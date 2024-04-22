@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AvroNet": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\AvroNet.Example\\AvroNet.Example.csproj"
+    }
+  }
+}

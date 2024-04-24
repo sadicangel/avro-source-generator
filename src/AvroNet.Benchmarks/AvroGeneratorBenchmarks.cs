@@ -11,7 +11,7 @@ public class AvroGeneratorBenchmarks
     public void Setup()
     {
         string code = """"
-        [AvroClass]
+        [AvroModel]
         public partial class User
         {
             public const string SchemaJson = """
@@ -57,7 +57,7 @@ public class AvroGeneratorBenchmarks
         
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("AvroNet", "1.0.0.0")]
         [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false)]
-        internal sealed class AvroClassAttribute : global::System.Attribute
+        internal sealed class AvroModelAttribute : global::System.Attribute
         {
         }
         #nullable restore
@@ -154,8 +154,8 @@ public class AvroGeneratorBenchmarks
 
         benchmark.Inspect(new CSharpIncrementalGeneratorBenchmarkInspectionContext
         {
-            Source = ("AvroClassAttribute.g.cs", attribute),
-            AdditionalSources = { ("User.AvroClass.g.cs", generated) },
+            Source = ("AvroModelAttribute.g.cs", attribute),
+            AdditionalSources = { ("User.AvroModel.g.cs", generated) },
         });
     }
 }

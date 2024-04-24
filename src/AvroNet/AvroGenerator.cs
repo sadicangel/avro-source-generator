@@ -3,9 +3,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using Microsoft.CSharp;
-using System.CodeDom;
-using System.CodeDom.Compiler;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -14,140 +11,66 @@ namespace AvroNet;
 [Generator(LanguageNames.CSharp)]
 internal sealed partial class AvroGenerator : IIncrementalGenerator
 {
-    internal const string AvroClassAttributeName = "AvroNet.AvroClassAttribute";
+    internal const string AvroModelAttributeName = "AvroNet.AvroModelAttribute";
     internal const string AvroClassSchemaConstName = "SchemaJson";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(
-            static ctx => ctx.AddSource("AvroClassAttribute.g.cs", SourceText.From(AvroClassAttribute, Encoding.UTF8)));
+            static ctx => ctx.AddSource("AvroModelAttribute.g.cs", SourceText.From(AvroModelAttribute, Encoding.UTF8)));
 
         var infoList = context.SyntaxProvider
-            .ForAttributeWithMetadataName(AvroClassAttributeName,
-                predicate: static (node, token) => node is ClassDeclarationSyntax @class && @class.Modifiers.Any(SyntaxKind.PartialKeyword),
-                transform: static (ctx, token) =>
-                {
-                    var classDeclaration = Unsafe.As<ClassDeclarationSyntax>(ctx.TargetNode);
-                    var classSymbol = Unsafe.As<INamedTypeSymbol>(ctx.TargetSymbol);
+            .ForAttributeWithMetadataName(AvroModelAttributeName, IsPartialClassOrRecord, GetClassInfo);
 
-                    var schema = default(string);
-                    for (int i = 0; i < classDeclaration.Members.Count; ++i)
-                    {
-                        if (classDeclaration.Members[i] is FieldDeclarationSyntax field)
-                        {
-                            if (field.Declaration.Variables.FirstOrDefault(v => v.Identifier.Text == AvroClassSchemaConstName) is VariableDeclaratorSyntax variable)
-                            {
-                                var fieldDeclaration = (IFieldSymbol)ctx.SemanticModel.GetDeclaredSymbol(variable, token)!;
-                                if (fieldDeclaration.IsConst)
-                                {
-                                    schema = (string?)fieldDeclaration.ConstantValue;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (string.IsNullOrEmpty(schema))
-                        throw new NotSupportedException("add a diagnostic here for 'schema is null or empty'");
-
-                    return new AvroClassInfo(classSymbol, schema!);
-                });
-
-
-        context.RegisterSourceOutput(infoList,
-            static (ctx, info) => ctx.AddSource($"{info.Class.Name}.AvroClass.g.cs", AvroCodeGenEx.Instance.GenerateSourceText(info)));
-    }
-}
-
-file readonly record struct AvroClassInfo
-{
-    public readonly INamedTypeSymbol Class;
-    public readonly string Schema;
-
-    public AvroClassInfo(INamedTypeSymbol @class, string schema) : this()
-    {
-        Class = @class;
-        Schema = schema;
-    }
-}
-
-file sealed class AvroCodeGenEx : CodeGen
-{
-    public static readonly AvroCodeGenEx Instance = new();
-
-    private AvroCodeGenEx() { }
-
-    public SourceText GenerateSourceText(AvroClassInfo info)
-    {
-        Schemas.Clear();
-        Protocols.Clear();
-        NamespaceLookup.Clear();
-
-        var schema = Schema.Parse(info.Schema);
-        AddSchema(schema);
-        var unit = GenerateCode();
-        if (schema is NamedSchema namedSchema)
+        static bool IsPartialClassOrRecord(SyntaxNode node, CancellationToken cancellationToken)
         {
-            var classNameSpace = info.Class.ContainingNamespace?.ToDisplayString();
-            if (string.IsNullOrEmpty(classNameSpace))
-                throw new NotSupportedException("add a diagnostic here for 'cannot be declared in global namespace'");
+            return (node.IsKind(SyntaxKind.ClassDeclaration) || node.IsKind(SyntaxKind.RecordDeclaration))
+                && node is TypeDeclarationSyntax @class && @class.Modifiers.Any(SyntaxKind.PartialKeyword);
+        }
 
-            foreach (CodeNamespace schemaNamespace in unit.Namespaces)
+        static AvroModelOptions GetClassInfo(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
+        {
+            var typeDeclaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
+            var typeSymbol = Unsafe.As<INamedTypeSymbol>(context.TargetSymbol);
+
+            var modelSchema = default(string);
+            for (int i = 0; i < typeDeclaration.Members.Count; ++i)
             {
-                if (schemaNamespace.Name == namedSchema.Namespace)
+                if (typeDeclaration.Members[i] is FieldDeclarationSyntax field)
                 {
-                    schemaNamespace.Name = classNameSpace;
-                    foreach (CodeTypeDeclaration type in schemaNamespace.Types)
+                    if (field.Declaration.Variables.FirstOrDefault(v => v.Identifier.Text == AvroClassSchemaConstName) is VariableDeclaratorSyntax variable)
                     {
-                        if (type.Name == namedSchema.Name)
+                        var fieldDeclaration = (IFieldSymbol)context.SemanticModel.GetDeclaredSymbol(variable, cancellationToken)!;
+                        if (fieldDeclaration.IsConst)
                         {
-                            type.Name = info.Class.Name;
+                            modelSchema = (string?)fieldDeclaration.ConstantValue;
+                            break;
                         }
                     }
-                    break;
                 }
             }
+
+            if (string.IsNullOrEmpty(modelSchema))
+                throw new NotSupportedException("add a diagnostic here for 'schema is null or empty'");
+
+            return new AvroModelOptions(
+                name: typeSymbol.Name,
+                schema: modelSchema!,
+                @namespace: typeSymbol.ContainingNamespace?.ToDisplayString()! ?? "",
+                accessModifier: typeDeclaration.Modifiers.Any(SyntaxKind.PublicKeyword) ? "public" : "internal",
+                declarationType: typeDeclaration.IsKind(SyntaxKind.RecordDeclaration) ? "partial record" : "partial class"
+                );
         }
 
-        var cSharpCodeProvider = new CSharpCodeProvider();
-        var codeGeneratorOptions = new CodeGeneratorOptions
-        {
-            BracingStyle = "C",
-            IndentString = "    ",
-            BlankLinesBetweenMembers = false,
-        };
-        using var writer = new StringWriter();
-        cSharpCodeProvider.GenerateCodeFromCompileUnit(unit, writer, codeGeneratorOptions);
-        var sourceText = writer.ToString();
-        return SourceText.From(sourceText, Encoding.UTF8);
-    }
+        context.RegisterSourceOutput(infoList, GenerateSourceText);
 
-    protected override void ProcessSchemas() => base.ProcessSchemas();
+        static void GenerateSourceText(SourceProductionContext context, AvroModelOptions options)
+        {
+            using var writer = new SourceTextWriter(options);
 
-    protected override void createSchemaField(Schema schema, CodeTypeDeclaration ctd, bool overrideFlag)
-    {
-        var type = new CodeTypeReference(typeof(Schema), CodeTypeReferenceOptions.GlobalReference);
-        string text = "_SCHEMA";
-        var codeMemberField = new CodeMemberField(type, text)
-        {
-            Attributes = (MemberAttributes)24579,
-            InitExpression = new CodeMethodInvokeExpression(
-                new CodeMethodReferenceExpression(new CodeTypeReferenceExpression(type), "Parse"),
-                new CodeFieldReferenceExpression { FieldName = AvroGenerator.AvroClassSchemaConstName })
-        };
-        ctd.Members.Add(codeMemberField);
-
-        var codeMemberProperty = new CodeMemberProperty
-        {
-            Attributes = MemberAttributes.Public,
-            Name = "Schema",
-            Type = type
-        };
-        codeMemberProperty.GetStatements.Add(new CodeMethodReturnStatement(new CodeTypeReferenceExpression(ctd.Name + "." + text)));
-        if (overrideFlag)
-        {
-            codeMemberProperty.Attributes |= MemberAttributes.Override;
+            writer.ProcessSchema(Schema.Parse(options.Schema));
+            var sourceText = writer.ToString();
+            context.AddSource($"{options.Name}.AvroModel.g.cs", SourceText.From(sourceText, Encoding.UTF8));
         }
-        ctd.Members.Add(codeMemberProperty);
     }
 }

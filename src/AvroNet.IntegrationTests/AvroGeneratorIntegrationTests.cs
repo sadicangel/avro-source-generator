@@ -17,7 +17,7 @@ public class AvroGeneratorIntegrationTests
     }
 }
 
-[AvroClass]
+[AvroModel]
 partial class User
 {
     private const string SchemaJson = """

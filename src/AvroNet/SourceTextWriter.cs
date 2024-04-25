@@ -24,80 +24,6 @@ internal sealed class SourceTextWriter : IDisposable
             : identifier;
     }
 
-    private string TypeRef(NamedSchema schema, bool nullable)
-    {
-        return nullable
-            ? $"{_options.Namespace}.{ValidIdentifier(schema.Name)}?"
-            : $"{_options.Namespace}.{ValidIdentifier(schema.Name)}";
-    }
-
-    private string UnderlyingType(UnionSchema schema)
-    {
-        return schema.Count switch
-        {
-            2 => (schema.Schemas[0].Tag, schema.Schemas[1].Tag) switch
-            {
-                (Schema.Type.Null, Schema.Type.Null) => "object?",
-                (_, Schema.Type.Null) => FullType(schema.Schemas[0], nullable: true),
-                (Schema.Type.Null, _) => FullType(schema.Schemas[1], nullable: true),
-                (_, _) => "object",
-            },
-            _ => schema.Schemas.Any(s => s.Tag is Schema.Type.Null) ? "object?" : "object"
-        };
-    }
-
-    private string LogicalType(LogicalSchema schema)
-    {
-        var type = schema.LogicalType.GetCSharpType(nullible: false);
-        return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>)
-            ? $"{type.GetGenericArguments()[0]}?"
-            : type.ToString();
-    }
-
-    private string FullType(Schema schema, bool nullable = false)
-    {
-        if (nullable)
-        {
-            return schema.Tag switch
-            {
-                Schema.Type.Null => "object?",
-                Schema.Type.Boolean => "bool?",
-                Schema.Type.Int => "int?",
-                Schema.Type.Long => "long?",
-                Schema.Type.Float => "float?",
-                Schema.Type.Double => "double?",
-                Schema.Type.Bytes => "byte[]?",
-                Schema.Type.String => "string?",
-                Schema.Type.Enumeration or Schema.Type.Fixed or Schema.Type.Record or Schema.Type.Error => TypeRef(schema.As<NamedSchema>(), nullable),
-                Schema.Type.Array => $"System.Collections.Generic.IList<{FullType(schema.As<ArraySchema>().ItemSchema)}>?",
-                Schema.Type.Map => $"System.Collections.Generic.IDictionary<string,{FullType(schema.As<MapSchema>().ValueSchema)}>?",
-                Schema.Type.Union => UnderlyingType(schema.As<UnionSchema>()),
-                Schema.Type.Logical => LogicalType(schema.As<LogicalSchema>()),
-                _ => throw new CodeGenException($"Invalid schema '{schema.Name}' of type {schema.Tag}"),
-            };
-        }
-        else
-        {
-            return schema.Tag switch
-            {
-                Schema.Type.Null => "object?",
-                Schema.Type.Boolean => "bool",
-                Schema.Type.Int => "int",
-                Schema.Type.Long => "long",
-                Schema.Type.Float => "float",
-                Schema.Type.Double => "double",
-                Schema.Type.Bytes => "byte[]",
-                Schema.Type.String => "string",
-                Schema.Type.Enumeration or Schema.Type.Fixed or Schema.Type.Record or Schema.Type.Error => TypeRef(schema.As<NamedSchema>(), nullable),
-                Schema.Type.Array => $"System.Collections.Generic.IList<{FullType(schema.As<ArraySchema>().ItemSchema)}>",
-                Schema.Type.Map => $"System.Collections.Generic.IDictionary<string,{FullType(schema.As<MapSchema>().ValueSchema)}>",
-                Schema.Type.Union => UnderlyingType(schema.As<UnionSchema>()),
-                Schema.Type.Logical => LogicalType(schema.As<LogicalSchema>()),
-                _ => throw new CodeGenException($"Invalid schema '{schema.Name}' of type {schema.Tag}"),
-            };
-        }
-    }
-
     private void Comment(string? comment)
     {
         if (!string.IsNullOrWhiteSpace(comment))
@@ -159,11 +85,10 @@ internal sealed class SourceTextWriter : IDisposable
     private string Field(Field field, ref GetPutBuilder getPutBuilder)
     {
         var fieldName = ValidIdentifier(field.Name);
-        var fieldType = FullType(field.Schema);
-        var isRequired = fieldType[fieldType.Length - 1] != '?';
+        var fieldType = FieldType.FromSchema(field.Schema, _options.Namespace);
         Comment(field.Documentation);
         _writer.Write("public ");
-        if (isRequired)
+        if (!fieldType.IsNullable)
             _writer.Write("required ");
         _writer.Write(fieldType);
         _writer.Write(' ');
@@ -180,7 +105,7 @@ internal sealed class SourceTextWriter : IDisposable
             _writer.WriteLine(" { get; init; }");
         }
 
-        getPutBuilder.AddCase(field.Pos, fieldName, fieldType);
+        getPutBuilder.AddCase(field, field.Pos, fieldName, fieldType);
 
         return fieldName;
 
@@ -217,7 +142,7 @@ internal sealed class SourceTextWriter : IDisposable
         }
     }
 
-    public void Enum(EnumSchema schema)
+    private void Enum(EnumSchema schema)
     {
         Comment(schema.Documentation);
         var name = ValidIdentifier(schema.Name);
@@ -230,7 +155,7 @@ internal sealed class SourceTextWriter : IDisposable
         EndDefinition();
     }
 
-    public void Fixed(FixedSchema schema)
+    private void Fixed(FixedSchema schema)
     {
         Comment(schema.Documentation);
         var name = ValidIdentifier(schema.Name);
@@ -248,7 +173,7 @@ internal sealed class SourceTextWriter : IDisposable
         EndDefinition();
     }
 
-    public void Record(RecordSchema schema)
+    private void Record(RecordSchema schema)
     {
         if (schema.Documentation is not null)
             Comment(schema.Documentation);

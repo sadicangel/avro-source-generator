@@ -63,7 +63,7 @@ internal ref struct GetPutBuilder
         }
     }
 
-    public readonly GetPutBuilder AddCase(int position, string name, string type)
+    public readonly GetPutBuilder AddCase(int position, string name, FieldType type)
     {
         IndentBuilders();
         _getBuilder.Append("case ");

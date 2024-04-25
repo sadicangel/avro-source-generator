@@ -105,7 +105,7 @@ internal sealed class SourceTextWriter : IDisposable
             _writer.WriteLine(" { get; init; }");
         }
 
-        getPutBuilder.AddCase(field, field.Pos, fieldName, fieldType);
+        getPutBuilder.AddCase(field.Pos, fieldName, fieldType);
 
         return fieldName;
 

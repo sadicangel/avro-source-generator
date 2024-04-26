@@ -25,6 +25,15 @@ public partial record class Test
                 { "name": "fixed_field", "type": { "type": "fixed", "name": "ExampleFixed", "size": 16} },
                 { "name": "union_field", "type": ["string", "int", { "type": "record", "name": "UnionRecord", "fields": [{ "name": "sub_field", "type": "string"}]}]},
                 { "name": "record_field", "type": { "type": "record", "name": "ExampleRecord", "fields": [{ "name": "sub_field", "type": "string"}]} },
+                { "name": "decimal_field_bytes", "type": { "type": "bytes", "logicalType": "decimal", "precision": 2 } },
+                { "name": "uuid", "type": { "type": "string", "logicalType": "uuid" } },
+                { "name": "date", "type": { "type": "int", "logicalType": "date" } },
+                { "name": "time_ms", "type": { "type": "int", "logicalType": "time-millis" } },
+                { "name": "time_us", "type": { "type": "long", "logicalType": "time-micros" } },
+                { "name": "timestamp_ms", "type": { "type": "long", "logicalType": "timestamp-millis" } },
+                { "name": "timestamp_us", "type": { "type": "long", "logicalType": "timestamp-micros" } },
+                { "name": "local_timestamp_ms", "type": { "type": "long", "logicalType": "local-timestamp-millis" } },
+                { "name": "local_timestamp_us", "type": { "type": "long", "logicalType": "local-timestamp-micros" } },
                 { "name": "null_boolean_field", "type": ["null", "boolean"]},
                 { "name": "null_int_field", "type": ["null", "int"]},
                 { "name": "null_long_field", "type": ["null", "long"]},
@@ -39,7 +48,16 @@ public partial record class Test
                 { "name": "null_enum_field", "type": ["null", "ExampleEnum" ]},
                 { "name": "null_fixed_field", "type": ["null", "ExampleFixed" ]},
                 { "name": "null_union_field", "type": ["null", "string", "int", "UnionRecord" ]},
-                { "name": "null_record_field", "type": ["null", "ExampleRecord" ]}
+                { "name": "null_record_field", "type": ["null", "ExampleRecord" ]},
+                { "name": "null_decimal_field_bytes", "type": ["null", { "type": "bytes", "logicalType": "decimal", "precision": 2 }]},
+                { "name": "null_uuid", "type": ["null", { "type": "string", "logicalType": "uuid" }]},
+                { "name": "null_date", "type": ["null", { "type": "int", "logicalType": "date" }]},
+                { "name": "null_time_ms", "type": ["null", { "type": "int", "logicalType": "time-millis" }]},
+                { "name": "null_time_us", "type": ["null", { "type": "long", "logicalType": "time-micros" }]},
+                { "name": "null_timestamp_ms", "type": ["null", { "type": "long", "logicalType": "timestamp-millis" }]},
+                { "name": "null_timestamp_us", "type": ["null", { "type": "long", "logicalType": "timestamp-micros" }]},
+                { "name": "null_local_timestamp_ms", "type": ["null", { "type": "long", "logicalType": "local-timestamp-millis" }]},
+                { "name": "null_local_timestamp_us", "type": ["null", { "type": "long", "logicalType": "local-timestamp-micros" }]}
             ]
         }
     """;

@@ -1,4 +1,5 @@
 using Avro;
+using Avro.Generic;
 using Avro.Specific;
 using System.Reflection;
 
@@ -44,7 +45,9 @@ internal partial class AvroGenerator
         #nullable restore
         """;
     public static readonly string AvroSchemaTypeName = $"global::{typeof(Schema).FullName}";
+    public static readonly string AvroFixedSchemaTypeName = $"global::{typeof(FixedSchema).FullName}";
     public static readonly string AvroISpecificRecordTypeName = $"global::{typeof(ISpecificRecord).FullName}";
     public static readonly string AvroSpecificExceptionTypeName = $"global::{typeof(SpecificException).FullName}";
     public static readonly string AvroSpecificFixedTypeName = $"global::{typeof(SpecificFixed).FullName}";
+    public static readonly string AvroGenericFixedTypeName = $"global::{typeof(GenericFixed).FullName}";
 }

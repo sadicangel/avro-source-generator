@@ -58,7 +58,7 @@ internal sealed class SourceTextWriter : IDisposable
         _writer.WriteLine('}');
     }
 
-    private void SchemaProperty(Schema schema, bool isOverride)
+    private void SchemaProperty(Schema schema, string typeName, bool isOverride)
     {
         _writer.Write("public static readonly ");
         _writer.Write(AvroGenerator.AvroSchemaTypeName);
@@ -76,7 +76,7 @@ internal sealed class SourceTextWriter : IDisposable
             _writer.Write("override ");
         _writer.Write(AvroGenerator.AvroSchemaTypeName);
         _writer.Write(" Schema { get => ");
-        _writer.Write(schema.Name);
+        _writer.Write(typeName);
         _writer.Write('.');
         _writer.Write("_SCHEMA");
         _writer.WriteLine("; }");
@@ -90,8 +90,13 @@ internal sealed class SourceTextWriter : IDisposable
         Comment(field.Documentation);
 
         _writer.Write("public ");
-        if (!fieldType.IsNullable && _options.UseRequiredProperties)
-            _writer.Write("required ");
+        if (!fieldType.IsNullable)
+        {
+            if (_options.UseRequiredProperties)
+                _writer.Write("required ");
+            else
+                defaultValue ??= "default!";
+        }
         _writer.Write(fieldType);
         _writer.Write(' ');
         _writer.Write(fieldName);
@@ -161,7 +166,7 @@ internal sealed class SourceTextWriter : IDisposable
         Comment(schema.Documentation);
         var name = ValidIdentifier(schema.Name);
         StartDefinition("partial class", name, AvroGenerator.AvroSpecificFixedTypeName);
-        SchemaProperty(schema, isOverride: true);
+        SchemaProperty(schema, name, isOverride: true);
         _writer.Write("public uint FixedSize { get => ");
         _writer.Write(schema.Size);
         _writer.WriteLine("; }");
@@ -170,7 +175,21 @@ internal sealed class SourceTextWriter : IDisposable
         _writer.Write(name);
         _writer.Write("() : base(");
         _writer.Write(schema.Size);
-        _writer.WriteLine(") { }");
+        _writer.WriteLine(")");
+        _writer.WriteLine("{");
+        ++_writer.Indent;
+        _writer.Write("((");
+        _writer.Write(AvroGenerator.AvroGenericFixedTypeName);
+        _writer.Write(')');
+        _writer.Write("this");
+        _writer.Write(')');
+        _writer.Write(".Schema = (");
+        _writer.Write(AvroGenerator.AvroFixedSchemaTypeName);
+        _writer.Write(")");
+        _writer.Write(name);
+        _writer.WriteLine("._SCHEMA;");
+        --_writer.Indent;
+        _writer.WriteLine("}");
         EndDefinition();
     }
 
@@ -181,7 +200,7 @@ internal sealed class SourceTextWriter : IDisposable
 
         var name = ValidIdentifier(schema.Name);
         StartDefinition(_options.DeclarationType, name, AvroGenerator.AvroISpecificRecordTypeName);
-        SchemaProperty(schema, isOverride: false);
+        SchemaProperty(schema, name, isOverride: false);
 
         var getPutBuilder = new GetPutBuilder(name, _writer.Indent, isOverride: schema.Tag is Schema.Type.Error);
         foreach (var field in schema.Fields)

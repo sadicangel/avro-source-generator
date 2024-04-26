@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="8.0.3" />
     <PackageReference Include="Apache.Avro" Version="1.11.3" />
     <PackageReference Include="AutoFixture" Version="4.18.1" />
     <PackageReference Include="PolySharp" Version="1.14.1">

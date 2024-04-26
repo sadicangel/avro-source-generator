@@ -29,10 +29,20 @@ internal partial class AvroGenerator
         [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false)]
         internal sealed class AvroModelAttribute : global::System.Attribute
         {
+        #if NET8_0_OR_GREATER
+            private const int NET = 8;
+        #elif NET7_0_OR_GREATER
+            private const int NET = 7;
+        #elif NET6_0_OR_GREATER
+            private const int NET = 6;
+        #elif NET5_0_OR_GREATER
+            private const int NET = 5;
+        #else
+            private const int NET = 2;
+        #endif
         }
         #nullable restore
         """;
-
     public static readonly string AvroSchemaTypeName = $"global::{typeof(Schema).FullName}";
     public static readonly string AvroISpecificRecordTypeName = $"global::{typeof(ISpecificRecord).FullName}";
     public static readonly string AvroSpecificExceptionTypeName = $"global::{typeof(SpecificException).FullName}";

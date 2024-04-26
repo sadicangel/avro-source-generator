@@ -11,7 +11,8 @@ namespace AvroNet;
 [Generator(LanguageNames.CSharp)]
 internal sealed partial class AvroGenerator : IIncrementalGenerator
 {
-    internal const string AvroModelAttributeName = "AvroNet.AvroModelAttribute";
+    internal const string AvroModelAttributeName = "AvroModelAttribute";
+    internal const string AvroModelAttributeFullName = $"AvroNet.{AvroModelAttributeName}";
     internal const string AvroClassSchemaConstName = "SchemaJson";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -20,7 +21,7 @@ internal sealed partial class AvroGenerator : IIncrementalGenerator
             static ctx => ctx.AddSource("AvroModelAttribute.g.cs", SourceText.From(AvroModelAttribute, Encoding.UTF8)));
 
         var infoList = context.SyntaxProvider
-            .ForAttributeWithMetadataName(AvroModelAttributeName, IsPartialClassOrRecord, GetClassInfo);
+            .ForAttributeWithMetadataName(AvroModelAttributeFullName, IsPartialClassOrRecord, GetClassInfo);
 
         static bool IsPartialClassOrRecord(SyntaxNode node, CancellationToken cancellationToken)
         {
@@ -53,13 +54,17 @@ internal sealed partial class AvroGenerator : IIncrementalGenerator
             if (string.IsNullOrEmpty(modelSchema))
                 throw new NotSupportedException("add a diagnostic here for 'schema is null or empty'");
 
+            var value = context.Attributes.Single(a => a.AttributeClass?.Name == AvroModelAttributeName);
+            var dotnetVersion = (int)((IFieldSymbol)value.AttributeClass!.GetMembers().Single(s => s.Name == "NET")).ConstantValue!;
+
             return new AvroModelOptions(
-                name: typeSymbol.Name,
-                schema: modelSchema!,
-                @namespace: typeSymbol.ContainingNamespace?.ToDisplayString()! ?? "",
-                accessModifier: typeDeclaration.Modifiers.Any(SyntaxKind.PublicKeyword) ? "public" : "internal",
-                declarationType: typeDeclaration.IsKind(SyntaxKind.RecordDeclaration) ? "partial record" : "partial class"
-                );
+                Name: typeSymbol.Name,
+                Schema: modelSchema!,
+                Namespace: typeSymbol.ContainingNamespace?.ToDisplayString()! ?? "",
+                AccessModifier: typeDeclaration.Modifiers.Any(SyntaxKind.PublicKeyword) ? "public" : "internal",
+                DeclarationType: typeDeclaration.IsKind(SyntaxKind.RecordDeclaration) ? "partial record" : "partial class",
+                DotnetVersion: dotnetVersion
+            );
         }
 
         context.RegisterSourceOutput(infoList, GenerateSourceText);

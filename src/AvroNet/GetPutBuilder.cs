@@ -63,42 +63,62 @@ internal ref struct GetPutBuilder
         }
     }
 
-    public readonly GetPutBuilder AddCase(int position, string name, FieldType type)
+    public readonly GetPutBuilder AddCase(int position, string name, FieldType type, bool useUnsafeAccessors)
     {
-        IndentBuilders();
-        _getBuilder.Append("case ");
-        _getBuilder.Append(position);
-        _getBuilder.Append(": return this.");
-        _getBuilder.Append(name);
-        _getBuilder.AppendLine(";");
+        if (useUnsafeAccessors)
+        {
+            IndentBuilders();
+            _getBuilder.Append("case ");
+            _getBuilder.Append(position);
+            _getBuilder.Append(": return this.");
+            _getBuilder.Append(name);
+            _getBuilder.AppendLine(";");
 
-        _putBuilder.Append("case ");
-        _putBuilder.Append(position);
-        _putBuilder.Append(": Set_");
-        _putBuilder.Append(name);
-        _putBuilder.Append("(this, (");
-        _putBuilder.Append(type);
-        _putBuilder.AppendLine(")fieldValue!); break;");
+            _putBuilder.Append("case ");
+            _putBuilder.Append(position);
+            _putBuilder.Append(": Set_");
+            _putBuilder.Append(name);
+            _putBuilder.Append("(this, (");
+            _putBuilder.Append(type);
+            _putBuilder.AppendLine(")fieldValue!); break;");
 
-        const string UnsafeAccessorInit =
-            "[global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = ";
+            const string UnsafeAccessorInit =
+                "[global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = ";
 
-        IndentSetters();
-        _unsafeSetters.Append(UnsafeAccessorInit);
-        _unsafeSetters.Append("\"set_");
-        _unsafeSetters.Append(name);
-        _unsafeSetters.AppendLine("\")]");
+            IndentSetters();
+            _unsafeSetters.Append(UnsafeAccessorInit);
+            _unsafeSetters.Append("\"set_");
+            _unsafeSetters.Append(name);
+            _unsafeSetters.AppendLine("\")]");
 
-        IndentSetters();
-        _unsafeSetters.Append("extern static ");
-        _unsafeSetters.Append(type);
-        _unsafeSetters.Append(" Set_");
-        _unsafeSetters.Append(name);
-        _unsafeSetters.Append('(');
-        _unsafeSetters.Append(_ownerType);
-        _unsafeSetters.Append(" obj, ");
-        _unsafeSetters.Append(type);
-        _unsafeSetters.AppendLine(" value);");
+            IndentSetters();
+            _unsafeSetters.Append("extern static ");
+            _unsafeSetters.Append(type);
+            _unsafeSetters.Append(" Set_");
+            _unsafeSetters.Append(name);
+            _unsafeSetters.Append('(');
+            _unsafeSetters.Append(_ownerType);
+            _unsafeSetters.Append(" obj, ");
+            _unsafeSetters.Append(type);
+            _unsafeSetters.AppendLine(" value);");
+        }
+        else
+        {
+            IndentBuilders();
+            _getBuilder.Append("case ");
+            _getBuilder.Append(position);
+            _getBuilder.Append(": return this.");
+            _getBuilder.Append(name);
+            _getBuilder.AppendLine(";");
+
+            _putBuilder.Append("case ");
+            _putBuilder.Append(position);
+            _putBuilder.Append(": this.");
+            _putBuilder.Append(name);
+            _putBuilder.Append(" = (");
+            _putBuilder.Append(type);
+            _putBuilder.AppendLine(")fieldValue!; break;");
+        }
 
         return this;
     }

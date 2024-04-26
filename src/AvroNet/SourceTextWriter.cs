@@ -86,26 +86,27 @@ internal sealed class SourceTextWriter : IDisposable
     {
         var fieldName = ValidIdentifier(field.Name);
         var fieldType = FieldType.FromSchema(field.Schema, _options.Namespace);
+        var defaultValue = DefaultValue(field, field.Schema, _options.Namespace);
         Comment(field.Documentation);
+
         _writer.Write("public ");
-        if (!fieldType.IsNullable)
+        if (!fieldType.IsNullable && _options.UseRequiredProperties)
             _writer.Write("required ");
         _writer.Write(fieldType);
         _writer.Write(' ');
         _writer.Write(fieldName);
-        var defaultValue = DefaultValue(field, field.Schema, _options.Namespace);
+        if (_options.UseInitOnlyProperties)
+            _writer.Write(" { get; init; }");
+        else
+            _writer.Write(" { get; set; }");
         if (defaultValue is not null)
         {
-            _writer.Write(" { get; init; } = ");
+            _writer.Write(" = ");
             _writer.Write(defaultValue);
-            _writer.WriteLine(';');
+            _writer.Write(';');
         }
-        else
-        {
-            _writer.WriteLine(" { get; init; }");
-        }
-
-        getPutBuilder.AddCase(field.Pos, fieldName, fieldType);
+        _writer.WriteLine();
+        getPutBuilder.AddCase(field.Pos, fieldName, fieldType, useUnsafeAccessors: _options.UseInitOnlyProperties);
 
         return fieldName;
 

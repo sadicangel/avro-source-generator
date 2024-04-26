@@ -3,7 +3,7 @@ namespace AvroNet.Example;
 [AvroModel]
 public partial record class Test
 {
-    private const string SchemaJson = """
+    public const string SchemaJson = """
         {
             "type": "record",
             "name": "Test",
@@ -44,3 +44,4 @@ public partial record class Test
         }
     """;
 }
+

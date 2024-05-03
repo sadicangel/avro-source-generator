@@ -42,14 +42,14 @@ internal static partial class CSharpSourceGeneratorVerifier<TSourceGenerator>
 
     public static async Task VerifyGeneratorAsync(string source, DiagnosticResult[] diagnostics, params (string filename, string content)[] generatedSources)
     {
-        CSharpSourceGeneratorVerifier<TSourceGenerator>.Test test = new()
+        var test = new Test()
         {
+            LanguageVersion = LanguageVersionHelper.GetLanguageVersion(),
             TestState =
             {
                 Sources = { source },
             },
         };
-
         foreach ((string filename, string content) generatedSource in generatedSources)
         {
             test.TestState.GeneratedSources.Add((typeof(TSourceGenerator), generatedSource.filename, SourceText.From(generatedSource.content, Encoding.UTF8)));

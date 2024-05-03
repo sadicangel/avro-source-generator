@@ -11,22 +11,21 @@ internal static partial class CSharpSourceGeneratorVerifier<TSourceGenerator>
 {
     public sealed class Test : CSharpSourceGeneratorTest<EmptySourceGeneratorProvider, MSTestVerifier>
     {
-        public Test()
-        {
-        }
-
         public LanguageVersion LanguageVersion { get; set; } = LanguageVersion.Default;
 
-        protected override IEnumerable<ISourceGenerator> GetSourceGenerators()
-        {
-            return new[] { new TSourceGenerator().AsSourceGenerator() };
-        }
+        protected override IEnumerable<ISourceGenerator> GetSourceGenerators() => [new TSourceGenerator().AsSourceGenerator()];
 
         protected override CompilationOptions CreateCompilationOptions()
         {
-            CompilationOptions compilationOptions = base.CreateCompilationOptions();
+            var compilationOptions = base.CreateCompilationOptions();
             return compilationOptions.WithSpecificDiagnosticOptions(
-                 compilationOptions.SpecificDiagnosticOptions.SetItems(CSharpVerifierHelper.NullableWarnings));
+                compilationOptions.SpecificDiagnosticOptions.SetItems(CSharpVerifierHelper.NullableWarnings));
+        }
+
+        protected override async Task<Compilation> GetProjectCompilationAsync(Project project, IVerifier verifier, CancellationToken cancellationToken)
+        {
+            var compilation = await base.GetProjectCompilationAsync(project, verifier, cancellationToken);
+            return compilation;
         }
 
         protected override ParseOptions CreateParseOptions()

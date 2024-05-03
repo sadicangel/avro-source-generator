@@ -11,27 +11,33 @@ internal ref struct GetPutBuilder
     private readonly StringBuilder _unsafeSetters;
     private readonly string _ownerType;
     private readonly int _accessorIndentation;
+    private readonly AvroModelOptions _options;
 
     private int _builderIndentation;
 
-    public GetPutBuilder(string ownerType, int indent, bool isOverride)
+    public GetPutBuilder(string ownerType, int indent, bool isOverride, AvroModelOptions options)
     {
         _ownerType = ownerType;
         _builderIndentation = indent;
         _getBuilder = new StringBuilder(256);
         _putBuilder = new StringBuilder(256);
         _unsafeSetters = new StringBuilder(256);
+        _options = options;
 
+        _getBuilder.Append("public ");
+        _putBuilder.Append("public ");
         if (isOverride)
         {
-            _getBuilder.AppendLine("public override object? Get(int fieldPos)");
-            _putBuilder.AppendLine("public override void Put(int fieldPos, object? fieldValue");
+            _getBuilder.Append("override ");
+            _putBuilder.Append("override ");
         }
-        else
-        {
-            _getBuilder.AppendLine("public object? Get(int fieldPos)");
-            _putBuilder.AppendLine("public void Put(int fieldPos, object? fieldValue)");
-        }
+        var objectType = _options.UseNullableReferenceTypes ? "object?" : "object";
+        _getBuilder.Append(objectType);
+        _getBuilder.AppendLine(" Get(int fieldPos)");
+        _putBuilder.Append("void Put(int fieldPos, ");
+        _putBuilder.Append(objectType);
+        _putBuilder.AppendLine(" fieldValue)");
+
         IndentBuilders();
         _getBuilder.AppendLine("{");
         _putBuilder.AppendLine("{");
@@ -63,9 +69,9 @@ internal ref struct GetPutBuilder
         }
     }
 
-    public readonly GetPutBuilder AddCase(int position, string name, FieldType type, bool useUnsafeAccessors)
+    public readonly GetPutBuilder AddCase(int position, string name, TypeSymbol type)
     {
-        if (useUnsafeAccessors)
+        if (_options.UseUnsafeAccessors)
         {
             IndentBuilders();
             _getBuilder.Append("case ");
@@ -80,7 +86,10 @@ internal ref struct GetPutBuilder
             _putBuilder.Append(name);
             _putBuilder.Append("(this, (");
             _putBuilder.Append(type);
-            _putBuilder.AppendLine(")fieldValue!); break;");
+            if (_options.UseNullableReferenceTypes)
+                _putBuilder.AppendLine(")fieldValue!); break;");
+            else
+                _putBuilder.AppendLine(")fieldValue); break;");
 
             const string UnsafeAccessorInit =
                 "[global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = ";
@@ -117,7 +126,10 @@ internal ref struct GetPutBuilder
             _putBuilder.Append(name);
             _putBuilder.Append(" = (");
             _putBuilder.Append(type);
-            _putBuilder.AppendLine(")fieldValue!; break;");
+            if (_options.UseNullableReferenceTypes)
+                _putBuilder.AppendLine(")fieldValue!; break;");
+            else
+                _putBuilder.AppendLine(")fieldValue; break;");
         }
 
         return this;

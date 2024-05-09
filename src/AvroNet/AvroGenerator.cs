@@ -18,64 +18,66 @@ internal sealed partial class AvroGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterPostInitializationOutput(
-            static ctx => ctx.AddSource("AvroModelAttribute.g.cs", SourceText.From(AvroModelAttribute, Encoding.UTF8)));
+        context.RegisterPostInitializationOutput(static context =>
+            context.AddSource("AvroModelAttribute.g.cs", SourceText.From(AvroModelAttribute, Encoding.UTF8)));
 
-        var infoList = context.SyntaxProvider
-            .ForAttributeWithMetadataName(AvroModelAttributeFullName, IsPartialClassOrRecord, GetClassInfo);
-
-        static bool IsPartialClassOrRecord(SyntaxNode node, CancellationToken cancellationToken)
-        {
-            var result = (node.IsKind(SyntaxKind.ClassDeclaration) || node.IsKind(SyntaxKind.RecordDeclaration))
-                && node is TypeDeclarationSyntax @class && @class.Modifiers.Any(SyntaxKind.PartialKeyword);
-            return result;
-        }
-
-        static AvroModelOptions GetClassInfo(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
-        {
-            var languageVersion = ((CSharpCompilation)context.SemanticModel.Compilation).LanguageVersion;
-            var typeDeclaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
-            var typeSymbol = Unsafe.As<INamedTypeSymbol>(context.TargetSymbol);
-
-            var modelSchema = default(string);
-            for (int i = 0; i < typeDeclaration.Members.Count; ++i)
-            {
-                if (typeDeclaration.Members[i] is FieldDeclarationSyntax field)
+        var models = context.SyntaxProvider
+            .ForAttributeWithMetadataName(AvroModelAttributeFullName,
+                predicate: static (node, cancellationToken) =>
                 {
-                    if (field.Declaration.Variables.FirstOrDefault(v => v.Identifier.Text == AvroClassSchemaConstName) is VariableDeclaratorSyntax variable)
+                    if (!node.IsKind(SyntaxKind.ClassDeclaration) && !node.IsKind(SyntaxKind.RecordDeclaration))
+                        return false;
+
+                    return Unsafe.As<TypeDeclarationSyntax>(node).Modifiers.Any(SyntaxKind.PartialKeyword);
+                },
+                transform: static (context, cancellationToken) =>
+                {
+                    var typeDeclaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
+                    var typeSymbol = Unsafe.As<INamedTypeSymbol>(context.TargetSymbol);
+                    var modelFeatures = (AvroModelFeatures)context.Attributes
+                        .Single(attr => attr.AttributeClass?.Name == AvroModelAttributeName)
+                        .ConstructorArguments[0].Value!;
+
+                    var modelSchema = default(string);
+                    for (int i = 0; i < typeDeclaration.Members.Count; ++i)
                     {
-                        var fieldDeclaration = (IFieldSymbol)context.SemanticModel.GetDeclaredSymbol(variable, cancellationToken)!;
-                        if (fieldDeclaration.IsConst)
+                        if (typeDeclaration.Members[i] is FieldDeclarationSyntax field)
                         {
-                            modelSchema = (string?)fieldDeclaration.ConstantValue;
-                            break;
+                            var schemaJson = field.Declaration.Variables
+                                .FirstOrDefault(v => v.Identifier.Text == AvroClassSchemaConstName);
+                            if (schemaJson is not null)
+                            {
+                                var schemaJsonSymbol = (IFieldSymbol)context.SemanticModel
+                                    .GetDeclaredSymbol(schemaJson, cancellationToken)!;
+                                if (schemaJsonSymbol.IsConst)
+                                {
+                                    modelSchema = (string?)schemaJsonSymbol.ConstantValue;
+                                    break;
+                                }
+                            }
                         }
                     }
-                }
-            }
 
-            if (string.IsNullOrEmpty(modelSchema))
-                throw new NotSupportedException("add a diagnostic here for 'schema is null or empty'");
+                    if (string.IsNullOrEmpty(modelSchema))
+                        throw new NotSupportedException("add a diagnostic here for 'schema is null or empty'");
 
-            return new AvroModelOptions(
-                Name: typeSymbol.Name,
-                Schema: modelSchema!,
-                Namespace: typeSymbol.ContainingNamespace?.ToDisplayString()! ?? "",
-                AccessModifier: typeDeclaration.Modifiers.Any(SyntaxKind.PublicKeyword) ? "public" : "internal",
-                DeclarationType: typeDeclaration.IsKind(SyntaxKind.RecordDeclaration) ? "partial record class" : "partial class",
-                LanguageVersion: languageVersion
-            );
-        }
+                    return new AvroModelOptions(
+                        Name: typeSymbol.Name,
+                        Schema: modelSchema!,
+                        Namespace: typeSymbol.ContainingNamespace?.ToDisplayString()! ?? "",
+                        AccessModifier: typeDeclaration.Modifiers.Any(SyntaxKind.PublicKeyword) ? "public" : "internal",
+                        DeclarationType: typeDeclaration.IsKind(SyntaxKind.RecordDeclaration) ? "partial record class" : "partial class",
+                        Features: modelFeatures
+                    );
+                });
 
-        context.RegisterSourceOutput(infoList, GenerateSourceText);
-
-        static void GenerateSourceText(SourceProductionContext context, AvroModelOptions options)
+        context.RegisterSourceOutput(models, static (context, options) =>
         {
             using var writer = new SourceTextWriter(options);
             using var document = JsonDocument.Parse(options.Schema);
             writer.Write(new AvroSchema(document.RootElement));
             var sourceText = writer.ToString();
             context.AddSource($"{options.Name}.AvroModel.g.cs", SourceText.From(sourceText, Encoding.UTF8));
-        }
+        });
     }
 }

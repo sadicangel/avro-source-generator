@@ -33,55 +33,32 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
         };
     }
 
-    public static TypeSymbol Null { get; } = new(SchemaTypeTag.Null, "object?");
-    public static TypeSymbol Boolean { get; } = new(SchemaTypeTag.Boolean, "bool");
-    public static TypeSymbol BooleanNullable { get; } = new(SchemaTypeTag.Boolean, "bool?");
-    public static TypeSymbol Int { get; } = new(SchemaTypeTag.Int, "int");
-    public static TypeSymbol IntNullable { get; } = new(SchemaTypeTag.Int, "int?");
-    public static TypeSymbol Long { get; } = new(SchemaTypeTag.Long, "long");
-    public static TypeSymbol LongNullable { get; } = new(SchemaTypeTag.Long, "long?");
-    public static TypeSymbol Float { get; } = new(SchemaTypeTag.Float, "float");
-    public static TypeSymbol FloatNullable { get; } = new(SchemaTypeTag.Float, "float?");
-    public static TypeSymbol Double { get; } = new(SchemaTypeTag.Double, "double");
-    public static TypeSymbol DoubleNullable { get; } = new(SchemaTypeTag.Double, "double?");
-    public static TypeSymbol Bytes { get; } = new(SchemaTypeTag.Bytes, "byte[]");
-    public static TypeSymbol BytesNullable { get; } = new(SchemaTypeTag.Bytes, "byte[]?");
-    public static TypeSymbol String { get; } = new(SchemaTypeTag.String, "string");
-    public static TypeSymbol StringNullable { get; } = new(SchemaTypeTag.String, "string?");
-    public static TypeSymbol Enum(JsonElement name, string @namespace) => new(SchemaTypeTag.Enumeration, $"{@namespace}.{name}");
-    public static TypeSymbol EnumNullable(JsonElement name, string @namespace) => new(SchemaTypeTag.Enumeration, $"{@namespace}.{name}?");
-    public static TypeSymbol Fixed(JsonElement name, string @namespace) => new(SchemaTypeTag.Fixed, $"{@namespace}.{name}");
-    public static TypeSymbol FixedNullable(JsonElement name, string @namespace) => new(SchemaTypeTag.Fixed, $"{@namespace}.{name}?");
-    public static TypeSymbol Record(JsonElement name, string @namespace) => new(SchemaTypeTag.Record, $"{@namespace}.{name}");
-    public static TypeSymbol RecordNullable(JsonElement name, string @namespace) => new(SchemaTypeTag.Record, $"{@namespace}.{name}?");
-    public static TypeSymbol Error(JsonElement name, string @namespace) => new(SchemaTypeTag.Error, $"{@namespace}.{name}");
-    public static TypeSymbol ErrorNullable(JsonElement name, string @namespace) => new(SchemaTypeTag.Error, $"{@namespace}.{name}?");
-    public static TypeSymbol Array(TypeSymbol typeArg) => new(SchemaTypeTag.Array, $"System.Collections.Generic.IList<{typeArg.Name}>", typeArg);
-    public static TypeSymbol ArrayNullable(TypeSymbol typeArg) => new(SchemaTypeTag.Array, $"System.Collections.Generic.IList<{typeArg.Name}>?", typeArg);
-    public static TypeSymbol Map(TypeSymbol typeArg) => new(SchemaTypeTag.Map, $"System.Collections.Generic.IDictionary<string, {typeArg.Name}>", typeArg);
-    public static TypeSymbol MapNullable(TypeSymbol typeArg) => new(SchemaTypeTag.Map, $"System.Collections.Generic.IDictionary<string, {typeArg.Name}>?", typeArg);
-    public static TypeSymbol Union { get; } = new(SchemaTypeTag.Union, "object");
-    public static TypeSymbol UnionNullable { get; } = new(SchemaTypeTag.Union, "object?");
-    public static TypeSymbol LogicalDecimal { get; } = new(SchemaTypeTag.Logical, "Avro.AvroDecimal", null, "decimal");
-    public static TypeSymbol LogicalDecimalNullable { get; } = new(SchemaTypeTag.Logical, "Avro.AvroDecimal?", null, "decimal");
-    public static TypeSymbol LogicalUuid { get; } = new(SchemaTypeTag.Logical, "System.Guid", null, "uuid");
-    public static TypeSymbol LogicalUuidNullable { get; } = new(SchemaTypeTag.Logical, "System.Guid?", null, "uuid");
-    public static TypeSymbol LogicalTimestampMillis { get; } = new(SchemaTypeTag.Logical, "System.DateTime", null, "timestamp-millis");
-    public static TypeSymbol LogicalTimestampMillisNullable { get; } = new(SchemaTypeTag.Logical, "System.DateTime?", null, "timestamp-millis");
-    public static TypeSymbol LogicalTimestampMicros { get; } = new(SchemaTypeTag.Logical, "System.DateTime", null, "timestamp-micros");
-    public static TypeSymbol LogicalTimestampMicrosNullable { get; } = new(SchemaTypeTag.Logical, "System.DateTime?", null, "timestamp-micros");
-    public static TypeSymbol LogicalLocalTimestampMillis { get; } = new(SchemaTypeTag.Logical, "System.DateTime", null, "local-timestamp-millis");
-    public static TypeSymbol LogicalLocalTimestampMillisNullable { get; } = new(SchemaTypeTag.Logical, "System.DateTime?", null, "local-timestamp-millis");
-    public static TypeSymbol LogicalLocalTimestampMicros { get; } = new(SchemaTypeTag.Logical, "System.DateTime", null, "local-timestamp-micros");
-    public static TypeSymbol LogicalLocalTimestampMicrosNullable { get; } = new(SchemaTypeTag.Logical, "System.DateTime?", null, "local-timestamp-micros");
-    public static TypeSymbol LogicalDate { get; } = new(SchemaTypeTag.Logical, "System.DateTime", null, "date");
-    public static TypeSymbol LogicalDateNullable { get; } = new(SchemaTypeTag.Logical, "System.DateTime?", null, "date");
-    public static TypeSymbol LogicalTimeMillis { get; } = new(SchemaTypeTag.Logical, "System.TimeSpan", null, "time-millis");
-    public static TypeSymbol LogicalTimeMillisNullable { get; } = new(SchemaTypeTag.Logical, "System.TimeSpan?", null, "time-millis");
-    public static TypeSymbol LogicalTimeMicros { get; } = new(SchemaTypeTag.Logical, "System.TimeSpan", null, "time-micros");
-    public static TypeSymbol LogicalTimeMicrosNullable { get; } = new(SchemaTypeTag.Logical, "System.TimeSpan?", null, "time-micros");
-    public static TypeSymbol LogicalDuration { get; } = new(SchemaTypeTag.Logical, "int[]", null, "duration");
-    public static TypeSymbol LogicalDurationNullable { get; } = new(SchemaTypeTag.Logical, "int[]?", null, "duration");
+
+    public static TypeSymbol Null(bool nullable) => nullable ? Types.NullNullable : Types.Null;
+    public static TypeSymbol Boolean(bool nullable) => nullable ? Types.BooleanNullable : Types.Boolean;
+    public static TypeSymbol Int(bool nullable) => nullable ? Types.IntNullable : Types.Int;
+    public static TypeSymbol Long(bool nullable) => nullable ? Types.LongNullable : Types.Long;
+    public static TypeSymbol Float(bool nullable) => nullable ? Types.FloatNullable : Types.Float;
+    public static TypeSymbol Double(bool nullable) => nullable ? Types.DoubleNullable : Types.Double;
+    public static TypeSymbol Bytes(bool nullable) => nullable ? Types.BytesNullable : Types.Bytes;
+    public static TypeSymbol String(bool nullable) => nullable ? Types.StringNullable : Types.String;
+    public static TypeSymbol Enum(JsonElement name, string @namespace, bool nullable) => new(SchemaTypeTag.Enumeration, nullable ? $"{@namespace}.{name}?" : $"{@namespace}.{name}");
+    public static TypeSymbol Fixed(JsonElement name, string @namespace, bool nullable) => new(SchemaTypeTag.Fixed, nullable ? $"{@namespace}.{name}?" : $"{@namespace}.{name}");
+    public static TypeSymbol Record(JsonElement name, string @namespace, bool nullable) => new(SchemaTypeTag.Record, nullable ? $"{@namespace}.{name}?" : $"{@namespace}.{name}");
+    public static TypeSymbol Error(JsonElement name, string @namespace, bool nullable) => new(SchemaTypeTag.Error, nullable ? $"{@namespace}.{name}?" : $"{@namespace}.{name}");
+    public static TypeSymbol Array(TypeSymbol typeArg, bool nullable) => new(SchemaTypeTag.Array, nullable ? $"System.Collections.Generic.IList<{typeArg.Name}>?" : $"System.Collections.Generic.IList<{typeArg.Name}>", typeArg);
+    public static TypeSymbol Map(TypeSymbol typeArg, bool nullable) => new(SchemaTypeTag.Map, nullable ? $"System.Collections.Generic.IDictionary<string, {typeArg.Name}>?" : $"System.Collections.Generic.IDictionary<string, {typeArg.Name}>", typeArg);
+    public static TypeSymbol Union(bool nullable) => nullable ? Types.UnionNullable : Types.Union;
+    public static TypeSymbol LogicalDecimal(bool nullable) => nullable ? Types.LogicalDecimalNullable : Types.LogicalDecimal;
+    public static TypeSymbol LogicalUuid(bool nullable) => nullable ? Types.LogicalUuidNullable : Types.LogicalUuid;
+    public static TypeSymbol LogicalTimestampMillis(bool nullable) => nullable ? Types.LogicalTimestampMillisNullable : Types.LogicalTimestampMillis;
+    public static TypeSymbol LogicalTimestampMicros(bool nullable) => nullable ? Types.LogicalTimestampMicrosNullable : Types.LogicalTimestampMicros;
+    public static TypeSymbol LogicalLocalTimestampMillis(bool nullable) => nullable ? Types.LogicalLocalTimestampMillisNullable : Types.LogicalLocalTimestampMillis;
+    public static TypeSymbol LogicalLocalTimestampMicros(bool nullable) => nullable ? Types.LogicalLocalTimestampMicrosNullable : Types.LogicalLocalTimestampMicros;
+    public static TypeSymbol LogicalDate(bool nullable) => nullable ? Types.LogicalDateNullable : Types.LogicalDate;
+    public static TypeSymbol LogicalTimeMillis(bool nullable) => nullable ? Types.LogicalTimeMillisNullable : Types.LogicalTimeMillis;
+    public static TypeSymbol LogicalTimeMicros(bool nullable) => nullable ? Types.LogicalTimeMicrosNullable : Types.LogicalTimeMicros;
+    public static TypeSymbol LogicalDuration(bool nullable) => nullable ? Types.LogicalDurationNullable : Types.LogicalDuration;
 
     public static TypeSymbol FromSchema(
         AvroSchema schema,
@@ -89,18 +66,18 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
         IReadOnlyDictionary<ReadOnlyMemory<byte>, AvroSchema> schemas,
         AvroModelOptions options) => schema.GetTypeTag(schemas) switch
         {
-            SchemaTypeTag.Null => Null,
-            SchemaTypeTag.Boolean => nullable ? BooleanNullable : Boolean,
-            SchemaTypeTag.Int => nullable ? IntNullable : Int,
-            SchemaTypeTag.Long => nullable ? LongNullable : Long,
-            SchemaTypeTag.Float => nullable ? FloatNullable : Float,
-            SchemaTypeTag.Double => nullable ? DoubleNullable : Double,
-            SchemaTypeTag.Bytes => nullable && options.UseNullableReferenceTypes ? BytesNullable : Bytes,
-            SchemaTypeTag.String => nullable && options.UseNullableReferenceTypes ? StringNullable : String,
-            SchemaTypeTag.Enumeration => nullable ? EnumNullable(schema.Name, options.Namespace) : Enum(schema.Name, options.Namespace),
-            SchemaTypeTag.Fixed => nullable && options.UseNullableReferenceTypes ? FixedNullable(schema.Name, options.Namespace) : Fixed(schema.Name, options.Namespace),
-            SchemaTypeTag.Record => nullable && options.UseNullableReferenceTypes ? RecordNullable(schema.Name, options.Namespace) : Record(schema.Name, options.Namespace),
-            SchemaTypeTag.Error => nullable && options.UseNullableReferenceTypes ? ErrorNullable(schema.Name, options.Namespace) : Error(schema.Name, options.Namespace),
+            SchemaTypeTag.Null => Null(options.UseNullableReferenceTypes),
+            SchemaTypeTag.Boolean => Boolean(nullable),
+            SchemaTypeTag.Int => Int(nullable),
+            SchemaTypeTag.Long => Long(nullable),
+            SchemaTypeTag.Float => Float(nullable),
+            SchemaTypeTag.Double => Double(nullable),
+            SchemaTypeTag.Bytes => Bytes(nullable && options.UseNullableReferenceTypes),
+            SchemaTypeTag.String => String(nullable && options.UseNullableReferenceTypes),
+            SchemaTypeTag.Enumeration => Enum(schema.Name, options.Namespace, nullable),
+            SchemaTypeTag.Fixed => Fixed(schema.Name, options.Namespace, nullable && options.UseNullableReferenceTypes),
+            SchemaTypeTag.Record => Record(schema.Name, options.Namespace, nullable && options.UseNullableReferenceTypes),
+            SchemaTypeTag.Error => Error(schema.Name, options.Namespace, nullable && options.UseNullableReferenceTypes),
             SchemaTypeTag.Array => FromArraySchema(schema.AsArraySchema(), nullable, schemas, options),
             SchemaTypeTag.Map => FromMapSchema(schema.AsMapSchema(), nullable, schemas, options),
             SchemaTypeTag.Union => FromUnionSchema(schema.AsUnionSchema(), schemas, options),
@@ -115,7 +92,7 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
         AvroModelOptions options)
     {
         var typeArg = FromSchema(schema.ItemsSchema, nullable: false, schemas, options);
-        return nullable && options.UseNullableReferenceTypes ? ArrayNullable(typeArg) : Array(typeArg);
+        return Array(typeArg, nullable && options.UseNullableReferenceTypes);
     }
 
     private static TypeSymbol FromMapSchema(
@@ -125,7 +102,7 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
         AvroModelOptions options)
     {
         var typeArg = FromSchema(schema.ValuesSchema, nullable: false, schemas, options);
-        return nullable && options.UseNullableReferenceTypes ? MapNullable(typeArg) : Map(typeArg);
+        return Map(typeArg, nullable && options.UseNullableReferenceTypes);
     }
 
     private static TypeSymbol FromUnionSchema(
@@ -139,27 +116,69 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
             1 => FromSchema(unionSchemas[0], nullable: false, schemas, options),
             2 => (unionSchemas[0].GetTypeTag(schemas), unionSchemas[1].GetTypeTag(schemas)) switch
             {
-                (SchemaTypeTag.Null, SchemaTypeTag.Null) => UnionNullable,
+                (SchemaTypeTag.Null, SchemaTypeTag.Null) => Union(options.UseNullableReferenceTypes),
                 (_, SchemaTypeTag.Null) => FromSchema(unionSchemas[0], nullable: true, schemas, options),
                 (SchemaTypeTag.Null, _) => FromSchema(unionSchemas[1], nullable: true, schemas, options),
-                (_, _) => Union,
+                (_, _) => Union(options.UseNullableReferenceTypes),
             },
-            _ => unionSchemas.Any(s => s.GetTypeTag(schemas) is SchemaTypeTag.Null) && options.UseNullableReferenceTypes ? UnionNullable : Union
+            _ => Union(unionSchemas.Any(s => s.GetTypeTag(schemas) is SchemaTypeTag.Null) && options.UseNullableReferenceTypes)
         };
     }
 
     private static TypeSymbol FromLogicalSchema(LogicalSchema schema, bool nullable, AvroModelOptions options) => schema.LogicalType.GetRawValue().Span switch
     {
-    [0x22, 0x75, 0x75, 0x69, 0x64, 0x22] => nullable && options.UseNullableReferenceTypes ? LogicalUuidNullable : LogicalUuid,
-    [0x22, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x6C, 0x6C, 0x69, 0x73, 0x22] => nullable ? LogicalTimestampMillisNullable : LogicalTimestampMillis,
-    [0x22, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x63, 0x72, 0x6F, 0x73, 0x22] => nullable ? LogicalTimestampMicrosNullable : LogicalTimestampMicros,
-    [0x22, 0x6C, 0x6F, 0x63, 0x61, 0x6C, 0x2D, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x6C, 0x6C, 0x69, 0x73, 0x22] => nullable ? LogicalLocalTimestampMillisNullable : LogicalLocalTimestampMillis,
-    [0x22, 0x6C, 0x6F, 0x63, 0x61, 0x6C, 0x2D, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x63, 0x72, 0x6F, 0x73, 0x22] => nullable ? LogicalLocalTimestampMicrosNullable : LogicalLocalTimestampMicros,
-    [0x22, 0x64, 0x61, 0x74, 0x65, 0x22] => nullable ? LogicalDateNullable : LogicalDate,
-    [0x22, 0x74, 0x69, 0x6D, 0x65, 0x2D, 0x6D, 0x69, 0x6C, 0x6C, 0x69, 0x73, 0x22] => nullable ? LogicalTimeMillisNullable : LogicalTimeMillis,
-    [0x22, 0x74, 0x69, 0x6D, 0x65, 0x2D, 0x6D, 0x69, 0x63, 0x72, 0x6F, 0x73, 0x22] => nullable ? LogicalTimeMicrosNullable : LogicalTimeMicros,
-    [0x22, 0x64, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6F, 0x6E, 0x22] => nullable ? LogicalDurationNullable : LogicalDuration,
-    [0x22, 0x64, 0x65, 0x63, 0x69, 0x6D, 0x61, 0x6C, 0x22] => nullable ? LogicalDecimalNullable : LogicalDecimal,
+    [0x22, 0x75, 0x75, 0x69, 0x64, 0x22] => LogicalUuid(nullable && options.UseNullableReferenceTypes),
+    [0x22, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x6C, 0x6C, 0x69, 0x73, 0x22] => LogicalTimestampMillis(nullable),
+    [0x22, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x63, 0x72, 0x6F, 0x73, 0x22] => LogicalTimestampMicros(nullable),
+    [0x22, 0x6C, 0x6F, 0x63, 0x61, 0x6C, 0x2D, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x6C, 0x6C, 0x69, 0x73, 0x22] => LogicalLocalTimestampMillis(nullable),
+    [0x22, 0x6C, 0x6F, 0x63, 0x61, 0x6C, 0x2D, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x63, 0x72, 0x6F, 0x73, 0x22] => LogicalLocalTimestampMicros(nullable),
+    [0x22, 0x64, 0x61, 0x74, 0x65, 0x22] => LogicalDate(nullable),
+    [0x22, 0x74, 0x69, 0x6D, 0x65, 0x2D, 0x6D, 0x69, 0x6C, 0x6C, 0x69, 0x73, 0x22] => LogicalTimeMillis(nullable),
+    [0x22, 0x74, 0x69, 0x6D, 0x65, 0x2D, 0x6D, 0x69, 0x63, 0x72, 0x6F, 0x73, 0x22] => LogicalTimeMicros(nullable),
+    [0x22, 0x64, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6F, 0x6E, 0x22] => LogicalDuration(nullable),
+    [0x22, 0x64, 0x65, 0x63, 0x69, 0x6D, 0x61, 0x6C, 0x22] => LogicalDecimal(nullable),
         _ => throw new NotSupportedException(schema.LogicalType.GetRawText()),
     };
+}
+
+file static class Types
+{
+    public static readonly TypeSymbol Null = new(SchemaTypeTag.Null, "object");
+    public static readonly TypeSymbol NullNullable = new(SchemaTypeTag.Null, "object?");
+    public static readonly TypeSymbol Boolean = new(SchemaTypeTag.Null, "bool");
+    public static readonly TypeSymbol BooleanNullable = new(SchemaTypeTag.Null, "bool?");
+    public static readonly TypeSymbol Int = new(SchemaTypeTag.Null, "int");
+    public static readonly TypeSymbol IntNullable = new(SchemaTypeTag.Null, "int?");
+    public static readonly TypeSymbol Long = new(SchemaTypeTag.Null, "long");
+    public static readonly TypeSymbol LongNullable = new(SchemaTypeTag.Null, "long?");
+    public static readonly TypeSymbol Float = new(SchemaTypeTag.Null, "float");
+    public static readonly TypeSymbol FloatNullable = new(SchemaTypeTag.Null, "float?");
+    public static readonly TypeSymbol Double = new(SchemaTypeTag.Null, "double");
+    public static readonly TypeSymbol DoubleNullable = new(SchemaTypeTag.Null, "double?");
+    public static readonly TypeSymbol Bytes = new(SchemaTypeTag.Null, "byte[]");
+    public static readonly TypeSymbol BytesNullable = new(SchemaTypeTag.Null, "byte[]?");
+    public static readonly TypeSymbol String = new(SchemaTypeTag.Null, "string");
+    public static readonly TypeSymbol StringNullable = new(SchemaTypeTag.Null, "string?");
+    public static readonly TypeSymbol Union = new(SchemaTypeTag.Union, "object");
+    public static readonly TypeSymbol UnionNullable = new(SchemaTypeTag.Union, "object?");
+    public static readonly TypeSymbol LogicalDecimal = new(SchemaTypeTag.Logical, "Avro.AvroDecimal", null, "decimal");
+    public static readonly TypeSymbol LogicalDecimalNullable = new(SchemaTypeTag.Logical, "Avro.AvroDecimal?", null, "decimal");
+    public static readonly TypeSymbol LogicalUuid = new(SchemaTypeTag.Logical, "System.Guid", null, "uuid");
+    public static readonly TypeSymbol LogicalUuidNullable = new(SchemaTypeTag.Logical, "System.Guid?", null, "uuid");
+    public static readonly TypeSymbol LogicalTimestampMillis = new(SchemaTypeTag.Logical, "System.DateTime", null, "timestamp-millis");
+    public static readonly TypeSymbol LogicalTimestampMillisNullable = new(SchemaTypeTag.Logical, "System.DateTime?", null, "timestamp-millis");
+    public static readonly TypeSymbol LogicalTimestampMicros = new(SchemaTypeTag.Logical, "System.DateTime", null, "timestamp-micros");
+    public static readonly TypeSymbol LogicalTimestampMicrosNullable = new(SchemaTypeTag.Logical, "System.DateTime?", null, "timestamp-micros");
+    public static readonly TypeSymbol LogicalLocalTimestampMillis = new(SchemaTypeTag.Logical, "System.DateTime", null, "local-timestamp-millis");
+    public static readonly TypeSymbol LogicalLocalTimestampMillisNullable = new(SchemaTypeTag.Logical, "System.DateTime?", null, "local-timestamp-millis");
+    public static readonly TypeSymbol LogicalLocalTimestampMicros = new(SchemaTypeTag.Logical, "System.DateTime", null, "local-timestamp-micros");
+    public static readonly TypeSymbol LogicalLocalTimestampMicrosNullable = new(SchemaTypeTag.Logical, "System.DateTime?", null, "local-timestamp-micros");
+    public static readonly TypeSymbol LogicalDate = new(SchemaTypeTag.Logical, "System.DateTime", null, "date");
+    public static readonly TypeSymbol LogicalDateNullable = new(SchemaTypeTag.Logical, "System.DateTime?", null, "date");
+    public static readonly TypeSymbol LogicalTimeMillis = new(SchemaTypeTag.Logical, "System.TimeSpan", null, "time-millis");
+    public static readonly TypeSymbol LogicalTimeMillisNullable = new(SchemaTypeTag.Logical, "System.TimeSpan?", null, "time-millis");
+    public static readonly TypeSymbol LogicalTimeMicros = new(SchemaTypeTag.Logical, "System.TimeSpan", null, "time-micros");
+    public static readonly TypeSymbol LogicalTimeMicrosNullable = new(SchemaTypeTag.Logical, "System.TimeSpan?", null, "time-micros");
+    public static readonly TypeSymbol LogicalDuration = new(SchemaTypeTag.Logical, "int[]", null, "duration");
+    public static readonly TypeSymbol LogicalDurationNullable = new(SchemaTypeTag.Logical, "int[]?", null, "duration");
 }

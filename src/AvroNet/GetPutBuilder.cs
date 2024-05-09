@@ -9,9 +9,9 @@ internal ref struct GetPutBuilder
     private readonly StringBuilder _putBuilder;
 
     private readonly StringBuilder _unsafeSetters;
+    private readonly AvroModelOptions _options;
     private readonly string _ownerType;
     private readonly int _accessorIndentation;
-    private readonly AvroModelOptions _options;
 
     private int _builderIndentation;
 

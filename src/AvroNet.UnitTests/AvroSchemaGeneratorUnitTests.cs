@@ -12,7 +12,35 @@ public class AvroSchemaGeneratorUnitTests
         {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("AvroNet", "1.0.0.0")]
             [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false)]
-            internal sealed class AvroModelAttribute : global::System.Attribute { }
+            internal sealed class AvroModelAttribute : global::System.Attribute
+            {
+                public AvroModelFeatures Features { get; }
+        
+                public AvroModelAttribute(AvroModelFeatures features)
+                {
+                    Features = features;
+                }
+            }
+        
+            [global::System.Flags]
+            internal enum AvroModelFeatures
+            {
+                None = 0,
+                NullableReferenceTypes = 1 << 0,
+                FileScopedNamespaces = 1 << 1,
+                InitOnlyProperties = 1 << 2,
+                RequiredProperties = 1 << 3,
+                UnsafeAccessors = 1 << 4,
+        
+                NetStandard2_0 = None,
+                Net472 = None,
+                Net48 = None,
+                NetStandard2_1 = NullableReferenceTypes,
+                Net5 = NullableReferenceTypes | FileScopedNamespaces,
+                Net6 = NullableReferenceTypes | FileScopedNamespaces | InitOnlyProperties,
+                Net7 = NullableReferenceTypes | FileScopedNamespaces | InitOnlyProperties | RequiredProperties,
+                Net8 = NullableReferenceTypes | FileScopedNamespaces | InitOnlyProperties | RequiredProperties | UnsafeAccessors,
+            }
         }
         """";
 
@@ -44,7 +72,7 @@ public class AvroSchemaGeneratorUnitTests
 
             namespace Tests.OpenClass;
             
-            [AvroModel]
+            [AvroModel(AvroModelFeatures.Net8)]
             public partial record class User
             {
                 public const string SchemaJson = """
@@ -137,7 +165,7 @@ public class AvroSchemaGeneratorUnitTests
 
             namespace Tests.OpenClass
             {
-                [AvroModel]
+                [AvroModel(AvroModelFeatures.Net472)]
                 public partial class User
                 {
                     public const string SchemaJson = @"

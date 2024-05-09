@@ -1,7 +1,4 @@
-﻿
-using Microsoft.CodeAnalysis.CSharp;
-
-namespace AvroNet;
+﻿namespace AvroNet;
 
 internal sealed record class AvroModelOptions(
     string Name,
@@ -9,11 +6,11 @@ internal sealed record class AvroModelOptions(
     string Namespace,
     string AccessModifier,
     string DeclarationType,
-    LanguageVersion LanguageVersion)
+    AvroModelFeatures Features)
 {
-    public bool UseNullableReferenceTypes { get => LanguageVersion >= LanguageVersion.CSharp8; }
-    public bool UseFileScopedNamespaces { get => LanguageVersion >= LanguageVersion.CSharp10; }
-    public bool UseRequiredProperties { get => LanguageVersion >= LanguageVersion.CSharp11; }
-    public bool UseInitOnlyProperties { get => LanguageVersion >= LanguageVersion.CSharp12; }
-    public bool UseUnsafeAccessors { get => LanguageVersion >= LanguageVersion.CSharp12; }
+    public bool UseNullableReferenceTypes { get => (Features & AvroModelFeatures.NullableReferenceTypes) != 0; }
+    public bool UseFileScopedNamespaces { get => (Features & AvroModelFeatures.FileScopedNamespaces) != 0; }
+    public bool UseRequiredProperties { get => (Features & AvroModelFeatures.RequiredProperties) != 0; }
+    public bool UseInitOnlyProperties { get => (Features & AvroModelFeatures.InitOnlyProperties) != 0; }
+    public bool UseUnsafeAccessors { get => (Features & AvroModelFeatures.UnsafeAccessors) != 0; }
 }

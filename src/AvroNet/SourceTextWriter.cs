@@ -27,16 +27,13 @@ internal sealed class SourceTextWriter : IDisposable
             _writer.WriteLine("#nullable enable");
         if (_options.UseFileScopedNamespaces)
         {
-            _writer.Write("namespace ");
-            _writer.Write(_options.Namespace);
-            _writer.WriteLine(";");
+            _writer.WriteLine($"namespace {_options.Namespace};");
             _writer.WriteLine();
             WriteSchema(schema);
         }
         else
         {
-            _writer.Write("namespace ");
-            _writer.WriteLine(_options.Namespace);
+            _writer.WriteLine($"namespace {_options.Namespace}");
             _writer.WriteLine("{");
             ++_writer.Indent;
             WriteSchema(schema);
@@ -120,22 +117,11 @@ internal sealed class SourceTextWriter : IDisposable
 
     private void WriteDefinitionStart(string typeDefinition, string typeIdentifier, string? baseTypeIdentifier = null)
     {
-        _writer.Write('[');
-        _writer.Write(AvroGenerator.GeneratedCodeAttribute);
-        _writer.WriteLine(']');
-        _writer.Write(_options.AccessModifier);
-        _writer.Write(' ');
-        _writer.Write(typeDefinition);
-        _writer.Write(' ');
-        _writer.Write(typeIdentifier);
+        _writer.WriteLine($"[{AvroGenerator.GeneratedCodeAttribute}]");
         if (baseTypeIdentifier is not null)
-        {
-            _writer.Write(' ');
-            _writer.Write(':');
-            _writer.Write(' ');
-            _writer.Write(baseTypeIdentifier);
-        }
-        _writer.WriteLine();
+            _writer.WriteLine($"{_options.AccessModifier} {typeDefinition} {typeIdentifier} : {baseTypeIdentifier}");
+        else
+            _writer.WriteLine($"{_options.AccessModifier} {typeDefinition} {typeIdentifier}");
         _writer.WriteLine('{');
         ++_writer.Indent;
     }
@@ -148,55 +134,111 @@ internal sealed class SourceTextWriter : IDisposable
 
     private void WriteSchemaProperty(JsonElement json, string typeName, bool isOverride)
     {
-        _writer.Write("public static readonly ");
-        _writer.Write(AvroGenerator.AvroSchemaTypeName);
-        _writer.Write(" _SCHEMA = ");
-        _writer.Write(AvroGenerator.AvroSchemaTypeName);
-        _writer.Write(".Parse(");
-        var schemaJson = typeName == _options.Name
-            ? AvroGenerator.AvroClassSchemaConstName
-            : SymbolDisplay.FormatLiteral(json.GetRawText(), quote: true);
-        _writer.Write(schemaJson);
-        _writer.WriteLine(");");
-
-        _writer.Write("public ");
-        if (isOverride)
-            _writer.Write("override ");
-        _writer.Write(AvroGenerator.AvroSchemaTypeName);
-        _writer.Write(" Schema { get => ");
-        _writer.Write(typeName);
-        _writer.Write('.');
-        _writer.Write("_SCHEMA");
-        _writer.WriteLine("; }");
+        var schemaJson = typeName == _options.Name ? AvroGenerator.AvroClassSchemaConstName : SymbolDisplay.FormatLiteral(json.GetRawText(), quote: true);
+        _writer.WriteLine($"public static readonly {AvroGenerator.AvroSchemaTypeName} _SCHEMA = {AvroGenerator.AvroSchemaTypeName}.Parse({schemaJson});");
+        _writer.WriteLine($$"""public {{(isOverride ? "override " : "")}}{{AvroGenerator.AvroSchemaTypeName}} Schema { get => {{typeName}}._SCHEMA; }""");
     }
 
-    private void WriteField(FieldSchema schema, string fieldName, TypeSymbol fieldType)
+    private void WriteField(FieldInfo field)
     {
-        var defaultValue = fieldType.GetValue(schema.Default);
-        WriteComment(schema.Documentation);
+        WriteComment(field.Schema.Documentation);
 
-        _writer.Write("public ");
-        if (!fieldType.IsNullable)
-        {
-            if (_options.UseRequiredProperties)
-                _writer.Write("required ");
-            else if (_options.UseNullableReferenceTypes)
-                defaultValue ??= "default!";
-        }
-        _writer.Write(fieldType);
-        _writer.Write(' ');
-        _writer.Write(fieldName);
-        if (_options.UseInitOnlyProperties)
-            _writer.Write(" { get; init; }");
-        else
-            _writer.Write(" { get; set; }");
+        var modifiers = !field.Type.IsNullable && _options.UseRequiredProperties ? "public required" : "public";
+        var set = _options.UseInitOnlyProperties ? "init" : "set";
+        var defaultValue = field.Type.GetValue(field.Schema.Default);
+        if (!field.Type.IsNullable && _options.UseNullableReferenceTypes)
+            defaultValue ??= "default!";
+
         if (defaultValue is not null)
+            _writer.WriteLine($$"""{{modifiers}} {{field.Type}} {{field.Name}} { get; {{set}}; } = {{defaultValue}};""");
+        else
+            _writer.WriteLine($$"""{{modifiers}} {{field.Type}} {{field.Name}} { get; {{set}}; }""");
+    }
+
+    private readonly record struct FieldInfo(FieldSchema Schema, string Name, TypeSymbol Type, int Position);
+
+    private void WriteGetMethod(List<FieldInfo> fields, bool isOverride)
+    {
+        var objectType = _options.UseNullableReferenceTypes ? "object?" : "object";
+        _writer.WriteLine($"public {(isOverride ? "override " : "")}{objectType} Get(int fieldPos)");
+        _writer.WriteLine("{");
+        ++_writer.Indent;
+        _writer.WriteLine("switch (fieldPos)");
+        _writer.WriteLine("{");
+        ++_writer.Indent;
+        foreach (var field in fields)
+            _writer.WriteLine($"case {field.Position}: return this.{field.Name};");
+        _writer.WriteLine("""default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");""");
+        --_writer.Indent;
+        _writer.WriteLine("}");
+        --_writer.Indent;
+        _writer.WriteLine("}");
+    }
+
+    private void WritePutMethod(string ownerTypeName, List<FieldInfo> fields, bool isOverride)
+    {
+        var objectType = _options.UseNullableReferenceTypes ? "object?" : "object";
+        _writer.WriteLine($"public {(isOverride ? "override " : "")}void Put(int fieldPos, {objectType} fieldValue)");
+        _writer.WriteLine("{");
+        ++_writer.Indent;
+        _writer.WriteLine("switch (fieldPos)");
+        _writer.WriteLine("{");
+        ++_writer.Indent;
+        var parameterName = _options.UseNullableReferenceTypes ? "fieldValue!" : "fieldValue";
+        if (_options.UseInitOnlyProperties)
         {
-            _writer.Write(" = ");
-            _writer.Write(defaultValue);
-            _writer.Write(';');
+            var setPrefix = _options.UseUnsafeAccessors ? "" : $"{ownerTypeName}Reflection.";
+            foreach (var field in fields)
+                _writer.WriteLine($"case {field.Position}: {setPrefix}Set_{field.Name}(this, ({field.Type}){parameterName}); break;");
         }
-        _writer.WriteLine();
+        else
+        {
+            foreach (var field in fields)
+                _writer.WriteLine($"case {field.Position}: this.{field.Name} = ({field.Type}){parameterName}; break;");
+        }
+        _writer.WriteLine("""default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");""");
+        --_writer.Indent;
+        _writer.WriteLine("}");
+
+        if (_options.UseInitOnlyProperties && _options.UseUnsafeAccessors)
+        {
+            foreach (var field in fields)
+            {
+                _writer.WriteLine($"""[global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_{field.Name}")]""");
+                _writer.WriteLine($"extern static void Set_{field.Name}({ownerTypeName} obj, {field.Type} value);");
+            }
+        }
+
+        --_writer.Indent;
+        _writer.WriteLine("}");
+
+        if (_options.UseInitOnlyProperties && !_options.UseUnsafeAccessors)
+        {
+            _writer.WriteLine($"private static class {ownerTypeName}Reflection");
+            _writer.WriteLine("{");
+            ++_writer.Indent;
+
+            foreach (var field in fields)
+                _writer.WriteLine($"""public static readonly Action<{ownerTypeName}, {field.Type}> Set_{field.Name} = CreateSetter<{field.Type}>("{field.Name}");""");
+
+            _writer.WriteLine($"private static Action<{ownerTypeName}, TProperty> CreateSetter<TProperty>(string propertyName)");
+            _writer.WriteLine("{");
+            ++_writer.Indent;
+            _writer.WriteLine($"""var objParam = global::System.Linq.Expressions.Expression.Parameter(typeof({ownerTypeName}), "obj");""");
+            _writer.WriteLine($"""var valueParam = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");""");
+            if (_options.UseNullableReferenceTypes)
+                _writer.WriteLine($"""var property = global::System.Linq.Expressions.Expression.Property(objParam, typeof({ownerTypeName}).GetProperty(propertyName)!);""");
+            else
+                _writer.WriteLine($"""var property = global::System.Linq.Expressions.Expression.Property(objParam, typeof({ownerTypeName}).GetProperty(propertyName));""");
+            _writer.WriteLine($"""var assign = global::System.Linq.Expressions.Expression.Assign(property, valueParam);""");
+            _writer.WriteLine($"""var lambda = global::System.Linq.Expressions.Expression.Lambda<Action<{ownerTypeName}, TProperty>>(assign, objParam, valueParam);""");
+            _writer.WriteLine($"""return lambda.Compile();""");
+            --_writer.Indent;
+            _writer.WriteLine("}");
+
+            --_writer.Indent;
+            _writer.WriteLine("}");
+        }
     }
 
     private void WriteRecordSchema(RecordSchema schema)
@@ -207,19 +249,19 @@ internal sealed class SourceTextWriter : IDisposable
         WriteDefinitionStart(_options.DeclarationType, name, AvroGenerator.AvroISpecificRecordTypeName);
         WriteSchemaProperty(schema.Json, name, isOverride: false);
 
-        var getPutBuilder = new GetPutBuilder(name, _writer.Indent, isOverride: false, _options);
-        var fieldPosition = 0;
-        foreach (var field in schema.Fields)
-        {
-            var fieldName = Identifier.GetValid(field.Name);
-            var fieldType = TypeSymbol.FromSchema(field.Schema, nullable: false, _schemas, _options);
-            WriteField(field, fieldName, fieldType);
+        var fields = schema.Fields
+            .Select((field, index) => new FieldInfo(
+                field,
+                Identifier.GetValid(field.Name),
+                TypeSymbol.FromSchema(field.Schema, nullable: false, _schemas, _options),
+                index))
+            .ToList();
 
-            getPutBuilder.AddCase(fieldPosition++, fieldName, fieldType);
-        }
-        getPutBuilder.AddDefault();
-        _writer.WriteLine();
-        getPutBuilder.WriteTo(_writer);
+        foreach (var field in fields)
+            WriteField(field);
+
+        WriteGetMethod(fields, isOverride: false);
+        WritePutMethod(name, fields, isOverride: false);
 
         WriteDefinitionEnd();
         _writer.WriteLine();
@@ -230,22 +272,22 @@ internal sealed class SourceTextWriter : IDisposable
         var name = Identifier.GetValid(schema.Name);
 
         WriteComment(schema.Documentation);
-        WriteDefinitionStart(_options.DeclarationType, name, AvroGenerator.AvroISpecificRecordTypeName);
-        WriteSchemaProperty(schema.Json, name, isOverride: false);
+        WriteDefinitionStart(_options.DeclarationType, name, AvroGenerator.AvroSpecificExceptionTypeName);
+        WriteSchemaProperty(schema.Json, name, isOverride: true);
 
-        var getPutBuilder = new GetPutBuilder(name, _writer.Indent, isOverride: false, _options);
-        var fieldPosition = 0;
-        foreach (var field in schema.Fields)
-        {
-            var fieldName = Identifier.GetValid(field.Name);
-            var fieldType = TypeSymbol.FromSchema(field.Schema, nullable: false, _schemas, _options);
-            WriteField(field, fieldName, fieldType);
+        var fields = schema.Fields
+            .Select((field, index) => new FieldInfo(
+                field,
+                Identifier.GetValid(field.Name),
+                TypeSymbol.FromSchema(field.Schema, nullable: false, _schemas, _options),
+                index))
+            .ToList();
 
-            getPutBuilder.AddCase(fieldPosition++, fieldName, fieldType);
-        }
-        getPutBuilder.AddDefault();
-        _writer.WriteLine();
-        getPutBuilder.WriteTo(_writer);
+        foreach (var field in fields)
+            WriteField(field);
+
+        WriteGetMethod(fields, isOverride: true);
+        WritePutMethod(name, fields, isOverride: true);
 
         WriteDefinitionEnd();
         _writer.WriteLine();
@@ -271,27 +313,11 @@ internal sealed class SourceTextWriter : IDisposable
         var name = Identifier.GetValid(schema.Name);
         WriteDefinitionStart("partial class", name, AvroGenerator.AvroSpecificFixedTypeName);
         WriteSchemaProperty(schema.Json, name, isOverride: true);
-        _writer.Write("public uint FixedSize { get => ");
-        _writer.Write(schema.Size);
-        _writer.WriteLine("; }");
-        _writer.WriteLine();
-        _writer.Write("public ");
-        _writer.Write(name);
-        _writer.Write("() : base(");
-        _writer.Write(schema.Size);
-        _writer.WriteLine(")");
+        _writer.WriteLine($$"""public uint FixedSize { get => {{schema.Size}}; }""");
+        _writer.WriteLine($"public {name}() : base({schema.Size})");
         _writer.WriteLine("{");
         ++_writer.Indent;
-        _writer.Write("((");
-        _writer.Write(AvroGenerator.AvroGenericFixedTypeName);
-        _writer.Write(')');
-        _writer.Write("this");
-        _writer.Write(')');
-        _writer.Write(".Schema = (");
-        _writer.Write(AvroGenerator.AvroFixedSchemaTypeName);
-        _writer.Write(")");
-        _writer.Write(name);
-        _writer.WriteLine("._SCHEMA;");
+        _writer.WriteLine($"(({AvroGenerator.AvroGenericFixedTypeName})this).Schema = ({AvroGenerator.AvroFixedSchemaTypeName}){name}._SCHEMA;");
         --_writer.Indent;
         _writer.WriteLine("}");
         WriteDefinitionEnd();

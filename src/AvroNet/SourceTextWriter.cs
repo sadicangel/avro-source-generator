@@ -112,7 +112,28 @@ internal sealed class SourceTextWriter : IDisposable
     {
         var comment = documentation?.GetString();
         if (!string.IsNullOrWhiteSpace(comment))
-            _writer.WriteLine(SyntaxFactory.Comment(comment!).ToFullString());
+        {
+            _writer.WriteLine("/// <summary>");
+            _writer.Write("/// ");
+            var span = comment.AsSpan();
+            for (int i = 0; i < span.Length; ++i)
+            {
+                switch (span[i])
+                {
+                    case '\r':
+                        break;
+                    case '\n':
+                        _writer.WriteLine();
+                        _writer.Write("/// ");
+                        break;
+                    default:
+                        _writer.Write(span[i]);
+                        break;
+                }
+            }
+            _writer.WriteLine();
+            _writer.WriteLine("/// </summary>");
+        }
     }
 
     private void WriteDefinitionStart(string typeDefinition, string typeIdentifier, string? baseTypeIdentifier = null)

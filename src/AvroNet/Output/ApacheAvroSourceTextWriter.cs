@@ -308,10 +308,7 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
         using (Block())
         {
             foreach (var field in schema.Symbols)
-            {
-                builder.Append(Identifier.GetValid(field));
-                builder.AppendLine(",");
-            }
+                builder.AppendLine($"{Identifier.GetValid(field)},");
         };
         builder.AppendLine();
     }
@@ -326,11 +323,10 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
             WriteSchemaProperty(schema.Json, name, isOverride: true);
             builder.AppendLine($$"""public uint FixedSize { get => {{schema.Size}}; }""");
             builder.AppendLine($"public {name}() : base({schema.Size})");
-            builder.AppendLine("{");
-            builder.IncrementIndentation();
-            builder.AppendLine($"(({AvroGenerator.AvroGenericFixedTypeName})this).Schema = ({AvroGenerator.AvroFixedSchemaTypeName}){name}._SCHEMA;");
-            builder.DecrementIndentation();
-            builder.AppendLine("}");
+            using (Block())
+            {
+                builder.AppendLine($"(({AvroGenerator.AvroGenericFixedTypeName})this).Schema = ({AvroGenerator.AvroFixedSchemaTypeName}){name}._SCHEMA;");
+            }
         };
         builder.AppendLine();
     }

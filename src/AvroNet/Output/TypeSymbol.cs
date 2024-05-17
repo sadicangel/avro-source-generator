@@ -1,7 +1,7 @@
 ﻿using AvroNet.Schemas;
 using System.Text.Json;
 
-namespace AvroNet;
+namespace AvroNet.Output;
 
 internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymbol? TypeArg = null, string? LogicalType = null)
 {
@@ -60,74 +60,59 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
     public static TypeSymbol LogicalTimeMicros(bool nullable) => nullable ? Types.LogicalTimeMicrosNullable : Types.LogicalTimeMicros;
     public static TypeSymbol LogicalDuration(bool nullable) => nullable ? Types.LogicalDurationNullable : Types.LogicalDuration;
 
-    public static TypeSymbol FromSchema(
-        AvroSchema schema,
-        bool nullable,
-        IReadOnlyDictionary<ReadOnlyMemory<byte>, AvroSchema> schemas,
-        AvroModelOptions options) => schema.GetTypeTag(schemas) switch
-        {
-            SchemaTypeTag.Null => Null(options.UseNullableReferenceTypes),
-            SchemaTypeTag.Boolean => Boolean(nullable),
-            SchemaTypeTag.Int => Int(nullable),
-            SchemaTypeTag.Long => Long(nullable),
-            SchemaTypeTag.Float => Float(nullable),
-            SchemaTypeTag.Double => Double(nullable),
-            SchemaTypeTag.Bytes => Bytes(nullable && options.UseNullableReferenceTypes),
-            SchemaTypeTag.String => String(nullable && options.UseNullableReferenceTypes),
-            SchemaTypeTag.Enumeration => Enum(schema.Name, options.Namespace, nullable),
-            SchemaTypeTag.Fixed => Fixed(schema.Name, options.Namespace, nullable && options.UseNullableReferenceTypes),
-            SchemaTypeTag.Record => Record(schema.Name, options.Namespace, nullable && options.UseNullableReferenceTypes),
-            SchemaTypeTag.Error => Error(schema.Name, options.Namespace, nullable && options.UseNullableReferenceTypes),
-            SchemaTypeTag.Array => FromArraySchema(schema.AsArraySchema(), nullable, schemas, options),
-            SchemaTypeTag.Map => FromMapSchema(schema.AsMapSchema(), nullable, schemas, options),
-            SchemaTypeTag.Union => FromUnionSchema(schema.AsUnionSchema(), schemas, options),
-            SchemaTypeTag.Logical => FromLogicalSchema(schema.AsLogicalSchema(), nullable, options),
-            _ => throw new InvalidOperationException($"Invalid schema '{schema.Name}' of type {schema.GetTypeTag(schemas)}"),
-        };
-
-    private static TypeSymbol FromArraySchema(
-        ArraySchema schema,
-        bool nullable,
-        IReadOnlyDictionary<ReadOnlyMemory<byte>, AvroSchema> schemas,
-        AvroModelOptions options)
+    public static TypeSymbol FromSchema(AvroSchema schema, bool nullable, SourceTextWriterContext context) => context.Schemas.GetTypeTag(schema) switch
     {
-        var typeArg = FromSchema(schema.ItemsSchema, nullable: false, schemas, options);
-        return Array(typeArg, nullable && options.UseNullableReferenceTypes);
+        SchemaTypeTag.Null => Null(context.UseNullableReferenceTypes),
+        SchemaTypeTag.Boolean => Boolean(nullable),
+        SchemaTypeTag.Int => Int(nullable),
+        SchemaTypeTag.Long => Long(nullable),
+        SchemaTypeTag.Float => Float(nullable),
+        SchemaTypeTag.Double => Double(nullable),
+        SchemaTypeTag.Bytes => Bytes(nullable && context.UseNullableReferenceTypes),
+        SchemaTypeTag.String => String(nullable && context.UseNullableReferenceTypes),
+        SchemaTypeTag.Enumeration => Enum(schema.Name, context.Namespace, nullable),
+        SchemaTypeTag.Fixed => Fixed(schema.Name, context.Namespace, nullable && context.UseNullableReferenceTypes),
+        SchemaTypeTag.Record => Record(schema.Name, context.Namespace, nullable && context.UseNullableReferenceTypes),
+        SchemaTypeTag.Error => Error(schema.Name, context.Namespace, nullable && context.UseNullableReferenceTypes),
+        SchemaTypeTag.Array => FromArraySchema(schema.AsArraySchema(), nullable, context),
+        SchemaTypeTag.Map => FromMapSchema(schema.AsMapSchema(), nullable, context),
+        SchemaTypeTag.Union => FromUnionSchema(schema.AsUnionSchema(), context),
+        SchemaTypeTag.Logical => FromLogicalSchema(schema.AsLogicalSchema(), nullable, context),
+        _ => throw new InvalidOperationException($"Invalid schema '{schema.Name}' of type {context.Schemas.GetTypeTag(schema)}"),
+    };
+
+    private static TypeSymbol FromArraySchema(ArraySchema schema, bool nullable, SourceTextWriterContext context)
+    {
+        var typeArg = FromSchema(schema.ItemsSchema, nullable: false, context);
+        return Array(typeArg, nullable && context.UseNullableReferenceTypes);
     }
 
-    private static TypeSymbol FromMapSchema(
-        MapSchema schema,
-        bool nullable,
-        IReadOnlyDictionary<ReadOnlyMemory<byte>, AvroSchema> schemas,
-        AvroModelOptions options)
+    private static TypeSymbol FromMapSchema(MapSchema schema, bool nullable, SourceTextWriterContext context)
     {
-        var typeArg = FromSchema(schema.ValuesSchema, nullable: false, schemas, options);
-        return Map(typeArg, nullable && options.UseNullableReferenceTypes);
+        var typeArg = FromSchema(schema.ValuesSchema, nullable: false, context);
+        return Map(typeArg, nullable && context.UseNullableReferenceTypes);
     }
 
-    private static TypeSymbol FromUnionSchema(
-        UnionSchema schema,
-        IReadOnlyDictionary<ReadOnlyMemory<byte>, AvroSchema> schemas,
-        AvroModelOptions options)
+    private static TypeSymbol FromUnionSchema(UnionSchema schema, SourceTextWriterContext context)
     {
         var unionSchemas = schema.Schemas.ToArray();
         return unionSchemas.Length switch
         {
-            1 => FromSchema(unionSchemas[0], nullable: false, schemas, options),
-            2 => (unionSchemas[0].GetTypeTag(schemas), unionSchemas[1].GetTypeTag(schemas)) switch
+            1 => FromSchema(unionSchemas[0], nullable: false, context),
+            2 => (context.Schemas.GetTypeTag(unionSchemas[0]), context.Schemas.GetTypeTag(unionSchemas[1])) switch
             {
-                (SchemaTypeTag.Null, SchemaTypeTag.Null) => Union(options.UseNullableReferenceTypes),
-                (_, SchemaTypeTag.Null) => FromSchema(unionSchemas[0], nullable: true, schemas, options),
-                (SchemaTypeTag.Null, _) => FromSchema(unionSchemas[1], nullable: true, schemas, options),
-                (_, _) => Union(options.UseNullableReferenceTypes),
+                (SchemaTypeTag.Null, SchemaTypeTag.Null) => Union(context.UseNullableReferenceTypes),
+                (_, SchemaTypeTag.Null) => FromSchema(unionSchemas[0], nullable: true, context),
+                (SchemaTypeTag.Null, _) => FromSchema(unionSchemas[1], nullable: true, context),
+                (_, _) => Union(context.UseNullableReferenceTypes),
             },
-            _ => Union(unionSchemas.Any(s => s.GetTypeTag(schemas) is SchemaTypeTag.Null) && options.UseNullableReferenceTypes)
+            _ => Union(unionSchemas.Any(s => context.Schemas.GetTypeTag(s) is SchemaTypeTag.Null) && context.UseNullableReferenceTypes)
         };
     }
 
-    private static TypeSymbol FromLogicalSchema(LogicalSchema schema, bool nullable, AvroModelOptions options) => schema.LogicalType.GetRawValue().Span switch
+    private static TypeSymbol FromLogicalSchema(LogicalSchema schema, bool nullable, SourceTextWriterContext context) => schema.LogicalType.GetRawValue().Span switch
     {
-    [0x22, 0x75, 0x75, 0x69, 0x64, 0x22] => LogicalUuid(nullable && options.UseNullableReferenceTypes),
+    [0x22, 0x75, 0x75, 0x69, 0x64, 0x22] => LogicalUuid(nullable && context.UseNullableReferenceTypes),
     [0x22, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x6C, 0x6C, 0x69, 0x73, 0x22] => LogicalTimestampMillis(nullable),
     [0x22, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x63, 0x72, 0x6F, 0x73, 0x22] => LogicalTimestampMicros(nullable),
     [0x22, 0x6C, 0x6F, 0x63, 0x61, 0x6C, 0x2D, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x6C, 0x6C, 0x69, 0x73, 0x22] => LogicalLocalTimestampMillis(nullable),

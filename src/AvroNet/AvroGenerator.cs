@@ -1,11 +1,10 @@
-using AvroNet.Schemas;
+using AvroNet.Output;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Json;
 
 namespace AvroNet;
 
@@ -38,7 +37,7 @@ internal sealed partial class AvroGenerator : IIncrementalGenerator
                         .Single(attr => attr.AttributeClass?.Name == AvroModelAttributeName)
                         .ConstructorArguments[0].Value!;
 
-                    var modelSchema = default(string);
+                    var schemaJsonValue = default(string);
                     for (int i = 0; i < typeDeclaration.Members.Count; ++i)
                     {
                         if (typeDeclaration.Members[i] is FieldDeclarationSyntax field)
@@ -51,20 +50,20 @@ internal sealed partial class AvroGenerator : IIncrementalGenerator
                                     .GetDeclaredSymbol(schemaJson, cancellationToken)!;
                                 if (schemaJsonSymbol.IsConst)
                                 {
-                                    modelSchema = (string?)schemaJsonSymbol.ConstantValue;
+                                    schemaJsonValue = (string?)schemaJsonSymbol.ConstantValue;
                                     break;
                                 }
                             }
                         }
                     }
 
-                    if (string.IsNullOrEmpty(modelSchema))
+                    if (string.IsNullOrEmpty(schemaJsonValue))
                         throw new NotSupportedException("add a diagnostic here for 'schema is null or empty'");
 
-                    return new AvroModelOptions(
+                    return new SourceTextWriterContext(
                         Name: typeSymbol.Name,
-                        Schema: modelSchema!,
                         Namespace: typeSymbol.ContainingNamespace?.ToDisplayString()! ?? "",
+                        SchemaJson: schemaJsonValue!,
                         AccessModifier: typeDeclaration.Modifiers.Any(SyntaxKind.PublicKeyword) ? "public" : "internal",
                         DeclarationType: typeDeclaration.IsKind(SyntaxKind.RecordDeclaration) ? "partial record class" : "partial class",
                         Features: modelFeatures
@@ -73,10 +72,7 @@ internal sealed partial class AvroGenerator : IIncrementalGenerator
 
         context.RegisterSourceOutput(models, static (context, options) =>
         {
-            using var writer = new SourceTextWriter(options);
-            using var document = JsonDocument.Parse(options.Schema);
-            writer.Write(new AvroSchema(document.RootElement));
-            var sourceText = writer.ToString();
+            var sourceText = ApacheAvroSourceTextWriter.WriteFromContext(options);
             context.AddSource($"{options.Name}.AvroModel.g.cs", SourceText.From(sourceText, Encoding.UTF8));
         });
     }

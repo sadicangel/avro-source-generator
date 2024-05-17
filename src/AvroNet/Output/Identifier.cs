@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace AvroNet;
+namespace AvroNet.Output;
 
 internal static class Identifier
 {

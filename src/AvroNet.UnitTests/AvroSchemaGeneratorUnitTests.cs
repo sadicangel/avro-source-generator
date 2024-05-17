@@ -133,11 +133,11 @@ public class AvroSchemaGeneratorUnitTests
                     }
 
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Name")]
-                    extern static string Set_Name(User obj, string value);
+                    extern static void Set_Name(User obj, string value);
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Age")]
-                    extern static int Set_Age(User obj, int value);
+                    extern static void Set_Age(User obj, int value);
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Description")]
-                    extern static string? Set_Description(User obj, string? value);
+                    extern static void Set_Description(User obj, string? value);
                 }
 
             }

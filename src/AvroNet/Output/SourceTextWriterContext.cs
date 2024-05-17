@@ -1,13 +1,17 @@
-﻿namespace AvroNet;
+﻿using AvroNet.Schemas;
 
-internal sealed record class AvroModelOptions(
+namespace AvroNet.Output;
+
+internal sealed record class SourceTextWriterContext(
     string Name,
-    string Schema,
     string Namespace,
+    string SchemaJson,
     string AccessModifier,
     string DeclarationType,
     AvroModelFeatures Features)
 {
+    public SchemaRegistry Schemas { get; } = new();
+
     public bool UseNullableReferenceTypes { get => (Features & AvroModelFeatures.NullableReferenceTypes) != 0; }
     public bool UseFileScopedNamespaces { get => (Features & AvroModelFeatures.FileScopedNamespaces) != 0; }
     public bool UseRequiredProperties { get => (Features & AvroModelFeatures.RequiredProperties) != 0; }

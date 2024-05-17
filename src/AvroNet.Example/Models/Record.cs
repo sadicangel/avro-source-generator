@@ -1,6 +1,10 @@
 ﻿namespace AvroNet.Example.Models;
 
+#if NET8_0_OR_GREATER
 [AvroModel(AvroModelFeatures.Net8)]
+#else
+[AvroModel(AvroModelFeatures.NetStandard2_0)]
+#endif
 public sealed partial record class Record
 {
     private const string SchemaJson = """

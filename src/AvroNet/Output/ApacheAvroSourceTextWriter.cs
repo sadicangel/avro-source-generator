@@ -33,7 +33,7 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
         else
         {
             builder.AppendLine($"namespace {context.Namespace}");
-            using (Block())
+            using (BlockStatement())
             {
                 WriteSchema(schema);
             }
@@ -138,7 +138,7 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
             builder.AppendLine($"{context.AccessModifier} {typeDefinition} {typeIdentifier}");
     }
 
-    private CurlyBlock Block() => new(builder);
+    private BlockStatement BlockStatement() => new(builder);
 
     private void WriteSchemaProperty(JsonElement json, string typeName, bool isOverride)
     {
@@ -172,10 +172,10 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
         foreach (var schema in schemas)
         {
             fields.Add(new FieldInfo(
-                    schema,
-                    Identifier.GetValid(schema.Name),
-                    TypeSymbol.FromSchema(schema.Schema, nullable: false, context),
-                    index++));
+                schema,
+                Identifier.GetValid(schema.Name),
+                TypeSymbol.FromSchema(schema.Schema, nullable: false, context),
+                index++));
         }
         return fields;
     }
@@ -184,83 +184,74 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
     {
         var objectType = context.UseNullableReferenceTypes ? "object?" : "object";
         builder.AppendLine($"public {(isOverride ? "override " : "")}{objectType} Get(int fieldPos)");
-        builder.AppendLine("{");
-        builder.IncrementIndentation();
-        builder.AppendLine("switch (fieldPos)");
-        builder.AppendLine("{");
-        builder.IncrementIndentation();
-        foreach (var field in fields)
-            builder.AppendLine($"case {field.Position}: return this.{field.Name};");
-        builder.AppendLine("""default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");""");
-        builder.DecrementIndentation();
-        builder.AppendLine("}");
-        builder.DecrementIndentation();
-        builder.AppendLine("}");
+        using (BlockStatement())
+        {
+            builder.AppendLine("switch (fieldPos)");
+            using (BlockStatement())
+            {
+                foreach (var field in fields)
+                    builder.AppendLine($"case {field.Position}: return this.{field.Name};");
+                builder.AppendLine("""default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");""");
+            }
+        }
     }
 
     private void WritePutMethod(string ownerTypeName, List<FieldInfo> fields, bool isOverride)
     {
         var objectType = context.UseNullableReferenceTypes ? "object?" : "object";
         builder.AppendLine($"public {(isOverride ? "override " : "")}void Put(int fieldPos, {objectType} fieldValue)");
-        builder.AppendLine("{");
-        builder.IncrementIndentation();
-        builder.AppendLine("switch (fieldPos)");
-        builder.AppendLine("{");
-        builder.IncrementIndentation();
-        var parameterName = context.UseNullableReferenceTypes ? "fieldValue!" : "fieldValue";
-        if (context.UseInitOnlyProperties)
+        using (BlockStatement())
         {
-            var setPrefix = context.UseUnsafeAccessors ? "" : $"{ownerTypeName}Reflection.";
-            foreach (var field in fields)
-                builder.AppendLine($"case {field.Position}: {setPrefix}Set_{field.Name}(this, ({field.Type}){parameterName}); break;");
-        }
-        else
-        {
-            foreach (var field in fields)
-                builder.AppendLine($"case {field.Position}: this.{field.Name} = ({field.Type}){parameterName}; break;");
-        }
-        builder.AppendLine("""default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");""");
-        builder.DecrementIndentation();
-        builder.AppendLine("}");
-
-        if (context.UseInitOnlyProperties && context.UseUnsafeAccessors)
-        {
-            foreach (var field in fields)
+            builder.AppendLine("switch (fieldPos)");
+            using (BlockStatement())
             {
-                builder.AppendLine($"""[global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_{field.Name}")]""");
-                builder.AppendLine($"extern static void Set_{field.Name}({ownerTypeName} obj, {field.Type} value);");
+                var parameterName = context.UseNullableReferenceTypes ? "fieldValue!" : "fieldValue";
+                if (context.UseInitOnlyProperties)
+                {
+                    var setPrefix = context.UseUnsafeAccessors ? "" : $"{ownerTypeName}Reflection.";
+                    foreach (var field in fields)
+                        builder.AppendLine($"case {field.Position}: {setPrefix}Set_{field.Name}(this, ({field.Type}){parameterName}); break;");
+                }
+                else
+                {
+                    foreach (var field in fields)
+                        builder.AppendLine($"case {field.Position}: this.{field.Name} = ({field.Type}){parameterName}; break;");
+                }
+                builder.AppendLine("""default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");""");
+            }
+
+            if (context.UseInitOnlyProperties && context.UseUnsafeAccessors)
+            {
+                foreach (var field in fields)
+                {
+                    builder.AppendLine($"""[global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_{field.Name}")]""");
+                    builder.AppendLine($"extern static void Set_{field.Name}({ownerTypeName} obj, {field.Type} value);");
+                }
             }
         }
-
-        builder.DecrementIndentation();
-        builder.AppendLine("}");
 
         if (context.UseInitOnlyProperties && !context.UseUnsafeAccessors)
         {
             builder.AppendLine($"private static class {ownerTypeName}Reflection");
-            builder.AppendLine("{");
-            builder.IncrementIndentation();
+            using (BlockStatement())
+            {
+                foreach (var field in fields)
+                    builder.AppendLine($"""public static readonly Action<{ownerTypeName}, {field.Type}> Set_{field.Name} = CreateSetter<{field.Type}>("{field.Name}");""");
 
-            foreach (var field in fields)
-                builder.AppendLine($"""public static readonly Action<{ownerTypeName}, {field.Type}> Set_{field.Name} = CreateSetter<{field.Type}>("{field.Name}");""");
-
-            builder.AppendLine($"private static Action<{ownerTypeName}, TProperty> CreateSetter<TProperty>(string propertyName)");
-            builder.AppendLine("{");
-            builder.IncrementIndentation();
-            builder.AppendLine($"""var objParam = global::System.Linq.Expressions.Expression.Parameter(typeof({ownerTypeName}), "obj");""");
-            builder.AppendLine($"""var valueParam = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");""");
-            if (context.UseNullableReferenceTypes)
-                builder.AppendLine($"""var property = global::System.Linq.Expressions.Expression.Property(objParam, typeof({ownerTypeName}).GetProperty(propertyName)!);""");
-            else
-                builder.AppendLine($"""var property = global::System.Linq.Expressions.Expression.Property(objParam, typeof({ownerTypeName}).GetProperty(propertyName));""");
-            builder.AppendLine($"""var assign = global::System.Linq.Expressions.Expression.Assign(property, valueParam);""");
-            builder.AppendLine($"""var lambda = global::System.Linq.Expressions.Expression.Lambda<Action<{ownerTypeName}, TProperty>>(assign, objParam, valueParam);""");
-            builder.AppendLine($"""return lambda.Compile();""");
-            builder.DecrementIndentation();
-            builder.AppendLine("}");
-
-            builder.DecrementIndentation();
-            builder.AppendLine("}");
+                builder.AppendLine($"private static Action<{ownerTypeName}, TProperty> CreateSetter<TProperty>(string propertyName)");
+                using (BlockStatement())
+                {
+                    builder.AppendLine($"""var objParam = global::System.Linq.Expressions.Expression.Parameter(typeof({ownerTypeName}), "obj");""");
+                    builder.AppendLine($"""var valueParam = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");""");
+                    if (context.UseNullableReferenceTypes)
+                        builder.AppendLine($"""var property = global::System.Linq.Expressions.Expression.Property(objParam, typeof({ownerTypeName}).GetProperty(propertyName)!);""");
+                    else
+                        builder.AppendLine($"""var property = global::System.Linq.Expressions.Expression.Property(objParam, typeof({ownerTypeName}).GetProperty(propertyName));""");
+                    builder.AppendLine($"""var assign = global::System.Linq.Expressions.Expression.Assign(property, valueParam);""");
+                    builder.AppendLine($"""var lambda = global::System.Linq.Expressions.Expression.Lambda<Action<{ownerTypeName}, TProperty>>(assign, objParam, valueParam);""");
+                    builder.AppendLine($"""return lambda.Compile();""");
+                }
+            }
         }
     }
 
@@ -270,7 +261,7 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
 
         WriteComment(schema.Documentation);
         WriteTypeDeclaration(context.DeclarationType, name, AvroGenerator.AvroISpecificRecordTypeName);
-        using (Block())
+        using (BlockStatement())
         {
             WriteSchemaProperty(schema.Json, name, isOverride: false);
             var fields = GetFieldInfo(schema.Fields, schema.FieldsLength);
@@ -278,7 +269,7 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
                 WriteField(field);
             WriteGetMethod(fields, isOverride: false);
             WritePutMethod(name, fields, isOverride: false);
-        };
+        }
         builder.AppendLine();
     }
 
@@ -288,7 +279,7 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
 
         WriteComment(schema.Documentation);
         WriteTypeDeclaration(context.DeclarationType, name, AvroGenerator.AvroSpecificExceptionTypeName);
-        using (Block())
+        using (BlockStatement())
         {
             WriteSchemaProperty(schema.Json, name, isOverride: true);
             var fields = GetFieldInfo(schema.Fields, schema.FieldsLength);
@@ -296,7 +287,7 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
                 WriteField(field);
             WriteGetMethod(fields, isOverride: true);
             WritePutMethod(name, fields, isOverride: true);
-        };
+        }
         builder.AppendLine();
     }
 
@@ -305,11 +296,11 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
         WriteComment(schema.Documentation);
         var name = Identifier.GetValid(schema.Name);
         WriteTypeDeclaration("enum", name);
-        using (Block())
+        using (BlockStatement())
         {
             foreach (var field in schema.Symbols)
                 builder.AppendLine($"{Identifier.GetValid(field)},");
-        };
+        }
         builder.AppendLine();
     }
 
@@ -318,32 +309,32 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
         WriteComment(schema.Documentation);
         var name = Identifier.GetValid(schema.Name);
         WriteTypeDeclaration("partial class", name, AvroGenerator.AvroSpecificFixedTypeName);
-        using (Block())
+        using (BlockStatement())
         {
             WriteSchemaProperty(schema.Json, name, isOverride: true);
             builder.AppendLine($$"""public uint FixedSize { get => {{schema.Size}}; }""");
             builder.AppendLine($"public {name}() : base({schema.Size})");
-            using (Block())
+            using (BlockStatement())
             {
                 builder.AppendLine($"(({AvroGenerator.AvroGenericFixedTypeName})this).Schema = ({AvroGenerator.AvroFixedSchemaTypeName}){name}._SCHEMA;");
             }
-        };
+        }
         builder.AppendLine();
     }
+}
 
-    private readonly ref struct CurlyBlock
+internal readonly ref struct BlockStatement
+{
+    private readonly IndentedStringBuilder _builder;
+    public BlockStatement(IndentedStringBuilder builder)
     {
-        private readonly IndentedStringBuilder _builder;
-        public CurlyBlock(IndentedStringBuilder builder)
-        {
-            _builder = builder;
-            _builder.AppendLine("{");
-            _builder.IncrementIndentation();
-        }
-        public void Dispose()
-        {
-            _builder.DecrementIndentation();
-            _builder.AppendLine("}");
-        }
+        _builder = builder;
+        _builder.AppendLine("{");
+        _builder.IncrementIndentation();
+    }
+    public void Dispose()
+    {
+        _builder.DecrementIndentation();
+        _builder.AppendLine("}");
     }
 }

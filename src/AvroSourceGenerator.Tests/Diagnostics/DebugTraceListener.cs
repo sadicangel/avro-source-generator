@@ -1,7 +1,7 @@
 #if NETFRAMEWORK
 using System.Diagnostics;
 
-namespace AvroSourceGenerator.UnitTests.Diagnostics;
+namespace AvroSourceGenerator.Tests.Diagnostics;
 
     internal sealed class DebugTraceListener : TraceListener
     {

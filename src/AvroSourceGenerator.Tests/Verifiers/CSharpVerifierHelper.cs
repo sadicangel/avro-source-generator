@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Immutable;
 
-namespace AvroSourceGenerator.UnitTests.Verifiers;
+namespace AvroSourceGenerator.Tests.Verifiers;
 
 internal static class CSharpVerifierHelper
 {

@@ -1,19 +1,19 @@
+﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
-using Microsoft.CodeAnalysis.Testing.Verifiers;
 
-namespace AvroSourceGenerator.UnitTests.Verifiers;
+namespace AvroSourceGenerator.Tests.Verifiers;
 
 internal static partial class CSharpSourceGeneratorVerifier<TSourceGenerator>
     where TSourceGenerator : IIncrementalGenerator, new()
 {
-    public sealed class Test : CSharpSourceGeneratorTest<EmptySourceGeneratorProvider, MSTestVerifier>
+    public sealed class Test : CSharpSourceGeneratorTest<EmptySourceGeneratorProvider, DefaultVerifier>
     {
         public LanguageVersion LanguageVersion { get; set; } = LanguageVersion.Default;
 
-        protected override IEnumerable<ISourceGenerator> GetSourceGenerators() => [new TSourceGenerator().AsSourceGenerator()];
+        protected override IEnumerable<Type> GetSourceGenerators() => [typeof(TSourceGenerator)];
 
         protected override CompilationOptions CreateCompilationOptions()
         {
@@ -22,7 +22,7 @@ internal static partial class CSharpSourceGeneratorVerifier<TSourceGenerator>
                 compilationOptions.SpecificDiagnosticOptions.SetItems(CSharpVerifierHelper.NullableWarnings));
         }
 
-        protected override async Task<Compilation> GetProjectCompilationAsync(Project project, IVerifier verifier, CancellationToken cancellationToken)
+        protected override async Task<(Compilation compilation, ImmutableArray<Diagnostic> generatorDiagnostics)> GetProjectCompilationAsync(Project project, IVerifier verifier, CancellationToken cancellationToken)
         {
             var compilation = await base.GetProjectCompilationAsync(project, verifier, cancellationToken);
             return compilation;

@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis.CSharp;
 
-namespace AvroSourceGenerator.UnitTests;
+namespace AvroSourceGenerator.Tests;
 internal static class LanguageVersionHelper
 {
         public static LanguageVersion GetLanguageVersion()

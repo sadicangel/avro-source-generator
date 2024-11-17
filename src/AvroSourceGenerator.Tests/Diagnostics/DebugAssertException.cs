@@ -1,7 +1,7 @@
 #if NETFRAMEWORK
 using System.Diagnostics.CodeAnalysis;
 
-namespace AvroSourceGenerator.UnitTests.Diagnostics;
+namespace AvroSourceGenerator.Tests.Diagnostics;
 
     [SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "Debug.Assert on .NET Framework")]
     [SuppressMessage("Design", "CA1064:Exceptions should be public", Justification = "Debug.Assert on .NET Framework")]

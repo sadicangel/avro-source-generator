@@ -1,12 +1,16 @@
+﻿using System.Runtime.CompilerServices;
+using System.Text;
 using AvroSourceGenerator.Output;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using System.Runtime.CompilerServices;
-using System.Text;
+
+[assembly: InternalsVisibleTo("AvroSourceGenerator.Tests")]
+[assembly: InternalsVisibleTo("AvroSourceGenerator.IntegrationTests")]
 
 namespace AvroSourceGenerator;
+
 
 [Generator(LanguageNames.CSharp)]
 internal sealed partial class AvroSourceGenerator : IIncrementalGenerator
@@ -38,7 +42,7 @@ internal sealed partial class AvroSourceGenerator : IIncrementalGenerator
                         .ConstructorArguments[0].Value!;
 
                     var schemaJsonValue = default(string);
-                    for (int i = 0; i < typeDeclaration.Members.Count; ++i)
+                    for (var i = 0; i < typeDeclaration.Members.Count; ++i)
                     {
                         if (typeDeclaration.Members[i] is FieldDeclarationSyntax field)
                         {

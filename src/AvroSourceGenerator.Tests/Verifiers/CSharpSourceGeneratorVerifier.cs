@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
 
-namespace AvroSourceGenerator.UnitTests.Verifiers;
+namespace AvroSourceGenerator.Tests.Verifiers;
 
 internal static partial class CSharpSourceGeneratorVerifier<TSourceGenerator>
     where TSourceGenerator : IIncrementalGenerator, new()

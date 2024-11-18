@@ -1,31 +1,36 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using AvroSourceGenerator.Output;
+using AvroSourceGenerator.Schemas;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-[assembly: InternalsVisibleTo("AvroSourceGenerator.Tests")]
-[assembly: InternalsVisibleTo("AvroSourceGenerator.IntegrationTests")]
-
 namespace AvroSourceGenerator;
-
 
 [Generator(LanguageNames.CSharp)]
 internal sealed partial class AvroSourceGenerator : IIncrementalGenerator
 {
-    internal const string AvroModelAttributeName = "AvroModelAttribute";
-    internal const string AvroModelAttributeFullName = $"AvroSourceGenerator.{AvroModelAttributeName}";
-    internal const string AvroClassSchemaConstName = "SchemaJson";
+    internal const string AvroAttributeFullName = $"AvroSourceGenerator.{nameof(AvroAttribute)}";
+    internal const string AvroSchemaName = "AvroSchema";
+    internal const string AvroSchemaTypeName = "global::Avro.Schema";
+    internal const string AvroFixedSchemaTypeName = "global::Avro.FixedSchema";
+    internal const string AvroISpecificRecordTypeName = "global::Avro.Specific.ISpecificRecord";
+    internal const string AvroSpecificExceptionTypeName = "global::Avro.Specific.SpecificException";
+    internal const string AvroSpecificFixedTypeName = "global::Avro.Specific.SpecificFixed";
+    internal const string AvroGenericFixedTypeName = "global::Avro.Generic.GenericFixed";
+
+    internal static readonly AssemblyName AssemblyName = typeof(AvroSourceGenerator).Assembly.GetName();
+    internal static readonly string GeneratedCodeAttribute = $@"global::System.CodeDom.Compiler.GeneratedCodeAttribute(""{AssemblyName.Name}"", ""{AssemblyName.Version}"")";
+    internal static readonly string ExcludeFromCodeCoverageAttribute = "global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterPostInitializationOutput(static context =>
-            context.AddSource("AvroModelAttribute.g.cs", SourceText.From(AvroModelAttribute, Encoding.UTF8)));
-
         var models = context.SyntaxProvider
-            .ForAttributeWithMetadataName(AvroModelAttributeFullName,
+            .ForAttributeWithMetadataName(AvroAttributeFullName,
                 predicate: static (node, cancellationToken) =>
                 {
                     if (!node.IsKind(SyntaxKind.ClassDeclaration) && !node.IsKind(SyntaxKind.RecordDeclaration))
@@ -37,8 +42,8 @@ internal sealed partial class AvroSourceGenerator : IIncrementalGenerator
                 {
                     var typeDeclaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
                     var typeSymbol = Unsafe.As<INamedTypeSymbol>(context.TargetSymbol);
-                    var modelFeatures = (AvroModelFeatures)context.Attributes
-                        .Single(attr => attr.AttributeClass?.Name == AvroModelAttributeName)
+                    var modelFeatures = (LanguageFeatures)context.Attributes
+                        .Single(attr => attr.AttributeClass?.Name == nameof(AvroAttribute))
                         .ConstructorArguments[0].Value!;
 
                     var schemaJsonValue = default(string);
@@ -47,7 +52,7 @@ internal sealed partial class AvroSourceGenerator : IIncrementalGenerator
                         if (typeDeclaration.Members[i] is FieldDeclarationSyntax field)
                         {
                             var schemaJson = field.Declaration.Variables
-                                .FirstOrDefault(v => v.Identifier.Text == AvroClassSchemaConstName);
+                                .FirstOrDefault(v => v.Identifier.Text == AvroSchemaName);
                             if (schemaJson is not null)
                             {
                                 var schemaJsonSymbol = (IFieldSymbol)context.SemanticModel
@@ -64,10 +69,10 @@ internal sealed partial class AvroSourceGenerator : IIncrementalGenerator
                     if (string.IsNullOrEmpty(schemaJsonValue))
                         throw new NotSupportedException("add a diagnostic here for 'schema is null or empty'");
 
-                    return new SourceTextWriterContext(
+                    return new SourceTextWriterOptions(
                         Name: typeSymbol.Name,
                         Namespace: typeSymbol.ContainingNamespace?.ToDisplayString()! ?? "",
-                        SchemaJson: schemaJsonValue!,
+                        AvroSchema: schemaJsonValue!,
                         AccessModifier: typeDeclaration.Modifiers.Any(SyntaxKind.PublicKeyword) ? "public" : "internal",
                         DeclarationType: typeDeclaration.IsKind(SyntaxKind.RecordDeclaration) ? "partial record class" : "partial class",
                         Features: modelFeatures
@@ -76,8 +81,13 @@ internal sealed partial class AvroSourceGenerator : IIncrementalGenerator
 
         context.RegisterSourceOutput(models, static (context, options) =>
         {
-            var sourceText = ApacheAvroSourceTextWriter.WriteFromContext(options);
-            context.AddSource($"{options.Name}.AvroModel.g.cs", SourceText.From(sourceText, Encoding.UTF8));
+            using var document = JsonDocument.Parse(options.AvroSchema);
+
+            var writer = new ApacheAvroSourceTextWriter(new IndentedStringBuilder(), options);
+            writer.Write(new AvroSchema(document.RootElement));
+
+            var sourceText = writer.ToString();
+            context.AddSource($"{options.Name}.Avro.g.cs", SourceText.From(sourceText, Encoding.UTF8));
         });
     }
 }

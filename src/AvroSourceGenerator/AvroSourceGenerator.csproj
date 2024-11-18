@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     <PackageReference Include="PolySharp" PrivateAssets="all" />
   </ItemGroup>
   
@@ -25,9 +25,18 @@
     <PackageReference Include="System.Text.Json" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="Microsoft.Bcl.HashCode" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\AvroSourceGenerator.Attributes\AvroSourceGenerator.Attributes.csproj" PrivateAssets="All" />
+  </ItemGroup>
 
   <ItemGroup>
-    <!-- Generator dependencies -->
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\$(AssemblyName).Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\$(AssemblyName).Attributes.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="true" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="$(OutputPath)\netstandard2.0\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(OutputPath)\netstandard2.0\Microsoft.Bcl.HashCode.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>

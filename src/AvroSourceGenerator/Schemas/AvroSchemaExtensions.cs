@@ -17,7 +17,7 @@ internal static class AvroSchemaExtensions
         extern static ReadOnlyMemory<byte> GetRawValueFunc(JsonElement jsonElement);
     }
 #else
-    private static readonly Func<JsonElement, ReadOnlyMemory<byte>> GetRawValueFunc = CreateGetRawValueFunc();
+    private static readonly Func<JsonElement, ReadOnlyMemory<byte>> s_getRawValueFunc = CreateGetRawValueFunc();
 
     private static Func<JsonElement, ReadOnlyMemory<byte>> CreateGetRawValueFunc()
     {
@@ -32,6 +32,6 @@ internal static class AvroSchemaExtensions
         return getRawValue;
     }
 
-    public static ReadOnlyMemory<byte> GetRawValue(this JsonElement jsonElement) => GetRawValueFunc.Invoke(jsonElement);
+    public static ReadOnlyMemory<byte> GetRawValue(this JsonElement jsonElement) => s_getRawValueFunc.Invoke(jsonElement);
 #endif
 }

@@ -38,7 +38,7 @@ internal sealed class IndentedStringBuilder
     {
         if (!_indentationPending) return;
         _indentationPending = false;
-        for (int i = 0; i < _indentation; ++i)
+        for (var i = 0; i < _indentation; ++i)
             _builder.Append(DefaultIndentation);
     }
 

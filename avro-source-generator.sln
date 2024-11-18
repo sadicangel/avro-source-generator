@@ -7,6 +7,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroSourceGenerator", "src\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroSourceGenerator.Tests", "src\AvroSourceGenerator.Tests\AvroSourceGenerator.Tests.csproj", "{3FD7F50E-84A6-44AA-8935-693B20F65DFA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Attributes", "src\AvroSourceGenerator.Attributes\AvroSourceGenerator.Attributes.csproj", "{6B8EC3CB-F9FC-43D7-87F9-FD59DEB44A30}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		Directory.Packages.props = Directory.Packages.props
+		LICENSE = LICENSE
+		README.md = README.md
+		SpellingExclusions.dic = SpellingExclusions.dic
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +34,10 @@ Global
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B8EC3CB-F9FC-43D7-87F9-FD59DEB44A30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B8EC3CB-F9FC-43D7-87F9-FD59DEB44A30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B8EC3CB-F9FC-43D7-87F9-FD59DEB44A30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B8EC3CB-F9FC-43D7-87F9-FD59DEB44A30}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

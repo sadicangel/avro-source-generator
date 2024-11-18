@@ -60,7 +60,7 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
     public static TypeSymbol LogicalTimeMicros(bool nullable) => nullable ? Types.LogicalTimeMicrosNullable : Types.LogicalTimeMicros;
     public static TypeSymbol LogicalDuration(bool nullable) => nullable ? Types.LogicalDurationNullable : Types.LogicalDuration;
 
-    public static TypeSymbol FromSchema(AvroSchema schema, bool nullable, SourceTextWriterContext context) => context.Schemas.GetTypeTag(schema) switch
+    public static TypeSymbol FromSchema(AvroSchema schema, bool nullable, SourceTextWriterOptions context) => context.Schemas.GetTypeTag(schema) switch
     {
         SchemaTypeTag.Null => Null(context.UseNullableReferenceTypes),
         SchemaTypeTag.Boolean => Boolean(nullable),
@@ -81,19 +81,19 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
         _ => throw new InvalidOperationException($"Invalid schema '{schema.Name}' of type {context.Schemas.GetTypeTag(schema)}"),
     };
 
-    private static TypeSymbol FromArraySchema(ArraySchema schema, bool nullable, SourceTextWriterContext context)
+    private static TypeSymbol FromArraySchema(ArraySchema schema, bool nullable, SourceTextWriterOptions context)
     {
         var typeArg = FromSchema(schema.ItemsSchema, nullable: false, context);
         return Array(typeArg, nullable && context.UseNullableReferenceTypes);
     }
 
-    private static TypeSymbol FromMapSchema(MapSchema schema, bool nullable, SourceTextWriterContext context)
+    private static TypeSymbol FromMapSchema(MapSchema schema, bool nullable, SourceTextWriterOptions context)
     {
         var typeArg = FromSchema(schema.ValuesSchema, nullable: false, context);
         return Map(typeArg, nullable && context.UseNullableReferenceTypes);
     }
 
-    private static TypeSymbol FromUnionSchema(UnionSchema schema, SourceTextWriterContext context)
+    private static TypeSymbol FromUnionSchema(UnionSchema schema, SourceTextWriterOptions context)
     {
         var unionSchemas = schema.Schemas.ToArray();
         return unionSchemas.Length switch
@@ -110,7 +110,7 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
         };
     }
 
-    private static TypeSymbol FromLogicalSchema(LogicalSchema schema, bool nullable, SourceTextWriterContext context) => schema.LogicalType.GetRawValue().Span switch
+    private static TypeSymbol FromLogicalSchema(LogicalSchema schema, bool nullable, SourceTextWriterOptions context) => schema.LogicalType.GetRawValue().Span switch
     {
     [0x22, 0x75, 0x75, 0x69, 0x64, 0x22] => LogicalUuid(nullable && context.UseNullableReferenceTypes),
     [0x22, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x2D, 0x6D, 0x69, 0x6C, 0x6C, 0x69, 0x73, 0x22] => LogicalTimestampMillis(nullable),

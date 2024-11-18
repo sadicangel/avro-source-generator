@@ -19,6 +19,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="System.Formats.Asn1" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
@@ -32,10 +33,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AvroSourceGenerator\AvroSourceGenerator.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="App.config" />
+    <ProjectReference Include="..\AvroSourceGenerator.Attributes\AvroSourceGenerator.Attributes.csproj" />
   </ItemGroup>
 
 </Project>

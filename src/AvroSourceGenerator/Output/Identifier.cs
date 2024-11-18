@@ -4,7 +4,7 @@ namespace AvroSourceGenerator.Output;
 
 internal static class Identifier
 {
-    private static readonly Dictionary<string, string> Reserved = new()
+    private static readonly Dictionary<string, string> s_reserved = new()
     {
         ["bool"] = "@bool",
         ["byte"] = "@byte",
@@ -92,6 +92,6 @@ internal static class Identifier
     public static string GetValid(JsonElement name)
     {
         var identifier = name.GetString()!;
-        return Reserved.TryGetValue(identifier, out var reserved) ? reserved : identifier;
+        return s_reserved.TryGetValue(identifier, out var reserved) ? reserved : identifier;
     }
 }

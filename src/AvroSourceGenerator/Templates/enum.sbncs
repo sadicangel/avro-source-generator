@@ -1,0 +1,11 @@
+{{~ $type = schema | avro.type ~}}
+{{~ $enum = schema | avro.enum ~}}
+{{~ include 'comment' documentation: $enum.Documentation ~}}
+[global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
+{{~ include 'attributes' schema: $enum ~}}
+{{ AccessModifier }} enum {{ $type.Name }}
+{
+    {{~ for symbol in $enum.Symbols ~}}
+    {{ symbol | avro.escape }},
+    {{~ end ~}}
+}

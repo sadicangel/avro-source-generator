@@ -41,7 +41,7 @@ public enum SchemaTypeTag
     /// <summary>
     /// An enumeration.
     /// </summary>
-    Enumeration,
+    Enum,
     /// <summary>
     /// An array of values.
     /// </summary>

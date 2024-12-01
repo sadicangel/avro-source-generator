@@ -1,0 +1,13 @@
+{{
+    type = $.schema | avro.type
+    case type.Kind
+    when 'Enum'
+        include 'enum' schema: ($.schema | avro.enum)
+    when 'Fixed'
+        include 'fixed' schema: ($.schema | avro.fixed)
+    when 'Record'
+        include 'record' schema: ($.schema | avro.record)
+    when 'Error'
+        include 'error' schema: ($.schema | avro.error)
+    end
+}}

@@ -65,7 +65,7 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
                     WriteSchema(member);
                 return;
 
-            case SchemaTypeTag.Enumeration:
+            case SchemaTypeTag.Enum:
                 WriteEnumSchema(schema.AsEnumSchema());
                 return;
 
@@ -82,7 +82,7 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
 
             case SchemaTypeTag.Error:
                 var errorSchema = schema.AsErrorSchema();
-                foreach (var field in schema.AsErrorSchema().Fields)
+                foreach (var field in errorSchema.Fields)
                     WriteSchema(field.Schema);
                 WriteErrorSchema(errorSchema);
                 return;
@@ -125,9 +125,9 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
         builder.AppendLine($"[{AvroSourceGenerator.ExcludeFromCodeCoverageAttribute}]");
         builder.AppendLine($"[{AvroSourceGenerator.GeneratedCodeAttribute}]");
         if (baseTypeIdentifier is not null)
-            builder.AppendLine($"{options.AccessModifier} {typeDefinition} {typeIdentifier} : {baseTypeIdentifier}");
+            builder.AppendLine($"{typeDefinition} {typeIdentifier} : {baseTypeIdentifier}");
         else
-            builder.AppendLine($"{options.AccessModifier} {typeDefinition} {typeIdentifier}");
+            builder.AppendLine($"{typeDefinition} {typeIdentifier}");
     }
 
     private BlockStatement BlockStatement() => new(builder);
@@ -252,7 +252,7 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
         var name = Identifier.GetValid(schema.Name);
 
         WriteComment(schema.Documentation);
-        WriteTypeDeclaration(options.DeclarationType, name, AvroSourceGenerator.AvroISpecificRecordTypeName);
+        WriteTypeDeclaration(options.Declaration, name, AvroSourceGenerator.AvroISpecificRecordTypeName);
         using (BlockStatement())
         {
             WriteSchemaProperty(schema.Json, name, isOverride: false);
@@ -270,7 +270,7 @@ internal readonly struct ApacheAvroSourceTextWriter(IndentedStringBuilder builde
         var name = Identifier.GetValid(schema.Name);
 
         WriteComment(schema.Documentation);
-        WriteTypeDeclaration(options.DeclarationType, name, AvroSourceGenerator.AvroSpecificExceptionTypeName);
+        WriteTypeDeclaration(options.Declaration, name, AvroSourceGenerator.AvroSpecificExceptionTypeName);
         using (BlockStatement())
         {
             WriteSchemaProperty(schema.Json, name, isOverride: true);

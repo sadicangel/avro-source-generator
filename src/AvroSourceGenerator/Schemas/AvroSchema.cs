@@ -24,7 +24,6 @@ internal readonly record struct AvroSchema(JsonElement Json) : IAvroSchema
         };
     }
 
-    public PrimitiveSchema AsPrimitiveSchema() => new(Json);
     public ArraySchema AsArraySchema() => new(Json);
     public MapSchema AsMapSchema() => new(Json);
     public UnionSchema AsUnionSchema() => new(Json);
@@ -33,4 +32,13 @@ internal readonly record struct AvroSchema(JsonElement Json) : IAvroSchema
     public EnumSchema AsEnumSchema() => new(Json);
     public FixedSchema AsFixedSchema() => new(Json);
     public LogicalSchema AsLogicalSchema() => new(Json);
+
+    public static implicit operator AvroSchema(ArraySchema schema) => new(schema.Json);
+    public static implicit operator AvroSchema(MapSchema schema) => new(schema.Json);
+    public static implicit operator AvroSchema(UnionSchema schema) => new(schema.Json);
+    public static implicit operator AvroSchema(RecordSchema schema) => new(schema.Json);
+    public static implicit operator AvroSchema(ErrorSchema schema) => new(schema.Json);
+    public static implicit operator AvroSchema(EnumSchema schema) => new(schema.Json);
+    public static implicit operator AvroSchema(FixedSchema schema) => new(schema.Json);
+    public static implicit operator AvroSchema(LogicalSchema schema) => new(schema.Json);
 }

@@ -1,0 +1,4 @@
+{{~ include 'comment' documentation: $.field.Documentation ~}}
+{{~ include 'attributes' schema: $.field.Schema ~}}
+public {{~ UseRequiredProperties ? ' required ' : ' ' ~}} {{ $.type }} {{ $.field.Name | avro.escape }} { get; {{ UseInitOnlyProperties ? 'init' : 'set' }}; }
+{{- if $.type.IsNullable && UseNullableReferenceTypes && !UseRequiredProperties; ' = default!'; end }}

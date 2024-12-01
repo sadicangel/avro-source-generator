@@ -1,0 +1,68 @@
+{{~ $object = UseNullableReferenceTypes ? 'object?' : 'object' ~}}
+public {{~ $.override ? ' override ' : ' ' ~}} {{ $object}} Get(int fieldPos)
+{
+    switch (fieldPos)
+    {
+        {{~ for field in $.fields ~}}
+        case {{ for.index }}: return this.{{ field.Name | avro.escape }};
+        {{~ end ~}}
+        default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
+    }
+}
+
+{{~ $fieldValue = UseNullableReferenceTypes ? 'fieldValue!' : 'fieldValue' ~}}
+{{~ if !UseInitOnlyProperties ~}}
+public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object }} fieldValue)
+{
+    switch (fieldPos)
+    {
+        {{~ for field in $.fields ~}}
+        case {{ for.index }}: this.{{ field.Name | avro.escape }} = ({{ $.fieldTypes[for.index] }}){{ $fieldValue }}; break;
+        {{~ end ~}}
+        default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
+    }
+}
+{{~ else if UseUnsafeAccessors ~}}
+public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object }} fieldValue)
+{
+    switch (fieldPos)
+    {
+        {{~ for field in $.fields ~}}
+        {{~ $fieldName = field.Name | avro.escape ~}}
+        case {{ for.index }}: Set_{{ $fieldName }}(this, ({{ $.fieldTypes[for.index] }}){{ $fieldValue }}); break;
+            [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = {{ $"\"set_{ $fieldName }\"" }})]
+            extern static void Set_{{ $fieldName }}({{ $.containingTypeName }} obj, {{ $.fieldTypes[for.index] }} value);
+        {{~ end ~}}
+        default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
+    }
+}
+{{~ else ~}}
+public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object }} fieldValue)
+{
+    switch (fieldPos)
+    {
+        {{~ for field in $.fields ~}}
+        case {{ for.index }}: {{ $.containingTypeName }}Reflection.Set_{{ field.Name | avro.escape }}(this, ({{ $.fieldTypes[for.index] }}){{ $fieldValue }}); break;
+        {{~ end ~}}
+        default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
+    }
+}
+
+private static class {{ $.containingTypeName }}Reflection
+{
+    {{~ for field in $.fields ~}}
+    {{~ $fieldName = field.Name | avro.escape ~}}
+    public static readonly global::System.Action<{{ $.containingTypeName }}, {{ $.fieldTypes[for.index] }}> Set_{{ $fieldName }} = CreateSetter<{{ $.fieldTypes[for.index] }}>({{ $fieldName | string.literal }});
+    {{~ end ~}}
+
+    private static Action<{{ $.containingTypeName }}, TProperty> CreateSetter<TProperty>(string propertyName)
+    {
+        var obj = global::System.Linq.Expressions.Expression.Parameter(typeof({{ $.containingTypeName }}), "obj");
+        var value = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");
+        var property = global::System.Linq.Expressions.Expression.Property(obj, typeof({{ $.containingTypeName }}).GetProperty(propertyName){{~ UseNullableReferenceTypes ? '!' : '' ~}});
+        var assign = global::System.Linq.Expressions.Expression.Assign(property, value);
+        var lambda = global::System.Linq.Expressions.Expression.Lambda<Action<{{ $.containingTypeName }}, TProperty>>(assign, obj, value);
+        return lambda.Compile();
+    }
+}
+{{~ end ~}}

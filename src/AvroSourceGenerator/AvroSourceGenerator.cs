@@ -70,12 +70,11 @@ internal sealed partial class AvroSourceGenerator : IIncrementalGenerator
                         throw new NotSupportedException("add a diagnostic here for 'schema is null or empty'");
 
                     return new SourceTextWriterOptions(
+                        AvroSchema: schemaJsonValue!,
                         Name: typeSymbol.Name,
                         Namespace: typeSymbol.ContainingNamespace?.ToDisplayString()! ?? "",
-                        AvroSchema: schemaJsonValue!,
-                        AccessModifier: typeDeclaration.Modifiers.Any(SyntaxKind.PublicKeyword) ? "public" : "internal",
-                        DeclarationType: typeDeclaration.IsKind(SyntaxKind.RecordDeclaration) ? "partial record class" : "partial class",
-                        Features: modelFeatures
+                        Declaration: typeDeclaration.IsKind(SyntaxKind.RecordDeclaration) ? "partial record class" : "partial class",
+                        LanguageFeatures: modelFeatures
                     );
                 });
 

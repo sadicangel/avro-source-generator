@@ -1,5 +1,5 @@
-﻿using AvroSourceGenerator.Schemas;
-using System.Text.Json;
+﻿using System.Text.Json;
+using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Output;
 
@@ -21,7 +21,7 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
             SchemaTypeTag.Double => @default?.GetRawText(),
             SchemaTypeTag.Bytes => @default?.GetRawText() is string bytes ? $"System.Text.Encoding.GetBytes({bytes})" : null,
             SchemaTypeTag.String => @default?.GetRawText(),
-            SchemaTypeTag.Enumeration => @default is not null ? $"{Name}.{Identifier.GetValid(@default.Value)}" : null,
+            SchemaTypeTag.Enum => @default is not null ? $"{Name}.{Identifier.GetValid(@default.Value)}" : null,
             SchemaTypeTag.Fixed => @default?.GetRawText() is string bytes ? $"new {Name} {{ Value = System.Text.Encoding.GetBytes({bytes}) }}" : null,
             //SchemaTypeTag.Union => throw new NotImplementedException(),
             //SchemaTypeTag.Record => throw new NotImplementedException(),
@@ -42,7 +42,7 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
     public static TypeSymbol Double(bool nullable) => nullable ? Types.DoubleNullable : Types.Double;
     public static TypeSymbol Bytes(bool nullable) => nullable ? Types.BytesNullable : Types.Bytes;
     public static TypeSymbol String(bool nullable) => nullable ? Types.StringNullable : Types.String;
-    public static TypeSymbol Enum(JsonElement name, string @namespace, bool nullable) => new(SchemaTypeTag.Enumeration, nullable ? $"{@namespace}.{name}?" : $"{@namespace}.{name}");
+    public static TypeSymbol Enum(JsonElement name, string @namespace, bool nullable) => new(SchemaTypeTag.Enum, nullable ? $"{@namespace}.{name}?" : $"{@namespace}.{name}");
     public static TypeSymbol Fixed(JsonElement name, string @namespace, bool nullable) => new(SchemaTypeTag.Fixed, nullable ? $"{@namespace}.{name}?" : $"{@namespace}.{name}");
     public static TypeSymbol Record(JsonElement name, string @namespace, bool nullable) => new(SchemaTypeTag.Record, nullable ? $"{@namespace}.{name}?" : $"{@namespace}.{name}");
     public static TypeSymbol Error(JsonElement name, string @namespace, bool nullable) => new(SchemaTypeTag.Error, nullable ? $"{@namespace}.{name}?" : $"{@namespace}.{name}");
@@ -70,7 +70,7 @@ internal sealed record class TypeSymbol(SchemaTypeTag Tag, string Name, TypeSymb
         SchemaTypeTag.Double => Double(nullable),
         SchemaTypeTag.Bytes => Bytes(nullable && context.UseNullableReferenceTypes),
         SchemaTypeTag.String => String(nullable && context.UseNullableReferenceTypes),
-        SchemaTypeTag.Enumeration => Enum(schema.Name, context.Namespace, nullable),
+        SchemaTypeTag.Enum => Enum(schema.Name, context.Namespace, nullable),
         SchemaTypeTag.Fixed => Fixed(schema.Name, context.Namespace, nullable && context.UseNullableReferenceTypes),
         SchemaTypeTag.Record => Record(schema.Name, context.Namespace, nullable && context.UseNullableReferenceTypes),
         SchemaTypeTag.Error => Error(schema.Name, context.Namespace, nullable && context.UseNullableReferenceTypes),

@@ -16,13 +16,14 @@ public class AvroSchemaGeneratorUnitTests
             public const string AvroSchema = """
             {
                 "type": "record",
-                "namespace": "Tests.User",
+                "namespace": "AvroSourceGenerator.Tests",
                 "name": "User",
                 "fields" : [
                     { "name": "Name", "type": "string" },
                     { "name": "Age", "type": "int", "default": 18 },
                     { "name": "Description", "type": [ "string", "null" ] }
-                ]
+                ],
+                "aliases": ["Person", "Human"]
             }
             """;
         }
@@ -80,6 +81,6 @@ public class AvroSchemaGeneratorUnitTests
             """";
 
         TestHelpers.Verify(_source,
-            new Document("User.Avro.g.cs", ExpectedContent));
+            new Document("TestClass.Avro.g.cs", ExpectedContent));
     }
 }

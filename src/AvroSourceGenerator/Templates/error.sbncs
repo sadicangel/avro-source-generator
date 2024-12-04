@@ -1,20 +1,17 @@
-{{~ $type = schema | avro.type ~}}
-{{~ $error = schema | avro.error ~}}
-{{~ include 'comment' documentation: $error.Documentation ~}}
+{{~ include 'comment' documentation: $.schema.Documentation ~}}
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-{{~ include 'attributes' schema: $error ~}}
-{{ AccessModifier }} partial class {{ $type.Name }} : global::Avro.Specific.SpecificException
+{{~ include 'aliases' schema: $.schema ~}}
+{{ AccessModifier }} partial class {{ $.schema.Name }} : global::Avro.Specific.SpecificException
 {
-    {{~ $fieldTypes = $error.Fields | array.map 'Schema' | array.each @avro.type ~}}
-    {{~ for field in $error.Fields ~}}
-    {{ include 'field' field: field type: $fieldTypes[for.index] ~}}
+    {{~ for field in $.schema.Fields ~}}
+    {{ include 'field' field: field ~}}
     {{~ end ~}}
     
-    public override global::Avro.Schema Schema { get => {{ $type.Name }}._SCHEMA; }
+    public override global::Avro.Schema Schema { get => {{ $.schema.Name }}._SCHEMA; }
     public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
-    {{ $error.Json }}
+    {{ $.schema.Json }}
     """);
 
-    {{ include 'getput' containingTypeName: $type.Name fields: $error.Fields fieldTypes: $fieldTypes override: true ~}}
+    {{ include 'getput' schema: $.schema override: true ~}}
 }

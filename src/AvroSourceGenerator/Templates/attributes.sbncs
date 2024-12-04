@@ -1,6 +1,0 @@
-{{~ if $.schema.AliasesLength > 0 ~}}
-[global::AvroSourceGenerator.AvroAliases({{ $.schema.Aliases | array.each @string.literal | array.join ', ' }})]
-{{~ end ~}}
-{{~ if $.schema.Default ~}}
-[global::AvroSourceGenerator.AvroDefault({{ $.schema.Default }})]
-{{~ end ~}}

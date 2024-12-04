@@ -1,11 +1,9 @@
-{{~ $type = schema | avro.type ~}}
-{{~ $enum = schema | avro.enum ~}}
-{{~ include 'comment' documentation: $enum.Documentation ~}}
+{{~ include 'comment' documentation: $.schema.Documentation ~}}
 [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-{{~ include 'attributes' schema: $enum ~}}
-{{ AccessModifier }} enum {{ $type.Name }}
+{{~ include 'aliases' schema: $.schema ~}}
+{{ AccessModifier }} enum {{ $.schema.Name }}
 {
-    {{~ for symbol in $enum.Symbols ~}}
-    {{ symbol | avro.escape }},
+    {{~ for symbol in $.schema.Symbols ~}}
+    {{ symbol }},
     {{~ end ~}}
 }

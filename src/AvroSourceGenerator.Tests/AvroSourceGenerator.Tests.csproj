@@ -14,7 +14,6 @@
 
   <ItemGroup>
     <PackageReference Include="Apache.Avro" />
-    <PackageReference Include="Scriban" />
     <PackageReference Include="System.CodeDom" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />

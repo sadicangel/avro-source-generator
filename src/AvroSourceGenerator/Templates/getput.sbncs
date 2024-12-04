@@ -3,8 +3,8 @@ public {{~ $.override ? ' override ' : ' ' ~}} {{ $object}} Get(int fieldPos)
 {
     switch (fieldPos)
     {
-        {{~ for field in $.fields ~}}
-        case {{ for.index }}: return this.{{ field.Name | avro.escape }};
+        {{~ for field in $.schema.Fields ~}}
+        case {{ for.index }}: return this.{{ field.Name }};
         {{~ end ~}}
         default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
     }
@@ -16,8 +16,8 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
 {
     switch (fieldPos)
     {
-        {{~ for field in $.fields ~}}
-        case {{ for.index }}: this.{{ field.Name | avro.escape }} = ({{ $.fieldTypes[for.index] }}){{ $fieldValue }}; break;
+        {{~ for field in $.schema.Fields ~}}
+        case {{ for.index }}: this.{{ field.Name }} = ({{ field.Type.Name }}){{ $fieldValue }}; break;
         {{~ end ~}}
         default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
     }
@@ -27,13 +27,14 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
 {
     switch (fieldPos)
     {
-        {{~ for field in $.fields ~}}
-        {{~ $fieldName = field.Name | avro.escape ~}}
-        case {{ for.index }}: Set_{{ $fieldName }}(this, ({{ $.fieldTypes[for.index] }}){{ $fieldValue }}); break;
-            [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = {{ $"\"set_{ $fieldName }\"" }})]
-            extern static void Set_{{ $fieldName }}({{ $.containingTypeName }} obj, {{ $.fieldTypes[for.index] }} value);
+        {{~ for field in $.schema.Fields ~}}
+        case {{ for.index }}:
+            Set_{{ field.Name }}(this, ({{ field.Type.Name }}){{ $fieldValue }}); break;
+            [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = {{ $"\"set_{ field.Name }\"" }})]
+            extern static void Set_{{ field.Name }}({{ $.schema.Name }} obj, {{ field.Type.Name }} value);
         {{~ end ~}}
-        default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
+        default:
+            throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
     }
 }
 {{~ else ~}}
@@ -41,27 +42,26 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
 {
     switch (fieldPos)
     {
-        {{~ for field in $.fields ~}}
-        case {{ for.index }}: {{ $.containingTypeName }}Reflection.Set_{{ field.Name | avro.escape }}(this, ({{ $.fieldTypes[for.index] }}){{ $fieldValue }}); break;
+        {{~ for field in $.schema.Fields ~}}
+        case {{ for.index }}: {{ $.schema.Name }}Reflection.Set_{{ field.Name }}(this, ({{ field.Type.Name }}){{ $fieldValue }}); break;
         {{~ end ~}}
         default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
     }
 }
 
-private static class {{ $.containingTypeName }}Reflection
+private static class {{ $.schema.Name }}Reflection
 {
-    {{~ for field in $.fields ~}}
-    {{~ $fieldName = field.Name | avro.escape ~}}
-    public static readonly global::System.Action<{{ $.containingTypeName }}, {{ $.fieldTypes[for.index] }}> Set_{{ $fieldName }} = CreateSetter<{{ $.fieldTypes[for.index] }}>({{ $fieldName | string.literal }});
+    {{~ for field in $.schema.Fields ~}}
+    public static readonly global::System.Action<{{ $.schema.Name }}, {{ field.Type.Name }}> Set_{{ field.Name }} = CreateSetter<{{ field.Type.Name }}>({{ field.Name | string.literal }});
     {{~ end ~}}
 
-    private static Action<{{ $.containingTypeName }}, TProperty> CreateSetter<TProperty>(string propertyName)
+    private static Action<{{ $.schema.Name }}, TProperty> CreateSetter<TProperty>(string propertyName)
     {
-        var obj = global::System.Linq.Expressions.Expression.Parameter(typeof({{ $.containingTypeName }}), "obj");
+        var obj = global::System.Linq.Expressions.Expression.Parameter(typeof({{ $.schema.Name }}), "obj");
         var value = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");
-        var property = global::System.Linq.Expressions.Expression.Property(obj, typeof({{ $.containingTypeName }}).GetProperty(propertyName){{~ UseNullableReferenceTypes ? '!' : '' ~}});
+        var property = global::System.Linq.Expressions.Expression.Property(obj, typeof({{ $.schema.Name }}).GetProperty(propertyName){{~ UseNullableReferenceTypes ? '!' : '' ~}});
         var assign = global::System.Linq.Expressions.Expression.Assign(property, value);
-        var lambda = global::System.Linq.Expressions.Expression.Lambda<Action<{{ $.containingTypeName }}, TProperty>>(assign, obj, value);
+        var lambda = global::System.Linq.Expressions.Expression.Lambda<Action<{{ $.schema.Name }}, TProperty>>(assign, obj, value);
         return lambda.Compile();
     }
 }

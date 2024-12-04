@@ -1,4 +1,9 @@
 {{~ include 'comment' documentation: $.field.Documentation ~}}
-{{~ include 'attributes' schema: $.field.Schema ~}}
-public {{~ UseRequiredProperties ? ' required ' : ' ' ~}} {{ $.type }} {{ $.field.Name | avro.escape }} { get; {{ UseInitOnlyProperties ? 'init' : 'set' }}; }
-{{- if $.type.IsNullable && UseNullableReferenceTypes && !UseRequiredProperties; ' = default!'; end }}
+{{~ include 'aliases' schema: $.field ~}}
+public {{~ UseRequiredProperties && !$.field.Default ? ' required ' : ' ' ~}} {{ $.field.Type }} {{ $.field.Name }} { get; {{ UseInitOnlyProperties ? 'init' : 'set' }}; }
+{{-
+if $.field.Default
+    $" = {$.field.Default};"
+else if !$.field.Type.IsNullable && UseNullableReferenceTypes && !UseRequiredProperties
+    ' = default!;'
+end }}

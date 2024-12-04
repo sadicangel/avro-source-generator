@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections.Immutable;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -9,6 +10,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Scriban;
 using Scriban.Functions;
+using Scriban.Parsing;
 using Scriban.Runtime;
 
 namespace AvroSourceGenerator;
@@ -16,23 +18,10 @@ namespace AvroSourceGenerator;
 [Generator(LanguageNames.CSharp)]
 internal sealed class AvroSourceGenerator : IIncrementalGenerator
 {
-    private const string AvroAttributeFullName = $"AvroSourceGenerator.{nameof(AvroAttribute)}";
-    private const string AvroSchemaName = "AvroSchema";
-
-    internal static readonly Assembly Assembly = typeof(AvroSourceGenerator).Assembly;
-    internal static readonly AssemblyName AssemblyName = Assembly.GetName();
-    internal static readonly Template MainTemplate = LoadMainTemplate();
-
-    private static Template LoadMainTemplate()
-    {
-        using var reader = new StreamReader(Assembly.GetManifestResourceStream("AvroSourceGenerator.Templates.main.sbncs"));
-        return Template.Parse(reader.ReadToEnd());
-    }
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var models = context.SyntaxProvider
-            .ForAttributeWithMetadataName(AvroAttributeFullName,
+            .ForAttributeWithMetadataName("AvroSourceGenerator.AvroAttribute",
                 predicate: static (node, cancellationToken) =>
                 {
                     if (!node.IsKind(SyntaxKind.ClassDeclaration) && !node.IsKind(SyntaxKind.RecordDeclaration))
@@ -50,70 +39,57 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
                         .ConstructorArguments[0].Value!;
 
                     var declaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
-                    var rootSchemaJson = default(string);
-                    for (var i = 0; i < declaration.Members.Count; ++i)
-                    {
-                        if (declaration.Members[i] is FieldDeclarationSyntax field)
-                        {
-                            var schemaJson = field.Declaration.Variables
-                                .FirstOrDefault(v => v.Identifier.Text == AvroSchemaName);
-                            if (schemaJson is not null)
-                            {
-                                var schemaJsonSymbol = (IFieldSymbol)context.SemanticModel
-                                    .GetDeclaredSymbol(schemaJson, cancellationToken)!;
-                                if (schemaJsonSymbol.IsConst)
-                                {
-                                    rootSchemaJson = (string?)schemaJsonSymbol.ConstantValue;
-                                    break;
-                                }
-                            }
-                        }
-                    }
 
-                    if (string.IsNullOrEmpty(rootSchemaJson))
+                    var schemaVariable = declaration.Members
+                        .OfType<FieldDeclarationSyntax>()
+                        .SelectMany(f => f.Declaration.Variables)
+                        .FirstOrDefault(v => v.Identifier.Text == "AvroSchema");
+
+                    if (schemaVariable is null)
                     {
                         // TODO: Emit a diagnostic here for 'schema is null or empty' / must be provided.
                         return null;
                     }
 
-                    var rootSchema = default(JsonDocument);
-                    try
+                    if (context.SemanticModel.GetDeclaredSymbol(schemaVariable, cancellationToken) is not IFieldSymbol schemaSymbol)
                     {
-                        rootSchema = JsonDocument.Parse(rootSchemaJson!);
-                    }
-                    catch (JsonException ex)
-                    {
-                        _ = ex;
-                        // TODO: Emit a diagnostic here for 'schema is invalid' / must be valid AVRO JSON Schema.
+                        // TODO: Emit a diagnostic here for 'schema is null or empty' / must be provided.
                         return null;
                     }
 
+                    if (!schemaSymbol.IsConst)
+                    {
+                        // TODO: Emit a diagnostic here for 'schema must be a constant'.
+                        return null;
+                    }
 
-                    languageFeatures &= ~LanguageFeatures.RequiredProperties;
+                    if (schemaSymbol.ConstantValue is not string { Length: > 0 } schemaJson)
+                    {
+                        // TODO: Emit a diagnostic here for 'schema is null or empty' / must be provided.
+                        return null;
+                    }
 
-                    var schemaRegistry = new SchemaRegistry(rootSchema, languageFeatures);
-
-                    var isRecordDeclaration = declaration.IsKind(SyntaxKind.RecordDeclaration);
-
-                    var accessModifier = GetAccessModifier(declaration);
-
-                    return CreateContext(
-                        schemaRegistry,
-                        isRecordDeclaration,
-                        accessModifier,
-                        languageFeatures
-                    );
+                    return new SourceOutputInfo(
+                        SchemaJson: schemaJson,
+                        LanguageFeatures: languageFeatures,
+                        IsRecordDeclaration: declaration.IsKind(SyntaxKind.RecordDeclaration),
+                        AccessModifier: GetAccessModifier(declaration),
+                        Diagnostics: []);
                 });
 
-        context.RegisterSourceOutput(models, static (sourceProductionContext, templateContext) =>
+        context.RegisterSourceOutput(models, (context, info) =>
         {
-            var names = Assembly.GetManifestResourceNames();
-            var sourceText = MainTemplate.Render(templateContext);
-            sourceProductionContext.AddSource($"{"TestClass"}.Avro.g.cs", SourceText.From(sourceText, Encoding.UTF8));
+            if (info is null)
+            {
+                // TODO: Report diagnostics here.
+                return;
+            }
+            var sourceText = TemplateLoader.MainTemplate.Render(CreateContext(info));
+            context.AddSource($"{"TestClass"}.Avro.g.cs", SourceText.From(sourceText, Encoding.UTF8));
         });
     }
 
-    public static string GetAccessModifier(TypeDeclarationSyntax typeDeclaration)
+    private static string GetAccessModifier(TypeDeclarationSyntax typeDeclaration)
     {
         // Default to internal if no access modifier is specified
         var accessModifier = "internal";
@@ -154,32 +130,78 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
         return accessModifier;
     }
 
-    private static TemplateContext CreateContext(
-        SchemaRegistry schemaRegistry,
-        bool isRecordDeclaration,
-        string accessModifier,
-        LanguageFeatures languageFeatures)
+    private static TemplateContext CreateContext(SourceOutputInfo info)
     {
+        // TODO: Catch and handle JsonException and emit a diagnostic for invalid JSON schema.
+        var schemaRegistry = new SchemaRegistry(JsonDocument.Parse(info.SchemaJson), info.LanguageFeatures);
+
         var builtin = new BuiltinFunctions();
         builtin.Import(new
         {
             SchemaRegistry = schemaRegistry,
-            IsRecordDeclaration = isRecordDeclaration,
-            AccessModifier = accessModifier,
-            LanguageFeatures = languageFeatures,
-            UseNullableReferenceTypes = (languageFeatures & LanguageFeatures.NullableReferenceTypes) != 0,
-            UseFileScopedNamespaces = (languageFeatures & LanguageFeatures.FileScopedNamespaces) != 0,
-            UseRequiredProperties = (languageFeatures & LanguageFeatures.RequiredProperties) != 0,
-            UseInitOnlyProperties = (languageFeatures & LanguageFeatures.InitOnlyProperties) != 0,
-            UseUnsafeAccessors = (languageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
+            info.IsRecordDeclaration,
+            info.AccessModifier,
+            info.LanguageFeatures,
+            UseNullableReferenceTypes = (info.LanguageFeatures & LanguageFeatures.NullableReferenceTypes) != 0,
+            UseFileScopedNamespaces = (info.LanguageFeatures & LanguageFeatures.FileScopedNamespaces) != 0,
+            UseRequiredProperties = (info.LanguageFeatures & LanguageFeatures.RequiredProperties) != 0,
+            UseInitOnlyProperties = (info.LanguageFeatures & LanguageFeatures.InitOnlyProperties) != 0,
+            UseUnsafeAccessors = (info.LanguageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
         },
         null,
         static member => member.Name);
         var context = new TemplateContext(builtin)
         {
             MemberRenamer = static member => member.Name,
-            TemplateLoader = new TemplateLoader(),
+            TemplateLoader = TemplateLoader.Instance,
         };
         return context;
     }
+}
+
+internal sealed record class SourceOutputInfo(
+    string SchemaJson,
+    LanguageFeatures LanguageFeatures,
+    bool IsRecordDeclaration,
+    string AccessModifier,
+    ImmutableArray<Diagnostic> Diagnostics);
+
+file sealed class TemplateLoader : ITemplateLoader
+{
+    private static readonly Dictionary<string, string> s_templatePaths = new()
+    {
+        ["aliases"] = "AvroSourceGenerator.Templates.aliases.sbncs",
+        ["comment"] = "AvroSourceGenerator.Templates.comment.sbncs",
+        ["enum"] = "AvroSourceGenerator.Templates.enum.sbncs",
+        ["error"] = "AvroSourceGenerator.Templates.error.sbncs",
+        ["field"] = "AvroSourceGenerator.Templates.field.sbncs",
+        ["fixed"] = "AvroSourceGenerator.Templates.fixed.sbncs",
+        ["getput"] = "AvroSourceGenerator.Templates.getput.sbncs",
+        ["main"] = "AvroSourceGenerator.Templates.main.sbncs",
+        ["record"] = "AvroSourceGenerator.Templates.record.sbncs",
+        ["schema"] = "AvroSourceGenerator.Templates.schema.sbncs",
+    };
+
+    private static readonly Lazy<Template> s_mainTemplate = new(() =>
+    {
+        using var stream = typeof(AvroSourceGenerator).Assembly.GetManifestResourceStream(s_templatePaths["main"]);
+        using var reader = new StreamReader(stream);
+        return Template.Parse(reader.ReadToEnd());
+    });
+
+    public static ITemplateLoader Instance { get; } = new TemplateLoader();
+
+    public static Template MainTemplate => s_mainTemplate.Value;
+
+    public string GetPath(TemplateContext context, SourceSpan callerSpan, string templateName) =>
+        s_templatePaths[templateName];
+
+    public string Load(TemplateContext context, SourceSpan callerSpan, string templatePath)
+    {
+        using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(templatePath));
+        return reader.ReadToEnd();
+    }
+
+    public async ValueTask<string> LoadAsync(TemplateContext context, SourceSpan callerSpan, string templatePath) =>
+        await Task.FromResult(Load(context, callerSpan, templatePath));
 }

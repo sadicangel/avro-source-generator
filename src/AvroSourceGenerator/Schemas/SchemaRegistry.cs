@@ -105,7 +105,7 @@ internal sealed class SchemaRegistry : IEnumerable<AvroSchema>, IDisposable
             if (@default is not null && symbols.IndexOf(@default) is -1)
                 throw new InvalidOperationException($"Invalid schema {schema.GetRawText()}");
 
-            _schemas[name] = enumSchema = new EnumSchema(name, documentation, aliases, symbols, @default);
+            _schemas[name] = enumSchema = new EnumSchema(schema, name, documentation, aliases, symbols, @default);
         }
 
         return nullable ? name.ToNullable() : name;
@@ -124,7 +124,7 @@ internal sealed class SchemaRegistry : IEnumerable<AvroSchema>, IDisposable
             var aliases = schema.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidOperationException($"Invalid schema {schema.GetRawText()}")).ToImmutableArray() : [];
             var fields = schema.GetProperty("fields").EnumerateArray().Select(field => Field(field, @namespace)).ToImmutableArray();
 
-            _schemas[name] = recordSchema = new RecordSchema(name, documentation, aliases, fields);
+            _schemas[name] = recordSchema = new RecordSchema(schema, name, documentation, aliases, fields);
         }
 
         return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;
@@ -142,7 +142,7 @@ internal sealed class SchemaRegistry : IEnumerable<AvroSchema>, IDisposable
             var aliases = schema.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidOperationException($"Invalid schema {schema.GetRawText()}")).ToImmutableArray() : [];
             var fields = schema.GetProperty("fields").EnumerateArray().Select(field => Field(field, @namespace)).ToImmutableArray();
 
-            _schemas[name] = recordSchema = new ErrorSchema(name, documentation, aliases, fields);
+            _schemas[name] = recordSchema = new ErrorSchema(schema, name, documentation, aliases, fields);
         }
 
         return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;
@@ -198,7 +198,7 @@ internal sealed class SchemaRegistry : IEnumerable<AvroSchema>, IDisposable
             var aliases = schema.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidOperationException($"Invalid schema {schema.GetRawText()}")).ToImmutableArray() : [];
             var size = schema.GetProperty("size").GetInt32();
 
-            _schemas[name] = fixedSchema = new FixedSchema(name, documentation, aliases, size);
+            _schemas[name] = fixedSchema = new FixedSchema(schema, name, documentation, aliases, size);
         }
 
         return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;

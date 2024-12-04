@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
@@ -6,6 +7,7 @@ namespace AvroSourceGenerator.Schemas;
 // kind we're interested in generating code for.
 internal abstract record class AvroSchema(
     SchemaType Type,
+    JsonElement Json,
     QualifiedName QualifiedName,
     string? Documentation,
     ImmutableArray<string> Aliases)

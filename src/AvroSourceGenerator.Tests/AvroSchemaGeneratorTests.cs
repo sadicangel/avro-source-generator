@@ -17,13 +17,13 @@ public class AvroSchemaGeneratorUnitTests
 
         namespace AvroSourceGenerator.Tests;
 
-        [Avro({{nameof(LanguageFeatures)}}.{{TestHelpers.LanguageFeatures}})]
+        [Avro(LanguageFeatures = LanguageFeatures.{{TestHelpers.LanguageFeatures}}, UseCSharpNamespace = true)]
         public partial record class User
         {
             public const string AvroSchema = """
             {
                 "type": "record",
-                "namespace": "AvroSourceGenerator.Tests",
+                "namespace": "Tests",
                 "name": "User",
                 "fields" : [
                     { "name": "Name", "type": "string" },

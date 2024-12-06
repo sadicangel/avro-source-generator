@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -35,11 +34,31 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
                 },
                 transform: static (context, cancellationToken) =>
                 {
-                    var languageFeatures = (LanguageFeatures)context.Attributes
-                        .Single(attr => attr.AttributeClass?.Name == nameof(AvroAttribute))
-                        .ConstructorArguments[0].Value!;
-
                     var declaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
+
+                    var symbol = Unsafe.As<INamedTypeSymbol>(context.TargetSymbol);
+
+                    var avroAttribute = context.Attributes
+                        .Single(attr => attr.AttributeClass?.Name == nameof(AvroAttribute));
+
+                    var languageFeatures = LanguageFeatures.Latest;
+                    var namespaceOverride = default(string);
+
+                    foreach (var kvp in avroAttribute.NamedArguments)
+                    {
+                        var name = kvp.Key;
+                        var value = kvp.Value.Value;
+
+                        switch (name)
+                        {
+                            case nameof(AvroAttribute.LanguageFeatures) when value is not null:
+                                languageFeatures = (LanguageFeatures)value;
+                                break;
+                            case nameof(AvroAttribute.UseCSharpNamespace) when value is true:
+                                namespaceOverride = symbol.ContainingNamespace?.ToDisplayString();
+                                break;
+                        }
+                    }
 
                     var schemaVariable = declaration.Members
                         .OfType<FieldDeclarationSyntax>()
@@ -73,7 +92,8 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
                     return new SourceOutputInfo(
                         SchemaJson: schemaJson,
                         LanguageFeatures: languageFeatures,
-                        IsRecordDeclaration: declaration.IsKind(SyntaxKind.RecordDeclaration),
+                        NamespaceOverride: namespaceOverride,
+                        RecordDeclaration: declaration.IsKind(SyntaxKind.RecordDeclaration) ? "record" : "class",
                         AccessModifier: GetAccessModifier(declaration),
                         Diagnostics: []);
                 });
@@ -141,11 +161,11 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
         builtin.Import(new
         {
             SchemaRegistry = schemaRegistry,
-            info.IsRecordDeclaration,
+            info.NamespaceOverride,
+            info.RecordDeclaration,
             info.AccessModifier,
             info.LanguageFeatures,
             UseNullableReferenceTypes = (info.LanguageFeatures & LanguageFeatures.NullableReferenceTypes) != 0,
-            UseFileScopedNamespaces = (info.LanguageFeatures & LanguageFeatures.FileScopedNamespaces) != 0,
             UseRequiredProperties = (info.LanguageFeatures & LanguageFeatures.RequiredProperties) != 0,
             UseInitOnlyProperties = (info.LanguageFeatures & LanguageFeatures.InitOnlyProperties) != 0,
             UseUnsafeAccessors = (info.LanguageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
@@ -160,13 +180,6 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
         return context;
     }
 }
-
-internal sealed record class SourceOutputInfo(
-    string SchemaJson,
-    LanguageFeatures LanguageFeatures,
-    bool IsRecordDeclaration,
-    string AccessModifier,
-    ImmutableArray<Diagnostic> Diagnostics);
 
 file sealed class TemplateLoader : ITemplateLoader
 {

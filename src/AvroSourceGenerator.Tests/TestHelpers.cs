@@ -13,18 +13,20 @@ public readonly record struct GeneratedOutput(ImmutableArray<Document> Documents
 internal static class TestHelpers
 {
     public static LanguageFeatures LanguageFeatures =>
-#if NET472 || NET48 || NETSTANDARD2_0
-        LanguageFeatures.CSharp7_3;
-#elif NETSTANDARD2_1
-        LanguageFeatures.CSharp8;
-#elif NET5_0
-        LanguageFeatures.CSharp9;
-#elif NET6_0
-        LanguageFeatures.CSharp10;
-#elif NET7_0
-        LanguageFeatures.CSharp11;
+#if NET9_0
+        LanguageFeatures.CSharp13;
 #elif NET8_0
         LanguageFeatures.CSharp12;
+#elif NET7_0
+        LanguageFeatures.CSharp11;
+#elif NET6_0
+        LanguageFeatures.CSharp10;
+#elif NET5_0
+        LanguageFeatures.CSharp9;
+#elif NETSTANDARD2_1
+        LanguageFeatures.CSharp8;
+#elif NET472 || NET48 || NETSTANDARD2_0
+        LanguageFeatures.CSharp7_3;
 #else
         LanguageFeatures.None;
 #endif

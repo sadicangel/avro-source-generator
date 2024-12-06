@@ -1,6 +1,3 @@
-{{~ include 'comment' documentation: $.schema.Documentation ~}}
-[global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-{{~ include 'aliases' schema: $.schema ~}}
 {{ AccessModifier }} enum {{ $.schema.Name }}
 {
     {{~ for symbol in $.schema.Symbols ~}}

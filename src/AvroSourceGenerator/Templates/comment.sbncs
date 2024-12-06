@@ -1,7 +1,0 @@
-{{~ if $.documentation ~}}
-/// <summary>
-{{~ for line in $.documentation | string.split '\n' ~}}
-/// {{ line | string.strip }}
-{{~ end ~}}
-/// </summary>
-{{~ end ~}}

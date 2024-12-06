@@ -1,11 +1,7 @@
-{{~ include 'comment' documentation: $.schema.Documentation ~}}
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-[global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-{{~ include 'aliases' schema: $.schema ~}}
 {{ AccessModifier }} partial {{ IsRecordDeclaration ? 'record' : 'class' }} {{ $.schema.Name }} : global::Avro.Specific.ISpecificRecord
 {    
     {{~ for field in $.schema.Fields ~}}
-    {{ include 'field' field: field ~}}
+    {{ include 'field' field: field }}
     {{~ end ~}}
  
     public global::Avro.Schema Schema { get => {{ $.schema.Name }}._SCHEMA; }

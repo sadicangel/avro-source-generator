@@ -1,9 +1,11 @@
-{{~ include 'comment' documentation: $.field.Documentation ~}}
-{{~ include 'aliases' schema: $.field ~}}
-public {{~ UseRequiredProperties && !$.field.Default ? ' required ' : ' ' ~}} {{ $.field.Type }} {{ $.field.Name }} { get; {{ UseInitOnlyProperties ? 'init' : 'set' }}; }
-{{-
-if $.field.Default
-    $" = {$.field.Default};"
-else if !$.field.Type.IsNullable && UseNullableReferenceTypes && !UseRequiredProperties
-    ' = default!;'
-end }}
+{{~ if $.field.Documentation ~}}
+/// <summary>
+{{~ for line in $.field.Documentation | string.split '\n' | array.each @string.strip ~}}
+/// {{ line }}
+{{~ end ~}}
+/// </summary>
+{{~ end ~}}
+{{~ if $.field.Aliases.size > 0 ~}}
+[global::AvroSourceGenerator.AvroAliases({{ $.field.Aliases | array.each @string.literal | array.join ', ' }})]
+{{~ end ~}}
+public {{~ UseRequiredProperties && !$.field.Type.IsNullable && !$.field.Default ? ' required ' : ' ' ~}} {{ $.field.Type }} {{ $.field.Name }} { get; {{ UseInitOnlyProperties ? 'init' : 'set' }}; } {{~ if $.field.Default; $" = {$.field.Default};"; end ~}}

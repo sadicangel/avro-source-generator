@@ -1,9 +1,16 @@
-﻿using Xunit;
+﻿using System.Text.Json;
+using Xunit;
 
 namespace AvroSourceGenerator.Tests;
 
 public class AvroSchemaGeneratorUnitTests
 {
+    private const string Comment = """
+        This is a multiline comment.
+        It can span multiple lines.
+
+        Yep! It can.
+        """;
     private readonly string _source = $$""""
         using System;
         using AvroSourceGenerator;
@@ -23,7 +30,8 @@ public class AvroSchemaGeneratorUnitTests
                     { "name": "Age", "type": "int", "default": 18 },
                     { "name": "Description", "type": [ "string", "null" ] }
                 ],
-                "aliases": ["Person", "Human"]
+                "aliases": ["Person", "Human"],
+                "doc": "{{JsonEncodedText.Encode(Comment)}}"
             }
             """;
         }

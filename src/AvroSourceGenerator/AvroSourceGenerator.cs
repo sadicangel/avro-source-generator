@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -85,6 +86,7 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
                 return;
             }
             var sourceText = TemplateLoader.MainTemplate.Render(CreateContext(info));
+            Debug.WriteLine(sourceText);
             context.AddSource($"{"TestClass"}.Avro.g.cs", SourceText.From(sourceText, Encoding.UTF8));
         });
     }
@@ -170,8 +172,6 @@ file sealed class TemplateLoader : ITemplateLoader
 {
     private static readonly Dictionary<string, string> s_templatePaths = new()
     {
-        ["aliases"] = "AvroSourceGenerator.Templates.aliases.sbncs",
-        ["comment"] = "AvroSourceGenerator.Templates.comment.sbncs",
         ["enum"] = "AvroSourceGenerator.Templates.enum.sbncs",
         ["error"] = "AvroSourceGenerator.Templates.error.sbncs",
         ["field"] = "AvroSourceGenerator.Templates.field.sbncs",

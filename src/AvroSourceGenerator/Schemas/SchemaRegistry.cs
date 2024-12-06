@@ -4,26 +4,23 @@ using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
-internal sealed class SchemaRegistry : IEnumerable<AvroSchema>, IDisposable
+internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? namespaceOverride = null)
+    : IEnumerable<AvroSchema>
 {
     private readonly Dictionary<QualifiedName, AvroSchema> _schemas = [];
-    private readonly JsonDocument _rootSchema;
-    private readonly LanguageFeatures _languageFeatures;
 
-    public SchemaRegistry(JsonDocument rootSchema, LanguageFeatures languageFeatures)
-    {
-        _rootSchema = rootSchema;
-        _languageFeatures = languageFeatures;
-
-        Type(rootSchema.RootElement, null, nullable: false);
-    }
-
-    private bool UseNullableReferenceTypes => _languageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes);
+    private bool UseNullableReferenceTypes => languageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes);
 
     public IEnumerator<AvroSchema> GetEnumerator() => _schemas.Values.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public void Dispose() => _rootSchema.Dispose();
+    public AvroSchema Register(JsonElement schema)
+    {
+        var name = Type(schema, @namespace: null, nullable: false);
+
+        // The schema will only be registered if it's a named schema.
+        return _schemas[name];
+    }
 
     private QualifiedName Type(JsonElement schema, string? @namespace, bool nullable)
     {
@@ -51,7 +48,7 @@ internal sealed class SchemaRegistry : IEnumerable<AvroSchema>, IDisposable
             "double" => QualifiedName.Double(nullable),
             "bytes" => QualifiedName.Bytes(UseNullableReferenceTypes & nullable),
             "string" => QualifiedName.String(UseNullableReferenceTypes & nullable),
-            _ when _schemas.TryGetValue(new QualifiedName(name, @namespace), out var registeredType) => registeredType.QualifiedName,
+            _ when _schemas.TryGetValue(new QualifiedName(NameHelper.GetValid(name), @namespace), out var registeredType) => registeredType.QualifiedName,
             _ => throw new InvalidOperationException($"Invalid schema {schema.GetRawText()}")
         };
     }
@@ -93,7 +90,7 @@ internal sealed class SchemaRegistry : IEnumerable<AvroSchema>, IDisposable
     private QualifiedName Enum(JsonElement schema, string? @namespace, bool nullable)
     {
         var localName = NameHelper.GetLocalName(schema);
-        @namespace = NameHelper.GetNamespace(schema) ?? @namespace;
+        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
         var name = new QualifiedName(localName, @namespace);
 
         if (!_schemas.TryGetValue(name, out var enumSchema))
@@ -115,7 +112,7 @@ internal sealed class SchemaRegistry : IEnumerable<AvroSchema>, IDisposable
     private QualifiedName Record(JsonElement schema, string? @namespace, bool nullable)
     {
         var localName = NameHelper.GetLocalName(schema);
-        @namespace = NameHelper.GetNamespace(schema) ?? @namespace;
+        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
         var name = new QualifiedName(localName, @namespace);
 
         if (!_schemas.TryGetValue(name, out var recordSchema))
@@ -133,7 +130,7 @@ internal sealed class SchemaRegistry : IEnumerable<AvroSchema>, IDisposable
     private QualifiedName Error(JsonElement schema, string? @namespace, bool nullable)
     {
         var localName = NameHelper.GetLocalName(schema);
-        @namespace = NameHelper.GetNamespace(schema) ?? @namespace;
+        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
         var name = new QualifiedName(localName, @namespace);
 
         if (!_schemas.TryGetValue(name, out var recordSchema))
@@ -189,7 +186,7 @@ internal sealed class SchemaRegistry : IEnumerable<AvroSchema>, IDisposable
     private QualifiedName Fixed(JsonElement schema, string? @namespace, bool nullable)
     {
         var localName = NameHelper.GetLocalName(schema);
-        @namespace = NameHelper.GetNamespace(schema) ?? @namespace;
+        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
         var name = new QualifiedName(localName, @namespace);
 
         if (!_schemas.TryGetValue(name, out var fixedSchema))

@@ -105,9 +105,38 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
                 // TODO: Report diagnostics here.
                 return;
             }
-            var sourceText = TemplateLoader.MainTemplate.Render(CreateContext(info));
+
+            // TODO: Catch and handle JsonException and emit a diagnostic for invalid JSON schema.
+            using var document = JsonDocument.Parse(info.SchemaJson);
+
+            var schemaRegistry = new SchemaRegistry(info.LanguageFeatures, info.NamespaceOverride);
+            // TODO: Catch and handle invalid schema exceptions and emit diagnostics.
+            var rootSchema = schemaRegistry.Register(document.RootElement);
+
+            // We should get no render errors, so we don't have to handle anything else.
+            var builtin = new BuiltinFunctions();
+            builtin.Import(new
+            {
+                SchemaRegistry = schemaRegistry,
+                info.RecordDeclaration,
+                info.AccessModifier,
+                info.LanguageFeatures,
+                UseNullableReferenceTypes = (info.LanguageFeatures & LanguageFeatures.NullableReferenceTypes) != 0,
+                UseRequiredProperties = (info.LanguageFeatures & LanguageFeatures.RequiredProperties) != 0,
+                UseInitOnlyProperties = (info.LanguageFeatures & LanguageFeatures.InitOnlyProperties) != 0,
+                UseUnsafeAccessors = (info.LanguageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
+            },
+            null,
+            static member => member.Name);
+            var templateContext = new TemplateContext(builtin)
+            {
+                MemberRenamer = static member => member.Name,
+                TemplateLoader = TemplateLoader.Instance,
+            };
+
+            var sourceText = TemplateLoader.MainTemplate.Render(templateContext);
             Debug.WriteLine(sourceText);
-            context.AddSource($"{"TestClass"}.Avro.g.cs", SourceText.From(sourceText, Encoding.UTF8));
+            context.AddSource($"{rootSchema.Name}.Avro.g.cs", SourceText.From(sourceText, Encoding.UTF8));
         });
     }
 
@@ -150,34 +179,6 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
         }
 
         return accessModifier;
-    }
-
-    private static TemplateContext CreateContext(SourceOutputInfo info)
-    {
-        // TODO: Catch and handle JsonException and emit a diagnostic for invalid JSON schema.
-        var schemaRegistry = new SchemaRegistry(JsonDocument.Parse(info.SchemaJson), info.LanguageFeatures);
-
-        var builtin = new BuiltinFunctions();
-        builtin.Import(new
-        {
-            SchemaRegistry = schemaRegistry,
-            info.NamespaceOverride,
-            info.RecordDeclaration,
-            info.AccessModifier,
-            info.LanguageFeatures,
-            UseNullableReferenceTypes = (info.LanguageFeatures & LanguageFeatures.NullableReferenceTypes) != 0,
-            UseRequiredProperties = (info.LanguageFeatures & LanguageFeatures.RequiredProperties) != 0,
-            UseInitOnlyProperties = (info.LanguageFeatures & LanguageFeatures.InitOnlyProperties) != 0,
-            UseUnsafeAccessors = (info.LanguageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
-        },
-        null,
-        static member => member.Name);
-        var context = new TemplateContext(builtin)
-        {
-            MemberRenamer = static member => member.Name,
-            TemplateLoader = TemplateLoader.Instance,
-        };
-        return context;
     }
 }
 

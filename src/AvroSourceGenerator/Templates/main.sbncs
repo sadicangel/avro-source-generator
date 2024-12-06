@@ -1,0 +1,3 @@
+{{~ for schema in SchemaRegistry ~}}
+{{ include 'schema' schema: schema }}
+{{~ end ~}}

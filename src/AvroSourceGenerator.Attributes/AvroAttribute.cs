@@ -1,6 +1,9 @@
 ﻿namespace AvroSourceGenerator;
 
-public sealed class AvroAttribute(LanguageFeatures languageFeatures = LanguageFeatures.Latest) : Attribute
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class AvroAttribute : Attribute
 {
-    public LanguageFeatures LanguageFeatures { get; } = languageFeatures;
+    public LanguageFeatures LanguageFeatures { get; set; } = LanguageFeatures.Latest;
+
+    public bool UseCSharpNamespace { get; set; }
 }

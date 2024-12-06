@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Schemas;
 
-public enum SchemaTypeTag
+public enum SchemaType
 {
     /// <summary>
     /// No value.
@@ -41,7 +41,7 @@ public enum SchemaTypeTag
     /// <summary>
     /// An enumeration.
     /// </summary>
-    Enumeration,
+    Enum,
     /// <summary>
     /// An array of values.
     /// </summary>

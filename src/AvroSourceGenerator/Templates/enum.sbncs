@@ -1,0 +1,6 @@
+{{ AccessModifier }} enum {{ $.schema.Name }}
+{
+    {{~ for symbol in $.schema.Symbols ~}}
+    {{ symbol }},
+    {{~ end ~}}
+}

@@ -89,7 +89,7 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
                         return null;
                     }
 
-                    return new SourceOutputInfo(
+                    return new SourceOutputModel(
                         SchemaJson: schemaJson,
                         LanguageFeatures: languageFeatures,
                         NamespaceOverride: namespaceOverride,
@@ -98,18 +98,18 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
                         Diagnostics: []);
                 });
 
-        context.RegisterSourceOutput(models, (context, info) =>
+        context.RegisterSourceOutput(models, static (context, model) =>
         {
-            if (info is null)
+            if (model is null)
             {
                 // TODO: Report diagnostics here.
                 return;
             }
 
             // TODO: Catch and handle JsonException and emit a diagnostic for invalid JSON schema.
-            using var document = JsonDocument.Parse(info.SchemaJson);
+            using var document = JsonDocument.Parse(model.SchemaJson);
 
-            var schemaRegistry = new SchemaRegistry(info.LanguageFeatures, info.NamespaceOverride);
+            var schemaRegistry = new SchemaRegistry(model.LanguageFeatures, model.NamespaceOverride);
             // TODO: Catch and handle invalid schema exceptions and emit diagnostics.
             var rootSchema = schemaRegistry.Register(document.RootElement);
 
@@ -118,13 +118,13 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
             builtin.Import(new
             {
                 SchemaRegistry = schemaRegistry,
-                info.RecordDeclaration,
-                info.AccessModifier,
-                info.LanguageFeatures,
-                UseNullableReferenceTypes = (info.LanguageFeatures & LanguageFeatures.NullableReferenceTypes) != 0,
-                UseRequiredProperties = (info.LanguageFeatures & LanguageFeatures.RequiredProperties) != 0,
-                UseInitOnlyProperties = (info.LanguageFeatures & LanguageFeatures.InitOnlyProperties) != 0,
-                UseUnsafeAccessors = (info.LanguageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
+                model.RecordDeclaration,
+                model.AccessModifier,
+                model.LanguageFeatures,
+                UseNullableReferenceTypes = (model.LanguageFeatures & LanguageFeatures.NullableReferenceTypes) != 0,
+                UseRequiredProperties = (model.LanguageFeatures & LanguageFeatures.RequiredProperties) != 0,
+                UseInitOnlyProperties = (model.LanguageFeatures & LanguageFeatures.InitOnlyProperties) != 0,
+                UseUnsafeAccessors = (model.LanguageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
             },
             null,
             static member => member.Name);

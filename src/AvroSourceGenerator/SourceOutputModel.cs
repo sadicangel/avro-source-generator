@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator;
 
-internal sealed record class SourceOutputInfo(
+internal sealed record class SourceOutputModel(
     string SchemaJson,
     LanguageFeatures LanguageFeatures,
     string? NamespaceOverride,

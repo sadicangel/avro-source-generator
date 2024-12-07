@@ -1,17 +1,14 @@
-﻿using System.Diagnostics;
-using System.Reflection;
+﻿using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using Scriban;
-using Scriban.Functions;
-using Scriban.Parsing;
-using Scriban.Runtime;
 
 namespace AvroSourceGenerator;
 
@@ -60,84 +57,86 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
                         }
                     }
 
-                    var schemaVariable = declaration.Members
-                        .OfType<FieldDeclarationSyntax>()
-                        .SelectMany(f => f.Declaration.Variables)
-                        .FirstOrDefault(v => v.Identifier.Text == "AvroSchema");
-
-                    if (schemaVariable is null)
-                    {
-                        // TODO: Emit a diagnostic here for 'schema is null or empty' / must be provided.
-                        return null;
-                    }
-
-                    if (context.SemanticModel.GetDeclaredSymbol(schemaVariable, cancellationToken) is not IFieldSymbol schemaSymbol)
-                    {
-                        // TODO: Emit a diagnostic here for 'schema is null or empty' / must be provided.
-                        return null;
-                    }
-
-                    if (!schemaSymbol.IsConst)
-                    {
-                        // TODO: Emit a diagnostic here for 'schema must be a constant'.
-                        return null;
-                    }
-
-                    if (schemaSymbol.ConstantValue is not string { Length: > 0 } schemaJson)
-                    {
-                        // TODO: Emit a diagnostic here for 'schema is null or empty' / must be provided.
-                        return null;
-                    }
+                    var schemaField = GetSchemaField(context, declaration, cancellationToken, out var diagnostics);
 
                     return new SourceOutputModel(
-                        SchemaJson: schemaJson,
                         LanguageFeatures: languageFeatures,
                         NamespaceOverride: namespaceOverride,
                         RecordDeclaration: declaration.IsKind(SyntaxKind.RecordDeclaration) ? "record" : "class",
                         AccessModifier: GetAccessModifier(declaration),
-                        Diagnostics: []);
+                        SchemaField: schemaField,
+                        Diagnostics: diagnostics);
                 });
 
         context.RegisterSourceOutput(models, static (context, model) =>
         {
-            if (model is null)
+            foreach (var diagnostic in model.Diagnostics)
             {
-                // TODO: Report diagnostics here.
+                context.ReportDiagnostic(diagnostic);
+            }
+
+            if (!model.SchemaField.IsValid)
+            {
                 return;
             }
 
-            // TODO: Catch and handle JsonException and emit a diagnostic for invalid JSON schema.
-            using var document = JsonDocument.Parse(model.SchemaJson);
-
-            var schemaRegistry = new SchemaRegistry(model.LanguageFeatures, model.NamespaceOverride);
-            // TODO: Catch and handle invalid schema exceptions and emit diagnostics.
-            var rootSchema = schemaRegistry.Register(document.RootElement);
-
-            // We should get no render errors, so we don't have to handle anything else.
-            var builtin = new BuiltinFunctions();
-            builtin.Import(new
+            try
             {
-                SchemaRegistry = schemaRegistry,
-                model.RecordDeclaration,
-                model.AccessModifier,
-                model.LanguageFeatures,
-                UseNullableReferenceTypes = (model.LanguageFeatures & LanguageFeatures.NullableReferenceTypes) != 0,
-                UseRequiredProperties = (model.LanguageFeatures & LanguageFeatures.RequiredProperties) != 0,
-                UseInitOnlyProperties = (model.LanguageFeatures & LanguageFeatures.InitOnlyProperties) != 0,
-                UseUnsafeAccessors = (model.LanguageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
-            },
-            null,
-            static member => member.Name);
-            var templateContext = new TemplateContext(builtin)
-            {
-                MemberRenamer = static member => member.Name,
-                TemplateLoader = TemplateLoader.Instance,
-            };
+                using var document = JsonDocument.Parse(model.SchemaField.SchemaJson);
+                var schemaRegistry = new SchemaRegistry(model.LanguageFeatures, model.NamespaceOverride);
+                var rootSchema = schemaRegistry.Register(document.RootElement);
 
-            var sourceText = TemplateLoader.MainTemplate.Render(templateContext);
-            Debug.WriteLine(sourceText);
-            context.AddSource($"{rootSchema.Name}.Avro.g.cs", SourceText.From(sourceText, Encoding.UTF8));
+                // We should get no render errors, so we don't have to handle anything else.
+                var sourceText = AvroTemplate.Render(
+                    schemaRegistry: schemaRegistry,
+                    languageFeatures: model.LanguageFeatures,
+                    recordDeclaration: model.RecordDeclaration,
+                    accessModifier: model.AccessModifier);
+
+                Debug.WriteLine(sourceText);
+                context.AddSource($"{rootSchema.Name}.Avro.g.cs", SourceText.From(sourceText, Encoding.UTF8));
+            }
+            catch (JsonException ex)
+            {
+                context.ReportDiagnostic(InvalidJsonDiagnostic.Create(model.SchemaField.Location, ex.Message));
+            }
+            catch (InvalidSchemaException ex)
+            {
+                context.ReportDiagnostic(InvalidAvroSchemaDiagnostic.Create(model.SchemaField.Location, ex.Message));
+            }
         });
+    }
+
+    private static SchemaFieldInfo GetSchemaField(GeneratorAttributeSyntaxContext context, TypeDeclarationSyntax declaration, CancellationToken cancellationToken, out ImmutableArray<Diagnostic> diagnostics)
+    {
+        var schemaVariable = declaration.Members
+            .OfType<FieldDeclarationSyntax>()
+            .SelectMany(f => f.Declaration.Variables)
+            .FirstOrDefault(v => v.Identifier.Text == "AvroSchema");
+
+        if (schemaVariable is null)
+        {
+            diagnostics = [MissingAvroSchemaMemberDiagnostic.Create(declaration.GetLocation())];
+            return default;
+        }
+
+        if (context.SemanticModel.GetDeclaredSymbol(schemaVariable, cancellationToken) is not IFieldSymbol schemaSymbol
+            || schemaSymbol.IsConst is false || schemaSymbol.ConstantValue is not string { Length: > 0 } schemaJson)
+        {
+            diagnostics = [InvalidAvroSchemaMemberDiagnostic.Create(schemaVariable.GetLocation())];
+            return default;
+        }
+
+        var initializer = schemaVariable.Initializer?.Value;
+        if (initializer is null)
+        {
+            diagnostics = [InvalidAvroSchemaMemberDiagnostic.Create(schemaVariable.GetLocation())];
+            return default;
+        }
+
+        diagnostics = [];
+
+        return new SchemaFieldInfo(schemaJson, initializer.GetLocation());
     }
 
     private static string GetAccessModifier(TypeDeclarationSyntax typeDeclaration)
@@ -180,42 +179,4 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
 
         return accessModifier;
     }
-}
-
-file sealed class TemplateLoader : ITemplateLoader
-{
-    private static readonly Dictionary<string, string> s_templatePaths = new()
-    {
-        ["enum"] = "AvroSourceGenerator.Templates.enum.sbncs",
-        ["error"] = "AvroSourceGenerator.Templates.error.sbncs",
-        ["field"] = "AvroSourceGenerator.Templates.field.sbncs",
-        ["fixed"] = "AvroSourceGenerator.Templates.fixed.sbncs",
-        ["getput"] = "AvroSourceGenerator.Templates.getput.sbncs",
-        ["main"] = "AvroSourceGenerator.Templates.main.sbncs",
-        ["record"] = "AvroSourceGenerator.Templates.record.sbncs",
-        ["schema"] = "AvroSourceGenerator.Templates.schema.sbncs",
-    };
-
-    private static readonly Lazy<Template> s_mainTemplate = new(() =>
-    {
-        using var stream = typeof(AvroSourceGenerator).Assembly.GetManifestResourceStream(s_templatePaths["main"]);
-        using var reader = new StreamReader(stream);
-        return Template.Parse(reader.ReadToEnd());
-    });
-
-    public static ITemplateLoader Instance { get; } = new TemplateLoader();
-
-    public static Template MainTemplate => s_mainTemplate.Value;
-
-    public string GetPath(TemplateContext context, SourceSpan callerSpan, string templateName) =>
-        s_templatePaths[templateName];
-
-    public string Load(TemplateContext context, SourceSpan callerSpan, string templatePath)
-    {
-        using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(templatePath));
-        return reader.ReadToEnd();
-    }
-
-    public async ValueTask<string> LoadAsync(TemplateContext context, SourceSpan callerSpan, string templatePath) =>
-        await Task.FromResult(Load(context, callerSpan, templatePath));
 }

@@ -242,6 +242,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
             _ => QualifiedName.Object(UseNullableReferenceTypes & schema.EnumerateArray().Any(IsNull)),
         };
 
+        // TODO: Avoid allocating a new string to compare against "null".
         static bool IsNull(JsonElement schema) =>
             schema.ValueKind is JsonValueKind.String && schema.GetString() == "null";
     }

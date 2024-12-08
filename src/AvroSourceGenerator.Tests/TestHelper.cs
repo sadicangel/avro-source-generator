@@ -10,7 +10,8 @@ public readonly record struct GeneratedOutput(ImmutableArray<Diagnostic> Diagnos
 
 internal static class TestHelper
 {
-    public static SettingsTask Verify(params string[] sources) => Verifier.Verify(GenerateOutput(sources));
+    public static SettingsTask Verify(params string[] sources) =>
+        Verifier.Verify(GenerateOutput(sources));
 
     public static GeneratedOutput GenerateOutput(params string[] sources)
     {

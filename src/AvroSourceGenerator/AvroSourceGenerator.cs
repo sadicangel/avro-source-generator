@@ -156,6 +156,10 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             {
                 accessModifier = "protected internal";
             }
+            else if (modifiers.Any(SyntaxKind.PrivateKeyword))
+            {
+                accessModifier = "private protected";
+            }
             else
             {
                 accessModifier = "protected";
@@ -163,14 +167,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
         }
         else if (modifiers.Any(SyntaxKind.PrivateKeyword))
         {
-            if (modifiers.Any(SyntaxKind.ProtectedKeyword))
-            {
-                accessModifier = "private protected";
-            }
-            else
-            {
-                accessModifier = "private";
-            }
+            accessModifier = "private";
         }
         else if (modifiers.Any(SyntaxKind.FileKeyword))
         {

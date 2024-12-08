@@ -82,4 +82,33 @@ public sealed class AvroRecordTests
         }
         """")
         .UseParameters(declaration);
+
+    [Theory]
+    [InlineData("public")]
+    [InlineData("internal")]
+    [InlineData("protected internal")]
+    [InlineData("private")]
+    [InlineData("private protected")]
+    [InlineData("file")]
+    [InlineData("")]
+    public Task Generates_Correct_AccessModifier(string accessModifier) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace AvroSourceGenerator.Tests;
+        
+        [Avro]
+        {{accessModifier}} partial class Record
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Record",
+                "fields": []
+            }
+            """;
+        }
+        """")
+        .UseParameters(accessModifier);
 }

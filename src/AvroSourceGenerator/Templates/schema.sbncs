@@ -10,7 +10,7 @@
 {{~ if UseNullableReferenceTypes ~}}
 #nullable enable
 {{~ end ~}}
-namespace {{ Schema.Namespace }}
+namespace {{ Schema.Namespace | string.slice 8 }}
 {
     {{~ if Schema.Documentation ~}}
     /// <summary>

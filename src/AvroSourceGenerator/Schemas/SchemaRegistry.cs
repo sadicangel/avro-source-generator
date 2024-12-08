@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
@@ -247,93 +249,98 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
 
 file static class NameHelper
 {
-    private static readonly Dictionary<string, string> s_reserved = new()
+    public static bool IsReserved(ReadOnlySpan<char> name, [MaybeNullWhen(false)] out string replacement)
     {
-        ["bool"] = "@bool",
-        ["byte"] = "@byte",
-        ["sbyte"] = "@sbyte",
-        ["short"] = "@short",
-        ["ushort"] = "@ushort",
-        ["int"] = "@int",
-        ["uint"] = "@uint",
-        ["long"] = "@long",
-        ["ulong"] = "@ulong",
-        ["double"] = "@double",
-        ["float"] = "@float",
-        ["decimal"] = "@decimal",
-        ["string"] = "@string",
-        ["char"] = "@char",
-        ["void"] = "@void",
-        ["object"] = "@object",
-        ["typeof"] = "@typeof",
-        ["sizeof"] = "@sizeof",
-        ["null"] = "@null",
-        ["true"] = "@true",
-        ["false"] = "@false",
-        ["if"] = "@if",
-        ["else"] = "@else",
-        ["while"] = "@while",
-        ["for"] = "@for",
-        ["foreach"] = "@foreach",
-        ["do"] = "@do",
-        ["switch"] = "@switch",
-        ["case"] = "@case",
-        ["default"] = "@default",
-        ["try"] = "@try",
-        ["catch"] = "@catch",
-        ["finally"] = "@finally",
-        ["lock"] = "@lock",
-        ["goto"] = "@goto",
-        ["break"] = "@break",
-        ["continue"] = "@continue",
-        ["return"] = "@return",
-        ["throw"] = "@throw",
-        ["public"] = "@public",
-        ["private"] = "@private",
-        ["internal"] = "@internal",
-        ["protected"] = "@protected",
-        ["static"] = "@static",
-        ["readonly"] = "@readonly",
-        ["sealed"] = "@sealed",
-        ["const"] = "@const",
-        ["fixed"] = "@fixed",
-        ["stackalloc"] = "@stackalloc",
-        ["volatile"] = "@volatile",
-        ["new"] = "@new",
-        ["override"] = "@override",
-        ["abstract"] = "@abstract",
-        ["virtual"] = "@virtual",
-        ["event"] = "@event",
-        ["extern"] = "@extern",
-        ["ref"] = "@ref",
-        ["out"] = "@out",
-        ["in"] = "@in",
-        ["is"] = "@is",
-        ["as"] = "@as",
-        ["params"] = "@params",
-        ["__arglist"] = "@__arglist",
-        ["__makeref"] = "@__makeref",
-        ["__reftype"] = "@__reftype",
-        ["__refvalue"] = "@__refvalue",
-        ["this"] = "@this",
-        ["base"] = "@base",
-        ["namespace"] = "@namespace",
-        ["using"] = "@using",
-        ["class"] = "@class",
-        ["struct"] = "@struct",
-        ["interface"] = "@interface",
-        ["enum"] = "@enum",
-        ["delegate"] = "@delegate",
-        ["checked"] = "@checked",
-        ["unchecked"] = "@unchecked",
-        ["unsafe"] = "@unsafe",
-        ["operator"] = "@operator",
-        ["explicit"] = "@explicit",
-        ["implicit"] = "@implicit",
-    };
+        replacement = name switch
+        {
+            "bool" => "@bool",
+            "byte" => "@byte",
+            "sbyte" => "@sbyte",
+            "short" => "@short",
+            "ushort" => "@ushort",
+            "int" => "@int",
+            "uint" => "@uint",
+            "long" => "@long",
+            "ulong" => "@ulong",
+            "double" => "@double",
+            "float" => "@float",
+            "decimal" => "@decimal",
+            "string" => "@string",
+            "char" => "@char",
+            "void" => "@void",
+            "object" => "@object",
+            "typeof" => "@typeof",
+            "sizeof" => "@sizeof",
+            "null" => "@null",
+            "true" => "@true",
+            "false" => "@false",
+            "if" => "@if",
+            "else" => "@else",
+            "while" => "@while",
+            "for" => "@for",
+            "foreach" => "@foreach",
+            "do" => "@do",
+            "switch" => "@switch",
+            "case" => "@case",
+            "default" => "@default",
+            "try" => "@try",
+            "catch" => "@catch",
+            "finally" => "@finally",
+            "lock" => "@lock",
+            "goto" => "@goto",
+            "break" => "@break",
+            "continue" => "@continue",
+            "return" => "@return",
+            "throw" => "@throw",
+            "public" => "@public",
+            "private" => "@private",
+            "internal" => "@internal",
+            "protected" => "@protected",
+            "static" => "@static",
+            "readonly" => "@readonly",
+            "sealed" => "@sealed",
+            "const" => "@const",
+            "fixed" => "@fixed",
+            "stackalloc" => "@stackalloc",
+            "volatile" => "@volatile",
+            "new" => "@new",
+            "override" => "@override",
+            "abstract" => "@abstract",
+            "virtual" => "@virtual",
+            "event" => "@event",
+            "extern" => "@extern",
+            "ref" => "@ref",
+            "out" => "@out",
+            "in" => "@in",
+            "is" => "@is",
+            "as" => "@as",
+            "params" => "@params",
+            "__arglist" => "@__arglist",
+            "__makeref" => "@__makeref",
+            "__reftype" => "@__reftype",
+            "__refvalue" => "@__refvalue",
+            "this" => "@this",
+            "base" => "@base",
+            "namespace" => "@namespace",
+            "using" => "@using",
+            "class" => "@class",
+            "struct" => "@struct",
+            "interface" => "@interface",
+            "enum" => "@enum",
+            "delegate" => "@delegate",
+            "checked" => "@checked",
+            "unchecked" => "@unchecked",
+            "unsafe" => "@unsafe",
+            "operator" => "@operator",
+            "explicit" => "@explicit",
+            "implicit" => "@implicit",
+            _ => null
+        };
 
-    public static string GetValid(string name) =>
-        s_reserved.TryGetValue(name, out var reserved) ? reserved : name;
+        return replacement is not null;
+    }
+
+    public static string GetValid(string name) => IsReserved(name, out var replacement) ? replacement : name;
 
     public static string GetLocalName(JsonElement schema)
     {
@@ -347,9 +354,67 @@ file static class NameHelper
 
     public static string? GetNamespace(JsonElement schema)
     {
-        if (!schema.TryGetProperty("namespace", out var json))
+        // TODO: We can probably benefit from accessing the raw value directly instead of allocating a string.
+        if (!schema.TryGetProperty("namespace", out var json) || json.GetString() is not string @namespace)
             return null;
 
-        return GetValid(json.GetString()!);
+        var builder = new StringBuilder("global::");
+
+        foreach (var part in new SplitEnumerable(@namespace, '.'))
+        {
+            if (IsReserved(part, out var replacement))
+            {
+                builder.Append(replacement);
+            }
+            else
+            {
+                builder.EnsureCapacity(builder.Length + part.Length);
+                for (var i = 0; i < part.Length; ++i)
+                    builder.Append(part[i]);
+            }
+        }
+
+        return builder.ToString();
+    }
+}
+
+file readonly ref struct SplitEnumerable(ReadOnlySpan<char> value, char separator)
+{
+    private readonly ReadOnlySpan<char> _value = value;
+    private readonly char _separator = separator;
+
+    public SplitEnumerator GetEnumerator() => new(_value, _separator);
+
+    public ref struct SplitEnumerator
+    {
+        private readonly ReadOnlySpan<char> _value;
+        private readonly char _separator;
+        private int _start;
+        public SplitEnumerator(ReadOnlySpan<char> value, char separator)
+        {
+            _value = value;
+            _separator = separator;
+            _start = -1;
+            Current = default;
+        }
+        public ReadOnlySpan<char> Current { get; private set; }
+
+        public bool MoveNext()
+        {
+            if (_start >= _value.Length)
+            {
+                return false;
+            }
+            var end = _value[(_start + 1)..].IndexOf(_separator);
+            if (end == -1)
+            {
+                Current = _value[(_start + 1)..];
+                _start = _value.Length;
+                return true;
+            }
+            Current = _value.Slice(_start + 1, end - _start - 1);
+            _start = end;
+            return true;
+        }
     }
 }

@@ -130,10 +130,10 @@ namespace SchemaNamespace
         public required byte[] BytesField { get; init; }
         public string? NullableStringField { get; init; }
         public int DefaultIntField { get; init; } = 42;
-        public required SchemaNamespace.TestEnum EnumField { get; init; }
+        public required global::SchemaNamespace.TestEnum EnumField { get; init; }
         public required global::System.Collections.Generic.IList<string> ArrayField { get; init; }
         public required global::System.Collections.Generic.IDictionary<string, int> MapField { get; init; }
-        public required SchemaNamespace.NestedRecord NestedRecordField { get; init; }
+        public required global::SchemaNamespace.NestedRecord NestedRecordField { get; init; }
         public required global::System.DateTime LogicalDateField { get; init; }
         public required global::System.DateTime LogicalTimestampField { get; init; }
      

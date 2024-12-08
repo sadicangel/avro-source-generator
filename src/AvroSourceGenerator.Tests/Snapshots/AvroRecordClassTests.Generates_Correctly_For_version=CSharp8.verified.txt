@@ -114,10 +114,10 @@ namespace SchemaNamespace
         public byte[] BytesField { get; set; }
         public string? NullableStringField { get; set; }
         public int DefaultIntField { get; set; } = 42;
-        public SchemaNamespace.TestEnum EnumField { get; set; }
+        public global::SchemaNamespace.TestEnum EnumField { get; set; }
         public global::System.Collections.Generic.IList<string> ArrayField { get; set; }
         public global::System.Collections.Generic.IDictionary<string, int> MapField { get; set; }
-        public SchemaNamespace.NestedRecord NestedRecordField { get; set; }
+        public global::SchemaNamespace.NestedRecord NestedRecordField { get; set; }
         public global::System.DateTime LogicalDateField { get; set; }
         public global::System.DateTime LogicalTimestampField { get; set; }
      

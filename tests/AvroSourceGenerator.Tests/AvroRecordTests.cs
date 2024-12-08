@@ -15,13 +15,13 @@ public sealed class AvroRecordTests
 
     [Theory]
     [MemberData(nameof(GetLanguageFeatures))]
-    public Task Generates_Correctly_For(string version) => TestHelper.Verify($$""""
+    public Task Generates_Correct_Features(string features) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
 
         namespace AvroSourceGenerator.Tests;
 
-        [Avro(LanguageFeatures = LanguageFeatures.{{version}})]
+        [Avro(LanguageFeatures = LanguageFeatures.{{features}})]
         public partial class Record
         {
             public const string AvroSchema = """
@@ -57,7 +57,7 @@ public sealed class AvroRecordTests
             """;
         }
         """")
-        .UseParameters(version);
+        .UseParameters(features);
 
     [Theory]
     [InlineData("class")]

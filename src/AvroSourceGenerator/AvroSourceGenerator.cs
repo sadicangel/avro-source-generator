@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
@@ -13,7 +11,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace AvroSourceGenerator;
 
 [Generator(LanguageNames.CSharp)]
-internal sealed class AvroSourceGenerator : IIncrementalGenerator
+public sealed class AvroSourceGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -35,13 +33,13 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
 
                     var symbol = Unsafe.As<INamedTypeSymbol>(context.TargetSymbol);
 
-                    var avroAttribute = context.Attributes
+                    var attribute = context.Attributes
                         .Single(attr => attr.AttributeClass?.Name == nameof(AvroAttribute));
 
                     var languageFeatures = LanguageFeatures.Latest;
                     var namespaceOverride = default(string);
 
-                    foreach (var kvp in avroAttribute.NamedArguments)
+                    foreach (var kvp in attribute.NamedArguments)
                     {
                         var name = kvp.Key;
                         var value = kvp.Value.Value;
@@ -68,7 +66,7 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
                         Diagnostics: diagnostics);
                 });
 
-        context.RegisterSourceOutput(models, static (context, model) =>
+        context.RegisterImplementationSourceOutput(models, static (context, model) =>
         {
             foreach (var diagnostic in model.Diagnostics)
             {
@@ -87,14 +85,16 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
                 var rootSchema = schemaRegistry.Register(document.RootElement);
 
                 // We should get no render errors, so we don't have to handle anything else.
-                var sourceText = AvroTemplate.Render(
+                var renderOutputs = AvroTemplate.Render(
                     schemaRegistry: schemaRegistry,
                     languageFeatures: model.LanguageFeatures,
                     recordDeclaration: model.RecordDeclaration,
                     accessModifier: model.AccessModifier);
 
-                Debug.WriteLine(sourceText);
-                context.AddSource($"{rootSchema.Name}.Avro.g.cs", SourceText.From(sourceText, Encoding.UTF8));
+                foreach (var renderOutput in renderOutputs)
+                {
+                    context.AddSource(renderOutput.HintName, SourceText.From(renderOutput.SourceText, Encoding.UTF8));
+                }
             }
             catch (JsonException ex)
             {
@@ -107,7 +107,7 @@ internal sealed class AvroSourceGenerator : IIncrementalGenerator
         });
     }
 
-    private static SchemaFieldInfo GetSchemaField(GeneratorAttributeSyntaxContext context, TypeDeclarationSyntax declaration, CancellationToken cancellationToken, out ImmutableArray<Diagnostic> diagnostics)
+    private static SchemaFieldInfo GetSchemaField(GeneratorAttributeSyntaxContext context, TypeDeclarationSyntax declaration, CancellationToken cancellationToken, out EquatableArray<Diagnostic> diagnostics)
     {
         var schemaVariable = declaration.Members
             .OfType<FieldDeclarationSyntax>()

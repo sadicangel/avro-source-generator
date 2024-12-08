@@ -3,8 +3,11 @@ using AvroSourceGenerator.Schemas;
 using Scriban;
 using Scriban.Parsing;
 using Scriban.Runtime;
+using Scriban.Syntax;
 
 namespace AvroSourceGenerator;
+
+internal readonly record struct RenderOutput(string HintName, string SourceText);
 
 internal static class AvroTemplate
 {
@@ -15,19 +18,20 @@ internal static class AvroTemplate
         TemplateLoader = new TemplateLoader(),
     };
 
-    internal static Template MainTemplate
+    internal static Template SchemaTemplate
     {
         get
         {
-            var path = s_templateContext.TemplateLoader.GetPath(s_templateContext, default, "main");
+            var path = s_templateContext.TemplateLoader.GetPath(s_templateContext, default, "schema");
             if (!s_templateContext.CachedTemplates.TryGetValue(path, out var template))
                 template = s_templateContext.CachedTemplates[path] = Template.Parse(s_templateContext.TemplateLoader.Load(s_templateContext, default, path));
             return template;
         }
     }
 
-    public static string Render(SchemaRegistry schemaRegistry, LanguageFeatures languageFeatures, string recordDeclaration, string accessModifier)
+    public static IEnumerable<RenderOutput> Render(SchemaRegistry schemaRegistry, LanguageFeatures languageFeatures, string recordDeclaration, string accessModifier)
     {
+        // TODO: Can we implement IScriptObject to represent the scope?
         var scope = new ScriptObject();
         scope.Import(new
         {
@@ -43,10 +47,14 @@ internal static class AvroTemplate
         s_templateContext.MemberRenamer);
 
         s_templateContext.PushGlobal(scope);
-        var output = MainTemplate.Render(s_templateContext);
+        foreach (var schema in schemaRegistry)
+        {
+            s_templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
+            var hintName = $"{schema.Name}.Avro.g.cs";
+            var sourceText = SchemaTemplate.Render(s_templateContext);
+            yield return new RenderOutput(hintName, sourceText);
+        }
         s_templateContext.PopGlobal();
-
-        return output;
     }
 }
 

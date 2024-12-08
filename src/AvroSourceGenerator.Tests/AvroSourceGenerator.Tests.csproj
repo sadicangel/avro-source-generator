@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net472</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <LangVersion>default</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -21,6 +21,9 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="System.Formats.Asn1" />
     <PackageReference Include="System.Text.Encodings.Web" />
+    <PackageReference Include="Verify.DiffPlex" />
+    <PackageReference Include="Verify.SourceGenerators" />
+    <PackageReference Include="Verify.Xunit" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
@@ -33,8 +36,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AvroSourceGenerator\AvroSourceGenerator.csproj" />
     <ProjectReference Include="..\AvroSourceGenerator.Attributes\AvroSourceGenerator.Attributes.csproj" />
+    <ProjectReference Include="..\AvroSourceGenerator\AvroSourceGenerator.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Snapshots\" />
   </ItemGroup>
 
 </Project>

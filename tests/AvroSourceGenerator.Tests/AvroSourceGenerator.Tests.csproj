@@ -36,8 +36,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AvroSourceGenerator.Attributes\AvroSourceGenerator.Attributes.csproj" />
-        <ProjectReference Include="..\AvroSourceGenerator\AvroSourceGenerator.csproj" />
+        <ProjectReference Include="..\..\src\AvroSourceGenerator.Attributes\AvroSourceGenerator.Attributes.csproj" />
+        <ProjectReference Include="..\..\src\AvroSourceGenerator\AvroSourceGenerator.csproj" />
     </ItemGroup>
 
 </Project>

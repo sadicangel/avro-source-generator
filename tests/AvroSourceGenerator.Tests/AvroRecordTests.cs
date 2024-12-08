@@ -1,4 +1,6 @@
-﻿namespace AvroSourceGenerator.Tests;
+﻿using System.Text.Json;
+
+namespace AvroSourceGenerator.Tests;
 
 public sealed class AvroRecordTests
 {
@@ -141,4 +143,31 @@ public sealed class AvroRecordTests
         }
         """")
         .UseParameters(useCSharpNamespace);
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("Single line comment")]
+    [InlineData("Multi\nline\ncomment")]
+    public Task Generates_Correct_Summary(string? doc) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro]
+        public partial class Record
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "doc": {{(doc is null ? "null" : $"\"{JsonEncodedText.Encode(doc)}\"")}},
+                "name": "Record",
+                "fields": []
+            }
+            """;
+        }
+        """")
+        .UseParameters(doc);
 }

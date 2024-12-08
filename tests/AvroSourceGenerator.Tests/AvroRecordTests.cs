@@ -19,7 +19,7 @@ public sealed class AvroRecordTests
         using System;
         using AvroSourceGenerator;
 
-        namespace AvroSourceGenerator.Tests;
+        namespace CSharpNamespace;
 
         [Avro(LanguageFeatures = LanguageFeatures.{{features}})]
         public partial class Record
@@ -66,7 +66,7 @@ public sealed class AvroRecordTests
         using System;
         using AvroSourceGenerator;
         
-        namespace AvroSourceGenerator.Tests;
+        namespace CSharpNamespace;
         
         [Avro]
         public partial {{declaration}} Record
@@ -95,7 +95,7 @@ public sealed class AvroRecordTests
         using System;
         using AvroSourceGenerator;
         
-        namespace AvroSourceGenerator.Tests;
+        namespace CSharpNamespace;
         
         [Avro]
         {{accessModifier}} partial class Record
@@ -111,4 +111,34 @@ public sealed class AvroRecordTests
         }
         """")
         .UseParameters(accessModifier);
+
+    [Theory]
+    [InlineData("false")]
+    [InlineData("true")]
+    public Task Generates_Correct_Namespace(string useCSharpNamespace) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro(UseCSharpNamespace = {{useCSharpNamespace}})]
+        public partial class Record
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Record",
+                "fields": [
+                    { "name": "NestedRecordField", "namespace": "SchemaNamespace", "type": {
+                        "type": "record",
+                        "name": "NestedRecord",
+                        "fields": []
+                    } }
+                ]
+            }
+            """;
+        }
+        """")
+        .UseParameters(useCSharpNamespace);
 }

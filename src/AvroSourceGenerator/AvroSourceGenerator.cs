@@ -50,7 +50,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
                                 languageFeatures = (LanguageFeatures)value;
                                 break;
                             case nameof(AvroAttribute.UseCSharpNamespace) when value is true:
-                                namespaceOverride = symbol.ContainingNamespace?.ToDisplayString();
+                                namespaceOverride = symbol.ContainingNamespace?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                                 break;
                         }
                     }

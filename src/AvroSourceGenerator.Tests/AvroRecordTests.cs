@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Tests;
 
-public sealed class AvroRecordClassTests
+public sealed class AvroRecordTests
 {
     public static TheoryData<string> GetLanguageFeatures() =>
     [
@@ -58,4 +58,51 @@ public sealed class AvroRecordClassTests
         }
         """")
         .UseParameters(version);
+
+    [Theory]
+    [InlineData("class")]
+    [InlineData("record")]
+    public Task Generates_Correct_Declaration(string declaration) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace AvroSourceGenerator.Tests;
+        
+        [Avro]
+        public partial {{declaration}} Record
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Record",
+                "fields": [
+                    { "name": "StringField", "type": "string" },
+                    { "name": "IntField", "type": "int" },
+                    { "name": "LongField", "type": "long" },
+                    { "name": "FloatField", "type": "float" },
+                    { "name": "DoubleField", "type": "double" },
+                    { "name": "BooleanField", "type": "boolean" },
+                    { "name": "BytesField", "type": "bytes" },
+                    { "name": "NullableStringField", "type": ["null", "string"], "default": null },
+                    { "name": "DefaultIntField", "type": "int", "default": 42 },
+                    { "name": "EnumField", "type": { "type": "enum", "name": "TestEnum", "symbols": ["A", "B", "C"] } },
+                    { "name": "ArrayField", "type": { "type": "array", "items": "string" } },
+                    { "name": "MapField", "type": { "type": "map", "values": "int" } },
+                    { "name": "NestedRecordField", "type": {
+                        "type": "record",
+                        "name": "NestedRecord",
+                        "fields": [
+                            { "name": "NestedStringField", "type": "string" },
+                            { "name": "NestedIntField", "type": "int" }
+                        ]
+                    } },
+                    { "name": "LogicalDateField", "type": { "type": "int", "logicalType": "date" } },
+                    { "name": "LogicalTimestampField", "type": { "type": "long", "logicalType": "timestamp-millis" } }
+                ]
+            }
+            """;
+        }
+        """")
+        .UseParameters(declaration);
 }

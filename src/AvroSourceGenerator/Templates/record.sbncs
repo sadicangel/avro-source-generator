@@ -1,4 +1,4 @@
-{{ AccessModifier }} partial {{ IsRecordDeclaration ? 'record' : 'class' }} {{ $.schema.Name }} : global::Avro.Specific.ISpecificRecord
+{{ AccessModifier }} partial {{ RecordDeclaration }} {{ $.schema.Name }} : global::Avro.Specific.ISpecificRecord
 {    
     {{~ for field in $.schema.Fields ~}}
     {{ include 'field' field: field }}

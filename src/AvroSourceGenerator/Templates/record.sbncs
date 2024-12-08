@@ -1,9 +1,9 @@
 {{ AccessModifier }} partial {{ RecordDeclaration }} {{ $.schema.Name }} : global::Avro.Specific.ISpecificRecord
-{    
+{
     {{~ for field in $.schema.Fields ~}}
     {{ include 'field' field: field }}
     {{~ end ~}}
- 
+
     public global::Avro.Schema Schema { get => {{ $.schema.Name }}._SCHEMA; }
     public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
     {{ $.schema.Json }}

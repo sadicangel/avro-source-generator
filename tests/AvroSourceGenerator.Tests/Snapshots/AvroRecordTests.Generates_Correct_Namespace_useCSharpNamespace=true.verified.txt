@@ -11,8 +11,8 @@ namespace CSharpNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial class NestedRecord : global::Avro.Specific.ISpecificRecord
-    {    
-     
+    {
+    
         public global::Avro.Schema Schema { get => NestedRecord._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
         {
@@ -55,9 +55,9 @@ namespace CSharpNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial class Record : global::Avro.Specific.ISpecificRecord
-    {    
+    {
         public required global::CSharpNamespace.NestedRecord NestedRecordField { get; init; }
-     
+    
         public global::Avro.Schema Schema { get => Record._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
         {

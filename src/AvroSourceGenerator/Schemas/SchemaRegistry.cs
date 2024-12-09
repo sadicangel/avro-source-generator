@@ -97,7 +97,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
         {
             var documentation = Helper.GetDocumentation(schema);
             var aliases = Helper.GetAliases(schema);
-            var symbols = schema.GetProperty("symbols").EnumerateArray().Select(symbol => Helper.GetValid(symbol.GetString() ?? throw new InvalidSchemaException($"Invalid symbol in schema: {schema.GetRawText()}"))).ToImmutableArray();
+            var symbols = Helper.GetSymbols(schema);
             var @default = schema.TryGetProperty("default", out var def) ? def.GetString() : null;
             if (@default is not null && symbols.IndexOf(@default) is -1)
                 throw new InvalidSchemaException($"Default value '{@default}' not found in symbols for schema: {schema.GetRawText()}");
@@ -388,9 +388,32 @@ file static class Helper
             return [];
         }
 
+        if (ali.ValueKind is not JsonValueKind.Array)
+        {
+            throw new InvalidSchemaException($"Property 'aliases' must be an array in schema: {schema.GetRawText()}");
+        }
+
         return ali.EnumerateArray()
             .Select(alias => alias.GetString()
                 ?? throw new InvalidSchemaException($"Invalid alias in schema: {schema.GetRawText()}"))
+            .ToImmutableArray();
+    }
+
+    public static ImmutableArray<string> GetSymbols(JsonElement schema)
+    {
+        if (!schema.TryGetProperty("symbols", out var symbols) || symbols.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+        {
+            throw new InvalidSchemaException($"Missing 'symbols' property in schema: {schema.GetRawText()}");
+        }
+
+        if (symbols.ValueKind is not JsonValueKind.Array)
+        {
+            throw new InvalidSchemaException($"Property 'symbols' must be an array in schema: {schema.GetRawText()}");
+        }
+
+        return symbols.EnumerateArray()
+            .Select(symbol => GetValid(symbol.GetString()
+                ?? throw new InvalidSchemaException($"Invalid symbol in schema: {schema.GetRawText()}")))
             .ToImmutableArray();
     }
 

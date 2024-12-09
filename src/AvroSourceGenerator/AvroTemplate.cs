@@ -11,26 +11,17 @@ internal readonly record struct RenderOutput(string HintName, string SourceText)
 
 internal static class AvroTemplate
 {
-    // Base context for all rendering.
-    private static readonly TemplateContext s_templateContext = new()
-    {
-        MemberRenamer = member => member.Name,
-        TemplateLoader = new TemplateLoader(),
-    };
-
-    internal static Template SchemaTemplate
-    {
-        get
-        {
-            var path = s_templateContext.TemplateLoader.GetPath(s_templateContext, default, "schema");
-            if (!s_templateContext.CachedTemplates.TryGetValue(path, out var template))
-                template = s_templateContext.CachedTemplates[path] = Template.Parse(s_templateContext.TemplateLoader.Load(s_templateContext, default, path));
-            return template;
-        }
-    }
-
     public static IEnumerable<RenderOutput> Render(SchemaRegistry schemaRegistry, LanguageFeatures languageFeatures, string recordDeclaration, string accessModifier)
     {
+        var templateContext = new TemplateContext()
+        {
+            MemberRenamer = member => member.Name,
+            TemplateLoader = new TemplateLoader(),
+        };
+
+        var schemaTemplatePath = templateContext.TemplateLoader.GetPath(templateContext, default, "schema");
+        var schemaTemplate = templateContext.CachedTemplates[schemaTemplatePath] = Template.Parse(templateContext.TemplateLoader.Load(templateContext, default, schemaTemplatePath));
+
         // TODO: Can we implement IScriptObject to represent the scope?
         var scope = new ScriptObject();
         scope.Import(new
@@ -44,17 +35,17 @@ internal static class AvroTemplate
             UseUnsafeAccessors = (languageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
         },
         filter: null,
-        s_templateContext.MemberRenamer);
+        templateContext.MemberRenamer);
 
-        s_templateContext.PushGlobal(scope);
+        templateContext.PushGlobal(scope);
         foreach (var schema in schemaRegistry)
         {
-            s_templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
+            templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
             var hintName = $"{schema.Name}.Avro.g.cs";
-            var sourceText = SchemaTemplate.Render(s_templateContext);
+            var sourceText = schemaTemplate.Render(templateContext);
             yield return new RenderOutput(hintName, sourceText);
         }
-        s_templateContext.PopGlobal();
+        templateContext.PopGlobal();
     }
 }
 

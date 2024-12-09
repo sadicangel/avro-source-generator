@@ -49,7 +49,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
             "double" => QualifiedName.Double(nullable),
             "bytes" => QualifiedName.Bytes(UseNullableReferenceTypes & nullable),
             "string" => QualifiedName.String(UseNullableReferenceTypes & nullable),
-            _ when _schemas.TryGetValue(new QualifiedName(NameHelper.GetValid(name), @namespace), out var registeredType) => registeredType.QualifiedName,
+            _ when _schemas.TryGetValue(new QualifiedName(Helper.GetValid(name), @namespace), out var registeredType) => registeredType.QualifiedName,
             _ => throw new InvalidSchemaException($"Unknown schema type: {name}")
         };
     }
@@ -89,20 +89,20 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
 
     private QualifiedName Enum(JsonElement schema, string? @namespace, bool nullable)
     {
-        var localName = NameHelper.GetLocalName(schema);
-        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
+        var localName = Helper.GetLocalName(schema);
+        @namespace = namespaceOverride ?? Helper.GetNamespace(schema) ?? @namespace;
         var name = new QualifiedName(localName, @namespace);
 
-        if (!_schemas.TryGetValue(name, out var enumSchema))
+        if (!_schemas.ContainsKey(name))
         {
-            var documentation = schema.TryGetProperty("doc", out var doc) ? doc.GetString() : null;
-            var aliases = schema.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidSchemaException($"Invalid alias in schema: {schema.GetRawText()}")).ToImmutableArray() : [];
-            var symbols = schema.GetProperty("symbols").EnumerateArray().Select(symbol => NameHelper.GetValid(symbol.GetString() ?? throw new InvalidSchemaException($"Invalid symbol in schema: {schema.GetRawText()}"))).ToImmutableArray();
+            var documentation = Helper.GetDocumentation(schema);
+            var aliases = Helper.GetAliases(schema);
+            var symbols = schema.GetProperty("symbols").EnumerateArray().Select(symbol => Helper.GetValid(symbol.GetString() ?? throw new InvalidSchemaException($"Invalid symbol in schema: {schema.GetRawText()}"))).ToImmutableArray();
             var @default = schema.TryGetProperty("default", out var def) ? def.GetString() : null;
             if (@default is not null && symbols.IndexOf(@default) is -1)
                 throw new InvalidSchemaException($"Default value '{@default}' not found in symbols for schema: {schema.GetRawText()}");
 
-            _schemas[name] = enumSchema = new EnumSchema(schema, name, documentation, aliases, symbols, @default);
+            _schemas[name] = new EnumSchema(schema, name, documentation, aliases, symbols, @default);
         }
 
         return nullable ? name.ToNullable() : name;
@@ -110,17 +110,17 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
 
     private QualifiedName Record(JsonElement schema, string? @namespace, bool nullable)
     {
-        var localName = NameHelper.GetLocalName(schema);
-        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
+        var localName = Helper.GetLocalName(schema);
+        @namespace = namespaceOverride ?? Helper.GetNamespace(schema) ?? @namespace;
         var name = new QualifiedName(localName, @namespace);
 
-        if (!_schemas.TryGetValue(name, out var recordSchema))
+        if (!_schemas.ContainsKey(name))
         {
-            var documentation = schema.TryGetProperty("doc", out var doc) ? doc.GetString() : null;
-            var aliases = schema.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidSchemaException($"Invalid alias in schema: {schema.GetRawText()}")).ToImmutableArray() : [];
+            var documentation = Helper.GetDocumentation(schema);
+            var aliases = Helper.GetAliases(schema);
             var fields = schema.GetProperty("fields").EnumerateArray().Select(field => Field(field, @namespace)).ToImmutableArray();
 
-            _schemas[name] = recordSchema = new RecordSchema(schema, name, documentation, aliases, fields);
+            _schemas[name] = new RecordSchema(schema, name, documentation, aliases, fields);
         }
 
         return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;
@@ -128,17 +128,17 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
 
     private QualifiedName Error(JsonElement schema, string? @namespace, bool nullable)
     {
-        var localName = NameHelper.GetLocalName(schema);
-        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
+        var localName = Helper.GetLocalName(schema);
+        @namespace = namespaceOverride ?? Helper.GetNamespace(schema) ?? @namespace;
         var name = new QualifiedName(localName, @namespace);
 
-        if (!_schemas.TryGetValue(name, out var recordSchema))
+        if (!_schemas.ContainsKey(name))
         {
-            var documentation = schema.TryGetProperty("doc", out var doc) ? doc.GetString() : null;
-            var aliases = schema.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidSchemaException($"Invalid alias in schema: {schema.GetRawText()}")).ToImmutableArray() : [];
+            var documentation = Helper.GetDocumentation(schema);
+            var aliases = Helper.GetAliases(schema);
             var fields = schema.GetProperty("fields").EnumerateArray().Select(field => Field(field, @namespace)).ToImmutableArray();
 
-            _schemas[name] = recordSchema = new ErrorSchema(schema, name, documentation, aliases, fields);
+            _schemas[name] = new ErrorSchema(schema, name, documentation, aliases, fields);
         }
 
         return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;
@@ -146,10 +146,10 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
 
     private Field Field(JsonElement field, string? @namespace)
     {
-        var name = NameHelper.GetLocalName(field);
+        var name = Helper.GetLocalName(field);
         var type = Type(field.GetProperty("type"), @namespace, nullable: false);
-        var documentation = field.TryGetProperty("doc", out var doc) ? doc.GetString() : null;
-        var aliases = field.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidSchemaException($"Invalid alias in field: {field.GetRawText()}")).ToImmutableArray() : [];
+        var documentation = Helper.GetDocumentation(field);
+        var aliases = Helper.GetAliases(field);
         var @default = field.TryGetProperty("default", out var def) ? GetValue(type, def) : null;
         var order = field.TryGetProperty("order", out var ord) ? ord.GetInt32() : default(int?);
         return new Field(name, type, documentation, aliases, @default, order);
@@ -184,17 +184,17 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
 
     private QualifiedName Fixed(JsonElement schema, string? @namespace, bool nullable)
     {
-        var localName = NameHelper.GetLocalName(schema);
-        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
+        var localName = Helper.GetLocalName(schema);
+        @namespace = namespaceOverride ?? Helper.GetNamespace(schema) ?? @namespace;
         var name = new QualifiedName(localName, @namespace);
 
-        if (!_schemas.TryGetValue(name, out var fixedSchema))
+        if (!_schemas.ContainsKey(name))
         {
-            var documentation = schema.TryGetProperty("doc", out var doc) ? doc.GetString() : null;
-            var aliases = schema.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidSchemaException($"Invalid alias in schema: {schema.GetRawText()}")).ToImmutableArray() : [];
+            var documentation = Helper.GetDocumentation(schema);
+            var aliases = Helper.GetAliases(schema);
             var size = schema.GetProperty("size").GetInt32();
 
-            _schemas[name] = fixedSchema = new FixedSchema(schema, name, documentation, aliases, size);
+            _schemas[name] = new FixedSchema(schema, name, documentation, aliases, size);
         }
 
         return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;
@@ -248,7 +248,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
     }
 }
 
-file static class NameHelper
+file static class Helper
 {
     public static bool IsReserved(ReadOnlySpan<char> name, [MaybeNullWhen(false)] out string replacement)
     {
@@ -377,6 +377,23 @@ file static class NameHelper
 
         return builder.ToString();
     }
+
+    public static string? GetDocumentation(JsonElement schema) =>
+        schema.TryGetProperty("doc", out var doc) ? doc.GetString() : null;
+
+    public static ImmutableArray<string> GetAliases(JsonElement schema)
+    {
+        if (!schema.TryGetProperty("aliases", out var ali) || ali.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+        {
+            return [];
+        }
+
+        return ali.EnumerateArray()
+            .Select(alias => alias.GetString()
+                ?? throw new InvalidSchemaException($"Invalid alias in schema: {schema.GetRawText()}"))
+            .ToImmutableArray();
+    }
+
 }
 
 file readonly ref struct SplitEnumerable(ReadOnlySpan<char> value, char separator)

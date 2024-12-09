@@ -170,4 +170,31 @@ public sealed class AvroRecordTests
         }
         """")
         .UseParameters(doc);
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("[\"Alias1\"]")]
+    [InlineData("[\"Alias1\", \"Alias2\"]")]
+    public Task Generates_Correct_Aliases(string aliases) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro]
+        public partial class Record
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Record",
+                "aliases": {{aliases}},
+                "fields": []
+            }
+            """;
+        }
+        """")
+        .UseParameters(aliases);
 }

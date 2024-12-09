@@ -154,4 +154,144 @@ public class AvroEnumTests
         }
         """")
         .UseParameters(aliases);
+
+    [Theory]
+    [InlineData("public")]
+    [InlineData("string")]
+    [InlineData("foreach")]
+    public Task Generates_Correct_Name_For_Reserved_Keywords(string name) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro]
+        partial class Wrapper
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Wrapper",
+                "fields": [
+                    { "name": "EnumField", "type": {
+                        "type": "enum", "name": "{{name}}", "symbols": []
+                    } }
+                ]
+            }
+            """;
+        }
+        """")
+        .UseParameters(name);
+
+    [Fact]
+    public Task Generates_Diagnostic_For_Missing_Name() => TestHelper.Verify(""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro]
+        partial class Wrapper
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Wrapper",
+                "fields": [
+                    { "name": "EnumField", "type": {
+                        "type": "enum", "symbols": []
+                    } }
+                ]
+            }
+            """;
+        }
+        """");
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("\"\"")]
+    [InlineData("[]")]
+    public Task Generates_Diagnostic_For_Invalid_Name(string name) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro]
+        partial class Wrapper
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Wrapper",
+                "fields": [
+                    { "name": "EnumField", "type": {
+                        "type": "enum", "name": {{name}}, "symbols": []
+                    } }
+                ]
+            }
+            """;
+        }
+        """")
+        .UseParameters(name);
+
+    [Theory]
+    [InlineData("null.name1.name2")]
+    [InlineData("name1.null.name2")]
+    [InlineData("name1.name2.null")]
+    public Task Generates_Correct_Namespace_For_Reserved_Keywords(string @namespace) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro]
+        partial class Wrapper
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Wrapper",
+                "fields": [
+                    { "name": "EnumField", "type": {
+                        "type": "enum", "name": "TestEnum", "namespace": "{{@namespace}}", "symbols": []
+                    } }
+                ]
+            }
+            """;
+        }
+        """")
+        .UseParameters(@namespace);
+
+    [Theory]
+    [InlineData("\"\"")]
+    [InlineData("[]")]
+    public Task Generates_Diagnostic_For_Invalid_Namespace(string @namespace) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro]
+        partial class Wrapper
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Wrapper",
+                "fields": [
+                    { "name": "EnumField", "type": {
+                        "type": "enum", "name": "TestEnum", "namespace": {{@namespace}}, "symbols": []
+                    } }
+                ]
+            }
+            """;
+        }
+        """")
+        .UseParameters(@namespace);
 }

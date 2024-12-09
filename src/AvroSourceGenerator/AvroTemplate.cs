@@ -41,7 +41,7 @@ internal static class AvroTemplate
         foreach (var schema in schemaRegistry)
         {
             templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
-            var hintName = $"{schema.Name}.Avro.g.cs";
+            var hintName = $"{schema.Name.Replace("@", "")}.Avro.g.cs";
             var sourceText = schemaTemplate.Render(templateContext);
             yield return new RenderOutput(hintName, sourceText);
         }

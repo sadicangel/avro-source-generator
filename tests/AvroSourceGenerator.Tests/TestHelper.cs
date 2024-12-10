@@ -38,7 +38,7 @@ internal static class TestHelper
 
         var documents = outputCompilation.SyntaxTrees
             .Where(st => !string.IsNullOrEmpty(st.FilePath))
-            .Select(st => new Document(st.FilePath, st.ToString()))
+            .Select(st => new Document(st.FilePath.Replace('\\', '/'), st.ToString()))
             .ToImmutableArray();
 
         return new(diagnostics, documents);

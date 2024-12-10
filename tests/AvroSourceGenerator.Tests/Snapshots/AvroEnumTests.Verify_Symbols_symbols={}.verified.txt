@@ -17,8 +17,8 @@
 ^^^^^^^^^^^^^^^^^^^
             { "name": "EnumField", "type": {
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                "type": "enum", "symbols": []
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                "type": "enum", "name": "TestEnum", "symbols": {}
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             } }
 ^^^^^^^^^^^^^^^
         ]
@@ -31,8 +31,8 @@
 */
  : (8,37)-(19,7),
       Message:
-The schema defined in the JSON is invalid: 'name' property is required in schema: {
-            "type": "enum", "symbols": []
+The schema defined in the JSON is invalid: 'symbols' property must be an array in schema: {
+            "type": "enum", "name": "TestEnum", "symbols": {}
         },
       Severity: Error,
       Descriptor: {

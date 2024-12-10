@@ -10,7 +10,7 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    internal enum TestEnum
+    public enum TestEnum
     {
         A,
         B,
@@ -29,9 +29,9 @@ namespace SchemaNamespace
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    internal partial class Wrapper : global::Avro.Specific.ISpecificRecord
+    public partial class Wrapper : global::Avro.Specific.ISpecificRecord
     {
-        public required global::SchemaNamespace.TestEnum EnumField { get; init; }
+        public global::SchemaNamespace.TestEnum EnumField { get; set; }
     
         public global::Avro.Schema Schema { get => Wrapper._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
@@ -60,12 +60,8 @@ namespace SchemaNamespace
         {
             switch (fieldPos)
             {
-                case 0:
-                    Set_EnumField(this, (TestEnum)fieldValue!); break;
-                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_EnumField")]
-                    extern static void Set_EnumField(Wrapper obj, TestEnum value);
-                default:
-                    throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
+                case 0: this.EnumField = (TestEnum)fieldValue!; break;
+                default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }
         }
     }

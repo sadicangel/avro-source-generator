@@ -44,4 +44,3 @@ internal static class TestHelper
         return new(diagnostics, documents);
     }
 }
-

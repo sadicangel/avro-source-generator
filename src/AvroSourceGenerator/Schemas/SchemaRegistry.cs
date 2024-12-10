@@ -14,30 +14,30 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
     public IEnumerator<AvroSchema> GetEnumerator() => _schemas.Values.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public AvroSchema Register(JsonElement schema)
+    public AvroSchema Register(JsonElement schema, string containingNamespace)
     {
-        var name = Type(schema, @namespace: null, nullable: false);
+        var name = Type(schema, containingNamespace, nullable: false);
 
         // The schema will only be registered if it's a named schema.
         return _schemas[name];
     }
 
-    private QualifiedName Type(JsonElement schema, string? @namespace, bool nullable)
+    private QualifiedName Type(JsonElement schema, string containingNamespace, bool nullable)
     {
         return schema.ValueKind switch
         {
-            JsonValueKind.String => KnownType(schema, @namespace, nullable),
-            JsonValueKind.Object => ComplexType(schema, @namespace, nullable),
-            JsonValueKind.Array => Union(schema, @namespace),
-            _ => throw new InvalidSchemaException($"Invalid schema type: {schema.GetRawText()}")
+            JsonValueKind.String => KnownType(schema, containingNamespace, nullable),
+            JsonValueKind.Object => ComplexType(schema, containingNamespace, nullable),
+            JsonValueKind.Array => Union(schema, containingNamespace),
+            _ => throw new InvalidSchemaException($"Invalid schema: {schema.GetRawText()}")
         };
     }
 
-    private QualifiedName KnownType(JsonElement schema, string? @namespace, bool nullable)
+    private QualifiedName KnownType(JsonElement schema, string containingNamespace, bool nullable)
     {
-        var name = schema.GetString() ?? throw new InvalidSchemaException($"Invalid schema: expected a string but got {schema.GetRawText()}");
+        var type = schema.GetString()!;
 
-        return name switch
+        return type switch
         {
             "null" => QualifiedName.Object(UseNullableReferenceTypes & nullable),
             "boolean" => QualifiedName.Boolean(nullable),
@@ -47,115 +47,144 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
             "double" => QualifiedName.Double(nullable),
             "bytes" => QualifiedName.Bytes(UseNullableReferenceTypes & nullable),
             "string" => QualifiedName.String(UseNullableReferenceTypes & nullable),
-            _ when _schemas.TryGetValue(new QualifiedName(NameHelper.GetValid(name), @namespace), out var registeredType) => registeredType.QualifiedName,
-            _ => throw new InvalidSchemaException($"Unknown schema type: {name}")
+            _ when _schemas.TryGetValue(new QualifiedName(JsonElementExtensions.GetValid(type), containingNamespace), out var registeredType) => registeredType.QualifiedName,
+            _ => throw new InvalidSchemaException($"Unknown schema '{type}' in {schema.GetRawText()}")
         };
     }
 
-    private QualifiedName ComplexType(JsonElement schema, string? @namespace, bool nullable)
+    private QualifiedName ComplexType(JsonElement schema, string containingNamespace, bool nullable)
     {
-        if (schema.TryGetProperty("logicalType", out var logicalType))
-            return Logical(logicalType, nullable);
+        if (schema.IsLogicalSchema())
+        {
+            return Logical(schema, nullable);
+        }
 
-        var type = schema.GetProperty("type").GetString() ?? throw new InvalidSchemaException($"Invalid schema: missing 'type' property in {schema.GetRawText()}");
+        var type = schema.GetSchemaTypeString();
 
         return type switch
         {
-            "array" => Array(schema, @namespace, nullable),
-            "map" => Map(schema, @namespace, nullable),
-            "enum" => Enum(schema, @namespace, nullable),
-            "record" => Record(schema, @namespace, nullable),
-            "error" => Error(schema, @namespace, nullable),
-            "fixed" => Fixed(schema, @namespace, nullable),
-            _ => throw new InvalidSchemaException($"Unknown complex schema type: {type} in {schema.GetRawText()}")
+            "array" => Array(schema, containingNamespace, nullable),
+            "map" => Map(schema, containingNamespace, nullable),
+            "enum" => Enum(schema, containingNamespace, nullable),
+            "record" => Record(schema, containingNamespace, nullable),
+            "error" => Error(schema, containingNamespace, nullable),
+            "fixed" => Fixed(schema, containingNamespace, nullable),
+            _ => throw new InvalidSchemaException($"Unknown schema '{type}' in {schema.GetRawText()}")
         };
     }
 
-    private QualifiedName Array(JsonElement schema, string? @namespace, bool nullable)
+    private QualifiedName Array(JsonElement schema, string containingNamespace, bool nullable)
     {
-        var items = Type(schema.GetProperty("items"), @namespace, nullable: false);
+        var itemsSchema = schema.GetSchemaItems();
+
+        var items = Type(itemsSchema, containingNamespace, nullable: false);
 
         return QualifiedName.Array(items, nullable);
     }
 
-    private QualifiedName Map(JsonElement schema, string? @namespace, bool nullable)
+    private QualifiedName Map(JsonElement schema, string containingNamespace, bool nullable)
     {
-        var values = Type(schema.GetProperty("values"), @namespace, nullable: false);
+        var valuesSchema = schema.GetSchemaValues();
+
+        var values = Type(valuesSchema, containingNamespace, nullable: false);
 
         return QualifiedName.Map(values, nullable);
     }
 
-    private QualifiedName Enum(JsonElement schema, string? @namespace, bool nullable)
+    private QualifiedName Enum(JsonElement schema, string containingNamespace, bool nullable)
     {
-        var localName = NameHelper.GetLocalName(schema);
-        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
+        var localName = schema.GetLocalName();
+        var @namespace = namespaceOverride ?? schema.GetNamespace() ?? containingNamespace;
         var name = new QualifiedName(localName, @namespace);
 
-        if (!_schemas.TryGetValue(name, out var enumSchema))
+        if (!_schemas.ContainsKey(name))
         {
-            var documentation = schema.TryGetProperty("doc", out var doc) ? doc.GetString() : null;
-            var aliases = schema.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidSchemaException($"Invalid alias in schema: {schema.GetRawText()}")).ToImmutableArray() : [];
-            var symbols = schema.GetProperty("symbols").EnumerateArray().Select(symbol => NameHelper.GetValid(symbol.GetString() ?? throw new InvalidSchemaException($"Invalid symbol in schema: {schema.GetRawText()}"))).ToImmutableArray();
-            var @default = schema.TryGetProperty("default", out var def) ? def.GetString() : null;
-            if (@default is not null && symbols.IndexOf(@default) is -1)
-                throw new InvalidSchemaException($"Default value '{@default}' not found in symbols for schema: {schema.GetRawText()}");
+            var documentation = schema.GetDocumentation();
+            var aliases = schema.GetAliases();
+            var symbols = schema.GetSymbols();
+            var @default = GetValue(symbols, schema.GetSchemaDefault());
 
-            _schemas[name] = enumSchema = new EnumSchema(schema, name, documentation, aliases, symbols, @default);
+            _schemas[name] = new EnumSchema(schema, name, documentation, aliases, symbols, @default);
         }
 
         return nullable ? name.ToNullable() : name;
+
+        static string? GetValue(ImmutableArray<string> symbols, JsonElement json)
+        {
+            if (json.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+            {
+                return null;
+            }
+
+            if (json.ValueKind is not JsonValueKind.String)
+            {
+                // TODO: Allow ignoring invalid non-required properties.
+                throw new InvalidSchemaException($"'default' must be a string in schema: {json.GetRawText()}");
+            }
+
+            var value = json.GetString();
+            if (symbols.IndexOf(value!) == -1)
+            {
+                throw new InvalidSchemaException($"Default value '{value}' not found in enum symbols: {string.Join(", ", symbols)}");
+            }
+
+            return value;
+        }
     }
 
-    private QualifiedName Record(JsonElement schema, string? @namespace, bool nullable)
+    private QualifiedName Record(JsonElement schema, string containingNamespace, bool nullable)
     {
-        var localName = NameHelper.GetLocalName(schema);
-        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
+        var localName = schema.GetLocalName();
+        var @namespace = namespaceOverride ?? schema.GetNamespace() ?? containingNamespace;
         var name = new QualifiedName(localName, @namespace);
 
-        if (!_schemas.TryGetValue(name, out var recordSchema))
+        if (!_schemas.ContainsKey(name))
         {
-            var documentation = schema.TryGetProperty("doc", out var doc) ? doc.GetString() : null;
-            var aliases = schema.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidSchemaException($"Invalid alias in schema: {schema.GetRawText()}")).ToImmutableArray() : [];
-            var fields = schema.GetProperty("fields").EnumerateArray().Select(field => Field(field, @namespace)).ToImmutableArray();
+            var documentation = schema.GetDocumentation();
+            var aliases = schema.GetAliases();
+            var fields = Fields(schema, @namespace);
 
-            _schemas[name] = recordSchema = new RecordSchema(schema, name, documentation, aliases, fields);
+            _schemas[name] = new RecordSchema(schema, name, documentation, aliases, fields);
         }
 
         return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;
     }
 
-    private QualifiedName Error(JsonElement schema, string? @namespace, bool nullable)
+    private QualifiedName Error(JsonElement schema, string containingNamespace, bool nullable)
     {
-        var localName = NameHelper.GetLocalName(schema);
-        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
+        var localName = schema.GetLocalName();
+        var @namespace = namespaceOverride ?? schema.GetNamespace() ?? containingNamespace;
         var name = new QualifiedName(localName, @namespace);
 
-        if (!_schemas.TryGetValue(name, out var recordSchema))
+        if (!_schemas.ContainsKey(name))
         {
-            var documentation = schema.TryGetProperty("doc", out var doc) ? doc.GetString() : null;
-            var aliases = schema.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidSchemaException($"Invalid alias in schema: {schema.GetRawText()}")).ToImmutableArray() : [];
-            var fields = schema.GetProperty("fields").EnumerateArray().Select(field => Field(field, @namespace)).ToImmutableArray();
+            var documentation = schema.GetDocumentation();
+            var aliases = schema.GetAliases();
+            var fields = Fields(schema, @namespace);
 
-            _schemas[name] = recordSchema = new ErrorSchema(schema, name, documentation, aliases, fields);
+            _schemas[name] = new ErrorSchema(schema, name, documentation, aliases, fields);
         }
 
         return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;
     }
 
-    private Field Field(JsonElement field, string? @namespace)
+    private ImmutableArray<Field> Fields(JsonElement schema, string containingNamespace) =>
+        schema.GetSchemaFields().Select(field => Field(field, containingNamespace)).ToImmutableArray();
+
+    private Field Field(JsonElement field, string containingNamespace)
     {
-        var name = NameHelper.GetLocalName(field);
-        var type = Type(field.GetProperty("type"), @namespace, nullable: false);
-        var documentation = field.TryGetProperty("doc", out var doc) ? doc.GetString() : null;
-        var aliases = field.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidSchemaException($"Invalid alias in field: {field.GetRawText()}")).ToImmutableArray() : [];
-        var @default = field.TryGetProperty("default", out var def) ? GetValue(type, def) : null;
-        var order = field.TryGetProperty("order", out var ord) ? ord.GetInt32() : default(int?);
+        var name = field.GetLocalName();
+        var type = Type(field.GetSchemaType(), containingNamespace, nullable: false);
+        var documentation = field.GetDocumentation();
+        var aliases = field.GetAliases();
+        var @default = GetValue(type, field.GetSchemaDefault());
+        var order = field.GetFieldOrder();
         return new Field(name, type, documentation, aliases, @default, order);
     }
 
     private string? GetValue(QualifiedName type, JsonElement value)
     {
-        if (value.ValueKind is JsonValueKind.Null)
+        if (value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
         {
             return null;
         }
@@ -180,19 +209,19 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
         };
     }
 
-    private QualifiedName Fixed(JsonElement schema, string? @namespace, bool nullable)
+    private QualifiedName Fixed(JsonElement schema, string containingNamespace, bool nullable)
     {
-        var localName = NameHelper.GetLocalName(schema);
-        @namespace = namespaceOverride ?? NameHelper.GetNamespace(schema) ?? @namespace;
+        var localName = schema.GetLocalName();
+        var @namespace = namespaceOverride ?? schema.GetNamespace() ?? containingNamespace;
         var name = new QualifiedName(localName, @namespace);
 
-        if (!_schemas.TryGetValue(name, out var fixedSchema))
+        if (!_schemas.ContainsKey(name))
         {
-            var documentation = schema.TryGetProperty("doc", out var doc) ? doc.GetString() : null;
-            var aliases = schema.TryGetProperty("aliases", out var ali) ? ali.EnumerateArray().Select(alias => alias.GetString() ?? throw new InvalidSchemaException($"Invalid alias in schema: {schema.GetRawText()}")).ToImmutableArray() : [];
-            var size = schema.GetProperty("size").GetInt32();
+            var documentation = schema.GetDocumentation();
+            var aliases = schema.GetAliases();
+            var size = schema.GetFixedSize();
 
-            _schemas[name] = fixedSchema = new FixedSchema(schema, name, documentation, aliases, size);
+            _schemas[name] = new FixedSchema(schema, name, documentation, aliases, size);
         }
 
         return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;
@@ -200,7 +229,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
 
     private QualifiedName Logical(JsonElement schema, bool nullable)
     {
-        var logicalType = schema.GetString() ?? throw new InvalidSchemaException($"Invalid logical type in schema: {schema.GetRawText()}");
+        var logicalType = schema.GetLogicalType();
 
         return logicalType switch
         {
@@ -214,142 +243,30 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
             "timestamp-micros" => QualifiedName.TimestampMicros(nullable),
             "timestamp-millis" => QualifiedName.TimestampMillis(nullable),
             "uuid" => QualifiedName.Uuid(nullable),
-            _ => throw new InvalidSchemaException($"Unsupported logical type: {logicalType} in schema: {schema.GetRawText()}"),
+            _ => throw new InvalidSchemaException($"Unsupported logical type '{logicalType}' in schema: {schema.GetRawText()}"),
         };
     }
 
-    private QualifiedName Union(JsonElement schema, string? @namespace)
+    private QualifiedName Union(JsonElement schema, string containingNamespace)
     {
         var length = schema.GetArrayLength();
 
         return length switch
         {
-            1 => Type(schema[0], @namespace, nullable: false),
-            2 => (IsNull(schema[0]), IsNull(schema[1])) switch
+            1 => Type(schema[0], containingNamespace, nullable: false),
+            2 => (JsonElementExtensions.IsNullSchema(schema[0]), JsonElementExtensions.IsNullSchema(schema[1])) switch
             {
                 // "null" | "null"
                 (true, true) => QualifiedName.Object(UseNullableReferenceTypes),
                 // "null" | T
-                (true, false) => Type(schema[1], @namespace, nullable: true),
+                (true, false) => Type(schema[1], containingNamespace, nullable: true),
                 // T | "null"
-                (false, true) => Type(schema[0], @namespace, nullable: true),
+                (false, true) => Type(schema[0], containingNamespace, nullable: true),
                 // T1 | T2
                 _ => QualifiedName.Object(nullable: false),
             },
             // T1 | T2 | ... | Tn
-            _ => QualifiedName.Object(UseNullableReferenceTypes & schema.EnumerateArray().Any(IsNull)),
+            _ => QualifiedName.Object(UseNullableReferenceTypes & schema.EnumerateArray().Any(JsonElementExtensions.IsNullSchema)),
         };
-
-        static bool IsNull(JsonElement schema) =>
-            schema.ValueKind is JsonValueKind.String && schema.GetString() == "null";
-    }
-}
-
-file static class NameHelper
-{
-    private static readonly Dictionary<string, string> s_reserved = new()
-    {
-        ["bool"] = "@bool",
-        ["byte"] = "@byte",
-        ["sbyte"] = "@sbyte",
-        ["short"] = "@short",
-        ["ushort"] = "@ushort",
-        ["int"] = "@int",
-        ["uint"] = "@uint",
-        ["long"] = "@long",
-        ["ulong"] = "@ulong",
-        ["double"] = "@double",
-        ["float"] = "@float",
-        ["decimal"] = "@decimal",
-        ["string"] = "@string",
-        ["char"] = "@char",
-        ["void"] = "@void",
-        ["object"] = "@object",
-        ["typeof"] = "@typeof",
-        ["sizeof"] = "@sizeof",
-        ["null"] = "@null",
-        ["true"] = "@true",
-        ["false"] = "@false",
-        ["if"] = "@if",
-        ["else"] = "@else",
-        ["while"] = "@while",
-        ["for"] = "@for",
-        ["foreach"] = "@foreach",
-        ["do"] = "@do",
-        ["switch"] = "@switch",
-        ["case"] = "@case",
-        ["default"] = "@default",
-        ["try"] = "@try",
-        ["catch"] = "@catch",
-        ["finally"] = "@finally",
-        ["lock"] = "@lock",
-        ["goto"] = "@goto",
-        ["break"] = "@break",
-        ["continue"] = "@continue",
-        ["return"] = "@return",
-        ["throw"] = "@throw",
-        ["public"] = "@public",
-        ["private"] = "@private",
-        ["internal"] = "@internal",
-        ["protected"] = "@protected",
-        ["static"] = "@static",
-        ["readonly"] = "@readonly",
-        ["sealed"] = "@sealed",
-        ["const"] = "@const",
-        ["fixed"] = "@fixed",
-        ["stackalloc"] = "@stackalloc",
-        ["volatile"] = "@volatile",
-        ["new"] = "@new",
-        ["override"] = "@override",
-        ["abstract"] = "@abstract",
-        ["virtual"] = "@virtual",
-        ["event"] = "@event",
-        ["extern"] = "@extern",
-        ["ref"] = "@ref",
-        ["out"] = "@out",
-        ["in"] = "@in",
-        ["is"] = "@is",
-        ["as"] = "@as",
-        ["params"] = "@params",
-        ["__arglist"] = "@__arglist",
-        ["__makeref"] = "@__makeref",
-        ["__reftype"] = "@__reftype",
-        ["__refvalue"] = "@__refvalue",
-        ["this"] = "@this",
-        ["base"] = "@base",
-        ["namespace"] = "@namespace",
-        ["using"] = "@using",
-        ["class"] = "@class",
-        ["struct"] = "@struct",
-        ["interface"] = "@interface",
-        ["enum"] = "@enum",
-        ["delegate"] = "@delegate",
-        ["checked"] = "@checked",
-        ["unchecked"] = "@unchecked",
-        ["unsafe"] = "@unsafe",
-        ["operator"] = "@operator",
-        ["explicit"] = "@explicit",
-        ["implicit"] = "@implicit",
-    };
-
-    public static string GetValid(string name) =>
-        s_reserved.TryGetValue(name, out var reserved) ? reserved : name;
-
-    public static string GetLocalName(JsonElement schema)
-    {
-        var name = schema.GetProperty("name").GetString();
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new InvalidSchemaException($"'name' property cannot be null or empty in the schema: {schema.GetRawText()}");
-        }
-        return GetValid(name!);
-    }
-
-    public static string? GetNamespace(JsonElement schema)
-    {
-        if (!schema.TryGetProperty("namespace", out var json))
-            return null;
-
-        return GetValid(json.GetString()!);
     }
 }

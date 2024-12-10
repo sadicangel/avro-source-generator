@@ -1,0 +1,44 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+{
+    public const string AvroSchema = """
+                                     ^^^
+    {
+^^^^^
+        "type": "record",
+^^^^^^^^^^^^^^^^^^^^^^^^^
+        "namespace": "",
+^^^^^^^^^^^^^^^^^^^^^^^^
+        "name": "Record",
+^^^^^^^^^^^^^^^^^^^^^^^^^
+        "fields": []
+^^^^^^^^^^^^^^^^^^^^
+    }
+^^^^^
+    """;
+^^^^^^^
+}
+*/
+ : (8,37)-(15,7),
+      Message:
+The schema defined in the JSON is invalid: 'namespace' property cannot be whitespace in schema: {
+    "type": "record",
+    "namespace": "",
+    "name": "Record",
+    "fields": []
+},
+      Severity: Error,
+      Descriptor: {
+        Id: AVROSG0004,
+        Title: Invalid Avro Schema,
+        MessageFormat: The schema defined in the JSON is invalid: {0},
+        Category: Semantic,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ],
+  Documents: null
+}

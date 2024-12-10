@@ -1,0 +1,49 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+{
+    public const string AvroSchema = """
+                                     ^^^
+    {
+^^^^^
+        "type": "record",
+^^^^^^^^^^^^^^^^^^^^^^^^^
+        "namespace": "SchemaNamespace",
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "name": "Wrapper",
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "fields": [
+^^^^^^^^^^^^^^^^^^^
+            { "name": "EnumField", "type": {
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                "type": "enum", "name": null, "symbols": []
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            } }
+^^^^^^^^^^^^^^^
+        ]
+^^^^^^^^^
+    }
+^^^^^
+    """;
+^^^^^^^
+}
+*/
+ : (8,37)-(19,7),
+      Message:
+The schema defined in the JSON is invalid: 'name' property must be a string in schema: {
+            "type": "enum", "name": null, "symbols": []
+        },
+      Severity: Error,
+      Descriptor: {
+        Id: AVROSG0004,
+        Title: Invalid Avro Schema,
+        MessageFormat: The schema defined in the JSON is invalid: {0},
+        Category: Semantic,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ],
+  Documents: null
+}

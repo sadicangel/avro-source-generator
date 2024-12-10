@@ -3,29 +3,29 @@
 {{~ if UseNullableReferenceTypes ~}}
 #nullable enable
 {{~ end ~}}
-namespace {{ schema.Namespace }}
+namespace {{ Schema.Namespace | string.slice 8 }}
 {
-    {{~ if $.schema.Documentation ~}}
+    {{~ if Schema.Documentation ~}}
     /// <summary>
-    {{~ for line in $.schema.Documentation | string.split '\n' | array.each @string.strip ~}}
+    {{~ for line in Schema.Documentation | string.split '\n' | array.each @string.strip ~}}
     /// {{ line }}
     {{~ end ~}}
     /// </summary>
     {{~ end ~}}
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    {{~ if $.schema.Aliases.size > 0 ~}}
-    [global::AvroSourceGenerator.AvroAliases({{ $.schema.Aliases | array.each @string.literal | array.join ', ' }})]
+    {{~ if Schema.Aliases.size > 0 ~}}
+    [global::AvroSourceGenerator.AvroAliases({{ Schema.Aliases | array.each @string.literal | array.join ', ' }})]
     {{~ end ~}}
     {{
-        case $.schema.Type
+        case Schema.Type
         when 'Enum'
-            include 'enum' schema: $.schema
+            include 'enum' schema: Schema
         when 'Fixed'
-            include 'fixed' schema: $.schema
+            include 'fixed' schema: Schema
         when 'Record'
-            include 'record' schema: $.schema
+            include 'record' schema: Schema
         when 'Error'
-            include 'error' schema: $.schema
+            include 'error' schema: Schema
         end
     }}
 }

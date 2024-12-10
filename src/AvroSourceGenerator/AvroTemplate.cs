@@ -3,31 +3,26 @@ using AvroSourceGenerator.Schemas;
 using Scriban;
 using Scriban.Parsing;
 using Scriban.Runtime;
+using Scriban.Syntax;
 
 namespace AvroSourceGenerator;
 
+internal readonly record struct RenderOutput(string HintName, string SourceText);
+
 internal static class AvroTemplate
 {
-    // Base context for all rendering.
-    private static readonly TemplateContext s_templateContext = new()
+    public static IEnumerable<RenderOutput> Render(SchemaRegistry schemaRegistry, LanguageFeatures languageFeatures, string recordDeclaration, string accessModifier)
     {
-        MemberRenamer = member => member.Name,
-        TemplateLoader = new TemplateLoader(),
-    };
-
-    internal static Template MainTemplate
-    {
-        get
+        var templateContext = new TemplateContext()
         {
-            var path = s_templateContext.TemplateLoader.GetPath(s_templateContext, default, "main");
-            if (!s_templateContext.CachedTemplates.TryGetValue(path, out var template))
-                template = s_templateContext.CachedTemplates[path] = Template.Parse(s_templateContext.TemplateLoader.Load(s_templateContext, default, path));
-            return template;
-        }
-    }
+            MemberRenamer = member => member.Name,
+            TemplateLoader = new TemplateLoader(),
+        };
 
-    public static string Render(SchemaRegistry schemaRegistry, LanguageFeatures languageFeatures, string recordDeclaration, string accessModifier)
-    {
+        var schemaTemplatePath = templateContext.TemplateLoader.GetPath(templateContext, default, "schema");
+        var schemaTemplate = templateContext.CachedTemplates[schemaTemplatePath] = Template.Parse(templateContext.TemplateLoader.Load(templateContext, default, schemaTemplatePath));
+
+        // TODO: Can we implement IScriptObject to represent the scope?
         var scope = new ScriptObject();
         scope.Import(new
         {
@@ -40,13 +35,17 @@ internal static class AvroTemplate
             UseUnsafeAccessors = (languageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
         },
         filter: null,
-        s_templateContext.MemberRenamer);
+        templateContext.MemberRenamer);
 
-        s_templateContext.PushGlobal(scope);
-        var output = MainTemplate.Render(s_templateContext);
-        s_templateContext.PopGlobal();
-
-        return output;
+        templateContext.PushGlobal(scope);
+        foreach (var schema in schemaRegistry)
+        {
+            templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
+            var hintName = $"{schema.Name.Replace("@", "")}.Avro.g.cs";
+            var sourceText = schemaTemplate.Render(templateContext);
+            yield return new RenderOutput(hintName, sourceText);
+        }
+        templateContext.PopGlobal();
     }
 }
 

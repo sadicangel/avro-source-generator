@@ -24,7 +24,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     <PackageReference Include="PolySharp" PrivateAssets="all" />
-    <PackageReference Include="Scriban" IncludeAssets="Build" />
+    <PackageReference Include="Scriban" PrivateAssets="all" IncludeAssets="Build" />
   </ItemGroup>
   
   <ItemGroup>
@@ -62,11 +62,5 @@
       <TargetPathWithTargetPlatformMoniker Include="$(PkgMicrosoft_Bcl_HashCode)\lib\netstandard2.0\Microsoft.Bcl.HashCode.dll" IncludeRuntimeDependency="false" />
     </ItemGroup>
   </Target>
-
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-      <_Parameter1>AvroSourceGenerator.Tests</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
 
 </Project>

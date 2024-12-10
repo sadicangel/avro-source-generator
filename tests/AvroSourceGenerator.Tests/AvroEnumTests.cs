@@ -97,7 +97,7 @@ public class AvroEnumTests
         namespace CSharpNamespace;
         
         [Avro]
-        public partial class Record
+        public partial class Wrapper
         {        
             public const string AvroSchema = """
             {
@@ -125,7 +125,7 @@ public class AvroEnumTests
         namespace CSharpNamespace;
         
         [Avro]
-        public partial class Record
+        public partial class Wrapper
         {
             public const string AvroSchema = """
             {
@@ -153,7 +153,7 @@ public class AvroEnumTests
         namespace CSharpNamespace;
         
         [Avro]
-        public partial class Record
+        public partial class Wrapper
         {
             public const string AvroSchema = """
             {
@@ -181,7 +181,7 @@ public class AvroEnumTests
         namespace CSharpNamespace;
         
         [Avro]
-        public partial class Record
+        public partial class Wrapper
         {
             public const string AvroSchema = """
             {
@@ -208,7 +208,7 @@ public class AvroEnumTests
         namespace CSharpNamespace;
         
         [Avro(LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
-        public partial class Record
+        public partial class Wrapper
         {
             public const string AvroSchema = """
             {
@@ -237,7 +237,7 @@ public class AvroEnumTests
         namespace CSharpNamespace;
         
         [Avro(UseCSharpNamespace = {{useCSharpNamespace}})]
-        public partial class Record
+        public partial class Wrapper
         {
             public const string AvroSchema = """
             {

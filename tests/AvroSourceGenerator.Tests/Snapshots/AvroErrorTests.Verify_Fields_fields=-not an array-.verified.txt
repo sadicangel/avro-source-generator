@@ -1,0 +1,44 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+{
+    public const string AvroSchema = """
+                                     ^^^
+    {
+^^^^^
+        "type": "error",
+^^^^^^^^^^^^^^^^^^^^^^^^
+        "namespace": "SchemaNamespace",
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "name": "Error",
+^^^^^^^^^^^^^^^^^^^^^^^^
+        "fields": "not an array"
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }
+^^^^^
+    """;
+^^^^^^^
+}
+*/
+ : (8,37)-(15,7),
+      Message:
+The schema defined in the JSON is invalid: 'fields' property must be an array in schema: {
+    "type": "error",
+    "namespace": "SchemaNamespace",
+    "name": "Error",
+    "fields": "not an array"
+},
+      Severity: Error,
+      Descriptor: {
+        Id: AVROSG0004,
+        Title: Invalid Avro Schema,
+        MessageFormat: The schema defined in the JSON is invalid: {0},
+        Category: Semantic,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ],
+  Documents: null
+}

@@ -26,12 +26,12 @@
     <PackageReference Include="PolySharp" PrivateAssets="all" />
     <PackageReference Include="Scriban" PrivateAssets="all" IncludeAssets="Build" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="System.Text.Json" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="Microsoft.Bcl.HashCode" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\AvroSourceGenerator.Attributes\AvroSourceGenerator.Attributes.csproj" PrivateAssets="All" />
   </ItemGroup>

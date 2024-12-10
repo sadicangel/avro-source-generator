@@ -36,14 +36,22 @@ namespace SchemaNamespace
         public global::Avro.Schema Schema { get => Wrapper._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
         {
-            "type": "record",
-            "namespace": "SchemaNamespace",
-            "name": "Wrapper",
-            "fields": [
-                { "name": "EnumField", "type": {
-                    "type": "enum", "name": "TestEnum", "symbols": ["B", "C"]
-                } }
-            ]
+          "type": "record",
+          "namespace": "SchemaNamespace",
+          "name": "Wrapper",
+          "fields": [
+            {
+              "name": "EnumField",
+              "type": {
+                "type": "enum",
+                "name": "TestEnum",
+                "symbols": [
+                  "B",
+                  "C"
+                ]
+              }
+            }
+          ]
         }
         """);
     

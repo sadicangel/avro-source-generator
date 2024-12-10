@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text.Json;
 using AvroSourceGenerator.Schemas;
 using Scriban;
 using Scriban.Parsing;
@@ -11,6 +12,8 @@ internal readonly record struct RenderOutput(string HintName, string SourceText)
 
 internal static class AvroTemplate
 {
+    private static readonly JsonSerializerOptions s_serializerOptions = new() { WriteIndented = true };
+
     public static IEnumerable<RenderOutput> Render(SchemaRegistry schemaRegistry, LanguageFeatures languageFeatures, string recordDeclaration, string accessModifier)
     {
         var templateContext = new TemplateContext()
@@ -24,6 +27,7 @@ internal static class AvroTemplate
 
         // TODO: Can we implement IScriptObject to represent the scope?
         var scope = new ScriptObject();
+        scope.Import("text", static (JsonElement json) => JsonSerializer.Serialize(json, s_serializerOptions));
         scope.Import(new
         {
             SchemaRegistry = schemaRegistry,

@@ -19,10 +19,10 @@ namespace name1.@fixed.name2
         public override global::Avro.Schema Schema { get => Fixed._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
         {
-            "type": "fixed",
-            "namespace": "name1.fixed.name2",
-            "name": "Fixed",
-            "size": 16
+          "type": "fixed",
+          "namespace": "name1.fixed.name2",
+          "name": "Fixed",
+          "size": 16
         }
         """);
     }

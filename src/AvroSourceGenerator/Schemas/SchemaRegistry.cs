@@ -54,7 +54,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
 
     private QualifiedName ComplexType(JsonElement schema, string containingNamespace, bool nullable)
     {
-        if (schema.IsLogicalSchema())
+        if (schema.IsSupportedLogicalSchema())
         {
             return Logical(schema, nullable);
         }
@@ -235,13 +235,13 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
         {
             "date" => QualifiedName.Date(nullable),
             "decimal" => QualifiedName.Decimal(nullable),
-            "duration" => QualifiedName.Duration(UseNullableReferenceTypes & nullable),
-            "local-timestamp-micros" => QualifiedName.LocalTimestampMicros(nullable),
-            "local-timestamp-millis" => QualifiedName.LocalTimestampMillis(nullable),
+            // "duration" => handled as a fixed type,
             "time-micros" => QualifiedName.TimeMicros(nullable),
             "time-millis" => QualifiedName.TimeMillis(nullable),
             "timestamp-micros" => QualifiedName.TimestampMicros(nullable),
             "timestamp-millis" => QualifiedName.TimestampMillis(nullable),
+            "local-timestamp-micros" => QualifiedName.LocalTimestampMicros(nullable),
+            "local-timestamp-millis" => QualifiedName.LocalTimestampMillis(nullable),
             "uuid" => QualifiedName.Uuid(nullable),
             _ => throw new InvalidSchemaException($"Unsupported logical type '{logicalType}' in schema: {schema.GetRawText()}"),
         };

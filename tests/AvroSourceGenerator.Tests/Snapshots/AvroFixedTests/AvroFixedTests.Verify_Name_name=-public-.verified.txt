@@ -19,10 +19,10 @@ namespace SchemaNamespace
         public override global::Avro.Schema Schema { get => @public._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
         {
-            "type": "fixed",
-            "namespace": "SchemaNamespace",
-            "name": "public",
-            "size": 16
+          "type": "fixed",
+          "namespace": "SchemaNamespace",
+          "name": "public",
+          "size": 16
         }
         """);
     }

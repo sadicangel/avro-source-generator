@@ -16,11 +16,11 @@ namespace SchemaNamespace
         public override global::Avro.Schema Schema { get => Error._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
         {
-            "type": "error",
-            "namespace": "SchemaNamespace",
-            "name": "Error",
-            "aliases": [],
-            "fields": []
+          "type": "error",
+          "namespace": "SchemaNamespace",
+          "name": "Error",
+          "aliases": [],
+          "fields": []
         }
         """);
     

@@ -19,7 +19,6 @@ internal readonly record struct QualifiedName(string Name, string? Namespace)
 
     public static QualifiedName Date(bool nullable) => new(nullable ? "DateTime?" : "DateTime", "global::System");
     public static QualifiedName Decimal(bool nullable) => new(nullable ? "AvroDecimal?" : "AvroDecimal", "global::Avro");
-    public static QualifiedName Duration(bool nullable) => new(nullable ? "int[]?" : "int[]", null);
     public static QualifiedName TimeMillis(bool nullable) => new(nullable ? "TimeSpan?" : "TimeSpan", "global::System");
     public static QualifiedName TimeMicros(bool nullable) => new(nullable ? "TimeSpan?" : "TimeSpan", "global::System");
     public static QualifiedName TimestampMillis(bool nullable) => new(nullable ? "DateTime?" : "DateTime", "global::System");

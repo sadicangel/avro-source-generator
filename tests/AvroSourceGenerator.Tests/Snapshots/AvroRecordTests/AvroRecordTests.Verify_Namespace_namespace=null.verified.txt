@@ -16,10 +16,10 @@ namespace CSharpNamespace
         public global::Avro.Schema Schema { get => Record._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
         {
-            "type": "record",
-            "namespace": null,
-            "name": "Record",
-            "fields": []
+          "type": "record",
+          "namespace": null,
+          "name": "Record",
+          "fields": []
         }
         """);
     

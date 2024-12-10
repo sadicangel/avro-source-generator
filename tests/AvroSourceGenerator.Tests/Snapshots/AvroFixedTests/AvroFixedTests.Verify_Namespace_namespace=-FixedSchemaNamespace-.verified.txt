@@ -19,10 +19,10 @@ namespace FixedSchemaNamespace
         public override global::Avro.Schema Schema { get => Fixed._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
         {
-            "type": "fixed",
-            "namespace": "FixedSchemaNamespace",
-            "name": "Fixed",
-            "size": 16
+          "type": "fixed",
+          "namespace": "FixedSchemaNamespace",
+          "name": "Fixed",
+          "size": 16
         }
         """);
     }

@@ -16,10 +16,10 @@ namespace name1.@class.name2
         public global::Avro.Schema Schema { get => Record._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
         {
-            "type": "record",
-            "namespace": "name1.class.name2",
-            "name": "Record",
-            "fields": []
+          "type": "record",
+          "namespace": "name1.class.name2",
+          "name": "Record",
+          "fields": []
         }
         """);
     

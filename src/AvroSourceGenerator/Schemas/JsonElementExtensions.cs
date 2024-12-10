@@ -102,9 +102,9 @@ internal static class JsonElementExtensions
         return replacement is not null;
     }
 
-    public static string GetValid(string name) => IsReserved(name, out var replacement) ? replacement : name;
+    public static string GetValid(string name) => IsReserved(name.AsSpan(), out var replacement) ? replacement : name;
 
-    public static ReadOnlySpan<char> GetValid(ReadOnlySpan<char> name) => IsReserved(name, out var replacement) ? replacement : name;
+    public static ReadOnlySpan<char> GetValid(ReadOnlySpan<char> name) => IsReserved(name, out var replacement) ? replacement.AsSpan() : name;
 
     public static string GetLocalName(this JsonElement schema)
     {
@@ -146,7 +146,7 @@ internal static class JsonElementExtensions
         var builder = new StringBuilder("global::");
 
         var first = true;
-        foreach (var part in new SplitEnumerable(@namespace, '.'))
+        foreach (var part in new SplitEnumerable(@namespace.AsSpan(), '.'))
         {
             var name = GetValid(part);
             if (first) first = false; else builder.Append('.');

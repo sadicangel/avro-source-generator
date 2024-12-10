@@ -84,6 +84,8 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
                 var schemaRegistry = new SchemaRegistry(model.LanguageFeatures, model.NamespaceOverride);
                 var rootSchema = schemaRegistry.Register(document.RootElement);
 
+                // TODO: Validate that the root schema name matches the candidate class name.
+
                 // We should get no render errors, so we don't have to handle anything else.
                 var renderOutputs = AvroTemplate.Render(
                     schemaRegistry: schemaRegistry,

@@ -310,10 +310,13 @@ internal static class JsonElementExtensions
         {
             throw new InvalidSchemaException($"'size' property must be a number in schema: {schema.GetRawText()}");
         }
-
         if (!json.TryGetInt32(out var size))
         {
             throw new InvalidSchemaException($"'size' property must be an integer in schema: {schema.GetRawText()}");
+        }
+        if (size <= 0)
+        {
+            throw new InvalidSchemaException($"'size' property must be a positive integer in schema: {schema.GetRawText()}");
         }
 
         return size;

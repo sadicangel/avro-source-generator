@@ -2,7 +2,7 @@
 {
     public {{ $.schema.Name }}() : base({{ $.schema.Size }}) { }
 
-    public uint FixedSize { get => {{ $.schema.Size }}; }
+    public uint Size { get => Value.Length; }
 
     public override global::Avro.Schema Schema { get => {{ $.schema.Name }}._SCHEMA; }
     public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""

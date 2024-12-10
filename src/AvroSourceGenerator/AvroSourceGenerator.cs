@@ -36,6 +36,8 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
                     var attribute = context.Attributes
                         .Single(attr => attr.AttributeClass?.Name == nameof(AvroAttribute));
 
+                    var containingNamespace = symbol.ContainingNamespace?
+                        .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? $"{symbol.Name}Namespace";
                     var languageFeatures = LanguageFeatures.Latest;
                     var namespaceOverride = default(string);
 
@@ -50,7 +52,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
                                 languageFeatures = (LanguageFeatures)value;
                                 break;
                             case nameof(AvroAttribute.UseCSharpNamespace) when value is true:
-                                namespaceOverride = symbol.ContainingNamespace?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                                namespaceOverride = containingNamespace;
                                 break;
                         }
                     }
@@ -59,6 +61,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
 
                     return new SourceOutputModel(
                         LanguageFeatures: languageFeatures,
+                        ContainingNamespace: containingNamespace,
                         NamespaceOverride: namespaceOverride,
                         RecordDeclaration: declaration.IsKind(SyntaxKind.RecordDeclaration) ? "record" : "class",
                         AccessModifier: GetAccessModifier(declaration),
@@ -82,7 +85,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             {
                 using var document = JsonDocument.Parse(model.SchemaField.SchemaJson);
                 var schemaRegistry = new SchemaRegistry(model.LanguageFeatures, model.NamespaceOverride);
-                var rootSchema = schemaRegistry.Register(document.RootElement);
+                var rootSchema = schemaRegistry.Register(document.RootElement, model.ContainingNamespace);
 
                 // TODO: Validate that the root schema name matches the candidate class name.
 

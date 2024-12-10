@@ -9,11 +9,6 @@
 #nullable enable
 namespace SchemaNamespace
 {
-    /// <summary>
-    /// Multi
-    /// line
-    /// comment
-    /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial class Record : global::Avro.Specific.ISpecificRecord
     {
@@ -23,7 +18,6 @@ namespace SchemaNamespace
         {
             "type": "record",
             "namespace": "SchemaNamespace",
-            "doc": "Multi\nline\ncomment",
             "name": "Record",
             "fields": []
         }
@@ -41,8 +35,7 @@ namespace SchemaNamespace
         {
             switch (fieldPos)
             {
-                default:
-                    throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
+                default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }
         }
     }

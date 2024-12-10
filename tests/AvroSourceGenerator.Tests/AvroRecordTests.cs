@@ -1,99 +1,10 @@
-﻿using System.Text.Json;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class AvroRecordTests
 {
-    public static TheoryData<string> GetLanguageFeatures() =>
-    [
-        nameof(LanguageFeatures.CSharp7_3),
-        nameof(LanguageFeatures.CSharp8),
-        nameof(LanguageFeatures.CSharp9),
-        nameof(LanguageFeatures.CSharp10),
-        nameof(LanguageFeatures.CSharp11),
-        nameof(LanguageFeatures.CSharp12),
-        nameof(LanguageFeatures.CSharp13),
-    ];
-
     [Theory]
-    [MemberData(nameof(GetLanguageFeatures))]
-    public Task Generates_Correct_Features(string features) => TestHelper.Verify($$""""
-        using System;
-        using AvroSourceGenerator;
-
-        namespace CSharpNamespace;
-
-        [Avro(LanguageFeatures = LanguageFeatures.{{features}})]
-        public partial class Record
-        {
-            public const string AvroSchema = """
-            {
-                "type": "record",
-                "namespace": "SchemaNamespace",
-                "name": "Record",
-                "fields": [
-                    { "name": "StringField", "type": "string" },
-                    { "name": "IntField", "type": "int" },
-                    { "name": "LongField", "type": "long" },
-                    { "name": "FloatField", "type": "float" },
-                    { "name": "DoubleField", "type": "double" },
-                    { "name": "BooleanField", "type": "boolean" },
-                    { "name": "BytesField", "type": "bytes" },
-                    { "name": "NullableStringField", "type": ["null", "string"], "default": null },
-                    { "name": "DefaultIntField", "type": "int", "default": 42 },
-                    { "name": "EnumField", "type": { "type": "enum", "name": "TestEnum", "symbols": ["A", "B", "C"] } },
-                    { "name": "ArrayField", "type": { "type": "array", "items": "string" } },
-                    { "name": "MapField", "type": { "type": "map", "values": "int" } },
-                    { "name": "NestedRecordField", "type": {
-                        "type": "record",
-                        "name": "NestedRecord",
-                        "fields": [
-                            { "name": "NestedStringField", "type": "string" },
-                            { "name": "NestedIntField", "type": "int" }
-                        ]
-                    } },
-                    { "name": "LogicalDateField", "type": { "type": "int", "logicalType": "date" } },
-                    { "name": "LogicalTimestampField", "type": { "type": "long", "logicalType": "timestamp-millis" } }
-                ]
-            }
-            """;
-        }
-        """")
-        .UseParameters(features);
-
-    [Theory]
-    [InlineData("class")]
-    [InlineData("record")]
-    public Task Generates_Correct_Declaration(string declaration) => TestHelper.Verify($$""""
-        using System;
-        using AvroSourceGenerator;
-        
-        namespace CSharpNamespace;
-        
-        [Avro]
-        public partial {{declaration}} Record
-        {
-            public const string AvroSchema = """
-            {
-                "type": "record",
-                "namespace": "SchemaNamespace",
-                "name": "Record",
-                "fields": []
-            }
-            """;
-        }
-        """")
-        .UseParameters(declaration);
-
-    [Theory]
-    [InlineData("public")]
-    [InlineData("internal")]
-    [InlineData("protected internal")]
-    [InlineData("private")]
-    [InlineData("private protected")]
-    [InlineData("file")]
-    [InlineData("")]
-    public Task Generates_Correct_AccessModifier(string accessModifier) => TestHelper.Verify($$""""
+    [InlineData("public"), InlineData("internal"), InlineData("protected internal"), InlineData("private"), InlineData("private protected"), InlineData("file"), InlineData("")]
+    public Task Verify_AccessModifier(string accessModifier) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
@@ -115,41 +26,82 @@ public sealed class AvroRecordTests
         .UseParameters(accessModifier);
 
     [Theory]
-    [InlineData("false")]
-    [InlineData("true")]
-    public Task Generates_Correct_Namespace(string useCSharpNamespace) => TestHelper.Verify($$""""
+    [InlineData("class"), InlineData("record"), InlineData("class record")]
+    public Task Verify_Declaration(string declaration) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
         namespace CSharpNamespace;
         
-        [Avro(UseCSharpNamespace = {{useCSharpNamespace}})]
-        public partial class Record
+        [Avro]
+        partial {{declaration}} Record
         {
             public const string AvroSchema = """
             {
                 "type": "record",
                 "namespace": "SchemaNamespace",
                 "name": "Record",
-                "fields": [
-                    { "name": "NestedRecordField", "namespace": "SchemaNamespace", "type": {
-                        "type": "record",
-                        "name": "NestedRecord",
-                        "fields": []
-                    } }
-                ]
+                "fields": []
             }
             """;
         }
         """")
-        .UseParameters(useCSharpNamespace);
+        .UseParameters(declaration);
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("Single line comment")]
-    [InlineData("Multi\nline\ncomment")]
-    public Task Generates_Correct_Summary(string? doc) => TestHelper.Verify($$""""
+    [InlineData("\"RecordName\""), InlineData("\"record_name\"")]
+    [InlineData("\"class\""), InlineData("\"string\"")]
+    [InlineData("null"), InlineData("\"\""), InlineData("[]")]
+    public Task Verify_Name(string name) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro]
+        partial class Record
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": {{name}},
+                "fields": []
+            }
+            """;
+        }
+        """")
+        .UseParameters(name);
+
+    [Theory]
+    [InlineData("null"), InlineData("\"RecordSchemaNamespace\"")]
+    [InlineData("\"class\""), InlineData("\"name1.class.name2\"")]
+    [InlineData("\"\""), InlineData("[]")]
+    public Task Verify_Namespace(string @namespace) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro]
+        partial class Record
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": {{@namespace}},
+                "name": "Record",
+                "fields": []
+            }
+            """;
+        }
+        """")
+        .UseParameters(@namespace);
+
+    [Theory]
+    [InlineData("null"), InlineData("\"\""), InlineData("\"Single line comment\""), InlineData("\"Multi\\nline\\ncomment\"")]
+    [InlineData("1"), InlineData("[]"), InlineData("{}")]
+    public Task Verify_Documentation(string doc) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
@@ -157,13 +109,13 @@ public sealed class AvroRecordTests
         
         [Avro]
         public partial class Record
-        {
+        {        
             public const string AvroSchema = """
             {
                 "type": "record",
                 "namespace": "SchemaNamespace",
-                "doc": {{(doc is null ? "null" : $"\"{JsonEncodedText.Encode(doc)}\"")}},
                 "name": "Record",
+                "doc": {{doc}},
                 "fields": []
             }
             """;
@@ -172,11 +124,9 @@ public sealed class AvroRecordTests
         .UseParameters(doc);
 
     [Theory]
-    [InlineData("null")]
-    [InlineData("[]")]
-    [InlineData("[\"Alias1\"]")]
-    [InlineData("[\"Alias1\", \"Alias2\"]")]
-    public Task Generates_Correct_Aliases(string aliases) => TestHelper.Verify($$""""
+    [InlineData("null"), InlineData("[]"), InlineData("[\"Alias1\"]"), InlineData("[\"Alias1\", \"Alias2\"]")]
+    [InlineData("\"not an array\""), InlineData("{}")]
+    public Task Verify_Aliases(string aliases) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
@@ -197,4 +147,74 @@ public sealed class AvroRecordTests
         }
         """")
         .UseParameters(aliases);
+
+    [Theory]
+    [InlineData("null"), InlineData("\"not an array\""), InlineData("{}")]
+    public Task Verify_Fields(string fields) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro]
+        public partial class Record
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Record",
+                "fields": {{fields}}
+            }
+            """;
+        }
+        """")
+        .UseParameters(fields);
+
+    [Theory]
+    [MemberData(nameof(TestData.GetLanguageVersions), MemberType = typeof(TestData))]
+    public Task Verify_LanguageFeatures(string languageFeatures) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro(LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
+        public partial class Record
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Record",
+                "fields": []
+            }
+            """;
+        }
+        """")
+        .UseParameters(languageFeatures);
+
+    [Theory]
+    [InlineData("false")]
+    [InlineData("true")]
+    public Task Verify_UseCSharpNamespace(string useCSharpNamespace) => TestHelper.Verify($$""""
+        using System;
+        using AvroSourceGenerator;
+        
+        namespace CSharpNamespace;
+        
+        [Avro(UseCSharpNamespace = {{useCSharpNamespace}})]
+        public partial class Record
+        {
+            public const string AvroSchema = """
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Record",
+                "fields": []
+            }
+            """;
+        }
+        """")
+        .UseParameters(useCSharpNamespace);
 }

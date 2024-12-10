@@ -10,7 +10,7 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial record Record : global::Avro.Specific.ISpecificRecord
+    public partial class Record : global::Avro.Specific.ISpecificRecord
     {
     
         public global::Avro.Schema Schema { get => Record._SCHEMA; }
@@ -35,8 +35,21 @@ namespace SchemaNamespace
         {
             switch (fieldPos)
             {
-                default:
-                    throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
+                default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
+            }
+        }
+        
+        private static class RecordReflection
+        {
+        
+            private static Action<Record, TProperty> CreateSetter<TProperty>(string propertyName)
+            {
+                var obj = global::System.Linq.Expressions.Expression.Parameter(typeof(Record), "obj");
+                var value = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");
+                var property = global::System.Linq.Expressions.Expression.Property(obj, typeof(Record).GetProperty(propertyName)!);
+                var assign = global::System.Linq.Expressions.Expression.Assign(property, value);
+                var lambda = global::System.Linq.Expressions.Expression.Lambda<Action<Record, TProperty>>(assign, obj, value);
+                return lambda.Compile();
             }
         }
     }

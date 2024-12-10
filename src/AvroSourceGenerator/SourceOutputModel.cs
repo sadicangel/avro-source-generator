@@ -6,6 +6,7 @@ namespace AvroSourceGenerator;
 
 internal sealed record class SourceOutputModel(
     LanguageFeatures LanguageFeatures,
+    string ContainingNamespace,
     string? NamespaceOverride,
     string RecordDeclaration,
     string AccessModifier,

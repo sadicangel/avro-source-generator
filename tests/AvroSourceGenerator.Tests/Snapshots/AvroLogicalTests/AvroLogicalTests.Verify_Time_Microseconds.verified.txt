@@ -46,9 +46,9 @@ namespace SchemaNamespace
             switch (fieldPos)
             {
                 case 0:
-                    Set_TimeField(this, (TimeSpan)fieldValue!); break;
+                    Set_TimeField(this, (global::System.TimeSpan)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_TimeField")]
-                    extern static void Set_TimeField(Wrapper obj, TimeSpan value);
+                    extern static void Set_TimeField(Wrapper obj, global::System.TimeSpan value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

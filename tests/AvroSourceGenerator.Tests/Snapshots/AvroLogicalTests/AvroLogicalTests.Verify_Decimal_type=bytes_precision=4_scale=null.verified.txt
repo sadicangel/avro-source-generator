@@ -48,9 +48,9 @@ namespace SchemaNamespace
             switch (fieldPos)
             {
                 case 0:
-                    Set_DecimalField(this, (AvroDecimal)fieldValue!); break;
+                    Set_DecimalField(this, (global::Avro.AvroDecimal)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_DecimalField")]
-                    extern static void Set_DecimalField(Wrapper obj, AvroDecimal value);
+                    extern static void Set_DecimalField(Wrapper obj, global::Avro.AvroDecimal value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

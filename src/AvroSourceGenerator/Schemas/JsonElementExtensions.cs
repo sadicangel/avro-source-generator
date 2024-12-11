@@ -108,7 +108,7 @@ internal static class JsonElementExtensions
 
     public static string GetLocalName(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("name"u8, out var json))
+        if (!schema.TryGetProperty("name", out var json))
         {
             throw new InvalidSchemaException($"'name' property is required in schema: {schema.GetRawText()}");
         }
@@ -128,7 +128,7 @@ internal static class JsonElementExtensions
 
     public static string? GetNamespace(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("namespace"u8, out var json) || json.ValueKind is JsonValueKind.Null)
+        if (!schema.TryGetProperty("namespace", out var json) || json.ValueKind is JsonValueKind.Null)
         {
             return null;
         }
@@ -160,7 +160,7 @@ internal static class JsonElementExtensions
 
     public static JsonElement GetSchemaType(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("type"u8, out var json))
+        if (!schema.TryGetProperty("type", out var json))
         {
             throw new InvalidSchemaException($"'type' property is required in schema: {schema.GetRawText()}");
         }
@@ -188,7 +188,7 @@ internal static class JsonElementExtensions
 
     public static string? GetDocumentation(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("doc"u8, out var doc) || doc.ValueKind is JsonValueKind.Null)
+        if (!schema.TryGetProperty("doc", out var doc) || doc.ValueKind is JsonValueKind.Null)
         {
             return null;
         }
@@ -204,7 +204,7 @@ internal static class JsonElementExtensions
 
     public static ImmutableArray<string> GetAliases(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("aliases"u8, out var ali) || ali.ValueKind is JsonValueKind.Null)
+        if (!schema.TryGetProperty("aliases", out var ali) || ali.ValueKind is JsonValueKind.Null)
         {
             return [];
         }
@@ -237,7 +237,7 @@ internal static class JsonElementExtensions
 
     public static JsonElement GetSchemaValues(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("values"u8, out var valuesSchema) || valuesSchema.ValueKind is JsonValueKind.Null)
+        if (!schema.TryGetProperty("values", out var valuesSchema) || valuesSchema.ValueKind is JsonValueKind.Null)
         {
             throw new InvalidSchemaException($"'values' property is required in schema: {schema.GetRawText()}");
         }
@@ -247,7 +247,7 @@ internal static class JsonElementExtensions
 
     public static JsonElement GetSchemaItems(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("items"u8, out var itemsSchema) || itemsSchema.ValueKind is JsonValueKind.Null)
+        if (!schema.TryGetProperty("items", out var itemsSchema) || itemsSchema.ValueKind is JsonValueKind.Null)
         {
             throw new InvalidSchemaException($"'items' property is required in schema: {schema.GetRawText()}");
         }
@@ -256,7 +256,7 @@ internal static class JsonElementExtensions
 
     public static ImmutableArray<string> GetSymbols(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("symbols"u8, out var symbols) || symbols.ValueKind is JsonValueKind.Null)
+        if (!schema.TryGetProperty("symbols", out var symbols) || symbols.ValueKind is JsonValueKind.Null)
         {
             throw new InvalidSchemaException($"'symbols' property is required in schema: {schema.GetRawText()}");
         }
@@ -288,7 +288,7 @@ internal static class JsonElementExtensions
 
     public static JsonElement.ArrayEnumerator GetSchemaFields(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("fields"u8, out var fields) || fields.ValueKind is JsonValueKind.Null)
+        if (!schema.TryGetProperty("fields", out var fields) || fields.ValueKind is JsonValueKind.Null)
         {
             throw new InvalidSchemaException($"'fields' property is required in schema: {schema.GetRawText()}");
         }
@@ -302,7 +302,7 @@ internal static class JsonElementExtensions
 
     public static int GetFixedSize(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("size"u8, out var json))
+        if (!schema.TryGetProperty("size", out var json))
         {
             throw new InvalidSchemaException($"'size' property is required in schema: {schema.GetRawText()}");
         }
@@ -324,26 +324,26 @@ internal static class JsonElementExtensions
 
     public static bool IsSupportedLogicalSchema(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("logicalType"u8, out var logicalType) || logicalType.ValueKind is not JsonValueKind.String)
+        if (!schema.TryGetProperty("logicalType", out var logicalType) || logicalType.ValueKind is not JsonValueKind.String)
         {
             return false;
         }
 
-        return logicalType.ValueEquals("date"u8)
-            || logicalType.ValueEquals("decimal"u8)
-            // logicalType.ValueEquals("duration"u8) is handled as a fixed type
-            || logicalType.ValueEquals("time-millis"u8)
-            || logicalType.ValueEquals("time-micros"u8)
-            || logicalType.ValueEquals("timestamp-millis"u8)
-            || logicalType.ValueEquals("timestamp-micros"u8)
-            || logicalType.ValueEquals("local-timestamp-millis"u8)
-            || logicalType.ValueEquals("local-timestamp-micros"u8)
-            || logicalType.ValueEquals("uuid"u8);
+        return logicalType.ValueEquals("date")
+            || logicalType.ValueEquals("decimal")
+            // logicalType.ValueEquals("duration") is handled as a fixed type
+            || logicalType.ValueEquals("time-millis")
+            || logicalType.ValueEquals("time-micros")
+            || logicalType.ValueEquals("timestamp-millis")
+            || logicalType.ValueEquals("timestamp-micros")
+            || logicalType.ValueEquals("local-timestamp-millis")
+            || logicalType.ValueEquals("local-timestamp-micros")
+            || logicalType.ValueEquals("uuid");
     }
 
     public static string GetLogicalType(this JsonElement schema)
     {
-        if (!schema.TryGetProperty("logicalType"u8, out var logicalType))
+        if (!schema.TryGetProperty("logicalType", out var logicalType))
         {
             throw new InvalidSchemaException($"'logicalType' property is required in schema: {schema.GetRawText()}");
         }
@@ -358,7 +358,7 @@ internal static class JsonElementExtensions
 
     public static int? GetFieldOrder(this JsonElement field)
     {
-        if (field.TryGetProperty("order"u8, out var json))
+        if (field.TryGetProperty("order", out var json))
         {
             if (json.ValueKind is not JsonValueKind.Number)
             {
@@ -377,7 +377,7 @@ internal static class JsonElementExtensions
 
     public static JsonElement GetSchemaDefault(this JsonElement schema)
     {
-        if (schema.TryGetProperty("default"u8, out var json))
+        if (schema.TryGetProperty("default", out var json))
         {
             return json;
         }

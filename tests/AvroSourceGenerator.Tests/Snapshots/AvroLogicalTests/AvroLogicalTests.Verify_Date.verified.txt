@@ -46,9 +46,9 @@ namespace SchemaNamespace
             switch (fieldPos)
             {
                 case 0:
-                    Set_DateField(this, (DateTime)fieldValue!); break;
+                    Set_DateField(this, (global::System.DateTime)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_DateField")]
-                    extern static void Set_DateField(Wrapper obj, DateTime value);
+                    extern static void Set_DateField(Wrapper obj, global::System.DateTime value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

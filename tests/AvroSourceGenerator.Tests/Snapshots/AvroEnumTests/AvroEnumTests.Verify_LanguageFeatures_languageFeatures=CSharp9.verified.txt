@@ -34,26 +34,9 @@ namespace SchemaNamespace
         public global::SchemaNamespace.TestEnum EnumField { get; set; }
     
         public global::Avro.Schema Schema { get => Wrapper._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
-        {
-          "type": "record",
-          "namespace": "SchemaNamespace",
-          "name": "Wrapper",
-          "fields": [
-            {
-              "name": "EnumField",
-              "type": {
-                "type": "enum",
-                "name": "TestEnum",
-                "symbols": [
-                  "A",
-                  "B"
-                ]
-              }
-            }
-          ]
-        }
-        """);
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        "{\"type\":\"record\",\"namespace\":\"SchemaNamespace\",\"name\":\"Wrapper\",\"fields\":[{\"name\":\"EnumField\",\"type\":{\"type\":\"enum\",\"name\":\"TestEnum\",\"symbols\":[\"A\",\"B\"]}}]}"
+        );
     
         public object? Get(int fieldPos)
         {
@@ -68,7 +51,7 @@ namespace SchemaNamespace
         {
             switch (fieldPos)
             {
-                case 0: this.EnumField = (TestEnum)fieldValue!; break;
+                case 0: this.EnumField = (global::SchemaNamespace.TestEnum)fieldValue!; break;
                 default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }
         }

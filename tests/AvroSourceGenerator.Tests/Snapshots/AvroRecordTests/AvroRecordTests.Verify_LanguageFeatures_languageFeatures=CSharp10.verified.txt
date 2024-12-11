@@ -14,14 +14,9 @@ namespace SchemaNamespace
     {
     
         public global::Avro.Schema Schema { get => Record._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
-        {
-          "type": "record",
-          "namespace": "SchemaNamespace",
-          "name": "Record",
-          "fields": []
-        }
-        """);
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        "{\"type\":\"record\",\"namespace\":\"SchemaNamespace\",\"name\":\"Record\",\"fields\":[]}"
+        );
     
         public object? Get(int fieldPos)
         {
@@ -42,13 +37,13 @@ namespace SchemaNamespace
         private static class RecordReflection
         {
         
-            private static Action<Record, TProperty> CreateSetter<TProperty>(string propertyName)
+            private static global::System.Action<Record, TProperty> CreateSetter<TProperty>(string propertyName)
             {
                 var obj = global::System.Linq.Expressions.Expression.Parameter(typeof(Record), "obj");
                 var value = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");
                 var property = global::System.Linq.Expressions.Expression.Property(obj, typeof(Record).GetProperty(propertyName)!);
                 var assign = global::System.Linq.Expressions.Expression.Assign(property, value);
-                var lambda = global::System.Linq.Expressions.Expression.Lambda<Action<Record, TProperty>>(assign, obj, value);
+                var lambda = global::System.Linq.Expressions.Expression.Lambda<global::System.Action<Record, TProperty>>(assign, obj, value);
                 return lambda.Compile();
             }
         }

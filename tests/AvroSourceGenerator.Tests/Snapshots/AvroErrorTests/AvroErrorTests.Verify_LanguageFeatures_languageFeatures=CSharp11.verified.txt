@@ -42,13 +42,13 @@ namespace SchemaNamespace
         private static class ErrorReflection
         {
         
-            private static Action<Error, TProperty> CreateSetter<TProperty>(string propertyName)
+            private static global::System.Action<Error, TProperty> CreateSetter<TProperty>(string propertyName)
             {
                 var obj = global::System.Linq.Expressions.Expression.Parameter(typeof(Error), "obj");
                 var value = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");
                 var property = global::System.Linq.Expressions.Expression.Property(obj, typeof(Error).GetProperty(propertyName)!);
                 var assign = global::System.Linq.Expressions.Expression.Assign(property, value);
-                var lambda = global::System.Linq.Expressions.Expression.Lambda<Action<Error, TProperty>>(assign, obj, value);
+                var lambda = global::System.Linq.Expressions.Expression.Lambda<global::System.Action<Error, TProperty>>(assign, obj, value);
                 return lambda.Compile();
             }
         }

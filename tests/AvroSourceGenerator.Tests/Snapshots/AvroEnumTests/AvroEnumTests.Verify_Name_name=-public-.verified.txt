@@ -64,9 +64,9 @@ namespace SchemaNamespace
             switch (fieldPos)
             {
                 case 0:
-                    Set_EnumField(this, (@public)fieldValue!); break;
+                    Set_EnumField(this, (global::SchemaNamespace.@public)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_EnumField")]
-                    extern static void Set_EnumField(Wrapper obj, @public value);
+                    extern static void Set_EnumField(Wrapper obj, global::SchemaNamespace.@public value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

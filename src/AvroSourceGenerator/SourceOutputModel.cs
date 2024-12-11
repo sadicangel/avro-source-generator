@@ -45,5 +45,5 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
 internal static class EquatableArrayBuilder
 {
     public static EquatableArray<T> Create<T>(ReadOnlySpan<T> values) where T : IEquatable<T> =>
-        new(ImmutableArray.Create(values));
+        new(ImmutableArray.Create(values.ToArray()));
 }

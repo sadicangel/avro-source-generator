@@ -5,9 +5,9 @@
     {{~ end ~}}
 
     public global::Avro.Schema Schema { get => {{ $.schema.Name }}._SCHEMA; }
-    public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
+    public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse({{ UseRawStringLiterals ? '"""' : '' }}
     {{ $.schema.Json | text }}
-    """);
+    {{ UseRawStringLiterals ? '"""' : '' }});
 
     {{ include 'getput' schema: $.schema override: false ~}}
 }

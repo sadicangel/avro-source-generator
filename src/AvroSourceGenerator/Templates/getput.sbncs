@@ -17,7 +17,7 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
     switch (fieldPos)
     {
         {{~ for field in $.schema.Fields ~}}
-        case {{ for.index }}: this.{{ field.Name }} = ({{ field.Type.Name }}){{ $fieldValue }}; break;
+        case {{ for.index }}: this.{{ field.Name }} = ({{ field.Type }}){{ $fieldValue }}; break;
         {{~ end ~}}
         default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
     }
@@ -29,9 +29,9 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
     {
         {{~ for field in $.schema.Fields ~}}
         case {{ for.index }}:
-            Set_{{ field.Name }}(this, ({{ field.Type.Name }}){{ $fieldValue }}); break;
+            Set_{{ field.Name }}(this, ({{ field.Type }}){{ $fieldValue }}); break;
             [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = {{ $"\"set_{ field.Name }\"" }})]
-            extern static void Set_{{ field.Name }}({{ $.schema.Name }} obj, {{ field.Type.Name }} value);
+            extern static void Set_{{ field.Name }}({{ $.schema.Name }} obj, {{ field.Type }} value);
         {{~ end ~}}
         default:
             throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
@@ -43,7 +43,7 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
     switch (fieldPos)
     {
         {{~ for field in $.schema.Fields ~}}
-        case {{ for.index }}: {{ $.schema.Name }}Reflection.Set_{{ field.Name }}(this, ({{ field.Type.Name }}){{ $fieldValue }}); break;
+        case {{ for.index }}: {{ $.schema.Name }}Reflection.Set_{{ field.Name }}(this, ({{ field.Type }}){{ $fieldValue }}); break;
         {{~ end ~}}
         default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
     }
@@ -52,16 +52,16 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
 private static class {{ $.schema.Name }}Reflection
 {
     {{~ for field in $.schema.Fields ~}}
-    public static readonly global::System.Action<{{ $.schema.Name }}, {{ field.Type.Name }}> Set_{{ field.Name }} = CreateSetter<{{ field.Type.Name }}>({{ field.Name | string.literal }});
+    public static readonly global::System.Action<{{ $.schema.Name }}, {{ field.Type }}> Set_{{ field.Name }} = CreateSetter<{{ field.Type }}>({{ field.Name | string.literal }});
     {{~ end ~}}
 
-    private static Action<{{ $.schema.Name }}, TProperty> CreateSetter<TProperty>(string propertyName)
+    private static global::System.Action<{{ $.schema.Name }}, TProperty> CreateSetter<TProperty>(string propertyName)
     {
         var obj = global::System.Linq.Expressions.Expression.Parameter(typeof({{ $.schema.Name }}), "obj");
         var value = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");
         var property = global::System.Linq.Expressions.Expression.Property(obj, typeof({{ $.schema.Name }}).GetProperty(propertyName){{~ UseNullableReferenceTypes ? '!' : '' ~}});
         var assign = global::System.Linq.Expressions.Expression.Assign(property, value);
-        var lambda = global::System.Linq.Expressions.Expression.Lambda<Action<{{ $.schema.Name }}, TProperty>>(assign, obj, value);
+        var lambda = global::System.Linq.Expressions.Expression.Lambda<global::System.Action<{{ $.schema.Name }}, TProperty>>(assign, obj, value);
         return lambda.Compile();
     }
 }

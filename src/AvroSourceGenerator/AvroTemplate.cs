@@ -2,6 +2,7 @@
 using System.Text.Json;
 using AvroSourceGenerator.Schemas;
 using Scriban;
+using Scriban.Functions;
 using Scriban.Parsing;
 using Scriban.Runtime;
 using Scriban.Syntax;
@@ -27,7 +28,9 @@ internal static class AvroTemplate
 
         // TODO: Can we implement IScriptObject to represent the scope?
         var scope = new ScriptObject();
-        scope.Import("text", static (JsonElement json) => JsonSerializer.Serialize(json, s_serializerOptions));
+        scope.Import("text", languageFeatures.HasFlag(LanguageFeatures.RawStringLiterals)
+            ? static (JsonElement json) => JsonSerializer.Serialize(json, s_serializerOptions)
+            : static (JsonElement json) => StringFunctions.Literal(JsonSerializer.Serialize(json)));
         scope.Import(new
         {
             SchemaRegistry = schemaRegistry,
@@ -36,6 +39,7 @@ internal static class AvroTemplate
             UseNullableReferenceTypes = (languageFeatures & LanguageFeatures.NullableReferenceTypes) != 0,
             UseRequiredProperties = (languageFeatures & LanguageFeatures.RequiredProperties) != 0,
             UseInitOnlyProperties = (languageFeatures & LanguageFeatures.InitOnlyProperties) != 0,
+            UseRawStringLiterals = (languageFeatures & LanguageFeatures.RawStringLiterals) != 0,
             UseUnsafeAccessors = (languageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
         },
         filter: null,

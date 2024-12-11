@@ -6,8 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <RootNamespace>$(MSBuildProjectName.Replace(" ", "_").Replace("Attributes", ""))</RootNamespace>
-    <AssemblyName>$(MSBuildProjectName.Replace("Attributes", ""))</AssemblyName>
+    <RootNamespace>$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
   </PropertyGroup>
 
 </Project>

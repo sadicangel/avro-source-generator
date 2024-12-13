@@ -14,8 +14,6 @@ internal static class TestHelper
 {
     public static SettingsTask Verify(string source) =>
         Verifier.Verify(GenerateOutput([source], []));
-    public static SettingsTask VerifyText(string text) =>
-        Verifier.Verify(GenerateOutput([], [text]));
 
     public static GeneratedOutput GenerateOutput(string[] sources, string[] texts)
     {

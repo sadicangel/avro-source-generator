@@ -107,52 +107,6 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(InvalidAvroSchemaDiagnostic.Create(model.SchemaLocation, ex.Message));
             }
         });
-
-        // TODO: Implement additional text support
-        /*var files = context.AdditionalTextsProvider
-            .Where(static text => text.Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase))
-            .Select(static (text, cancellationToken) => (
-                LanguageFeatures: LanguageFeatures.Latest,
-                RecordDeclaration: "class",
-                AccessModifier: "public",
-                SchemaJson: text.GetText()?.ToString()));
-
-        context.RegisterImplementationSourceOutput(files, static (context, model) =>
-        {
-            if (string.IsNullOrWhiteSpace(model.SchemaJson))
-            {
-                return;
-            }
-
-            try
-            {
-                using var document = JsonDocument.Parse(model.SchemaJson!);
-                var schemaRegistry = new SchemaRegistry(model.LanguageFeatures);
-                var rootSchema = schemaRegistry.Register(document.RootElement, "AvroSchemas");
-
-                // We should get no render errors, so we don't have to handle anything else.
-                var renderOutputs = AvroTemplate.Render(
-                    schemaRegistry: schemaRegistry,
-                    languageFeatures: model.LanguageFeatures,
-                    recordDeclaration: model.RecordDeclaration,
-                    accessModifier: model.AccessModifier);
-
-                foreach (var renderOutput in renderOutputs)
-                {
-                    context.AddSource(renderOutput.HintName, SourceText.From(renderOutput.SourceText, Encoding.UTF8));
-                }
-            }
-            catch (JsonException ex)
-            {
-                throw ex;
-                //context.ReportDiagnostic(InvalidJsonDiagnostic.Create(model.SchemaLocation, ex.Message));
-            }
-            catch (InvalidSchemaException ex)
-            {
-                throw ex;
-                //context.ReportDiagnostic(InvalidAvroSchemaDiagnostic.Create(model.SchemaLocation, ex.Message));
-            }
-        });*/
     }
 
     private static string? GetAttributeData(

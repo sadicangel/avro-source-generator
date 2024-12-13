@@ -13,8 +13,6 @@ internal readonly record struct RenderOutput(string HintName, string SourceText)
 
 internal static class AvroTemplate
 {
-    private static readonly JsonSerializerOptions s_serializerOptions = new() { WriteIndented = true };
-
     public static IEnumerable<RenderOutput> Render(SchemaRegistry schemaRegistry, LanguageFeatures languageFeatures, string recordDeclaration, string accessModifier)
     {
         var templateContext = new TemplateContext()
@@ -26,26 +24,7 @@ internal static class AvroTemplate
         var schemaTemplatePath = templateContext.TemplateLoader.GetPath(templateContext, default, "schema");
         var schemaTemplate = templateContext.CachedTemplates[schemaTemplatePath] = Template.Parse(templateContext.TemplateLoader.Load(templateContext, default, schemaTemplatePath));
 
-        // TODO: Can we implement IScriptObject to represent the scope?
-        var scope = new ScriptObject();
-        scope.Import("text", languageFeatures.HasFlag(LanguageFeatures.RawStringLiterals)
-            ? static (JsonElement json) => JsonSerializer.Serialize(json, s_serializerOptions)
-            : static (JsonElement json) => StringFunctions.Literal(JsonSerializer.Serialize(json)));
-        scope.Import(new
-        {
-            SchemaRegistry = schemaRegistry,
-            RecordDeclaration = recordDeclaration,
-            AccessModifier = accessModifier,
-            UseNullableReferenceTypes = (languageFeatures & LanguageFeatures.NullableReferenceTypes) != 0,
-            UseRequiredProperties = (languageFeatures & LanguageFeatures.RequiredProperties) != 0,
-            UseInitOnlyProperties = (languageFeatures & LanguageFeatures.InitOnlyProperties) != 0,
-            UseRawStringLiterals = (languageFeatures & LanguageFeatures.RawStringLiterals) != 0,
-            UseUnsafeAccessors = (languageFeatures & LanguageFeatures.UnsafeAccessors) != 0,
-        },
-        filter: null,
-        templateContext.MemberRenamer);
-
-        templateContext.PushGlobal(scope);
+        templateContext.PushGlobal(new TemplateScriptObject(languageFeatures, recordDeclaration, accessModifier));
         foreach (var schema in schemaRegistry)
         {
             templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
@@ -56,7 +35,6 @@ internal static class AvroTemplate
         templateContext.PopGlobal();
     }
 }
-
 
 file sealed class TemplateLoader : ITemplateLoader
 {
@@ -83,4 +61,30 @@ file sealed class TemplateLoader : ITemplateLoader
 
     public async ValueTask<string> LoadAsync(TemplateContext context, SourceSpan callerSpan, string templatePath) =>
         await Task.FromResult(Load(context, callerSpan, templatePath));
+}
+
+file sealed class TemplateScriptObject : ScriptObject
+{
+    private static readonly DynamicCustomFunction s_text_RawStringLiteral =
+        CreateFunction(static (JsonElement json) => JsonSerializer.Serialize(json, new JsonSerializerOptions { WriteIndented = true }));
+    private static readonly DynamicCustomFunction s_text_VerbatimStringLiteral =
+        CreateFunction(static (JsonElement json) => StringFunctions.Literal(JsonSerializer.Serialize(json)));
+
+    public TemplateScriptObject(
+        LanguageFeatures languageFeatures,
+        string recordDeclaration,
+        string accessModifier)
+    {
+        SetValue("text", (languageFeatures & LanguageFeatures.RawStringLiterals) != 0 ? s_text_RawStringLiteral : s_text_VerbatimStringLiteral, readOnly: true);
+        SetValue("RecordDeclaration", recordDeclaration, readOnly: true);
+        SetValue("AccessModifier", accessModifier, readOnly: true);
+        SetValue("UseNullableReferenceTypes", (languageFeatures & LanguageFeatures.NullableReferenceTypes) != 0, readOnly: true);
+        SetValue("UseRequiredProperties", (languageFeatures & LanguageFeatures.RequiredProperties) != 0, readOnly: true);
+        SetValue("UseInitOnlyProperties", (languageFeatures & LanguageFeatures.InitOnlyProperties) != 0, readOnly: true);
+        SetValue("UseRawStringLiterals", (languageFeatures & LanguageFeatures.RawStringLiterals) != 0, readOnly: true);
+        SetValue("UseUnsafeAccessors", (languageFeatures & LanguageFeatures.UnsafeAccessors) != 0, readOnly: true);
+    }
+
+    private static DynamicCustomFunction CreateFunction(Delegate @delegate) =>
+        DynamicCustomFunction.Create(@delegate);
 }

@@ -9,7 +9,7 @@ public class AvroLogicalTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """
@@ -41,7 +41,7 @@ public class AvroLogicalTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """
@@ -70,7 +70,7 @@ public class AvroLogicalTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """
@@ -99,7 +99,7 @@ public class AvroLogicalTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """
@@ -128,7 +128,7 @@ public class AvroLogicalTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """
@@ -157,7 +157,7 @@ public class AvroLogicalTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """
@@ -186,7 +186,7 @@ public class AvroLogicalTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """
@@ -215,7 +215,7 @@ public class AvroLogicalTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """
@@ -244,7 +244,7 @@ public class AvroLogicalTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """
@@ -273,7 +273,7 @@ public class AvroLogicalTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """

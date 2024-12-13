@@ -1,9 +1,9 @@
 ﻿namespace AvroSourceGenerator.IntegrationTests;
 
-[Avro(LanguageFeatures = LanguageFeatures.CSharp13, UseCSharpNamespace = true)]
+[Avro(AvroSchema, LanguageFeatures = LanguageFeatures.CSharp13, UseCSharpNamespace = true)]
 public partial class Record
 {
-    public const string AvroSchema = """
+    private const string AvroSchema = """
     {
         "type": "record",
         "namespace": "SchemaNamespace",

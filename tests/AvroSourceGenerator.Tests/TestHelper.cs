@@ -1,7 +1,9 @@
 ﻿using System.CodeDom.Compiler;
 using System.Collections.Immutable;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator.Tests;
 
@@ -10,10 +12,12 @@ public readonly record struct GeneratedOutput(ImmutableArray<Diagnostic> Diagnos
 
 internal static class TestHelper
 {
-    public static SettingsTask Verify(params string[] sources) =>
-        Verifier.Verify(GenerateOutput(sources));
+    public static SettingsTask Verify(string source) =>
+        Verifier.Verify(GenerateOutput([source], []));
+    public static SettingsTask VerifyText(string text) =>
+        Verifier.Verify(GenerateOutput([], [text]));
 
-    public static GeneratedOutput GenerateOutput(params string[] sources)
+    public static GeneratedOutput GenerateOutput(string[] sources, string[] texts)
     {
         var syntaxTrees = sources.Select(source => CSharpSyntaxTree.ParseText(source));
         var references = AppDomain.CurrentDomain.GetAssemblies()
@@ -34,6 +38,7 @@ internal static class TestHelper
 
         CSharpGeneratorDriver
             .Create(new AvroSourceGenerator())
+            .AddAdditionalTexts(texts.Select(t => new AdditionalTextImplementation(t)).ToImmutableArray<AdditionalText>())
             .RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
 
         var documents = outputCompilation.SyntaxTrees
@@ -43,4 +48,12 @@ internal static class TestHelper
 
         return new(diagnostics, documents);
     }
+}
+
+file sealed class AdditionalTextImplementation(string content) : AdditionalText
+{
+    public override string Path { get; } = $"{Guid.NewGuid()}.avsc";
+
+    public override SourceText? GetText(CancellationToken cancellationToken = default) =>
+        SourceText.From(content, Encoding.UTF8);
 }

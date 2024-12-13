@@ -4,7 +4,7 @@ namespace AvroSourceGenerator.Diagnostics;
 internal static class InvalidJsonDiagnostic
 {
     private static readonly DiagnosticDescriptor s_invalidJsonSchemaDescriptor = new(
-        id: "AVROSG0003",
+        id: "AVROSG0001",
         title: "Invalid JSON",
         messageFormat: "The provided JSON is invalid: {0}",
         category: "Syntax",

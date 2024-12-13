@@ -4,7 +4,7 @@ namespace AvroSourceGenerator.Diagnostics;
 internal static class InvalidAvroSchemaDiagnostic
 {
     private static readonly DiagnosticDescriptor s_invalidAvroSchemaDescriptor = new(
-        id: "AVROSG0004",
+        id: "AVROSG0002",
         title: "Invalid Avro Schema",
         messageFormat: "The schema defined in the JSON is invalid: {0}",
         category: "Semantic",

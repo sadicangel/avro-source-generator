@@ -4,3 +4,6 @@ makeref
 reftype
 refvalue
 Equatable
+avro
+sbncs
+getput

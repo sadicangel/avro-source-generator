@@ -5,7 +5,7 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
-AVROSG0001 | Usage | Warning | MissingAvroSchemaMemberDiagnostic
-AVROSG0002 | Usage | Warning | InvalidAvroSchemaMemberDiagnostic
-AVROSG0003 | Syntax | Error | InvalidJsonSchemaDiagnostic
-AVROSG0004 | Semantic | Error | InvalidAvroSchemaDiagnostic
+AVROSG0001 | Syntax | Error | InvalidJsonDiagnostic
+AVROSG0002 | Semantic | Error | InvalidAvroSchemaDiagnostic
+AVROSG0003 | Naming | Error | InvalidNameDiagnostic
+AVROSG0004 | Naming | Error | InvalidNamespaceDiagnostic

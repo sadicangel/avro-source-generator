@@ -19,53 +19,40 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             .ForAttributeWithMetadataName("AvroSourceGenerator.AvroAttribute",
                 predicate: static (node, cancellationToken) =>
                 {
+                    // The attribute can only be applied to a class or record declaration.
                     if (!node.IsKind(SyntaxKind.ClassDeclaration) && !node.IsKind(SyntaxKind.RecordDeclaration))
                     {
-                        // TODO: Emit diagnostic here for invalid declaration type. Must be a class or record.
                         return false;
                     }
 
+                    // TODO: Should we emit a diagnostic if the class is not partial?
                     return Unsafe.As<TypeDeclarationSyntax>(node).Modifiers.Any(SyntaxKind.PartialKeyword);
                 },
                 transform: static (context, cancellationToken) =>
                 {
-                    var declaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
-
                     var symbol = Unsafe.As<INamedTypeSymbol>(context.TargetSymbol);
+
+                    var containingClassName = symbol.Name;
+                    var containingNamespace = symbol.ContainingNamespace?
+                        .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? $"{symbol.Name}Namespace";
+
 
                     var attribute = context.Attributes
                         .Single(attr => attr.AttributeClass?.Name == nameof(AvroAttribute));
 
-                    var containingNamespace = symbol.ContainingNamespace?
-                        .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? $"{symbol.Name}Namespace";
-                    var languageFeatures = LanguageFeatures.Latest;
-                    var namespaceOverride = default(string);
+                    var schemaJson = GetAttributeData(attribute, containingNamespace, out var languageFeatures, out var namespaceOverride, out var diagnostics);
 
-                    foreach (var kvp in attribute.NamedArguments)
-                    {
-                        var name = kvp.Key;
-                        var value = kvp.Value.Value;
-
-                        switch (name)
-                        {
-                            case nameof(AvroAttribute.LanguageFeatures) when value is not null:
-                                languageFeatures = (LanguageFeatures)value;
-                                break;
-                            case nameof(AvroAttribute.UseCSharpNamespace) when value is true:
-                                namespaceOverride = containingNamespace;
-                                break;
-                        }
-                    }
-
-                    var schemaField = GetSchemaField(context, declaration, cancellationToken, out var diagnostics);
+                    var declaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
 
                     return new SourceOutputModel(
                         LanguageFeatures: languageFeatures,
+                        ContainingClassName: containingClassName,
                         ContainingNamespace: containingNamespace,
                         NamespaceOverride: namespaceOverride,
                         RecordDeclaration: declaration.IsKind(SyntaxKind.RecordDeclaration) ? "record" : "class",
                         AccessModifier: GetAccessModifier(declaration),
-                        SchemaField: schemaField,
+                        SchemaJson: schemaJson,
+                        SchemaLocation: attribute.ApplicationSyntaxReference!.GetSyntax().GetLocation(),
                         Diagnostics: diagnostics);
                 });
 
@@ -76,19 +63,28 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(diagnostic);
             }
 
-            if (!model.SchemaField.IsValid)
+            if (model.SchemaJson is null)
             {
                 return;
             }
 
             try
             {
-                using var document = JsonDocument.Parse(model.SchemaField.SchemaJson);
+                using var document = JsonDocument.Parse(model.SchemaJson);
                 var schemaRegistry = new SchemaRegistry(model.LanguageFeatures, model.NamespaceOverride);
                 var rootSchema = schemaRegistry.Register(document.RootElement, model.ContainingNamespace);
 
-                // TODO: Validate that the root schema name matches the candidate class name.
-                // TODO: Validate that the root schema namespace matches the candidate class namespace.
+                //if (rootSchema.Name != model.ContainingClassName)
+                //{
+                //    context.ReportDiagnostic(InvalidNameDiagnostic.Create(model.SchemaLocation, rootSchema.Name, model.ContainingClassName));
+                //    return;
+                //}
+
+                //if (model.NamespaceOverride is null && !string.IsNullOrWhiteSpace(rootSchema.Namespace) && rootSchema.Namespace != model.ContainingNamespace)
+                //{
+                //    context.ReportDiagnostic(InvalidNamespaceDiagnostic.Create(model.SchemaLocation, rootSchema.Namespace!, model.ContainingNamespace));
+                //    return;
+                //}
 
                 // We should get no render errors, so we don't have to handle anything else.
                 var renderOutputs = AvroTemplate.Render(
@@ -104,45 +100,57 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             }
             catch (JsonException ex)
             {
-                context.ReportDiagnostic(InvalidJsonDiagnostic.Create(model.SchemaField.Location, ex.Message));
+                context.ReportDiagnostic(InvalidJsonDiagnostic.Create(model.SchemaLocation, ex.Message));
             }
             catch (InvalidSchemaException ex)
             {
-                context.ReportDiagnostic(InvalidAvroSchemaDiagnostic.Create(model.SchemaField.Location, ex.Message));
+                context.ReportDiagnostic(InvalidAvroSchemaDiagnostic.Create(model.SchemaLocation, ex.Message));
             }
         });
     }
 
-    private static SchemaFieldInfo GetSchemaField(GeneratorAttributeSyntaxContext context, TypeDeclarationSyntax declaration, CancellationToken cancellationToken, out EquatableArray<Diagnostic> diagnostics)
+    private static string? GetAttributeData(
+        AttributeData attribute,
+        string containingNamespace,
+        out LanguageFeatures languageFeatures,
+        out string? namespaceOverride,
+        out EquatableArray<Diagnostic> diagnostics)
     {
-        var schemaVariable = declaration.Members
-            .OfType<FieldDeclarationSyntax>()
-            .SelectMany(f => f.Declaration.Variables)
-            .FirstOrDefault(v => v.Identifier.Text == "AvroSchema");
-
-        if (schemaVariable is null)
-        {
-            diagnostics = [MissingAvroSchemaMemberDiagnostic.Create(declaration.GetLocation())];
-            return default;
-        }
-
-        if (context.SemanticModel.GetDeclaredSymbol(schemaVariable, cancellationToken) is not IFieldSymbol schemaSymbol
-            || schemaSymbol.IsConst is false || schemaSymbol.ConstantValue is not string { Length: > 0 } schemaJson)
-        {
-            diagnostics = [InvalidAvroSchemaMemberDiagnostic.Create(schemaVariable.GetLocation())];
-            return default;
-        }
-
-        var initializer = schemaVariable.Initializer?.Value;
-        if (initializer is null)
-        {
-            diagnostics = [InvalidAvroSchemaMemberDiagnostic.Create(schemaVariable.GetLocation())];
-            return default;
-        }
-
         diagnostics = [];
+        languageFeatures = LanguageFeatures.Latest;
+        namespaceOverride = default;
 
-        return new SchemaFieldInfo(schemaJson, initializer.GetLocation());
+        if (attribute.ConstructorArguments.Length < 1)
+        {
+            // TODO: This would be invalid code (the build would fail),
+            // should we emit a diagnostic anyway?
+            return default;
+        }
+
+        var schemaJson = attribute.ConstructorArguments[0].Value as string;
+        if (string.IsNullOrWhiteSpace(schemaJson))
+        {
+            diagnostics = [InvalidJsonDiagnostic.Create(attribute.ApplicationSyntaxReference!.GetSyntax().GetLocation(), "Cannot be null or whitespace")];
+            return default;
+        }
+
+        foreach (var kvp in attribute.NamedArguments)
+        {
+            var name = kvp.Key;
+            var value = kvp.Value.Value;
+
+            switch (name)
+            {
+                case nameof(AvroAttribute.LanguageFeatures) when value is not null:
+                    languageFeatures = (LanguageFeatures)value;
+                    break;
+                case nameof(AvroAttribute.UseCSharpNamespace) when value is true:
+                    namespaceOverride = containingNamespace;
+                    break;
+            }
+        }
+
+        return schemaJson;
     }
 
     private static string GetAccessModifier(TypeDeclarationSyntax typeDeclaration)

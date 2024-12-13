@@ -10,7 +10,7 @@ public sealed class AvroRecordTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         {{accessModifier}} partial class Record
         {
             public const string AvroSchema = """
@@ -33,7 +33,7 @@ public sealed class AvroRecordTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial {{declaration}} Record
         {
             public const string AvroSchema = """
@@ -58,7 +58,7 @@ public sealed class AvroRecordTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Record
         {
             public const string AvroSchema = """
@@ -83,7 +83,7 @@ public sealed class AvroRecordTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Record
         {
             public const string AvroSchema = """
@@ -107,7 +107,7 @@ public sealed class AvroRecordTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         public partial class Record
         {        
             public const string AvroSchema = """
@@ -132,7 +132,7 @@ public sealed class AvroRecordTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         public partial class Record
         {
             public const string AvroSchema = """
@@ -156,7 +156,7 @@ public sealed class AvroRecordTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         public partial class Record
         {
             public const string AvroSchema = """
@@ -179,7 +179,7 @@ public sealed class AvroRecordTests
         
         namespace CSharpNamespace;
         
-        [Avro(LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
+        [Avro(AvroSchema, LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
         public partial class Record
         {
             public const string AvroSchema = """
@@ -203,7 +203,7 @@ public sealed class AvroRecordTests
         
         namespace CSharpNamespace;
         
-        [Avro(UseCSharpNamespace = {{useCSharpNamespace}})]
+        [Avro(AvroSchema, UseCSharpNamespace = {{useCSharpNamespace}})]
         public partial class Record
         {
             public const string AvroSchema = """

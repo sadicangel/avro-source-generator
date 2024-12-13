@@ -6,17 +6,14 @@ namespace AvroSourceGenerator;
 
 internal sealed record class SourceOutputModel(
     LanguageFeatures LanguageFeatures,
+    string ContainingClassName,
     string ContainingNamespace,
     string? NamespaceOverride,
     string RecordDeclaration,
     string AccessModifier,
-    SchemaFieldInfo SchemaField,
+    string? SchemaJson,
+    Location SchemaLocation,
     EquatableArray<Diagnostic> Diagnostics);
-
-internal readonly record struct SchemaFieldInfo(string SchemaJson, Location Location)
-{
-    public bool IsValid => SchemaJson is not null && Location is not null;
-}
 
 [CollectionBuilder(typeof(EquatableArrayBuilder), nameof(EquatableArrayBuilder.Create))]
 internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable<EquatableArray<T>>

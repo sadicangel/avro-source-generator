@@ -10,7 +10,7 @@ public class AvroEnumTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         {{accessModifier}} partial class Wrapper
         {
             public const string AvroSchema = """
@@ -39,7 +39,7 @@ public class AvroEnumTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """
@@ -68,7 +68,7 @@ public class AvroEnumTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Wrapper
         {
             public const string AvroSchema = """
@@ -96,7 +96,7 @@ public class AvroEnumTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         public partial class Wrapper
         {        
             public const string AvroSchema = """
@@ -124,7 +124,7 @@ public class AvroEnumTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         public partial class Wrapper
         {
             public const string AvroSchema = """
@@ -152,7 +152,7 @@ public class AvroEnumTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         public partial class Wrapper
         {
             public const string AvroSchema = """
@@ -180,7 +180,7 @@ public class AvroEnumTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         public partial class Wrapper
         {
             public const string AvroSchema = """
@@ -207,7 +207,7 @@ public class AvroEnumTests
         
         namespace CSharpNamespace;
         
-        [Avro(LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
+        [Avro(AvroSchema, LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
         public partial class Wrapper
         {
             public const string AvroSchema = """
@@ -236,7 +236,7 @@ public class AvroEnumTests
         
         namespace CSharpNamespace;
         
-        [Avro(UseCSharpNamespace = {{useCSharpNamespace}})]
+        [Avro(AvroSchema, UseCSharpNamespace = {{useCSharpNamespace}})]
         public partial class Wrapper
         {
             public const string AvroSchema = """

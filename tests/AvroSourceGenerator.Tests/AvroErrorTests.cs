@@ -10,7 +10,7 @@ public sealed class AvroErrorTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         {{accessModifier}} partial class Error
         {
             public const string AvroSchema = """
@@ -35,7 +35,7 @@ public sealed class AvroErrorTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Error
         {
             public const string AvroSchema = """
@@ -60,7 +60,7 @@ public sealed class AvroErrorTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         partial class Error
         {
             public const string AvroSchema = """
@@ -84,7 +84,7 @@ public sealed class AvroErrorTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         public partial class Error
         {        
             public const string AvroSchema = """
@@ -109,7 +109,7 @@ public sealed class AvroErrorTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         public partial class Error
         {
             public const string AvroSchema = """
@@ -133,7 +133,7 @@ public sealed class AvroErrorTests
         
         namespace CSharpNamespace;
         
-        [Avro]
+        [Avro(AvroSchema)]
         public partial class Error
         {
             public const string AvroSchema = """
@@ -156,7 +156,7 @@ public sealed class AvroErrorTests
         
         namespace CSharpNamespace;
         
-        [Avro(LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
+        [Avro(AvroSchema, LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
         public partial class Error
         {
             public const string AvroSchema = """
@@ -180,7 +180,7 @@ public sealed class AvroErrorTests
         
         namespace CSharpNamespace;
         
-        [Avro(UseCSharpNamespace = {{useCSharpNamespace}})]
+        [Avro(AvroSchema, UseCSharpNamespace = {{useCSharpNamespace}})]
         public partial class Error
         {
             public const string AvroSchema = """

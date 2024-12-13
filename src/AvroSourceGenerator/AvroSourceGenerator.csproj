@@ -44,18 +44,35 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\AvroSourceGenerator.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="$(OutputPath)\netstandard2.0\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\AvroSourceGenerator.Attributes.dll" />
     <None Include="$(OutputPath)\netstandard2.0\$(AssemblyName).Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\AvroSourceGenerator.Attributes.dll" />
+    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\AvroSourceGenerator.Attributes.dll" />
     <None Include="$(OutputPath)\netstandard2.0\$(AssemblyName).Attributes.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="true" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.IO.Pipelines.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="$(OutputPath)\netstandard2.0\System.IO.Pipelines.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.Memory.dll" />
     <None Include="$(OutputPath)\netstandard2.0\System.Memory.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll" />
     <None Include="$(OutputPath)\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.Text.Encodings.Web.dll" />
     <None Include="$(OutputPath)\netstandard2.0\System.Text.Encodings.Web.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.Text.Json.dll" />
     <None Include="$(OutputPath)\netstandard2.0\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.Threading.Tasks.Extensions.dll" />
     <None Include="$(OutputPath)\netstandard2.0\System.Threading.Tasks.Extensions.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" />
     <None Include="$(OutputPath)\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 

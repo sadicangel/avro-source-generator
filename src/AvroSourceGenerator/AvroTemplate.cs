@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections.Concurrent;
+using System.Reflection;
 using System.Text.Json;
 using AvroSourceGenerator.Schemas;
 using Scriban;
@@ -15,24 +16,29 @@ internal static class AvroTemplate
 {
     public static IEnumerable<RenderOutput> Render(SchemaRegistry schemaRegistry, LanguageFeatures languageFeatures, string recordDeclaration, string accessModifier)
     {
-        var templateContext = new TemplateContext()
+        var templateContext = new TemplateContext(new TemplateScriptObject(languageFeatures, recordDeclaration, accessModifier))
         {
             MemberRenamer = member => member.Name,
             TemplateLoader = new TemplateLoader(),
         };
 
-        var schemaTemplatePath = templateContext.TemplateLoader.GetPath(templateContext, default, "schema");
-        var schemaTemplate = templateContext.CachedTemplates[schemaTemplatePath] = Template.Parse(templateContext.TemplateLoader.Load(templateContext, default, schemaTemplatePath));
-
-        templateContext.PushGlobal(new TemplateScriptObject(languageFeatures, recordDeclaration, accessModifier));
+        var template = GetMainTemplate(templateContext);
         foreach (var schema in schemaRegistry)
         {
             templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
             var hintName = $"{schema.Name.Replace("@", "")}.Avro.g.cs";
-            var sourceText = schemaTemplate.Render(templateContext);
+            var sourceText = template.Render(templateContext);
             yield return new RenderOutput(hintName, sourceText);
         }
-        templateContext.PopGlobal();
+    }
+
+    private static Template GetMainTemplate(TemplateContext context)
+    {
+        const string MainTemplateName = "schema";
+        var templatePath = context.TemplateLoader.GetPath(context, default, MainTemplateName);
+        // TODO: Maybe avoid parsing the template each time.
+        var template = Template.Parse(context.TemplateLoader.Load(context, default, templatePath));
+        return template;
     }
 }
 
@@ -50,20 +56,24 @@ file sealed class TemplateLoader : ITemplateLoader
         ["schema"] = "AvroSourceGenerator.Templates.schema.sbncs",
     };
 
+    private static readonly ConcurrentDictionary<string, string> s_templates = new();
+
     public string GetPath(TemplateContext context, SourceSpan callerSpan, string templateName) =>
         s_templatePaths[templateName];
 
     public string Load(TemplateContext context, SourceSpan callerSpan, string templatePath)
     {
-        using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(templatePath));
-        return reader.ReadToEnd();
-    }
+        return s_templates.GetOrAdd(templatePath, LoadTemplate);
 
-    public async ValueTask<string> LoadAsync(TemplateContext context, SourceSpan callerSpan, string templatePath) =>
-        await Task.FromResult(Load(context, callerSpan, templatePath));
+        static string LoadTemplate(string templatePath)
+        {
+            using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(templatePath));
+            return reader.ReadToEnd();
+        }
+    }
 }
 
-file sealed class TemplateScriptObject : ScriptObject
+file sealed class TemplateScriptObject : BuiltinFunctions
 {
     private static readonly DynamicCustomFunction s_text_RawStringLiteral =
         CreateFunction(static (JsonElement json) => JsonSerializer.Serialize(json, new JsonSerializerOptions { WriteIndented = true }));

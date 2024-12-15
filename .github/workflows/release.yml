@@ -28,4 +28,6 @@ jobs:
     - name: Pack
       run: dotnet pack --no-build --configuration Release /p:PackageVersion=${VERSION} --output ./nupkg
     - name: Publish to GitHub
-      run: dotnet nuget push ./nupkg/*.nupkg --source "https://nuget.pkg.github.com/sadicangel/index.json" --api-key ${{ secrets.GITHUB_TOKEN }}
+      run: dotnet nuget push ./nupkg/*.nupkg --source "https://nuget.pkg.github.com/sadicangel/index.json" --api-key ${GITHUB_TOKEN}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

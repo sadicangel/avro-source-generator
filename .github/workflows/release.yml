@@ -1,0 +1,35 @@
+name: release
+
+on:
+  release:
+    types: [published]
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+    - name: Validate Version
+      run: |
+        VERSION=${GITHUB_REF_NAME#v}
+        if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+          echo "Invalid semantic version: $VERSION"
+          exit 1
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+    - name: Build
+      run: dotnet build --configuration Release
+    - name: Test
+      run: dotnet test --no-build --configuration Release --verbosity normal
+      if: (!contains(env.VERSION, '-'))
+    - name: Pack
+      run: dotnet pack --no-build --configuration Release /p:PackageVersion=${VERSION} --output ./nupkg
+    - name: Publish to GitHub
+      run: dotnet nuget push ./nupkg/*.nupkg --source "https://nuget.pkg.github.com/sadicangel/index.json" --api-key ${GITHUB_TOKEN}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

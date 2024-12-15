@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -14,10 +14,25 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <PackageScribanIncludeSource>true</PackageScribanIncludeSource>
     <DefineConstants>SCRIBAN_NO_ASYNC</DefineConstants>
+    <NoWarn>NU5128</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>AvroSourceGenerator</PackageId>
+    <Title>Avro Source Generator</Title>
+    <Authors>sadicangel</Authors>
+    <Company>sadicangel</Company>
+    <Description>A source generator for creating models from Apache Avro schemas.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>apache;avro;apacheavro;generator;generation;codegen;codegenerator;codegeneration</PackageTags>
+    <RepositoryUrl>https://github.com/sadicangel/avro-source-generator</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <!--<PackageIcon>icon.png</PackageIcon>-->
   </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Templates\**\*" />
+    <None Include="../../README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,36 +59,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\AvroSourceGenerator.dll" />
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\$(AssemblyName).Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\$(AssemblyName).Attributes.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="true" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="$(OutputPath)\netstandard2.0\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\AvroSourceGenerator.Attributes.dll" />
-    <None Include="$(OutputPath)\netstandard2.0\$(AssemblyName).Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\AvroSourceGenerator.Attributes.dll" />
-    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\AvroSourceGenerator.Attributes.dll" />
-    <None Include="$(OutputPath)\netstandard2.0\$(AssemblyName).Attributes.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="true" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.IO.Pipelines.dll" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="$(OutputPath)\netstandard2.0\System.IO.Pipelines.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.Memory.dll" />
-    <None Include="$(OutputPath)\netstandard2.0\System.Memory.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll" />
-    <None Include="$(OutputPath)\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.Text.Encodings.Web.dll" />
-    <None Include="$(OutputPath)\netstandard2.0\System.Text.Encodings.Web.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.Text.Json.dll" />
-    <None Include="$(OutputPath)\netstandard2.0\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\System.Threading.Tasks.Extensions.dll" />
-    <None Include="$(OutputPath)\netstandard2.0\System.Threading.Tasks.Extensions.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Remove="bin\Debug\netstandard2.0\\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" />
-    <None Include="$(OutputPath)\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\System.IO.Pipelines.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\System.Memory.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\System.Runtime.CompilerServices.Unsafe.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\System.Text.Encodings.Web.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\System.Threading.Tasks.Extensions.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\Microsoft.Bcl.AsyncInterfaces.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 
   <ItemGroup>

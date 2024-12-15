@@ -15,16 +15,17 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore --configuration Release
     - name: Test
-      run: dotnet test --no-build --verbosity normal
-    - name: Pack
+      run: dotnet test --no-build --configuration Release --verbosity normal
+    - name: Validate Version
       run: |
         VERSION=${GITHUB_REF_NAME#v}
         if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
           echo "Invalid semantic version: $VERSION"
           exit 1
         fi
-        dotnet pack --no-build --configuration Release /p:PackageVersion=$VERSION --output ./nupkg
+    - name: Pack
+      run: dotnet pack --no-build --configuration Release /p:PackageVersion=$VERSION --output ./nupkg
     - name: Publish to GitHub
       run: dotnet nuget push ./nupkg/*.nupkg --source "github" --api-key ${{ secrets.GITHUB_TOKEN }}

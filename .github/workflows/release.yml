@@ -23,8 +23,8 @@ jobs:
           echo "Invalid semantic version: $VERSION"
           exit 1
         fi
-        echo "Version=$VERSION" >> $GITHUB_ENV
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
     - name: Pack
-      run: dotnet pack --no-build --configuration Release /p:PackageVersion=${{ env.VERSION }} --output ./nupkg
+      run: dotnet pack --no-build --configuration Release /p:PackageVersion=${VERSION} --output ./nupkg
     - name: Publish to GitHub
       run: dotnet nuget push ./nupkg/*.nupkg --source "github" --api-key ${{ secrets.GITHUB_TOKEN }}

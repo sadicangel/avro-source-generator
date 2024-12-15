@@ -15,8 +15,6 @@
     <PackageScribanIncludeSource>true</PackageScribanIncludeSource>
     <DefineConstants>SCRIBAN_NO_ASYNC</DefineConstants>
     <NoWarn>NU5128</NoWarn>
-    <AssemblyName>$(PackageId)</AssemblyName>
-    <RootNamespace>$(PackageId)</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup>

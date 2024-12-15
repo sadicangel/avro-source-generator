@@ -27,7 +27,5 @@ jobs:
       if: (!contains(env.VERSION, '-'))
     - name: Pack
       run: dotnet pack --no-build --configuration Release /p:PackageVersion=${VERSION} --output ./nupkg
-    - name: Setup GitHub NuGet source
-      run: dotnet nuget add source --username sadicangel --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/sadicangel/index.json"
     - name: Publish to GitHub
-      run: dotnet nuget push ./nupkg/*.nupkg --source "github" --api-key ${{ secrets.GITHUB_TOKEN }}
+      run: dotnet nuget push ./nupkg/*.nupkg --source "https://nuget.pkg.github.com/sadicangel/index.json" --api-key ${{ secrets.GITHUB_TOKEN }}

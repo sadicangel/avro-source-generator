@@ -28,7 +28,6 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>apache;avro;apacheavro;generator;generation;codegen;codegenerator;codegeneration</PackageTags>
     <RepositoryUrl>https://github.com/sadicangel/avro-source-generator</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/sadicangel/avro-source-generator</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <!--<PackageIcon>icon.png</PackageIcon>-->
   </PropertyGroup>

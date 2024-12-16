@@ -7,7 +7,6 @@ Produces models that use modern C# features, such as nullable reference types, i
 ## Prerequisites
 
 - .NET SDK 6.0 or later
-- Visual Studio 2022 or later
 
 ## Usage
 

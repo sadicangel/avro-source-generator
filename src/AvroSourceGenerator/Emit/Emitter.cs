@@ -33,11 +33,11 @@ internal static class Emitter
             var schemaRegistry = new SchemaRegistry(languageFeatures, avroModel.NamespaceOverride);
             var rootSchema = schemaRegistry.Register(document.RootElement, avroModel.ContainingNamespace);
 
-            //if (rootSchema.Name != model.ContainingClassName)
-            //{
-            //    context.ReportDiagnostic(InvalidNameDiagnostic.Create(model.SchemaLocation, rootSchema.Name, model.ContainingClassName));
-            //    return;
-            //}
+            if (rootSchema.Name != avroModel.ContainingClassName && !rootSchema.Name.AsSpan(1).Equals(avroModel.ContainingClassName, StringComparison.Ordinal))
+            {
+                context.ReportDiagnostic(InvalidNameDiagnostic.Create(avroModel.SchemaLocation, rootSchema.Name, avroModel.ContainingClassName));
+                return;
+            }
 
             //if (model.NamespaceOverride is null && !string.IsNullOrWhiteSpace(rootSchema.Namespace) && rootSchema.Namespace != model.ContainingNamespace)
             //{

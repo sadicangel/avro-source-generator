@@ -49,17 +49,17 @@ public sealed class AvroRecordTests
         .UseParameters(declaration);
 
     [Theory]
-    [InlineData("\"RecordName\""), InlineData("\"record_name\"")]
-    [InlineData("\"class\""), InlineData("\"string\"")]
-    [InlineData("null"), InlineData("\"\""), InlineData("[]")]
-    public Task Verify_Name(string name) => TestHelper.Verify($$""""
+    [InlineData("\"RecordName\"", "RecordName"), InlineData("\"record_name\"", "record_name")]
+    [InlineData("\"class\"", "@class"), InlineData("\"string\"", "@string")]
+    [InlineData("null", "Record"), InlineData("\"\"", "Record"), InlineData("[]", "Record")]
+    public Task Verify_Name(string name, string matchingClassName) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
         namespace CSharpNamespace;
         
         [Avro(AvroSchema)]
-        partial class Record
+        partial class {{matchingClassName}}
         {
             public const string AvroSchema = """
             {

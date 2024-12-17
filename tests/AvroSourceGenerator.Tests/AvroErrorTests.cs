@@ -51,14 +51,14 @@ public sealed class AvroErrorTests
         .UseParameters(name);
 
     [Theory]
-    [InlineData("null"), InlineData("\"ErrorSchemaNamespace\"")]
-    [InlineData("\"class\""), InlineData("\"name1.class.name2\"")]
-    [InlineData("\"\""), InlineData("[]")]
-    public Task Verify_Namespace(string @namespace) => TestHelper.Verify($$""""
+    [InlineData("null", "CSharpNamespace"), InlineData("\"ErrorSchemaNamespace\"", "ErrorSchemaNamespace")]
+    [InlineData("\"class\"", "@class"), InlineData("\"name1.class.name2\"", "name1.@class.name2")]
+    [InlineData("\"\"", "ErrorSchemaNamespace"), InlineData("[]", "ErrorSchemaNamespace")]
+    public Task Verify_Namespace(string @namespace, string matchingNamespace) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
-        namespace SchemaNamespace;
+        namespace {{matchingNamespace}};
         
         [Avro(AvroSchema)]
         partial class Error
@@ -172,13 +172,14 @@ public sealed class AvroErrorTests
         .UseParameters(languageFeatures);
 
     [Theory]
-    [InlineData("false")]
-    [InlineData("true")]
-    public Task Verify_UseCSharpNamespace(string useCSharpNamespace) => TestHelper.Verify($$""""
+    [InlineData("false", "SchemaNamespace")]
+    [InlineData("false", "CSharpNamespace")]
+    [InlineData("true", "CSharpNamespace")]
+    public Task Verify_UseCSharpNamespace(string useCSharpNamespace, string csharpNamespace) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
-        namespace SchemaNamespace;
+        namespace {{csharpNamespace}};
         
         [Avro(AvroSchema, UseCSharpNamespace = {{useCSharpNamespace}})]
         public partial class Error
@@ -193,5 +194,5 @@ public sealed class AvroErrorTests
             """;
         }
         """")
-        .UseParameters(useCSharpNamespace);
+        .UseParameters(useCSharpNamespace, csharpNamespace);
 }

@@ -7,7 +7,7 @@ public class AvroLogicalTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper
@@ -39,7 +39,7 @@ public class AvroLogicalTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper
@@ -68,7 +68,7 @@ public class AvroLogicalTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper
@@ -97,7 +97,7 @@ public class AvroLogicalTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper
@@ -126,7 +126,7 @@ public class AvroLogicalTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper
@@ -155,7 +155,7 @@ public class AvroLogicalTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper
@@ -184,7 +184,7 @@ public class AvroLogicalTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper
@@ -213,7 +213,7 @@ public class AvroLogicalTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper
@@ -242,7 +242,7 @@ public class AvroLogicalTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper
@@ -271,7 +271,7 @@ public class AvroLogicalTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper

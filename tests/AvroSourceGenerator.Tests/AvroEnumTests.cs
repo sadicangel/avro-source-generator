@@ -8,7 +8,7 @@ public class AvroEnumTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         {{accessModifier}} partial class Wrapper
@@ -37,7 +37,7 @@ public class AvroEnumTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper
@@ -66,7 +66,7 @@ public class AvroEnumTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Wrapper
@@ -94,7 +94,7 @@ public class AvroEnumTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Wrapper
@@ -122,7 +122,7 @@ public class AvroEnumTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Wrapper
@@ -150,7 +150,7 @@ public class AvroEnumTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Wrapper
@@ -178,7 +178,7 @@ public class AvroEnumTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Wrapper
@@ -205,7 +205,7 @@ public class AvroEnumTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema, LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
         public partial class Wrapper
@@ -228,13 +228,14 @@ public class AvroEnumTests
 
 
     [Theory]
-    [InlineData("false")]
-    [InlineData("true")]
-    public Task Verify_UseCSharpNamespace(string useCSharpNamespace) => TestHelper.Verify($$""""
+    [InlineData("false", "SchemaNamespace")]
+    [InlineData("false", "CSharpNamespace")]
+    [InlineData("true", "CSharpNamespace")]
+    public Task Verify_UseCSharpNamespace(string useCSharpNamespace, string csharpNamespace) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace {{csharpNamespace}};
         
         [Avro(AvroSchema, UseCSharpNamespace = {{useCSharpNamespace}})]
         public partial class Wrapper
@@ -253,5 +254,5 @@ public class AvroEnumTests
             """;
         }
         """")
-        .UseParameters(useCSharpNamespace);
+        .UseParameters(useCSharpNamespace, csharpNamespace);
 }

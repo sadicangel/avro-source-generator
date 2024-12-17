@@ -17,7 +17,8 @@ internal static class TestHelper
 
     public static GeneratedOutput GenerateOutput(string[] sources, string[] texts)
     {
-        var syntaxTrees = sources.Select(source => CSharpSyntaxTree.ParseText(source));
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Default);
+        var syntaxTrees = sources.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions));
         var references = AppDomain.CurrentDomain.GetAssemblies()
             .Where(assembly => !assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
             .Select(assembly => MetadataReference.CreateFromFile(assembly.Location))
@@ -36,7 +37,8 @@ internal static class TestHelper
 
         CSharpGeneratorDriver
             .Create(new AvroSourceGenerator())
-            .AddAdditionalTexts(texts.Select(t => new AdditionalTextImplementation(t)).ToImmutableArray<AdditionalText>())
+            .AddAdditionalTexts([.. texts.Select(t => new AdditionalTextImplementation(t))])
+            .WithUpdatedParseOptions(parseOptions)
             .RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
 
         var documents = outputCompilation.SyntaxTrees

@@ -8,7 +8,7 @@ public class AvroFixedTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         {{accessModifier}} partial class Fixed
@@ -26,17 +26,17 @@ public class AvroFixedTests
         .UseParameters(accessModifier);
 
     [Theory]
-    [InlineData("\"Fixed\""), InlineData("\"fixed_name\"")]
-    [InlineData("\"public\""), InlineData("\"string\"")]
-    [InlineData("null"), InlineData("\"\""), InlineData("[]")]
-    public Task Verify_Name(string name) => TestHelper.Verify($$""""
+    [InlineData("\"Fixed\"", "Fixed"), InlineData("\"fixed_name\"", "fixed_name")]
+    [InlineData("\"public\"", "@public"), InlineData("\"string\"", "@string")]
+    [InlineData("null", "Fixed"), InlineData("\"\"", "Fixed"), InlineData("[]", "Fixed")]
+    public Task Verify_Name(string name, string matchingClassName) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
-        partial class Fixed
+        partial class {{matchingClassName}}
         {
             public const string AvroSchema = """
             {
@@ -51,14 +51,14 @@ public class AvroFixedTests
         .UseParameters(name);
 
     [Theory]
-    [InlineData("null"), InlineData("\"FixedSchemaNamespace\"")]
-    [InlineData("\"fixed\""), InlineData("\"name1.fixed.name2\"")]
-    [InlineData("\"\""), InlineData("[]")]
-    public Task Verify_Namespace(string @namespace) => TestHelper.Verify($$""""
+    [InlineData("null", "CSharpNamespace"), InlineData("\"FixedSchemaNamespace\"", "FixedSchemaNamespace")]
+    [InlineData("\"fixed\"", "@fixed"), InlineData("\"name1.fixed.name2\"", "name1.@fixed.name2")]
+    [InlineData("\"\"", "FixedSchemaNamespace"), InlineData("[]", "FixedSchemaNamespace")]
+    public Task Verify_Namespace(string @namespace, string matchingNamespace) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace {{matchingNamespace}};
         
         [Avro(AvroSchema)]
         partial class Fixed
@@ -82,7 +82,7 @@ public class AvroFixedTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Fixed
@@ -107,7 +107,7 @@ public class AvroFixedTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Fixed
@@ -132,7 +132,7 @@ public class AvroFixedTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Fixed
@@ -155,7 +155,7 @@ public class AvroFixedTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema, LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
         public partial class Fixed
@@ -173,13 +173,14 @@ public class AvroFixedTests
         .UseParameters(languageFeatures);
 
     [Theory]
-    [InlineData("false")]
-    [InlineData("true")]
-    public Task Verify_UseCSharpNamespace(string useCSharpNamespace) => TestHelper.Verify($$""""
+    [InlineData("false", "SchemaNamespace")]
+    [InlineData("false", "CSharpNamespace")]
+    [InlineData("true", "CSharpNamespace")]
+    public Task Verify_UseCSharpNamespace(string useCSharpNamespace, string csharpNamespace) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace {{csharpNamespace}};
         
         [Avro(AvroSchema, UseCSharpNamespace = {{useCSharpNamespace}})]
         public partial class Fixed
@@ -194,5 +195,5 @@ public class AvroFixedTests
             """;
         }
         """")
-        .UseParameters(useCSharpNamespace);
+        .UseParameters(useCSharpNamespace, csharpNamespace);
 }

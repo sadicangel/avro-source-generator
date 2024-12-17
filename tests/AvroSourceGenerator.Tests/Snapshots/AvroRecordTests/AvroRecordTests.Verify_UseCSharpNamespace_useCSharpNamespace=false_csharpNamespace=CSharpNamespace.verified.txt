@@ -1,0 +1,24 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+
+[Avro(AvroSchema, UseCSharpNamespace = false)]
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+public partial class Record
+*/
+ : (5,1)-(5,45),
+      Message: The namespace 'global::SchemaNamespace' in the schema does not match the class namespace 'global::CSharpNamespace'. If this behaviour is intended, set 'UseCSharpNamespace' to true.,
+      Severity: Error,
+      Descriptor: {
+        Id: AVROSG0004,
+        Title: Invalid Namespace,
+        MessageFormat: The namespace '{0}' in the schema does not match the class namespace '{1}'. If this behaviour is intended, set 'UseCSharpNamespace' to true.,
+        Category: Naming,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ],
+  Documents: null
+}

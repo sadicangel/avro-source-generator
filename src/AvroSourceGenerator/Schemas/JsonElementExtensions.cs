@@ -7,9 +7,8 @@ namespace AvroSourceGenerator.Schemas;
 
 internal static class JsonElementExtensions
 {
-    // TODO: Avoid allocating a new string to compare against "null".
     public static bool IsNullSchema(JsonElement schema) =>
-        schema.ValueKind is JsonValueKind.String && schema.GetString() == "null";
+        schema.ValueKind is JsonValueKind.String && schema.ValueEquals("null");
 
     public static bool IsReserved(ReadOnlySpan<char> name, [MaybeNullWhen(false)] out string replacement)
     {

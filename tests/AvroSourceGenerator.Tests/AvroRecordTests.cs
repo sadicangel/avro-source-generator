@@ -8,7 +8,7 @@ public sealed class AvroRecordTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         {{accessModifier}} partial class Record
@@ -31,7 +31,7 @@ public sealed class AvroRecordTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial {{declaration}} Record
@@ -56,7 +56,7 @@ public sealed class AvroRecordTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class {{matchingClassName}}
@@ -74,14 +74,14 @@ public sealed class AvroRecordTests
         .UseParameters(name);
 
     [Theory]
-    [InlineData("null"), InlineData("\"RecordSchemaNamespace\"")]
-    [InlineData("\"class\""), InlineData("\"name1.class.name2\"")]
-    [InlineData("\"\""), InlineData("[]")]
-    public Task Verify_Namespace(string @namespace) => TestHelper.Verify($$""""
+    [InlineData("null", "CSharpNamespace"), InlineData("\"RecordSchemaNamespace\"", "RecordSchemaNamespace")]
+    [InlineData("\"class\"", "@class"), InlineData("\"name1.class.name2\"", "name1.@class.name2")]
+    [InlineData("\"\"", "RecordSchemaNamespace"), InlineData("[]", "RecordSchemaNamespace")]
+    public Task Verify_Namespace(string @namespace, string matchingNamespace) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace {{matchingNamespace}};
         
         [Avro(AvroSchema)]
         partial class Record
@@ -105,7 +105,7 @@ public sealed class AvroRecordTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Record
@@ -130,7 +130,7 @@ public sealed class AvroRecordTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Record
@@ -154,7 +154,7 @@ public sealed class AvroRecordTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Record
@@ -177,7 +177,7 @@ public sealed class AvroRecordTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema, LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
         public partial class Record
@@ -195,13 +195,14 @@ public sealed class AvroRecordTests
         .UseParameters(languageFeatures);
 
     [Theory]
-    [InlineData("false")]
-    [InlineData("true")]
-    public Task Verify_UseCSharpNamespace(string useCSharpNamespace) => TestHelper.Verify($$""""
+    [InlineData("false", "SchemaNamespace")]
+    [InlineData("false", "CSharpNamespace")]
+    [InlineData("true", "CSharpNamespace")]
+    public Task Verify_UseCSharpNamespace(string useCSharpNamespace, string csharpNamespace) => TestHelper.Verify($$""""
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace {{csharpNamespace}};
         
         [Avro(AvroSchema, UseCSharpNamespace = {{useCSharpNamespace}})]
         public partial class Record
@@ -216,5 +217,5 @@ public sealed class AvroRecordTests
             """;
         }
         """")
-        .UseParameters(useCSharpNamespace);
+        .UseParameters(useCSharpNamespace, csharpNamespace);
 }

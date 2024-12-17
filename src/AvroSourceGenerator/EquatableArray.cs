@@ -1,19 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator;
-
-internal sealed record class SourceOutputModel(
-    LanguageFeatures LanguageFeatures,
-    string ContainingClassName,
-    string ContainingNamespace,
-    string? NamespaceOverride,
-    string RecordDeclaration,
-    string AccessModifier,
-    string? SchemaJson,
-    Location SchemaLocation,
-    EquatableArray<Diagnostic> Diagnostics);
 
 [CollectionBuilder(typeof(EquatableArrayBuilder), nameof(EquatableArrayBuilder.Create))]
 internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable<EquatableArray<T>>
@@ -36,7 +24,6 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
     public static bool operator ==(EquatableArray<T> left, EquatableArray<T> right) => left.Equals(right);
 
     public static bool operator !=(EquatableArray<T> left, EquatableArray<T> right) => !left.Equals(right);
-
 }
 
 internal static class EquatableArrayBuilder

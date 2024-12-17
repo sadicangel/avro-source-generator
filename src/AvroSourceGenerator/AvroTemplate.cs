@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text.Json;
 using AvroSourceGenerator.Schemas;
 using Scriban;
@@ -22,55 +21,65 @@ internal static class AvroTemplate
             TemplateLoader = new TemplateLoader(),
         };
 
-        var template = GetMainTemplate(templateContext);
+        foreach (var entry in TemplateLoader.Templates)
+        {
+            templateContext.CachedTemplates[entry.Key] = entry.Value;
+        }
+
+        var template = TemplateLoader.GetTemplate("schema");
         foreach (var schema in schemaRegistry)
         {
             templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
-            var hintName = $"{schema.Name.Replace("@", "")}.Avro.g.cs";
+            var safeName = schema.Name[0] is '@' ? schema.Name[1..] : schema.Name;
+            var hintName = $"{safeName}.Avro.g.cs";
             var sourceText = template.Render(templateContext);
             yield return new RenderOutput(hintName, sourceText);
         }
-    }
-
-    private static Template GetMainTemplate(TemplateContext context)
-    {
-        const string MainTemplateName = "schema";
-        var templatePath = context.TemplateLoader.GetPath(context, default, MainTemplateName);
-        // TODO: Maybe avoid parsing the template each time.
-        var template = Template.Parse(context.TemplateLoader.Load(context, default, templatePath));
-        return template;
     }
 }
 
 file sealed class TemplateLoader : ITemplateLoader
 {
-    private static readonly Dictionary<string, string> s_templatePaths = new()
-    {
-        ["enum"] = "AvroSourceGenerator.Templates.enum.sbncs",
-        ["error"] = "AvroSourceGenerator.Templates.error.sbncs",
-        ["field"] = "AvroSourceGenerator.Templates.field.sbncs",
-        ["fixed"] = "AvroSourceGenerator.Templates.fixed.sbncs",
-        ["getput"] = "AvroSourceGenerator.Templates.getput.sbncs",
-        ["main"] = "AvroSourceGenerator.Templates.main.sbncs",
-        ["record"] = "AvroSourceGenerator.Templates.record.sbncs",
-        ["schema"] = "AvroSourceGenerator.Templates.schema.sbncs",
-    };
+    private static readonly Dictionary<string, string> s_templatePaths;
 
-    private static readonly ConcurrentDictionary<string, string> s_templates = new();
+    private static readonly Dictionary<string, Template> s_templates;
+
+    static TemplateLoader()
+    {
+        s_templatePaths = new()
+        {
+            ["enum"] = "AvroSourceGenerator.Templates.enum.sbncs",
+            ["error"] = "AvroSourceGenerator.Templates.error.sbncs",
+            ["field"] = "AvroSourceGenerator.Templates.field.sbncs",
+            ["fixed"] = "AvroSourceGenerator.Templates.fixed.sbncs",
+            ["getput"] = "AvroSourceGenerator.Templates.getput.sbncs",
+            ["record"] = "AvroSourceGenerator.Templates.record.sbncs",
+            ["schema"] = "AvroSourceGenerator.Templates.schema.sbncs",
+        };
+
+        s_templates = new(s_templatePaths.Count);
+        foreach (var templatePath in s_templatePaths.Values)
+        {
+            s_templates[templatePath] = LoadTemplate(templatePath);
+        }
+
+        static Template LoadTemplate(string templatePath)
+        {
+            using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(templatePath));
+            return Template.Parse(reader.ReadToEnd(), templatePath);
+        }
+    }
+
+    public static IReadOnlyDictionary<string, Template> Templates => s_templates;
+
+    public static Template GetTemplate(string templateName) =>
+        s_templates[s_templatePaths[templateName]];
 
     public string GetPath(TemplateContext context, SourceSpan callerSpan, string templateName) =>
         s_templatePaths[templateName];
 
-    public string Load(TemplateContext context, SourceSpan callerSpan, string templatePath)
-    {
-        return s_templates.GetOrAdd(templatePath, LoadTemplate);
-
-        static string LoadTemplate(string templatePath)
-        {
-            using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(templatePath));
-            return reader.ReadToEnd();
-        }
-    }
+    public string Load(TemplateContext context, SourceSpan callerSpan, string templatePath) =>
+        throw new InvalidOperationException("This method should not be called.");
 }
 
 file sealed class TemplateScriptObject : BuiltinFunctions

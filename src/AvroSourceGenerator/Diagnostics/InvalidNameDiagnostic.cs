@@ -12,6 +12,7 @@ internal static class InvalidNameDiagnostic
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    // TODO: Add class location also.
     public static Diagnostic Create(Location location, string schemaName, string className) =>
         Diagnostic.Create(s_invalidNameDescriptor, location, schemaName, className);
 }

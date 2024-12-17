@@ -11,6 +11,7 @@ internal static class InvalidNamespaceDiagnostic
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    // TODO: Add namespace location also.
     public static Diagnostic Create(Location location, string schemaNamespace, string classNamespace) =>
         Diagnostic.Create(s_invalidNamespaceDescriptor, location, schemaNamespace, classNamespace);
 }

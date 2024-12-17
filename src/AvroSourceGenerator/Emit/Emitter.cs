@@ -33,17 +33,17 @@ internal static class Emitter
             var schemaRegistry = new SchemaRegistry(languageFeatures, avroModel.NamespaceOverride);
             var rootSchema = schemaRegistry.Register(document.RootElement, avroModel.ContainingNamespace);
 
-            if (rootSchema.Name != avroModel.ContainingClassName && !rootSchema.Name.AsSpan(1).Equals(avroModel.ContainingClassName, StringComparison.Ordinal))
+            if (!NameMatches(rootSchema.Name, avroModel.ContainingClassName))
             {
                 context.ReportDiagnostic(InvalidNameDiagnostic.Create(avroModel.SchemaLocation, rootSchema.Name, avroModel.ContainingClassName));
                 return;
             }
 
-            //if (model.NamespaceOverride is null && !string.IsNullOrWhiteSpace(rootSchema.Namespace) && rootSchema.Namespace != model.ContainingNamespace)
-            //{
-            //    context.ReportDiagnostic(InvalidNamespaceDiagnostic.Create(model.SchemaLocation, rootSchema.Namespace!, model.ContainingNamespace));
-            //    return;
-            //}
+            if (avroModel.NamespaceOverride is null && !NamespaceMatches(rootSchema.Namespace, avroModel.ContainingNamespace))
+            {
+                context.ReportDiagnostic(InvalidNamespaceDiagnostic.Create(avroModel.SchemaLocation, rootSchema.Namespace!, avroModel.ContainingNamespace));
+                return;
+            }
 
             // We should get no render errors, so we don't have to handle anything else.
             var renderOutputs = AvroTemplate.Render(
@@ -81,4 +81,10 @@ internal static class Emitter
             _ => LanguageFeatures.Latest,
         };
     }
+
+    private static bool NameMatches(string schemaName, string className) =>
+        schemaName == className || schemaName.AsSpan(1).Equals(className, StringComparison.Ordinal);
+
+    private static bool NamespaceMatches(string? schemaNamespace, string classNamespace) =>
+        string.IsNullOrWhiteSpace(schemaNamespace) || schemaNamespace == classNamespace || schemaNamespace.AsSpan(1).Equals(classNamespace, StringComparison.Ordinal);
 }

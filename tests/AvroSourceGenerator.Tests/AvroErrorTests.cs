@@ -8,7 +8,7 @@ public sealed class AvroErrorTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         {{accessModifier}} partial class Error
@@ -33,7 +33,7 @@ public sealed class AvroErrorTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class {{matchingClassName}}
@@ -58,7 +58,7 @@ public sealed class AvroErrorTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         partial class Error
@@ -82,7 +82,7 @@ public sealed class AvroErrorTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Error
@@ -107,7 +107,7 @@ public sealed class AvroErrorTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Error
@@ -131,7 +131,7 @@ public sealed class AvroErrorTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema)]
         public partial class Error
@@ -154,7 +154,7 @@ public sealed class AvroErrorTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema, LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
         public partial class Error
@@ -178,7 +178,7 @@ public sealed class AvroErrorTests
         using System;
         using AvroSourceGenerator;
         
-        namespace CSharpNamespace;
+        namespace SchemaNamespace;
         
         [Avro(AvroSchema, UseCSharpNamespace = {{useCSharpNamespace}})]
         public partial class Error

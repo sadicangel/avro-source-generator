@@ -83,8 +83,8 @@ internal static class Emitter
     }
 
     private static bool NameMatches(string schemaName, string className) =>
-        schemaName == className || schemaName.AsSpan(1).Equals(className, StringComparison.Ordinal);
+        schemaName == className || schemaName.AsSpan(1).Equals(className.AsSpan(), StringComparison.Ordinal);
 
     private static bool NamespaceMatches(string? schemaNamespace, string classNamespace) =>
-        string.IsNullOrWhiteSpace(schemaNamespace) || schemaNamespace == classNamespace || schemaNamespace.AsSpan(1).Equals(classNamespace, StringComparison.Ordinal);
+        string.IsNullOrWhiteSpace(schemaNamespace) || schemaNamespace == classNamespace || schemaNamespace.AsSpan(1).Equals(classNamespace.AsSpan(), StringComparison.Ordinal);
 }

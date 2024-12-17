@@ -1,9 +1,9 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace AvroSourceGenerator;
+namespace AvroSourceGenerator.Parsing;
 
 internal sealed record class AvroModel(
-    LanguageFeatures LanguageFeatures,
+    LanguageFeatures? LanguageFeatures,
     string ContainingClassName,
     string ContainingNamespace,
     string? NamespaceOverride,

@@ -186,7 +186,7 @@ internal partial record User;
 
 It is possible to specify the C# language features to be used in the generated code. This is useful when you need to ensure compatibility with older versions of C#.  
 For example, setting `LanguageFeatures = LanguageFeatures.CSharp7_3` will generate code using only features that are compatible with C# 7.3 (eg: no nullable reference types, no records, etc).  
-By default, generated code will use the latest features.
+If left unspecified, will generate code that uses features compatible with the language version of the project.
 
 Example for generating code compatible with C# 7.3 (suitable for .NET Framework and .NET Standard 2.0):
 ```cs

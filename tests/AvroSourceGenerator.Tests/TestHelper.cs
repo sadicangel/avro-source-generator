@@ -13,9 +13,9 @@ public readonly record struct GeneratedOutput(ImmutableArray<Diagnostic> Diagnos
 internal static class TestHelper
 {
     public static SettingsTask Verify(string source) =>
-        Verifier.Verify(GenerateOutput([source], []));
+        Verifier.Verify(GenerateOutput([source]));
 
-    public static GeneratedOutput GenerateOutput(string[] sources, string[] texts)
+    public static GeneratedOutput GenerateOutput(string[] sources)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Default);
         var syntaxTrees = sources.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions));
@@ -37,7 +37,6 @@ internal static class TestHelper
 
         CSharpGeneratorDriver
             .Create(new AvroSourceGenerator())
-            .AddAdditionalTexts([.. texts.Select(t => new AdditionalTextImplementation(t))])
             .WithUpdatedParseOptions(parseOptions)
             .RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
 
@@ -48,12 +47,4 @@ internal static class TestHelper
 
         return new(diagnostics, documents);
     }
-}
-
-file sealed class AdditionalTextImplementation(string content) : AdditionalText
-{
-    public override string Path { get; } = $"{Guid.NewGuid()}.avsc";
-
-    public override SourceText? GetText(CancellationToken cancellationToken = default) =>
-        SourceText.From(content, Encoding.UTF8);
 }

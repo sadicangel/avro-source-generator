@@ -8,7 +8,7 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    internal partial class Duration : global::Avro.Specific.SpecificFixed
+    public partial class Duration : global::Avro.Specific.SpecificFixed
     {
         public Duration() : base(12) { }
     
@@ -37,7 +37,7 @@ namespace SchemaNamespace
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    internal partial class Wrapper : global::Avro.Specific.ISpecificRecord
+    public partial record Wrapper : global::Avro.Specific.ISpecificRecord
     {
         public required global::SchemaNamespace.Duration TimestampField { get; init; }
     

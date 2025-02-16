@@ -11,46 +11,38 @@ namespace AvroSourceGenerator.Emit;
 
 internal static class Emitter
 {
-    public static void Emit(SourceProductionContext context, (AvroModel avroModel, LanguageVersion languageVersion) source)
+    public static void Emit(SourceProductionContext context, (AvroFile avroFile, GeneratorSettings generatorSettings, CompilationInfo compilationInfo, AvroOptions? avroOptions) source)
     {
-        var (avroModel, languageVersion) = source;
+        var (avroFile, generatorSettings, compilationInfo, avroOptions) = source;
 
-        foreach (var diagnostic in avroModel.Diagnostics)
+        foreach (var diagnostic in avroFile.Diagnostics)
         {
             context.ReportDiagnostic(diagnostic);
         }
 
-        if (avroModel.SchemaJson is null)
+        if (!avroFile.IsValid)
         {
             return;
         }
 
         try
         {
-            var languageFeatures = MapSpecifiedToEffectiveFeatures(avroModel.LanguageFeatures, languageVersion);
+            var languageFeatures = MapSpecifiedToEffectiveFeatures(
+                avroOptions?.LanguageFeatures ?? generatorSettings.LanguageFeatures,
+                compilationInfo.LanguageVersion);
 
-            using var document = JsonDocument.Parse(avroModel.SchemaJson);
-            var schemaRegistry = new SchemaRegistry(languageFeatures, avroModel.NamespaceOverride);
-            var rootSchema = schemaRegistry.Register(document.RootElement, avroModel.ContainingNamespace);
+            var accessModifier = avroOptions?.AccessModifier ?? generatorSettings.AccessModifier;
+            var recordDeclaration = avroOptions?.RecordDeclaration ?? generatorSettings.RecordDeclaration;
 
-            if (!NameMatches(rootSchema.Name, avroModel.ContainingClassName))
-            {
-                context.ReportDiagnostic(InvalidNameDiagnostic.Create(avroModel.SchemaLocation, rootSchema.Name, avroModel.ContainingClassName));
-                return;
-            }
-
-            if (avroModel.NamespaceOverride is null && !NamespaceMatches(rootSchema.Namespace, avroModel.ContainingNamespace))
-            {
-                context.ReportDiagnostic(InvalidNamespaceDiagnostic.Create(avroModel.SchemaLocation, rootSchema.Namespace!, avroModel.ContainingNamespace));
-                return;
-            }
+            var schemaRegistry = new SchemaRegistry(languageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes));
+            var rootSchema = schemaRegistry.Register(avroFile.Json);
 
             // We should get no render errors, so we don't have to handle anything else.
             var renderOutputs = AvroTemplate.Render(
                 schemaRegistry,
                 languageFeatures,
-                avroModel.RecordDeclaration,
-                avroModel.AccessModifier);
+                recordDeclaration,
+                accessModifier);
 
             foreach (var renderOutput in renderOutputs)
             {
@@ -59,11 +51,13 @@ internal static class Emitter
         }
         catch (JsonException ex)
         {
-            context.ReportDiagnostic(InvalidJsonDiagnostic.Create(avroModel.SchemaLocation, ex.Message));
+            // TODO: We can probably get a better location for the error.
+            context.ReportDiagnostic(InvalidJsonDiagnostic.Create(avroFile.GetLocation(), ex.Message));
         }
         catch (InvalidSchemaException ex)
         {
-            context.ReportDiagnostic(InvalidAvroSchemaDiagnostic.Create(avroModel.SchemaLocation, ex.Message));
+            // TODO: We can probably get a better location for the error.
+            context.ReportDiagnostic(InvalidSchemaDiagnostic.Create(avroFile.GetLocation(), ex.Message));
         }
     }
 
@@ -81,10 +75,4 @@ internal static class Emitter
             _ => LanguageFeatures.Latest,
         };
     }
-
-    private static bool NameMatches(string schemaName, string className) =>
-        schemaName == className || schemaName.AsSpan(1).Equals(className.AsSpan(), StringComparison.Ordinal);
-
-    private static bool NamespaceMatches(string? schemaNamespace, string classNamespace) =>
-        string.IsNullOrWhiteSpace(schemaNamespace) || schemaNamespace == classNamespace || schemaNamespace.AsSpan(1).Equals(classNamespace.AsSpan(), StringComparison.Ordinal);
 }

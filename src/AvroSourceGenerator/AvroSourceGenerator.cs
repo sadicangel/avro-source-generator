@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Emit;
+﻿using AvroSourceGenerator.Diagnostics;
+using AvroSourceGenerator.Emit;
 using AvroSourceGenerator.Parsing;
 using Microsoft.CodeAnalysis;
 
@@ -9,15 +10,58 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var modelProvider = context.SyntaxProvider
+        var avroFileProvider = context.AdditionalTextsProvider
+            .Where(Parser.IsAvroFile)
+            .Select(Parser.GetAvroFile);
+
+        var generatorSettings = context.AnalyzerConfigOptionsProvider
+            .Select(Parser.GetGeneratorSettings);
+
+        var compilationInfoProvider = context.CompilationProvider
+            .Select(Parser.GetCompilationInfo);
+
+        var avroOptionsProvider = context.SyntaxProvider
             .ForAttributeWithMetadataName("AvroSourceGenerator.AvroAttribute",
                 predicate: Parser.IsCandidateDeclaration,
-                transform: Parser.GetAvroModel);
+                transform: Parser.GetAvroOptions);
 
-        var languageVersionProvider = context.CompilationProvider.Select(Parser.GetLanguageVersion);
+        var avroProvider = avroFileProvider.Combine(generatorSettings.Combine(compilationInfoProvider).Combine(avroOptionsProvider.Collect()))
+            .Select((source, _) =>
+            {
+                var (avroFile, ((generatorSettings, compilationInfo), avroOptionsCollection)) = source;
 
-        var combinedProvider = modelProvider.Combine(languageVersionProvider);
+                // There should only be zero or one AvroOptions for each AvroFile.
+                // Multiple AvroOptions for the same AvroFile is most likely a compiler error as
+                // that means there are two attributes applied to the same declaration or to two
+                // different declarations with the same fully qualified name.
 
-        context.RegisterImplementationSourceOutput(combinedProvider, Emitter.Emit);
+                var avroOptions = avroOptionsCollection
+                    .FirstOrDefault(options => options.Name == avroFile.Name);
+
+                return (avroFile, generatorSettings, compilationInfo, avroOptions);
+            });
+
+        context.RegisterImplementationSourceOutput(avroProvider, Emitter.Emit);
+
+        var diagnosticsProvider = avroOptionsProvider.Combine(avroFileProvider.Collect())
+            .Select((source, _) =>
+            {
+                var (avroOptions, avroFiles) = source;
+
+                if (avroFiles.Any(file => file.Name == avroOptions.Name))
+                {
+                    return null;
+                }
+
+                return AttributeMismatchDiagnostic.Create(avroOptions.Location, avroOptions.Name);
+            });
+
+        context.RegisterImplementationSourceOutput(diagnosticsProvider, (context, diagnostic) =>
+        {
+            if (diagnostic is not null)
+            {
+                context.ReportDiagnostic(diagnostic);
+            }
+        });
     }
 }

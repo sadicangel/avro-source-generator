@@ -1,13 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: /*
-
-[Avro(AvroSchema)]
- ^^^^^^^^^^^^^^^^
-public partial class Fixed
-*/
- : (5,1)-(5,17),
+      Location: FC7EB9C84E5F3DFA81EBF5B77DECFDA7.avsc: (0,0)-(5,1),
       Message:
 The schema defined in the JSON is invalid: 'size' property must be a positive integer in schema: {
     "type": "fixed",
@@ -18,7 +12,7 @@ The schema defined in the JSON is invalid: 'size' property must be a positive in
       Severity: Error,
       Descriptor: {
         Id: AVROSG0002,
-        Title: Invalid Avro Schema,
+        Title: Invalid Schema,
         MessageFormat: The schema defined in the JSON is invalid: {0},
         Category: Semantic,
         DefaultSeverity: Error,

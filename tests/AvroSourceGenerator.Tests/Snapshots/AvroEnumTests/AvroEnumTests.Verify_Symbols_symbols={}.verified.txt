@@ -1,21 +1,18 @@
 ﻿{
   Diagnostics: [
     {
-      Location: /*
-
-[Avro(AvroSchema)]
- ^^^^^^^^^^^^^^^^
-public partial class Wrapper
-*/
- : (5,1)-(5,17),
+      Location: 2C73446F5A8EB42D0D0D16496A73C1D6.avsc: (0,0)-(5,1),
       Message:
 The schema defined in the JSON is invalid: 'symbols' property must be an array in schema: {
-            "type": "enum", "name": "TestEnum", "symbols": {}
-        },
+    "type": "enum",
+    "name": "TestEnum",
+    "namespace": "SchemaNamespace",
+    "symbols": {}
+},
       Severity: Error,
       Descriptor: {
         Id: AVROSG0002,
-        Title: Invalid Avro Schema,
+        Title: Invalid Schema,
         MessageFormat: The schema defined in the JSON is invalid: {0},
         Category: Semantic,
         DefaultSeverity: Error,

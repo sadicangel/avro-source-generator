@@ -1,0 +1,7 @@
+<Project>
+    <ItemGroup>
+        <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
+        <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
+        <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
+    </ItemGroup>
+</Project>

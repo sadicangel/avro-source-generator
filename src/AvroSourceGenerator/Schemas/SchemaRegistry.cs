@@ -4,25 +4,23 @@ using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
-internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? namespaceOverride = null)
+internal sealed class SchemaRegistry(bool useNullableReferenceTypes)
     : IEnumerable<AvroSchema>
 {
     private readonly Dictionary<QualifiedName, AvroSchema> _schemas = [];
 
-    private bool UseNullableReferenceTypes => languageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes);
-
     public IEnumerator<AvroSchema> GetEnumerator() => _schemas.Values.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public AvroSchema Register(JsonElement schema, string containingNamespace)
+    public AvroSchema Register(JsonElement schema)
     {
-        var name = Type(schema, containingNamespace, nullable: false);
+        var name = Type(schema, containingNamespace: null, nullable: false);
 
         // The schema will only be registered if it's a named schema.
         return _schemas[name];
     }
 
-    private QualifiedName Type(JsonElement schema, string containingNamespace, bool nullable)
+    private QualifiedName Type(JsonElement schema, string? containingNamespace, bool nullable)
     {
         return schema.ValueKind switch
         {
@@ -33,26 +31,26 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
         };
     }
 
-    private QualifiedName KnownType(JsonElement schema, string containingNamespace, bool nullable)
+    private QualifiedName KnownType(JsonElement schema, string? containingNamespace, bool nullable)
     {
         var type = schema.GetString()!;
 
         return type switch
         {
-            "null" => QualifiedName.Object(UseNullableReferenceTypes & nullable),
+            "null" => QualifiedName.Object(useNullableReferenceTypes & nullable),
             "boolean" => QualifiedName.Boolean(nullable),
             "int" => QualifiedName.Int(nullable),
             "long" => QualifiedName.Long(nullable),
             "float" => QualifiedName.Float(nullable),
             "double" => QualifiedName.Double(nullable),
-            "bytes" => QualifiedName.Bytes(UseNullableReferenceTypes & nullable),
-            "string" => QualifiedName.String(UseNullableReferenceTypes & nullable),
+            "bytes" => QualifiedName.Bytes(useNullableReferenceTypes & nullable),
+            "string" => QualifiedName.String(useNullableReferenceTypes & nullable),
             _ when _schemas.TryGetValue(new QualifiedName(JsonElementExtensions.GetValid(type), containingNamespace), out var registeredType) => registeredType.QualifiedName,
             _ => throw new InvalidSchemaException($"Unknown schema '{type}' in {schema.GetRawText()}")
         };
     }
 
-    private QualifiedName ComplexType(JsonElement schema, string containingNamespace, bool nullable)
+    private QualifiedName ComplexType(JsonElement schema, string? containingNamespace, bool nullable)
     {
         if (schema.IsSupportedLogicalSchema())
         {
@@ -73,7 +71,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
         };
     }
 
-    private QualifiedName Array(JsonElement schema, string containingNamespace, bool nullable)
+    private QualifiedName Array(JsonElement schema, string? containingNamespace, bool nullable)
     {
         var itemsSchema = schema.GetSchemaItems();
 
@@ -82,7 +80,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
         return QualifiedName.Array(items, nullable);
     }
 
-    private QualifiedName Map(JsonElement schema, string containingNamespace, bool nullable)
+    private QualifiedName Map(JsonElement schema, string? containingNamespace, bool nullable)
     {
         var valuesSchema = schema.GetSchemaValues();
 
@@ -91,10 +89,10 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
         return QualifiedName.Map(values, nullable);
     }
 
-    private QualifiedName Enum(JsonElement schema, string containingNamespace, bool nullable)
+    private QualifiedName Enum(JsonElement schema, string? containingNamespace, bool nullable)
     {
         var localName = schema.GetLocalName();
-        var @namespace = namespaceOverride ?? schema.GetNamespace() ?? containingNamespace;
+        var @namespace = schema.GetNamespace() ?? containingNamespace;
         var name = new QualifiedName(localName, @namespace);
 
         if (!_schemas.ContainsKey(name))
@@ -132,10 +130,10 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
         }
     }
 
-    private QualifiedName Record(JsonElement schema, string containingNamespace, bool nullable)
+    private QualifiedName Record(JsonElement schema, string? containingNamespace, bool nullable)
     {
         var localName = schema.GetLocalName();
-        var @namespace = namespaceOverride ?? schema.GetNamespace() ?? containingNamespace;
+        var @namespace = schema.GetNamespace() ?? containingNamespace;
         var name = new QualifiedName(localName, @namespace);
 
         if (!_schemas.ContainsKey(name))
@@ -147,13 +145,13 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
             _schemas[name] = new RecordSchema(schema, name, documentation, aliases, fields);
         }
 
-        return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;
+        return useNullableReferenceTypes & nullable ? name.ToNullable() : name;
     }
 
-    private QualifiedName Error(JsonElement schema, string containingNamespace, bool nullable)
+    private QualifiedName Error(JsonElement schema, string? containingNamespace, bool nullable)
     {
         var localName = schema.GetLocalName();
-        var @namespace = namespaceOverride ?? schema.GetNamespace() ?? containingNamespace;
+        var @namespace = schema.GetNamespace() ?? containingNamespace;
         var name = new QualifiedName(localName, @namespace);
 
         if (!_schemas.ContainsKey(name))
@@ -165,13 +163,13 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
             _schemas[name] = new ErrorSchema(schema, name, documentation, aliases, fields);
         }
 
-        return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;
+        return useNullableReferenceTypes & nullable ? name.ToNullable() : name;
     }
 
-    private ImmutableArray<Field> Fields(JsonElement schema, string containingNamespace) =>
-        schema.GetSchemaFields().Select(field => Field(field, containingNamespace)).ToImmutableArray();
+    private ImmutableArray<Field> Fields(JsonElement schema, string? containingNamespace) =>
+        [.. schema.GetSchemaFields().Select(field => Field(field, containingNamespace))];
 
-    private Field Field(JsonElement field, string containingNamespace)
+    private Field Field(JsonElement field, string? containingNamespace)
     {
         var name = field.GetLocalName();
         var type = Type(field.GetSchemaType(), containingNamespace, nullable: false);
@@ -190,7 +188,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
         }
 
         // TODO: Actually validate the value so that we don't generate invalid code.
-        return type.Name switch
+        return type.LocalName switch
         {
             "object" or "object?" => null,
             "bool" or "bool?" => value.GetRawText(),
@@ -209,10 +207,10 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
         };
     }
 
-    private QualifiedName Fixed(JsonElement schema, string containingNamespace, bool nullable)
+    private QualifiedName Fixed(JsonElement schema, string? containingNamespace, bool nullable)
     {
         var localName = schema.GetLocalName();
-        var @namespace = namespaceOverride ?? schema.GetNamespace() ?? containingNamespace;
+        var @namespace = schema.GetNamespace() ?? containingNamespace;
         var name = new QualifiedName(localName, @namespace);
 
         if (!_schemas.ContainsKey(name))
@@ -224,7 +222,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
             _schemas[name] = new FixedSchema(schema, name, documentation, aliases, size);
         }
 
-        return UseNullableReferenceTypes & nullable ? name.ToNullable() : name;
+        return useNullableReferenceTypes & nullable ? name.ToNullable() : name;
     }
 
     private QualifiedName Logical(JsonElement schema, bool nullable)
@@ -247,7 +245,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
         };
     }
 
-    private QualifiedName Union(JsonElement schema, string containingNamespace)
+    private QualifiedName Union(JsonElement schema, string? containingNamespace)
     {
         var length = schema.GetArrayLength();
 
@@ -257,7 +255,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
             2 => (JsonElementExtensions.IsNullSchema(schema[0]), JsonElementExtensions.IsNullSchema(schema[1])) switch
             {
                 // "null" | "null"
-                (true, true) => QualifiedName.Object(UseNullableReferenceTypes),
+                (true, true) => QualifiedName.Object(useNullableReferenceTypes),
                 // "null" | T
                 (true, false) => Type(schema[1], containingNamespace, nullable: true),
                 // T | "null"
@@ -266,7 +264,7 @@ internal sealed class SchemaRegistry(LanguageFeatures languageFeatures, string? 
                 _ => QualifiedName.Object(nullable: false),
             },
             // T1 | T2 | ... | Tn
-            _ => QualifiedName.Object(UseNullableReferenceTypes & schema.EnumerateArray().Any(JsonElementExtensions.IsNullSchema)),
+            _ => QualifiedName.Object(useNullableReferenceTypes & schema.EnumerateArray().Any(JsonElementExtensions.IsNullSchema)),
         };
     }
 }

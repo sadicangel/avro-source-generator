@@ -7,11 +7,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
+    <AdditionalFiles Include="*.avsc" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Apache.Avro" />
-    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

@@ -1,21 +1,19 @@
 ﻿{
   Diagnostics: [
     {
-      Location: /*
-
-[Avro(AvroSchema)]
- ^^^^^^^^^^^^^^^^
-public partial class Wrapper
-*/
- : (5,1)-(5,17),
+      Location: schema.avsc: (0,0)-(6,1),
       Message:
 The schema defined in the JSON is invalid: 'doc' property must be a string in schema: {
-            "type": "enum", "name": "TestEnum", "doc": [], "symbols": []
-        },
+    "type": "enum",
+    "name": "TestEnum",
+    "namespace": "SchemaNamespace",
+    "doc": [],
+    "symbols": []
+},
       Severity: Error,
       Descriptor: {
         Id: AVROSG0002,
-        Title: Invalid Avro Schema,
+        Title: Invalid Schema,
         MessageFormat: The schema defined in the JSON is invalid: {0},
         Category: Semantic,
         DefaultSeverity: Error,

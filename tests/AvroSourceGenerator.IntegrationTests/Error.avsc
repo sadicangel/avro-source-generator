@@ -1,0 +1,15 @@
+{
+  "type": "error",
+  "name": "ErrorExample",
+  "namespace": "AvroSourceGenerator.IntegrationTests",
+  "fields": [
+    {
+      "name": "ErrorCode",
+      "type": "int"
+    },
+    {
+      "name": "ErrorMessage",
+      "type": "string"
+    }
+  ]
+}

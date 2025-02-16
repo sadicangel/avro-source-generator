@@ -33,13 +33,14 @@
   <ItemGroup>
     <EmbeddedResource Include="Templates\**\*" />
     <None Include="../../README.md" Pack="true" PackagePath="\" />
+    <None Include="../../AvroSourceGenerator.props" Pack="true" PackagePath="build" Visible="false" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     <PackageReference Include="PolySharp" PrivateAssets="all" />
-    <PackageReference Include="Scriban" PrivateAssets="all" IncludeAssets="Build" />
+    <PackageReference Include="Scriban" PrivateAssets="all" IncludeAssets="build" />
   </ItemGroup>
 
   <ItemGroup>

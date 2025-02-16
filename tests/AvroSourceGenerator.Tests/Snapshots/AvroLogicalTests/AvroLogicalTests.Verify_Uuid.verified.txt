@@ -10,7 +10,7 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    internal partial class Wrapper : global::Avro.Specific.ISpecificRecord
+    public partial record Wrapper : global::Avro.Specific.ISpecificRecord
     {
         public required global::System.Guid UuidField { get; init; }
     

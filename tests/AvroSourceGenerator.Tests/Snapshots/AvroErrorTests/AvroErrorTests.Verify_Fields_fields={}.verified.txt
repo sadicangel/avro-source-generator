@@ -1,13 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: /*
-
-[Avro(AvroSchema)]
- ^^^^^^^^^^^^^^^^
-public partial class Error
-*/
- : (5,1)-(5,17),
+      Location: schema.avsc: (0,0)-(5,1),
       Message:
 The schema defined in the JSON is invalid: 'fields' property must be an array in schema: {
     "type": "error",
@@ -18,7 +12,7 @@ The schema defined in the JSON is invalid: 'fields' property must be an array in
       Severity: Error,
       Descriptor: {
         Id: AVROSG0002,
-        Title: Invalid Avro Schema,
+        Title: Invalid Schema,
         MessageFormat: The schema defined in the JSON is invalid: {0},
         Category: Semantic,
         DefaultSeverity: Error,

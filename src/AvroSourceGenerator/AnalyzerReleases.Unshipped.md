@@ -6,6 +6,5 @@
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 AVROSG0001 | Syntax | Error | InvalidJsonDiagnostic
-AVROSG0002 | Semantic | Error | InvalidAvroSchemaDiagnostic
-AVROSG0003 | Naming | Error | InvalidNameDiagnostic
-AVROSG0004 | Naming | Error | InvalidNamespaceDiagnostic
+AVROSG0002 | Semantic | Error | InvalidSchemaDiagnostic
+AVROSG0003 | Usage | Warning | AttributeMismatchDiagnostic

@@ -12,7 +12,7 @@ namespace SchemaNamespace
     /// <summary>
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class Record : global::Avro.Specific.ISpecificRecord
+    public partial record Record : global::Avro.Specific.ISpecificRecord
     {
     
         public global::Avro.Schema Schema { get => Record._SCHEMA; }

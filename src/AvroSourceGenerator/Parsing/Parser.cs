@@ -1,12 +1,92 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
+using AvroSourceGenerator.Schemas;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace AvroSourceGenerator.Parsing;
 internal static class Parser
 {
+    private static readonly SymbolDisplayFormat s_partiallyQualifiedFormat =
+        SymbolDisplayFormat.FullyQualifiedFormat.WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted);
+
+    public static bool IsAvroFile(AdditionalText text) =>
+        text.Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase);
+
+    public static AvroFile GetAvroFile(AdditionalText additionalText, CancellationToken cancellationToken)
+    {
+        var path = additionalText.Path;
+        var text = additionalText.GetText(cancellationToken)?.ToString();
+        var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            diagnostics.Add(InvalidJsonDiagnostic.Create(path.GetLocation(text), "The file is empty."));
+
+            return new AvroFile(path, text, default, default, diagnostics.ToImmutable());
+        }
+
+        try
+        {
+            using var jsonDocument = JsonDocument.Parse(text!);
+            var json = jsonDocument.RootElement.Clone();
+            var name = new QualifiedName(json.GetLocalName(), json.GetNamespace());
+            return new AvroFile(path, text, json, name, diagnostics.ToImmutable());
+        }
+        catch (JsonException ex)
+        {
+            diagnostics.Add(InvalidJsonDiagnostic.Create(path.GetLocation(text), ex.Message));
+        }
+        catch (InvalidSchemaException ex)
+        {
+            diagnostics.Add(InvalidSchemaDiagnostic.Create(path.GetLocation(text), ex.Message));
+        }
+
+        return new AvroFile(path, text, default, default, diagnostics.ToImmutable());
+    }
+
+    public static GeneratorSettings GetGeneratorSettings(AnalyzerConfigOptionsProvider provider, CancellationToken cancellationToken)
+    {
+        _ = cancellationToken;
+
+        if (!provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorAccessModifier", out var accessModifier) ||
+            accessModifier is not ("public" or "internal"))
+        {
+            accessModifier = "public";
+        }
+
+        if (!provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorRecordDeclaration", out var recordDeclaration) ||
+            recordDeclaration is not ("record" or "class"))
+        {
+            recordDeclaration = "record";
+        }
+
+        var languageFeatures = default(LanguageFeatures?);
+        if (provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorLanguageFeatures", out var languageFeaturesString) &&
+            Enum.TryParse<LanguageFeatures>(languageFeaturesString, ignoreCase: true, out var parsedLanguageFeatures))
+        {
+            languageFeatures = parsedLanguageFeatures;
+        }
+
+        return new GeneratorSettings(accessModifier, recordDeclaration, languageFeatures);
+    }
+
+    public static CompilationInfo GetCompilationInfo(Compilation compilation, CancellationToken cancellationToken)
+    {
+        _ = cancellationToken;
+
+        var csharpCompilation = (CSharpCompilation)compilation;
+        var assemblyNamespace = csharpCompilation.Assembly.ContainingNamespace?.ToDisplayString(s_partiallyQualifiedFormat);
+        var languageVersion = csharpCompilation.LanguageVersion;
+
+        return new CompilationInfo(assemblyNamespace, languageVersion);
+    }
+
+
+
     public static bool IsCandidateDeclaration(SyntaxNode node, CancellationToken cancellationToken)
     {
         _ = cancellationToken;
@@ -21,14 +101,14 @@ internal static class Parser
         return Unsafe.As<TypeDeclarationSyntax>(node).Modifiers.Any(SyntaxKind.PartialKeyword);
     }
 
-    public static AvroModel GetAvroModel(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
+    public static AvroOptions GetAvroOptions(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
     {
         _ = cancellationToken;
 
         var symbol = Unsafe.As<INamedTypeSymbol>(context.TargetSymbol);
-        var containingClassName = symbol.Name;
-        var containingNamespace = symbol.ContainingNamespace?
-            .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? $"{symbol.Name}Namespace";
+        var typeName = new QualifiedName(
+            symbol.Name,
+            symbol.ContainingNamespace?.ToDisplayString(s_partiallyQualifiedFormat));
 
         var declaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
         var recordDeclaration = declaration.IsKind(SyntaxKind.RecordDeclaration) ? "record" : "class";
@@ -38,16 +118,7 @@ internal static class Parser
             .Single(attr => attr.AttributeClass?.Name == nameof(AvroAttribute));
 
         var languageFeatures = default(LanguageFeatures?);
-        var namespaceOverride = default(string);
-        var schemaJson = attribute.ConstructorArguments.FirstOrDefault().Value as string;
-        var schemaLocation = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None;
-        var diagnostics = EquatableArray<Diagnostic>.Empty;
-
-        if (string.IsNullOrWhiteSpace(schemaJson))
-        {
-            diagnostics = new EquatableArray<Diagnostic>([
-                InvalidJsonDiagnostic.Create(schemaLocation, "Cannot be null or whitespace")]);
-        }
+        var location = context.TargetNode.GetLocation();
 
         foreach (var kvp in attribute.NamedArguments)
         {
@@ -59,34 +130,18 @@ internal static class Parser
                 case nameof(AvroAttribute.LanguageFeatures) when value is not null:
                     languageFeatures = (LanguageFeatures)value;
                     break;
-                case nameof(AvroAttribute.UseCSharpNamespace) when value is true:
-                    namespaceOverride = containingNamespace;
-                    break;
             }
         }
 
-        return new AvroModel(
-            languageFeatures,
-            containingClassName,
-            containingNamespace,
-            namespaceOverride,
-            recordDeclaration,
+        return new AvroOptions(
+            typeName,
             accessModifier,
-            schemaJson,
-            schemaLocation,
-            diagnostics);
+            recordDeclaration,
+            languageFeatures,
+            location);
     }
 
-    public static LanguageVersion GetLanguageVersion(Compilation compilation, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-
-        return ((CSharpCompilation)compilation).LanguageVersion;
-    }
-
-    private
-
-        static string GetAccessModifier(TypeDeclarationSyntax typeDeclaration)
+    private static string GetAccessModifier(TypeDeclarationSyntax typeDeclaration)
     {
         // Default to internal if no access modifier is specified
         var accessModifier = "internal";

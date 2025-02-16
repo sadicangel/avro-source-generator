@@ -12,13 +12,13 @@ public readonly record struct GeneratedOutput(ImmutableArray<Diagnostic> Diagnos
 
 internal static class TestHelper
 {
-    public static SettingsTask Verify(string source) =>
-        Verifier.Verify(GenerateOutput([source]));
+    public static SettingsTask Verify(string avro, params string[] sources) =>
+        Verifier.Verify(GenerateOutput(sources, [avro]));
 
-    public static GeneratedOutput GenerateOutput(string[] sources)
+    public static GeneratedOutput GenerateOutput(string[] sourceTexts, string[] additionalTexts)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Default);
-        var syntaxTrees = sources.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions));
+        var syntaxTrees = sourceTexts.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions));
         var references = AppDomain.CurrentDomain.GetAssemblies()
             .Where(assembly => !assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
             .Select(assembly => MetadataReference.CreateFromFile(assembly.Location))
@@ -37,6 +37,7 @@ internal static class TestHelper
 
         CSharpGeneratorDriver
             .Create(new AvroSourceGenerator())
+            .AddAdditionalTexts([.. additionalTexts.Select(t => new AdditionalTextImplementation(t))])
             .WithUpdatedParseOptions(parseOptions)
             .RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
 
@@ -47,4 +48,12 @@ internal static class TestHelper
 
         return new(diagnostics, documents);
     }
+}
+
+file sealed class AdditionalTextImplementation(string content) : AdditionalText
+{
+    public override string Path => $"schema.avsc";
+
+    public override SourceText? GetText(CancellationToken cancellationToken = default) =>
+        SourceText.From(content, Encoding.UTF8);
 }

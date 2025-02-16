@@ -5,7 +5,7 @@
 #nullable enable
 {{~ end ~}}
 {{~ end ~}}
-namespace {{ Schema.Namespace | string.slice 8 }}
+namespace {{ Schema.Namespace }}
 {
     {{~ if Schema.Documentation ~}}
     /// <summary>

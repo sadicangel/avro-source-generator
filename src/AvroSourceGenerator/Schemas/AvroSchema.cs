@@ -12,7 +12,7 @@ internal abstract record class AvroSchema(
     string? Documentation,
     ImmutableArray<string> Aliases)
 {
-    public string Name => QualifiedName.Name;
+    public string Name => QualifiedName.LocalName;
     public string? Namespace => QualifiedName.Namespace;
     public bool IsNullable => Name[^1] is '?';
 }

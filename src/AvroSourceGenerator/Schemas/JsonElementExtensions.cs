@@ -142,7 +142,13 @@ internal static class JsonElementExtensions
             throw new InvalidSchemaException($"'namespace' property cannot be whitespace in schema: {schema.GetRawText()}");
         }
 
-        var builder = new StringBuilder("global::");
+        if (!@namespace.Contains('.'))
+        {
+            return GetValid(@namespace);
+        }
+
+        // TODO: Might be a good idea to pool this builder.
+        var builder = new StringBuilder();
 
         var first = true;
         foreach (var part in new SplitEnumerable(@namespace.AsSpan(), '.'))

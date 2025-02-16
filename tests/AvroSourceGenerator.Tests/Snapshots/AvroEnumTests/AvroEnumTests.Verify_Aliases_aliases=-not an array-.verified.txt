@@ -1,21 +1,19 @@
 ﻿{
   Diagnostics: [
     {
-      Location: /*
-
-[Avro(AvroSchema)]
- ^^^^^^^^^^^^^^^^
-public partial class Wrapper
-*/
- : (5,1)-(5,17),
+      Location: schema.avsc: (0,0)-(6,1),
       Message:
 The schema defined in the JSON is invalid: 'aliases' property must be an array in schema: {
-            "type": "enum", "name": "TestEnum", "aliases": "not an array", "symbols": []
-        },
+    "type": "enum",
+    "name": "TestEnum",
+    "namespace": "SchemaNamespace",
+    "aliases": "not an array",
+    "symbols": []
+},
       Severity: Error,
       Descriptor: {
         Id: AVROSG0002,
-        Title: Invalid Avro Schema,
+        Title: Invalid Schema,
         MessageFormat: The schema defined in the JSON is invalid: {0},
         Category: Semantic,
         DefaultSeverity: Error,

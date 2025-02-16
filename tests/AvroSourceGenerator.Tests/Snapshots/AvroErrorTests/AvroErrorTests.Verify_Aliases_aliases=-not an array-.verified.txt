@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: 9B04A7872B62318129CA36E488C6EE07.avsc: (0,0)-(6,1),
+      Location: schema.avsc: (0,0)-(6,1),
       Message:
 The schema defined in the JSON is invalid: 'aliases' property must be an array in schema: {
     "type": "error",

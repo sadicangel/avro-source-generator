@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: 5A4AA85D1B3A5F877CF99D4405AA784D.avsc: (0,0)-(5,1),
+      Location: schema.avsc: (0,0)-(5,1),
       Message:
 The schema defined in the JSON is invalid: 'name' property must be a string in schema: {
     "type": "enum",

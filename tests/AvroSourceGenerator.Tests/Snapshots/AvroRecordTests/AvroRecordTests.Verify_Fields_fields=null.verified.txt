@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: 9D78AD76F710CF210DDDCF8D802D4B99.avsc: (0,0)-(5,1),
+      Location: schema.avsc: (0,0)-(5,1),
       Message:
 The schema defined in the JSON is invalid: 'fields' property is required in schema: {
     "type": "record",

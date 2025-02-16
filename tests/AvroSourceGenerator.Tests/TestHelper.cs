@@ -1,6 +1,5 @@
 ﻿using System.CodeDom.Compiler;
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -53,7 +52,7 @@ internal static class TestHelper
 
 file sealed class AdditionalTextImplementation(string content) : AdditionalText
 {
-    public override string Path => $"{Convert.ToHexString(MD5.HashData(Encoding.UTF8.GetBytes(content)))}.avsc";
+    public override string Path => $"schema.avsc";
 
     public override SourceText? GetText(CancellationToken cancellationToken = default) =>
         SourceText.From(content, Encoding.UTF8);

@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: 7BC3A82A633335E243F3ADF917F38EC3.avsc: (0,0)-(5,1),
+      Location: schema.avsc: (0,0)-(5,1),
       Message:
 The schema defined in the JSON is invalid: 'symbols' property is required in schema: {
     "type": "enum",

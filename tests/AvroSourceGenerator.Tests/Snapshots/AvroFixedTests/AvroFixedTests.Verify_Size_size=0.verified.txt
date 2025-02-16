@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: 82D30463FE7991819F1788B9A02F856A.avsc: (0,0)-(5,1),
+      Location: schema.avsc: (0,0)-(5,1),
       Message:
 The schema defined in the JSON is invalid: 'size' property must be a positive integer in schema: {
     "type": "fixed",

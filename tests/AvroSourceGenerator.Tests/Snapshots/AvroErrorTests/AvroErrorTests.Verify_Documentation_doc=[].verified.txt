@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: 958A9F44DCDE7BE76FBBA5B392578CE8.avsc: (0,0)-(6,1),
+      Location: schema.avsc: (0,0)-(6,1),
       Message:
 The schema defined in the JSON is invalid: 'doc' property must be a string in schema: {
     "type": "error",

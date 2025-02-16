@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: DCF18091C1187430737F3DF438564E51.avsc: (0,0)-(5,1),
+      Location: schema.avsc: (0,0)-(5,1),
       Message:
 The schema defined in the JSON is invalid: 'name' property cannot be whitespace in schema: {
     "type": "enum",

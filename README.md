@@ -28,7 +28,9 @@ Then, configure the csproj to include Avro schema files as `AdditionalFiles`.
 </ItemGroup>
 ```
 
-Add the schema file to your project. 
+Add the schema file to your project.
+
+_schemas/user.avsc_
 ```json
 {
   "type": "record",
@@ -69,7 +71,7 @@ Here is an example of a generated class for the `User` schema defined above:
 namespace example
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class User : global::Avro.Specific.ISpecificRecord
+    public partial record User : global::Avro.Specific.ISpecificRecord
     {
         public required string Name { get; init; }
         public string? Email { get; init; }
@@ -142,62 +144,92 @@ namespace example
 #pragma warning restore CS8618, CS8633, CS8714, CS8775
 ```
 
-## Records
+## Extending generated code
+Generated types are partial. This allows extending them using another partial definition.
 
-The generated code will match the declaration type of the class annotated with the `Avro` attribute. To generate records, simply declare the type as `record` or `record class`. For example:
-
-```cs
-using AvroSourceGenerator;
-
-namespace SchemaNamespace;
-
-[Avro(Schemas.User)]
-public partial record User;
-```
-> [!NOTE]  
-> This feature is limited to Avro `record` schemas. Code generated from `fixed` and `error` schemas will always be a regular class, as those types must inherit from non-record types.
-
-## C# namespaces
-
-By default, the generated code adheres to the namespaces specified in the Avro schema. To override this, set `UseCSharpNamespace` to `true`. This will ensure that all generated types share the same C# namespace as the class annotated with the `Avro` attribute. For example:
+Example for the `User` type generated above.
 
 ```cs
-using AvroSourceGenerator;
+namespace example;
 
-namespace ExampleNamespace;
-
-[Avro(Schemas.User, UseCSharpNamespace = true)]
-public partial record User;
+public partial record User
+{
+    public override ToString() => Name;
+}
 ```
-> [!WARNING]  
-> This may break deserialization for tools that lookup types by the schema namespace.
+
+
 
 ## Access modifier
 
-Generated code will have the same access modifier as the class annotated with the `Avro` attribute.  
-To declare all types as internal, just declare the class as internal:
+By default, types are generated as `public`.
+
+
+To change the access modifier of all generated types, add `AvroSourceGeneratorAccessModifier` to your csproj.
+```xml
+<PropertyGroup>
+  <AvroSourceGeneratorAccessModifier>internal</AvroSourceGeneratorAccessModifier>
+</PropertyGroup>
+```
+Supported values are `public` (default) and `internal`.
+
+To change the access modifier of just one type, declare a partial definition for it using the desired access modifier, an annotate it with the `Avro` attribute.  
 ```cs
 using AvroSourceGenerator;
 
-namespace ExampleNamespace;
+namespace example;
 
-[Avro(Schemas.User, UseCSharpNamespace = true)]
+[Avro]
 internal partial record User;
 ```
 
-## Language features
+### Records
 
-It is possible to specify the C# language features to be used in the generated code. This is useful when you need to ensure compatibility with older versions of C#.  
-For example, setting `LanguageFeatures = LanguageFeatures.CSharp7_3` will generate code using only features that are compatible with C# 7.3 (eg: no nullable reference types, no records, etc).  
-If left unspecified, will generate code that uses features compatible with the language version of the project.
+By default, generated code will prefer `record` declarations where possible.
 
-Example for generating code compatible with C# 7.3 (suitable for .NET Framework and .NET Standard 2.0):
+To change the preference for all generated types, add `AvroSourceGeneratorRecordDeclaration` to your csproj.
+```xml
+<PropertyGroup>
+  <AvroSourceGeneratorRecordDeclaration>class</AvroSourceGeneratorRecordDeclaration>
+</PropertyGroup>
+```
+Supported values are `record` (default) and `class`.
+
+To change the declaration of just one type, declare a partial definition for it using the desired `record` or `class` keyword, an annotate it with the `Avro` attribute.  
 ```cs
 using AvroSourceGenerator;
 
-namespace SchemaNamespace;
+namespace example;
 
-[Avro(Schemas.User, LanguageFeatures = LanguageFeatures.CSharp7_3)]
+[Avro]
+public partial class User;
+```
+> [!NOTE]  
+> This feature is effectively limited to Avro `record` schemas. `fixed` and `error` schemas will always generate regular classes, since they must inherit from non-record types.
+
+## Language features
+
+By default, code will be generated with the latest features available to the consuming project.
+
+It is possible to specify the C# language features to be used in the generated code. This is useful when you need to ensure compatibility with older versions of C#.  
+For example, using `LanguageFeatures.CSharp7_3` will generate code using only features that are compatible with C# 7.3 (eg: no nullable reference types, no records, etc).  
+
+To change language features for all generated code, add `AvroSourceGeneratorLanguageFeatures` to your csproj.
+```xml
+<PropertyGroup>
+  <AvroSourceGeneratorLanguageFeatures>CSharp7_3</AvroSourceGeneratorLanguageFeatures>
+</PropertyGroup>
+```
+Supported values are all flags defined in `LanguageFeatures` enum.  
+Parsing is case insensitive and uses default rules for flags (it uses `Enum.Parse`).
+
+To change used features for just one type, declare a partial definition for it, an annotate it with the `Avro` attribute, specifying a `LanguageFeatures` argument.
+```cs
+using AvroSourceGenerator;
+
+namespace example;
+
+[Avro(LanguageFeatures = LanguageFeatures.CSharp7_3)]
 public partial record User;
 ```
 
@@ -207,47 +239,40 @@ Example for using latest features but exclude required properties:
 ```cs
 using AvroSourceGenerator;
 
-namespace SchemaNamespace;
+namespace example;
 
-[Avro(Schemas.User, LanguageFeatures = LanguageFeatures.Latest & ~LanguageFeatures.RequiredProperties)]
+[Avro(LanguageFeatures = LanguageFeatures.Latest & ~LanguageFeatures.RequiredProperties)]
 public partial record User;
 ```
 
 ## Limitations
-In C#, `enum` types cannot be declared as `partial`, so annotating them with the `Avro` attribute is not beneficial, as it is not possible to generate additional implementation. Therefore, the root Avro schema must be a `record`, `error`, or `fixed` schema, but not an `enum`. To generate an `enum`, you can wrap the schema in a `record`. For example:
-```cs
-using AvroSourceGenerator;
+In C#, `enum` types cannot be declared as `partial`, so it's not possible to configure code generation for just a single `enum` type.  
+A possible workaround for this is to wrap the `enum` schema in a `record` schema.
 
-namespace SchemaNamespace;
+<details>
+<summary>
+Example
+</summary>
 
-[Avro("""
+### Before
+_Suit.avsc_
+```json
 {
-  "type": "record",
-  "name": "EnumWrapper",
-  "fields": [
-    {
-      "name": "EnumWrapperField",
-      "type": {
-        "type": "enum",
-        "name": "Suit",
-        "namespace": "EnumSchemaNamespace",
-        "symbols": [
-          "Hearts",
-          "Diamonds",
-          "Clubs",
-          "Spades"
-        ]
-      }
-    }
+  "type": "enum",
+  "name": "Suit",
+  "namespace": "example",
+  "symbols": [
+    "Hearts",
+    "Diamonds",
+    "Clubs",
+    "Spades"
   ]
 }
-""")]
-public partial record EnumWrapper;
 ```
-This will generate a file named `Suit.Avro.g.cs` with the following definition:
+_Suit.Avro.g.cs_
 ```cs
 // <auto-generated/>
-namespace EnumSchemaNamespace
+namespace example
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public enum Suit
@@ -259,6 +284,56 @@ namespace EnumSchemaNamespace
     }
 }
 ```
+### After
+_SuitWrapper.avsc_
+```json
+{
+  "type": "record",
+  "name": "SuitWrapper",
+  "namespace": "example",
+  "fields": [
+    {
+      "name": "WrapperField",
+      "type": {
+        "type": "enum",
+        "name": "Suit",
+        "namespace": "example",
+        "symbols": [
+          "Hearts",
+          "Diamonds",
+          "Clubs",
+          "Spades"
+        ]
+      }
+    }
+  ]
+}
+```
+_SuitWrapper.cs_
+```cs
+using AvroSourceGenerator;
+
+namespace example;
+
+[Avro]
+internal partial record SuitWrapper;
+```
+_Suit.Avro.g.cs_
+```cs
+// <auto-generated/>
+namespace example
+{
+    [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
+    internal enum Suit
+    {
+        Hearts,
+        Diamonds,
+        Clubs,
+        Spades,
+    }
+}
+```
+</details>
 
 ## Contributing
 

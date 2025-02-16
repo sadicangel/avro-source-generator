@@ -135,8 +135,8 @@ internal static class Parser
 
         return new AvroOptions(
             typeName,
-            recordDeclaration,
             accessModifier,
+            recordDeclaration,
             languageFeatures,
             location);
     }

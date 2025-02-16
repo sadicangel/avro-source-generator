@@ -2,7 +2,7 @@
 
 Avro Source Generator is a .NET source generator that generates C# code from Avro schemas.
 
-Produces models that use modern C# features, such as nullable reference types, init-only and required properties, and other.
+It produces models that use modern C# features, such as nullable reference types, init-only properties, required properties, and more.
 
 ## Prerequisites
 
@@ -20,7 +20,7 @@ You can mark the package as `PrivateAssets="all"` to prevent projects referencin
 <PackageReference Include="AvroSourceGenerator" Version="*" PrivateAssets="all" ExcludeAssets="runtime" />
 ```
 
-Then, configure the csproj to include Avro schema files as `AdditionalFiles`.
+Then, configure the `.csproj` to include Avro schema files as `AdditionalFiles`.
 
 ```xml
 <ItemGroup>
@@ -59,7 +59,7 @@ _schemas/user.avsc_
 }
 ```
 > [!NOTE]  
-> Schema files must have `.avsc` extension.
+> Schema files must have a `.avsc` extension.
 
 This will generate the C# files containing the types defined in the Avro schema.
 
@@ -154,18 +154,15 @@ namespace example;
 
 public partial record User
 {
-    public override ToString() => Name;
+    public override string ToString() => Name;
 }
 ```
-
-
 
 ## Access modifier
 
 By default, types are generated as `public`.
 
-
-To change the access modifier of all generated types, add `AvroSourceGeneratorAccessModifier` to your csproj.
+To change the access modifier of all generated types, add `AvroSourceGeneratorAccessModifier` to your `.csproj`.
 ```xml
 <PropertyGroup>
   <AvroSourceGeneratorAccessModifier>internal</AvroSourceGeneratorAccessModifier>
@@ -173,7 +170,7 @@ To change the access modifier of all generated types, add `AvroSourceGeneratorAc
 ```
 Supported values are `public` (default) and `internal`.
 
-To change the access modifier of just one type, declare a partial definition for it using the desired access modifier, an annotate it with the `Avro` attribute.  
+To change the access modifier of just one type, declare a partial definition for it using the desired access modifier, and annotate it with the `Avro` attribute.  
 ```cs
 using AvroSourceGenerator;
 
@@ -187,7 +184,7 @@ internal partial record User;
 
 By default, generated code will prefer `record` declarations where possible.
 
-To change the preference for all generated types, add `AvroSourceGeneratorRecordDeclaration` to your csproj.
+To change the preference for all generated types, add `AvroSourceGeneratorRecordDeclaration` to your `.csproj`.
 ```xml
 <PropertyGroup>
   <AvroSourceGeneratorRecordDeclaration>class</AvroSourceGeneratorRecordDeclaration>
@@ -195,7 +192,7 @@ To change the preference for all generated types, add `AvroSourceGeneratorRecord
 ```
 Supported values are `record` (default) and `class`.
 
-To change the declaration of just one type, declare a partial definition for it using the desired `record` or `class` keyword, an annotate it with the `Avro` attribute.  
+To change the declaration of just one type, declare a partial definition for it using the desired `record` or `class` keyword, and annotate it with the `Avro` attribute.  
 ```cs
 using AvroSourceGenerator;
 
@@ -212,18 +209,18 @@ public partial class User;
 By default, code will be generated with the latest features available to the consuming project.
 
 It is possible to specify the C# language features to be used in the generated code. This is useful when you need to ensure compatibility with older versions of C#.  
-For example, using `LanguageFeatures.CSharp7_3` will generate code using only features that are compatible with C# 7.3 (eg: no nullable reference types, no records, etc).  
+For example, using `LanguageFeatures.CSharp7_3` will generate code using only features that are compatible with C# 7.3 (e.g., no nullable reference types, no records, etc).  
 
-To change language features for all generated code, add `AvroSourceGeneratorLanguageFeatures` to your csproj.
+To change language features for all generated code, add `AvroSourceGeneratorLanguageFeatures` to your `.csproj`.
 ```xml
 <PropertyGroup>
   <AvroSourceGeneratorLanguageFeatures>CSharp7_3</AvroSourceGeneratorLanguageFeatures>
 </PropertyGroup>
 ```
-Supported values are all flags defined in `LanguageFeatures` enum.  
+Supported values are all flags defined in the `LanguageFeatures` enum.  
 Parsing is case insensitive and uses default rules for flags (it uses `Enum.Parse`).
 
-To change used features for just one type, declare a partial definition for it, an annotate it with the `Avro` attribute, specifying a `LanguageFeatures` argument.
+To change used features for just one type, declare a partial definition for it, and annotate it with the `Avro` attribute, specifying a `LanguageFeatures` argument.
 ```cs
 using AvroSourceGenerator;
 
@@ -235,7 +232,7 @@ public partial record User;
 
 It is also possible to enable or disable specific features.
 
-Example for using latest features but exclude required properties:
+Example for using the latest features but excluding required properties:
 ```cs
 using AvroSourceGenerator;
 

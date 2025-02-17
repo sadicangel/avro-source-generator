@@ -199,8 +199,8 @@ internal sealed class SchemaRegistry(bool useNullableReferenceTypes)
             "bytes" or "bytes?" => value.GetRawText(),
             "array" or "array?" => value.GetRawText(),
             "map" or "map?" => value.GetRawText(),
-            "string" or "string?" => value.GetString(),
-            _ when _schemas.TryGetValue(type, out var namedSchema) && namedSchema.Type is SchemaType.Enum => value.GetString(),
+            "string" or "string?" => value.GetRawText(),
+            _ when _schemas.TryGetValue(type, out var namedSchema) && namedSchema.Type is SchemaType.Enum => $"{type}.{value.GetString()}",
 
             // TODO: Do we need to handle complex types? Should they be supported?
             _ => null,

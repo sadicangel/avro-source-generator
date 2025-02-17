@@ -27,12 +27,17 @@ internal static class Emitter
 
         try
         {
-            var languageFeatures = MapSpecifiedToEffectiveFeatures(
-                avroOptions?.LanguageFeatures ?? generatorSettings.LanguageFeatures,
-                compilationInfo.LanguageVersion);
+            var languageFeatures = avroOptions?.LanguageFeatures
+                ?? generatorSettings.LanguageFeatures
+                ?? MapVersionToFeatures(compilationInfo.LanguageVersion);
 
-            var accessModifier = avroOptions?.AccessModifier ?? generatorSettings.AccessModifier;
-            var recordDeclaration = avroOptions?.RecordDeclaration ?? generatorSettings.RecordDeclaration;
+            var accessModifier = avroOptions?.AccessModifier
+                ?? generatorSettings.AccessModifier
+                ?? "public";
+
+            var recordDeclaration = avroOptions?.RecordDeclaration
+                ?? generatorSettings.RecordDeclaration
+                ?? (languageFeatures.HasFlag(LanguageFeatures.Records) ? "record" : "class");
 
             var schemaRegistry = new SchemaRegistry(languageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes));
             var rootSchema = schemaRegistry.Register(avroFile.Json);
@@ -61,9 +66,9 @@ internal static class Emitter
         }
     }
 
-    private static LanguageFeatures MapSpecifiedToEffectiveFeatures(LanguageFeatures? languageFeatures, LanguageVersion languageVersion)
+    private static LanguageFeatures MapVersionToFeatures(LanguageVersion languageVersion)
     {
-        return languageFeatures ?? languageVersion switch
+        return languageVersion switch
         {
             <= LanguageVersion.CSharp7_3 => LanguageFeatures.CSharp7_3,
             LanguageVersion.CSharp8 => LanguageFeatures.CSharp8,

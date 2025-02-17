@@ -55,13 +55,13 @@ internal static class Parser
         if (!provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorAccessModifier", out var accessModifier) ||
             accessModifier is not ("public" or "internal"))
         {
-            accessModifier = "public";
+            accessModifier = null;
         }
 
         if (!provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorRecordDeclaration", out var recordDeclaration) ||
             recordDeclaration is not ("record" or "class"))
         {
-            recordDeclaration = "record";
+            recordDeclaration = null;
         }
 
         var languageFeatures = default(LanguageFeatures?);

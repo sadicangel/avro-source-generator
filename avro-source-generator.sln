@@ -9,8 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Attribu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroSourceGenerator.Tests", "tests\AvroSourceGenerator.Tests\AvroSourceGenerator.Tests.csproj", "{3FD7F50E-84A6-44AA-8935-693B20F65DFA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.IntegrationTests", "tests\AvroSourceGenerator.IntegrationTests\AvroSourceGenerator.IntegrationTests.csproj", "{03AF770B-8702-4552-A280-7D598C987EAC}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -22,6 +20,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 		SpellingExclusions.dic = SpellingExclusions.dic
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Example", "samples\AvroSourceGenerator.Example\AvroSourceGenerator.Example.csproj", "{70748A49-D5CE-031F-6619-A463F2750D63}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,10 +41,10 @@ Global
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{03AF770B-8702-4552-A280-7D598C987EAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{03AF770B-8702-4552-A280-7D598C987EAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{03AF770B-8702-4552-A280-7D598C987EAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{03AF770B-8702-4552-A280-7D598C987EAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70748A49-D5CE-031F-6619-A463F2750D63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70748A49-D5CE-031F-6619-A463F2750D63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70748A49-D5CE-031F-6619-A463F2750D63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70748A49-D5CE-031F-6619-A463F2750D63}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

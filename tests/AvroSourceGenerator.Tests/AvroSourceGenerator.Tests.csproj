@@ -32,6 +32,7 @@
 
   <ItemGroup>
     <Folder Include="Snapshots\" />
+    <Folder Include="Snapshots\AvroEnumTests\" />
   </ItemGroup>
 
 </Project>

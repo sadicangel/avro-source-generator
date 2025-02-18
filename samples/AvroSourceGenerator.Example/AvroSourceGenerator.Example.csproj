@@ -2,16 +2,18 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <TargetFrameworks>net48;net6.0;net8.0</TargetFrameworks>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(TargetFramework)' != 'net48'">
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  
   <ItemGroup>
     <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
-    <AdditionalFiles Include="..\schemas\*.avsc" />
+    <AdditionalFiles Include="*.avsc" />
   </ItemGroup>
   
   <ItemGroup>

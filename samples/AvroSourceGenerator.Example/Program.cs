@@ -1,23 +1,31 @@
-﻿using Avro;
+﻿using System;
+using System.Collections.Generic;
+using Avro;
 using com.example.finance;
 
-var transaction = new Transaction
+internal static class Program
 {
-    id = Guid.NewGuid(),
-    amount = new AvroDecimal(123.45m),
-    currency = "USD",
-    timestamp = DateTime.UtcNow,
-    status = TransactionStatus.COMPLETED,
-    recipientId = "123456",
-    metadata = new Dictionary<string, string>
+    private static void Main()
     {
-        { "key1", "value1" },
-        { "key2", "value2" },
-    },
-    signature = new Signature(),
-    legacyId = "abc123",
-};
+        var transaction = new Transaction
+        {
+            id = Guid.NewGuid(),
+            amount = new AvroDecimal(123.45m),
+            currency = "USD",
+            timestamp = DateTime.UtcNow,
+            status = TransactionStatus.COMPLETED,
+            recipientId = "123456",
+            metadata = new Dictionary<string, string>
+            {
+                { "key1", "value1" },
+                { "key2", "value2" },
+            },
+            signature = new Signature(),
+            legacyId = "abc123",
+        };
 
-Random.Shared.NextBytes(transaction.signature.Value);
+        new Random().NextBytes(transaction.signature.Value);
 
-Console.WriteLine(transaction);
+        Console.WriteLine(transaction);
+    }
+}

@@ -15,17 +15,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
 		AvroSourceGenerator.props = AvroSourceGenerator.props
+		Directory.Build.props = Directory.Build.props
 		Directory.Packages.props = Directory.Packages.props
 		LICENSE = LICENSE
 		README.md = README.md
 		SpellingExclusions.dic = SpellingExclusions.dic
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Example", "samples\AvroSourceGenerator.Example\AvroSourceGenerator.Example.csproj", "{70748A49-D5CE-031F-6619-A463F2750D63}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "samples", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.ExampleNetStandard20", "samples\AvroSourceGenerator.ExampleNetStandard20\AvroSourceGenerator.ExampleNetStandard20.csproj", "{2AE86780-27F4-ED50-2377-DEA385F9F098}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Example", "samples\AvroSourceGenerator.Example\AvroSourceGenerator.Example.csproj", "{D773E625-772E-61F1-22AB-0C17B28097CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,21 +44,16 @@ Global
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{70748A49-D5CE-031F-6619-A463F2750D63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{70748A49-D5CE-031F-6619-A463F2750D63}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{70748A49-D5CE-031F-6619-A463F2750D63}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{70748A49-D5CE-031F-6619-A463F2750D63}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2AE86780-27F4-ED50-2377-DEA385F9F098}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2AE86780-27F4-ED50-2377-DEA385F9F098}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2AE86780-27F4-ED50-2377-DEA385F9F098}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2AE86780-27F4-ED50-2377-DEA385F9F098}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D773E625-772E-61F1-22AB-0C17B28097CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D773E625-772E-61F1-22AB-0C17B28097CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D773E625-772E-61F1-22AB-0C17B28097CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D773E625-772E-61F1-22AB-0C17B28097CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{70748A49-D5CE-031F-6619-A463F2750D63} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{2AE86780-27F4-ED50-2377-DEA385F9F098} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{D773E625-772E-61F1-22AB-0C17B28097CF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A445B110-9D42-4551-96AD-66E601FFDA4A}

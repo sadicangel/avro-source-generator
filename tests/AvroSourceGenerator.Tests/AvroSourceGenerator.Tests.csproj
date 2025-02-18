@@ -30,9 +30,4 @@
     <ProjectReference Include="..\..\src\AvroSourceGenerator\AvroSourceGenerator.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Snapshots\" />
-    <Folder Include="Snapshots\AvroEnumTests\" />
-  </ItemGroup>
-
 </Project>

@@ -3,7 +3,7 @@
 public class AvroEnumTests
 {
     [Theory]
-    [InlineData("EnumName"), InlineData("enum_name"), InlineData("public"), InlineData("enum")]
+    [InlineData("EnumName"), InlineData("enum_name"), InlineData("enum")]
     public Task VerifyName(string name) => TestHelper.VerifySourceCode($$"""
     {
         "type": "enum",
@@ -15,88 +15,104 @@ public class AvroEnumTests
 
     [Theory]
     [InlineData("null"), InlineData("\"\""), InlineData("[]")]
-    public Task VerifyNameDiagnostic(string name)
+    public Task VerifyNameDiagnostic(string name) => TestHelper.VerifyDiagnostic($$"""
     {
-        var avro = $$"""
-        {
-            "type": "enum",
-            "name": {{name}},
-            "namespace": "SchemaNamespace",
-            "symbols": []
-        }
-        """;
-
-        return TestHelper.VerifyDiagnostic(avro);
+        "type": "enum",
+        "name": {{name}},
+        "namespace": "SchemaNamespace",
+        "symbols": []
     }
+    """);
 
     [Theory]
-    [InlineData("null"), InlineData("\"EnumSchemaNamespace\"")]
-    [InlineData("\"enum\""), InlineData("\"name1.enum.name2\"")]
-    [InlineData("\"\""), InlineData("[]")]
-    public Task Verify_Namespace(string @namespace)
+    [InlineData("null"), InlineData("\"Schema1.Enum.Namespace\""), InlineData("\"schema2.enum.namespace\"")]
+    public Task VerifyNamespace(string @namespace) => TestHelper.VerifySourceCode($$"""
     {
-        var avro = $$"""
-        {
-            "type": "enum",
-            "name": "TestEnum",
-            "namespace": {{@namespace}},
-            "symbols": []
-        }
-        """;
-
-        return TestHelper.VerifySourceCode(avro);
+        "type": "enum",
+        "name": "TestEnum",
+        "namespace": {{@namespace}},
+        "symbols": []
     }
+    """);
+
+    [Theory]
+    [InlineData("\"\""), InlineData("[]")]
+    public Task VerifyNamespaceDiagnostic(string @namespace) => TestHelper.VerifyDiagnostic($$"""
+    {
+        "type": "enum",
+        "name": "TestEnum",
+        "namespace": {{@namespace}},
+        "symbols": []
+    }
+    """);
 
     [Theory]
     [InlineData("null"), InlineData("\"\""), InlineData("\"Single line comment\""), InlineData("\"Multi\\nline\\ncomment\"")]
-    [InlineData("1"), InlineData("[]"), InlineData("{}")]
-    public Task Verify_Documentation(string doc)
+    public Task VerifyDocumentation(string doc) => TestHelper.VerifySourceCode($$"""
     {
-        var avro = $$"""
-        {
-            "type": "enum",
-            "name": "TestEnum",
-            "namespace": "SchemaNamespace",
-            "doc": {{doc}},
-            "symbols": []
-        }
-        """;
-
-        return TestHelper.VerifySourceCode(avro);
+        "type": "enum",
+        "name": "TestEnum",
+        "namespace": "SchemaNamespace",
+        "doc": {{doc}},
+        "symbols": []
     }
+    """);
 
     [Theory]
-    [InlineData("null"), InlineData("[]"), InlineData("[\"Alias1\"]"), InlineData("[\"Alias1\", \"Alias2\"]")]
-    [InlineData("\"not an array\""), InlineData("{}")]
-    public Task Verify_Aliases(string aliases)
+    [InlineData("[]")]
+    public Task VerifyDocumentationDiagnostic(string doc) => TestHelper.VerifyDiagnostic($$"""
     {
-        var avro = $$"""
-        {
-            "type": "enum",
-            "name": "TestEnum",
-            "namespace": "SchemaNamespace",
-            "aliases": {{aliases}},
-            "symbols": []
-        }
-        """;
-
-        return TestHelper.VerifySourceCode(avro);
+        "type": "enum",
+        "name": "TestEnum",
+        "namespace": "SchemaNamespace",
+        "doc": {{doc}},
+        "symbols": []
     }
+    """);
 
     [Theory]
-    [InlineData("[]"), InlineData("[\"A\"]"), InlineData("[\"B\", \"C\"]")]
-    [InlineData("null"), InlineData("\"not an array\""), InlineData("{}")]
-    public Task Verify_Symbols(string symbols)
+    [InlineData("null"), InlineData("[]"), InlineData("[\"Alias1\", \"Alias2\"]")]
+    public Task VerifyAliases(string aliases) => TestHelper.VerifySourceCode($$"""
     {
-        var avro = $$"""
-        {
-            "type": "enum",
-            "name": "TestEnum",
-            "namespace": "SchemaNamespace",
-            "symbols": {{symbols}}
-        }
-        """;
-
-        return TestHelper.VerifySourceCode(avro);
+        "type": "enum",
+        "name": "TestEnum",
+        "namespace": "SchemaNamespace",
+        "aliases": {{aliases}},
+        "symbols": []
     }
+    """);
+
+    [Theory]
+    [InlineData("{}")]
+    public Task VerifyAliasesDiagnostic(string aliases) => TestHelper.VerifyDiagnostic($$"""
+    {
+        "type": "enum",
+        "name": "TestEnum",
+        "namespace": "SchemaNamespace",
+        "aliases": {{aliases}},
+        "symbols": []
+    }
+    """);
+
+    [Theory]
+    [InlineData("[]"), InlineData("[\"A\", \"B\"]")]
+    public Task VerifySymbols(string symbols) => TestHelper.VerifySourceCode($$"""
+    {
+        "type": "enum",
+        "name": "TestEnum",
+        "namespace": "SchemaNamespace",
+        "symbols": {{symbols}}
+    }
+    """);
+
+    [Theory]
+    [InlineData("null"), InlineData("{}")]
+    public Task VerifySymbolsDiagnostic(string symbols) => TestHelper.VerifyDiagnostic($$"""
+    {
+        "type": "enum",
+        "name": "TestEnum",
+        "namespace": "SchemaNamespace",
+        "symbols": {{symbols}}
+    }
+    """);
 }

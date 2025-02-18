@@ -61,7 +61,7 @@ internal static class TestHelper
             ]);
 
         var compilation = CSharpCompilation.Create(
-            "generator",
+            "GeneratorAssemblyName",
             syntaxTrees,
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));

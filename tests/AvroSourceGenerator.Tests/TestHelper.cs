@@ -19,25 +19,25 @@ internal static class TestHelper
 
     public static SettingsTask VerifySourceCode(
         string schema,
-        string? sourceText = null,
-        ProjectConfig? projectConfig = null)
+        string? source = null,
+        ProjectConfig? config = null)
     {
         var (_, documents) = GenerateOutput(
-            sourceText is null ? [] : [sourceText],
+            source is null ? [] : [source],
             [schema],
-            projectConfig);
+            config);
         return Verifier.Verify(Assert.Single(documents).Content);
     }
 
     public static SettingsTask VerifyDiagnostic(
         string schema,
-        string? sourceText = null,
-        ProjectConfig? projectConfig = null)
+        string? source = null,
+        ProjectConfig? config = null)
     {
         var (diagnostics, _) = GenerateOutput(
-            sourceText is null ? [] : [sourceText],
+            source is null ? [] : [source],
             [schema],
-            projectConfig);
+            config);
         return Verifier.Verify(Assert.Single(diagnostics));
     }
 
@@ -105,7 +105,8 @@ file sealed class AnalyzerConfigOptionsProviderImplementation(IEnumerable<KeyVal
     {
         public static readonly AnalyzerConfigOptionsImplementation Empty = new([]);
 
-        private readonly Dictionary<string, string> _options = new(options);
+        private readonly Dictionary<string, string> _options = new(options
+            .Select(kvp => new KeyValuePair<string, string>($"build_property.{kvp.Key}", kvp.Value)));
 
         public string this[string key] { get => _options[key]; init => _options[key] = value; }
 

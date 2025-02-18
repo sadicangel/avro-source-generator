@@ -3,6 +3,30 @@
 public class AvroEnumTests
 {
     [Theory]
+    [InlineData("public"), InlineData("internal"), InlineData("invalid")]
+    public Task Verify_AccessModifier_Global(string accessModifier)
+    {
+        var schema = """
+        {
+            "type": "enum",
+            "name": "Enum",
+            "namespace": "SchemaNamespace",
+            "symbols": []
+        }
+        """;
+
+        var config = ProjectConfig.Default with
+        {
+            GlobalOptions = new Dictionary<string, string>
+            {
+                ["AvroSourceGeneratorAccessModifier"] = accessModifier
+            }
+        };
+
+        return TestHelper.VerifySourceCode(schema, default, config);
+    }
+
+    [Theory]
     [InlineData("EnumName"), InlineData("enum_name"), InlineData("enum")]
     public Task Verify_Name(string name) => TestHelper.VerifySourceCode($$"""
     {

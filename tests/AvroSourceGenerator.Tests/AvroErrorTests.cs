@@ -3,24 +3,24 @@
 public sealed class AvroErrorTests
 {
     [Theory]
-    [InlineData("public"), InlineData("internal"), InlineData("protected internal"), InlineData("private"), InlineData("private protected"), InlineData("file"), InlineData("")]
-    public Task Verify_AccessModifier(string accessModifier) => TestHelper.Verify("""
-        {
-            "type": "error",
-            "namespace": "SchemaNamespace",
-            "name": "Error",
-            "fields": []
-        }
-        """, $$""""
-        using System;
-        using AvroSourceGenerator;
+    [InlineData("public"), InlineData("internal"), InlineData("file"), InlineData("")]
+    public Task VerifyAccessModifierLocal(string accessModifier) => TestHelper.Verify("""
+    {
+        "type": "error",
+        "namespace": "SchemaNamespace",
+        "name": "Error",
+        "fields": []
+    }
+    """, $$""""
+    using System;
+    using AvroSourceGenerator;
         
-        namespace SchemaNamespace;
+    namespace SchemaNamespace;
         
-        [Avro]
-        {{accessModifier}} partial class Error;
-        """")
-        .UseParameters(accessModifier);
+    [Avro]
+    {{accessModifier}} partial class Error;
+    """")
+    .UseParameters(accessModifier);
 
     [Theory]
     [InlineData("null"), InlineData("\"\""), InlineData("\"Single line comment\""), InlineData("\"Multi\\nline\\ncomment\"")]

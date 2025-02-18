@@ -4,7 +4,7 @@ public class AvroEnumTests
 {
     [Theory]
     [InlineData("EnumName"), InlineData("enum_name"), InlineData("enum")]
-    public Task VerifyName(string name) => TestHelper.VerifySourceCode($$"""
+    public Task Verify_Name(string name) => TestHelper.VerifySourceCode($$"""
     {
         "type": "enum",
         "name": "{{name}}",
@@ -15,7 +15,7 @@ public class AvroEnumTests
 
     [Theory]
     [InlineData("null"), InlineData("\"\""), InlineData("[]")]
-    public Task VerifyNameDiagnostic(string name) => TestHelper.VerifyDiagnostic($$"""
+    public Task Verify_Name_Diagnostic(string name) => TestHelper.VerifyDiagnostic($$"""
     {
         "type": "enum",
         "name": {{name}},
@@ -26,7 +26,7 @@ public class AvroEnumTests
 
     [Theory]
     [InlineData("null"), InlineData("\"Schema1.Enum.Namespace\""), InlineData("\"schema2.enum.namespace\"")]
-    public Task VerifyNamespace(string @namespace) => TestHelper.VerifySourceCode($$"""
+    public Task Verify_Namespace(string @namespace) => TestHelper.VerifySourceCode($$"""
     {
         "type": "enum",
         "name": "TestEnum",
@@ -37,7 +37,7 @@ public class AvroEnumTests
 
     [Theory]
     [InlineData("\"\""), InlineData("[]")]
-    public Task VerifyNamespaceDiagnostic(string @namespace) => TestHelper.VerifyDiagnostic($$"""
+    public Task Verify_Namespace_Diagnostic(string @namespace) => TestHelper.VerifyDiagnostic($$"""
     {
         "type": "enum",
         "name": "TestEnum",
@@ -48,7 +48,7 @@ public class AvroEnumTests
 
     [Theory]
     [InlineData("null"), InlineData("\"\""), InlineData("\"Single line comment\""), InlineData("\"Multi\\nline\\ncomment\"")]
-    public Task VerifyDocumentation(string doc) => TestHelper.VerifySourceCode($$"""
+    public Task Verify_Documentation(string doc) => TestHelper.VerifySourceCode($$"""
     {
         "type": "enum",
         "name": "TestEnum",
@@ -60,7 +60,7 @@ public class AvroEnumTests
 
     [Theory]
     [InlineData("[]")]
-    public Task VerifyDocumentationDiagnostic(string doc) => TestHelper.VerifyDiagnostic($$"""
+    public Task Verify_Documentation_Diagnostic(string doc) => TestHelper.VerifyDiagnostic($$"""
     {
         "type": "enum",
         "name": "TestEnum",
@@ -72,7 +72,7 @@ public class AvroEnumTests
 
     [Theory]
     [InlineData("null"), InlineData("[]"), InlineData("[\"Alias1\", \"Alias2\"]")]
-    public Task VerifyAliases(string aliases) => TestHelper.VerifySourceCode($$"""
+    public Task Verify_Aliases(string aliases) => TestHelper.VerifySourceCode($$"""
     {
         "type": "enum",
         "name": "TestEnum",
@@ -84,7 +84,7 @@ public class AvroEnumTests
 
     [Theory]
     [InlineData("{}")]
-    public Task VerifyAliasesDiagnostic(string aliases) => TestHelper.VerifyDiagnostic($$"""
+    public Task Verify_Aliases_Diagnostic(string aliases) => TestHelper.VerifyDiagnostic($$"""
     {
         "type": "enum",
         "name": "TestEnum",
@@ -96,7 +96,7 @@ public class AvroEnumTests
 
     [Theory]
     [InlineData("[]"), InlineData("[\"A\", \"B\"]")]
-    public Task VerifySymbols(string symbols) => TestHelper.VerifySourceCode($$"""
+    public Task Verify_Symbols(string symbols) => TestHelper.VerifySourceCode($$"""
     {
         "type": "enum",
         "name": "TestEnum",
@@ -107,7 +107,7 @@ public class AvroEnumTests
 
     [Theory]
     [InlineData("null"), InlineData("{}")]
-    public Task VerifySymbolsDiagnostic(string symbols) => TestHelper.VerifyDiagnostic($$"""
+    public Task Verify_Symbols_Diagnostic(string symbols) => TestHelper.VerifyDiagnostic($$"""
     {
         "type": "enum",
         "name": "TestEnum",

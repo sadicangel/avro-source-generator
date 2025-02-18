@@ -5,9 +5,11 @@
 #nullable enable
 {{~ end ~}}
 {{~ end ~}}
+{{~ if !string.whitespace Schema.Namespace ~}}
 namespace {{ Schema.Namespace }}
 {
-    {{~ if Schema.Documentation ~}}
+{{~ end ~}}
+    {{~ if !string.whitespace Schema.Documentation ~}}
     /// <summary>
     {{~ for line in Schema.Documentation | string.split '\n' | array.each @string.strip ~}}
     /// {{ line }}
@@ -30,7 +32,9 @@ namespace {{ Schema.Namespace }}
             include 'error' schema: Schema
         end
     }}
+{{~ if Schema.Namespace ~}}
 }
+{{~ end ~}}
 {{~ if Schema.Type == 'Record' || Schema.Type == 'Error' ~}}
 {{~ if UseNullableReferenceTypes ~}}
 #nullable restore

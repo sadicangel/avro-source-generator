@@ -46,8 +46,8 @@ internal static class Emitter
             var renderOutputs = AvroTemplate.Render(
                 schemaRegistry,
                 languageFeatures,
-                recordDeclaration,
-                accessModifier);
+                accessModifier,
+                recordDeclaration);
 
             foreach (var renderOutput in renderOutputs)
             {

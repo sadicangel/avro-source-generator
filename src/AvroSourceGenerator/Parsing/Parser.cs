@@ -79,10 +79,9 @@ internal static class Parser
         _ = cancellationToken;
 
         var csharpCompilation = (CSharpCompilation)compilation;
-        var assemblyNamespace = csharpCompilation.Assembly.ContainingNamespace?.ToDisplayString(s_partiallyQualifiedFormat);
         var languageVersion = csharpCompilation.LanguageVersion;
 
-        return new CompilationInfo(assemblyNamespace, languageVersion);
+        return new CompilationInfo(languageVersion);
     }
 
 

@@ -6,9 +6,13 @@ namespace AvroSourceGenerator.Emit;
 
 internal static class AvroTemplate
 {
-    public static IEnumerable<RenderOutput> Render(SchemaRegistry schemaRegistry, LanguageFeatures languageFeatures, string recordDeclaration, string accessModifier)
+    public static IEnumerable<RenderOutput> Render(
+        SchemaRegistry schemaRegistry,
+        LanguageFeatures languageFeatures,
+        string accessModifier,
+        string recordDeclaration)
     {
-        var templateContext = new TemplateContext(new TemplateScriptObject(languageFeatures, recordDeclaration, accessModifier))
+        var templateContext = new TemplateContext(new TemplateScriptObject(languageFeatures, accessModifier, recordDeclaration))
         {
             MemberRenamer = member => member.Name,
             TemplateLoader = new TemplateLoader(),

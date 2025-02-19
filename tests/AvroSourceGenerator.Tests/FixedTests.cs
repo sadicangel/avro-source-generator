@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Tests;
 
-public sealed class AvroFixedTests
+public sealed class FixedTests
 {
     [Theory]
     [InlineData("public"), InlineData("internal"), InlineData("file"), InlineData("")]
@@ -147,7 +147,7 @@ public sealed class AvroFixedTests
 
     [Theory]
     [InlineData("16")]
-    public Task Verify_Size(string size) => TestHelper.Verify($$"""
+    public Task Verify_Size(string size) => TestHelper.VerifySourceCode($$"""
     {
         "type": "fixed",
         "namespace": "SchemaNamespace",

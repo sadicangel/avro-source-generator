@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
+using System.Text;
 using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
@@ -190,21 +191,33 @@ internal sealed class SchemaRegistry(bool useNullableReferenceTypes)
         // TODO: Actually validate the value so that we don't generate invalid code.
         return type.LocalName switch
         {
-            "object" or "object?" => null,
+            "object" or "object?" => value.GetRawText(),
             "bool" or "bool?" => value.GetRawText(),
             "int" or "int?" => value.GetRawText(),
             "long" or "long?" => value.GetRawText(),
-            "float" or "float?" => value.GetRawText(),
+            "float" or "float?" => GetFloatValue(value),
             "double" or "double?" => value.GetRawText(),
-            "bytes" or "bytes?" => value.GetRawText(),
-            "array" or "array?" => value.GetRawText(),
-            "map" or "map?" => value.GetRawText(),
+            "byte[]" or "byte[]?" => GetBytesValue(value),
             "string" or "string?" => value.GetRawText(),
             _ when _schemas.TryGetValue(type, out var namedSchema) && namedSchema.Type is SchemaType.Enum => $"{type}.{value.GetString()}",
 
             // TODO: Do we need to handle complex types? Should they be supported?
             _ => null,
+
         };
+
+        static string GetFloatValue(JsonElement value)
+        {
+            var text = value.GetRawText();
+            return text.Contains('.') ? $"{text}f" : text;
+        }
+
+        static string GetBytesValue(JsonElement value)
+        {
+            var text = value.GetString();
+            var bytes = Encoding.UTF8.GetBytes(text);
+            return $"[{string.Join(", ", bytes.Select(bytes => $"0x{bytes:X2}"))}]";
+        }
     }
 
     private QualifiedName Fixed(JsonElement schema, string? containingNamespace, bool nullable)

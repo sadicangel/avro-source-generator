@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Tests;
 
-public sealed class AvroRecordTests
+public sealed class RecordTests
 {
     [Theory]
     [InlineData("public"), InlineData("internal"), InlineData("file"), InlineData("")]

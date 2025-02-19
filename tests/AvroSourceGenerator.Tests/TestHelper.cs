@@ -19,11 +19,24 @@ internal static class TestHelper
         string? source = null,
         ProjectConfig? config = null)
     {
-        var (_, documents) = GenerateOutput(
+        var (diagnostics, documents) = GenerateOutput(
             source is null ? [] : [source],
             [schema],
             config);
-        return Verifier.Verify(Assert.Single(documents).Content);
+
+        if (documents is [var document])
+        {
+            return Verifier.Verify(document.Content);
+        }
+
+        if (diagnostics.Length > 0)
+        {
+            Assert.Fail(string.Join("; ", documents.Select(d => d.Content)));
+        }
+
+        Assert.Single(diagnostics);
+
+        return default! /*Unreachable*/;
     }
 
     public static SettingsTask VerifyDiagnostic(
@@ -35,6 +48,7 @@ internal static class TestHelper
             source is null ? [] : [source],
             [schema],
             config);
+
         return Verifier.Verify(Assert.Single(diagnostics));
     }
 

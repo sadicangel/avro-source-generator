@@ -1,17 +1,21 @@
 ﻿namespace AvroSourceGenerator.Tests;
 
-public class AvroFixedTests
+public sealed class AvroFixedTests
 {
     [Theory]
-    [InlineData("public"), InlineData("internal"), InlineData("protected internal"), InlineData("private"), InlineData("private protected"), InlineData("file"), InlineData("")]
-    public Task Verify_AccessModifier(string accessModifier) => TestHelper.Verify("""
+    [InlineData("public"), InlineData("internal"), InlineData("file"), InlineData("")]
+    public Task Verify_AccessModifier_Local(string accessModifier)
+    {
+        var schema = """
         {
             "type": "fixed",
             "namespace": "SchemaNamespace",
             "name": "Fixed",
             "size": 16
         }
-        """, $$"""
+        """;
+
+        var source = $$""""
         using System;
         using AvroSourceGenerator;
         
@@ -19,60 +23,164 @@ public class AvroFixedTests
         
         [Avro]
         {{accessModifier}} partial class Fixed;
-        """)
-        .UseParameters(accessModifier);
+        """";
+
+        return TestHelper.VerifySourceCode(schema, source);
+    }
+
+    [Theory]
+    [InlineData("public"), InlineData("internal"), InlineData("invalid")]
+    public Task Verify_AccessModifier_Global(string accessModifier)
+    {
+        var schema = """
+        {
+            "type": "fixed",
+            "namespace": "SchemaNamespace",
+            "name": "Fixed",
+            "size": 16
+        }
+        """;
+
+        var config = ProjectConfig.Default with
+        {
+            GlobalOptions = new Dictionary<string, string>
+            {
+                ["AvroSourceGeneratorAccessModifier"] = accessModifier
+            }
+        };
+
+        return TestHelper.VerifySourceCode(schema, default, config);
+    }
+
+
+    [Theory]
+    [InlineData("Fixed"), InlineData("exception"), InlineData("throw")]
+    public Task Verify_Name(string name) => TestHelper.VerifySourceCode($$"""
+    {
+        "type": "fixed",
+        "name": "{{name}}",
+        "namespace": "SchemaNamespace",
+        "size": 16
+    }
+    """);
+
+    [Theory]
+    [InlineData("null"), InlineData("\"\""), InlineData("[]")]
+    public Task Verify_Name_Diagnostic(string name) => TestHelper.VerifyDiagnostic($$"""
+    {
+        "type": "fixed",
+        "name": {{name}},
+        "namespace": "SchemaNamespace",
+        "size": 16
+    }
+    """);
+
+    [Theory]
+    [InlineData("null"), InlineData("\"Schema1.Throw.Namespace\""), InlineData("\"schema2.throw.namespace\"")]
+    public Task Verify_Namespace(string @namespace) => TestHelper.VerifySourceCode($$"""
+    {
+        "type": "fixed",
+        "name": "Fixed",
+        "namespace": {{@namespace}},
+        "size": 16
+    }
+    """);
+
+    [Theory]
+    [InlineData("\"\""), InlineData("[]")]
+    public Task Verify_Namespace_Diagnostic(string @namespace) => TestHelper.VerifyDiagnostic($$"""
+    {
+        "type": "fixed",
+        "name": "Fixed",
+        "namespace": {{@namespace}},
+        "size": 16
+    }
+    """);
 
     [Theory]
     [InlineData("null"), InlineData("\"\""), InlineData("\"Single line comment\""), InlineData("\"Multi\\nline\\ncomment\"")]
-    [InlineData("1"), InlineData("[]"), InlineData("{}")]
-    public Task Verify_Documentation(string doc) => TestHelper.Verify($$""""
-        {
-            "type": "fixed",
-            "namespace": "SchemaNamespace",
-            "name": "Fixed",
-            "doc": {{doc}},
-            "size": 16
-        }
-        """")
-        .UseParameters(doc);
+    public Task Verify_Documentation(string doc) => TestHelper.VerifySourceCode($$"""
+    {
+        "type": "fixed",
+        "name": "Fixed",
+        "namespace": "SchemaNamespace",
+        "doc": {{doc}},
+        "size": 16
+    }
+    """);
 
     [Theory]
-    [InlineData("null"), InlineData("[]"), InlineData("[\"Alias1\"]"), InlineData("[\"Alias1\", \"Alias2\"]")]
-    [InlineData("\"not an array\""), InlineData("{}")]
-    public Task Verify_Aliases(string aliases) => TestHelper.Verify($$"""
-        {
-            "type": "fixed",
-            "namespace": "SchemaNamespace",
-            "name": "Fixed",
-            "aliases": {{aliases}},
-            "size": 16
-        }
-        """)
-        .UseParameters(aliases);
+    [InlineData("[]")]
+    public Task Verify_Documentation_Diagnostic(string doc) => TestHelper.VerifyDiagnostic($$"""
+    {
+        "type": "fixed",
+        "name": "Fixed",
+        "namespace": "SchemaNamespace",
+        "doc": {{doc}},
+        "size": 16
+    }
+    """);
+
+    [Theory]
+    [InlineData("null"), InlineData("[]"), InlineData("[\"Alias1\", \"Alias2\"]")]
+    public Task Verify_Aliases(string aliases) => TestHelper.VerifySourceCode($$"""
+    {
+        "type": "fixed",
+        "name": "Fixed",
+        "namespace": "SchemaNamespace",
+        "aliases": {{aliases}},
+        "size": 16
+    }
+    """);
+
+    [Theory]
+    [InlineData("{}")]
+    public Task Verify_Aliases_Diagnostic(string aliases) => TestHelper.VerifyDiagnostic($$"""
+    {
+        "type": "fixed",
+        "name": "Fixed",
+        "namespace": "SchemaNamespace",
+        "aliases": {{aliases}},
+        "size": 16
+    }
+    """);
 
     [Theory]
     [InlineData("16")]
-    [InlineData("0"), InlineData("-1"), InlineData("null"), InlineData("[]"), InlineData("\"A\"")]
     public Task Verify_Size(string size) => TestHelper.Verify($$"""
+    {
+        "type": "fixed",
+        "namespace": "SchemaNamespace",
+        "name": "Fixed",
+        "size": {{size}}
+    }
+    """);
+
+    [Theory]
+    [InlineData("0"), InlineData("-1"), InlineData("1.1"), InlineData("null"), InlineData("\"A\"")]
+    public Task Verify_Size_Diagnostic(string size) => TestHelper.VerifyDiagnostic($$"""
         {
             "type": "fixed",
             "namespace": "SchemaNamespace",
             "name": "Fixed",
             "size": {{size}}
         }
-        """)
-        .UseParameters(size);
+        """);
 
     [Theory]
     [MemberData(nameof(TestData.GetLanguageVersions), MemberType = typeof(TestData))]
-    public Task Verify_LanguageFeatures(string languageFeatures) => TestHelper.Verify("""
+    public Task Verify_LanguageFeatures_Local(string languageFeatures)
+    {
+        var schema = """
         {
             "type": "fixed",
             "namespace": "SchemaNamespace",
             "name": "Fixed",
             "size": 16
         }
-        """, $$""""
+        """;
+
+        var source = $$""""
         using System;
         using AvroSourceGenerator;
         
@@ -80,6 +188,32 @@ public class AvroFixedTests
         
         [Avro(LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
         public partial class Fixed;
-        """")
-        .UseParameters(languageFeatures);
+        """";
+
+        return TestHelper.VerifySourceCode(schema, source);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestData.GetLanguageVersions), MemberType = typeof(TestData))]
+    public Task Verify_LanguageFeatures_Global(string languageFeatures)
+    {
+        var schema = """
+        {
+            "type": "fixed",
+            "namespace": "SchemaNamespace",
+            "name": "Fixed",
+            "size": 16
+        }
+        """;
+
+        var config = ProjectConfig.Default with
+        {
+            GlobalOptions = new Dictionary<string, string>
+            {
+                ["AvroSourceGeneratorLanguageFeatures"] = languageFeatures
+            }
+        };
+
+        return TestHelper.VerifySourceCode(schema, default, config);
+    }
 }

@@ -1,0 +1,19 @@
+﻿{
+  Location: schema.avsc: (0,0)-(5,1),
+  Message:
+The schema defined in the JSON is invalid: 'name' property must be a string in schema: {
+    "type": "enum",
+    "name": null,
+    "namespace": "SchemaNamespace",
+    "symbols": []
+},
+  Severity: Error,
+  Descriptor: {
+    Id: AVROSG0002,
+    Title: Invalid Schema,
+    MessageFormat: The schema defined in the JSON is invalid: {0},
+    Category: Semantic,
+    DefaultSeverity: Error,
+    IsEnabledByDefault: true
+  }
+}

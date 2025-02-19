@@ -1,8 +1,10 @@
 ﻿using System.CodeDom.Compiler;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator.Tests;
@@ -12,12 +14,41 @@ public readonly record struct GeneratedOutput(ImmutableArray<Diagnostic> Diagnos
 
 internal static class TestHelper
 {
-    public static SettingsTask Verify(string avro, params string[] sources) =>
-        Verifier.Verify(GenerateOutput(sources, [avro]));
+    public static SettingsTask Verify(string avro, string? source = null) =>
+        Verifier.Verify(GenerateOutput(source is null ? [] : [source], [avro]));
 
-    public static GeneratedOutput GenerateOutput(string[] sourceTexts, string[] additionalTexts)
+    public static SettingsTask VerifySourceCode(
+        string schema,
+        string? source = null,
+        ProjectConfig? config = null)
     {
-        var parseOptions = new CSharpParseOptions(LanguageVersion.Default);
+        var (_, documents) = GenerateOutput(
+            source is null ? [] : [source],
+            [schema],
+            config);
+        return Verifier.Verify(Assert.Single(documents).Content);
+    }
+
+    public static SettingsTask VerifyDiagnostic(
+        string schema,
+        string? source = null,
+        ProjectConfig? config = null)
+    {
+        var (diagnostics, _) = GenerateOutput(
+            source is null ? [] : [source],
+            [schema],
+            config);
+        return Verifier.Verify(Assert.Single(diagnostics));
+    }
+
+    public static GeneratedOutput GenerateOutput(
+        ImmutableArray<string> sourceTexts,
+        ImmutableArray<string> additionalTexts,
+        ProjectConfig? projectConfig = null)
+    {
+        projectConfig ??= ProjectConfig.Default;
+
+        var parseOptions = new CSharpParseOptions(projectConfig.LanguageVersion);
         var syntaxTrees = sourceTexts.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions));
         var references = AppDomain.CurrentDomain.GetAssemblies()
             .Where(assembly => !assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
@@ -30,7 +61,7 @@ internal static class TestHelper
             ]);
 
         var compilation = CSharpCompilation.Create(
-            "generator",
+            "GeneratorAssemblyName",
             syntaxTrees,
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
@@ -39,6 +70,7 @@ internal static class TestHelper
             .Create(new AvroSourceGenerator())
             .AddAdditionalTexts([.. additionalTexts.Select(t => new AdditionalTextImplementation(t))])
             .WithUpdatedParseOptions(parseOptions)
+            .WithUpdatedAnalyzerConfigOptions(new AnalyzerConfigOptionsProviderImplementation(projectConfig.GlobalOptions))
             .RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
 
         var documents = outputCompilation.SyntaxTrees
@@ -57,3 +89,36 @@ file sealed class AdditionalTextImplementation(string content) : AdditionalText
     public override SourceText? GetText(CancellationToken cancellationToken = default) =>
         SourceText.From(content, Encoding.UTF8);
 }
+
+file sealed class AnalyzerConfigOptionsProviderImplementation(IEnumerable<KeyValuePair<string, string>> globalOptions)
+    : AnalyzerConfigOptionsProvider
+{
+    public override AnalyzerConfigOptions GlobalOptions { get; } = new AnalyzerConfigOptionsImplementation(globalOptions);
+
+    public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) =>
+        throw new NotImplementedException();
+    public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) =>
+        throw new NotImplementedException();
+
+    private sealed class AnalyzerConfigOptionsImplementation(IEnumerable<KeyValuePair<string, string>> options)
+        : AnalyzerConfigOptions
+    {
+        public static readonly AnalyzerConfigOptionsImplementation Empty = new([]);
+
+        private readonly Dictionary<string, string> _options = new(options
+            .Select(kvp => new KeyValuePair<string, string>($"build_property.{kvp.Key}", kvp.Value)));
+
+        public string this[string key] { get => _options[key]; init => _options[key] = value; }
+
+        public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
+            => _options.TryGetValue(key, out value);
+    }
+}
+
+internal sealed record class ProjectConfig(
+    LanguageVersion LanguageVersion,
+    Dictionary<string, string> GlobalOptions)
+{
+    public static readonly ProjectConfig Default = new(LanguageVersion.Default, []);
+}
+

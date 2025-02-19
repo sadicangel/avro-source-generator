@@ -1,0 +1,19 @@
+﻿{
+  Location: schema.avsc: (0,0)-(5,1),
+  Message:
+The schema defined in the JSON is invalid: 'fields' property is required in schema: {
+    "type": "error",
+    "namespace": "SchemaNamespace",
+    "name": "Error",
+    "fields": null
+},
+  Severity: Error,
+  Descriptor: {
+    Id: AVROSG0002,
+    Title: Invalid Schema,
+    MessageFormat: The schema defined in the JSON is invalid: {0},
+    Category: Semantic,
+    DefaultSeverity: Error,
+    IsEnabledByDefault: true
+  }
+}

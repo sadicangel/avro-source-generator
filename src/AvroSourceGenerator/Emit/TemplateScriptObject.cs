@@ -13,12 +13,12 @@ internal sealed class TemplateScriptObject : BuiltinFunctions
 
     public TemplateScriptObject(
         LanguageFeatures languageFeatures,
-        string recordDeclaration,
-        string accessModifier)
+        string accessModifier,
+        string recordDeclaration)
     {
         SetValue("text", (languageFeatures & LanguageFeatures.RawStringLiterals) != 0 ? s_text_RawStringLiteral : s_text_VerbatimStringLiteral, readOnly: true);
-        SetValue("RecordDeclaration", recordDeclaration, readOnly: true);
         SetValue("AccessModifier", accessModifier, readOnly: true);
+        SetValue("RecordDeclaration", recordDeclaration, readOnly: true);
         SetValue("UseNullableReferenceTypes", (languageFeatures & LanguageFeatures.NullableReferenceTypes) != 0, readOnly: true);
         SetValue("UseRequiredProperties", (languageFeatures & LanguageFeatures.RequiredProperties) != 0, readOnly: true);
         SetValue("UseInitOnlyProperties", (languageFeatures & LanguageFeatures.InitOnlyProperties) != 0, readOnly: true);

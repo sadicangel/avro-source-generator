@@ -1,4 +1,4 @@
-{{~ if $.field.Documentation ~}}
+{{~ if !string.whitespace field.Documentation ~}}
 /// <summary>
 {{~ for line in $.field.Documentation | string.split '\n' | array.each @string.strip ~}}
 /// {{ line }}
@@ -8,4 +8,6 @@
 {{~ if $.field.Aliases.size > 0 ~}}
 [global::AvroSourceGenerator.AvroAliases({{ $.field.Aliases | array.each @string.literal | array.join ', ' }})]
 {{~ end ~}}
-public {{~ UseRequiredProperties && !$.field.Type.IsNullable && !$.field.Default ? ' required ' : ' ' ~}} {{ $.field.Type }} {{ $.field.Name }} { get; {{ UseInitOnlyProperties ? 'init' : 'set' }}; } {{~ if $.field.Default; $" = {$.field.Default};"; end ~}}
+{{~ $required = UseRequiredProperties && !$.field.Type.IsNullable && !$.field.Default ? ' required ' : ' ' ~}}
+{{~ $set = UseInitOnlyProperties ? 'init' : 'set' ~}}
+public {{~ $required ~}} {{ $.field.Type }} {{ $.field.Name }} { get; {{ $set }}; } {{~ if $.field.Default; $" = {$.field.Default};"; end ~}}

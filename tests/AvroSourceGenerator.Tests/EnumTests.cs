@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Tests;
 
-public class AvroEnumTests
+public class EnumTests
 {
     [Theory]
     [InlineData("public"), InlineData("internal"), InlineData("invalid")]

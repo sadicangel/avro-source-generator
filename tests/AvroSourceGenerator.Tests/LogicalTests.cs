@@ -1,5 +1,5 @@
 ﻿namespace AvroSourceGenerator.Tests;
-public class AvroLogicalTests
+public class LogicalTests
 {
     [Theory]
     [InlineData("bytes", "4", "2"), InlineData("bytes", "4", "null"), InlineData("fixed", "4", "2"), InlineData("fixed", "4", "null")]

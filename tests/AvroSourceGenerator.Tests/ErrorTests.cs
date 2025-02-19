@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Tests;
 
-public sealed class AvroErrorTests
+public sealed class ErrorTests
 {
     [Theory]
     [InlineData("public"), InlineData("internal"), InlineData("file"), InlineData("")]

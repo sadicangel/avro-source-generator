@@ -147,7 +147,7 @@ public sealed class AvroFixedTests
 
     [Theory]
     [InlineData("16")]
-    public Task Verify_Size(string size) => TestHelper.Verify($$"""
+    public Task Verify_Size(string size) => TestHelper.VerifySourceCode($$"""
     {
         "type": "fixed",
         "namespace": "SchemaNamespace",

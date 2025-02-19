@@ -14,9 +14,6 @@ public readonly record struct GeneratedOutput(ImmutableArray<Diagnostic> Diagnos
 
 internal static class TestHelper
 {
-    public static SettingsTask Verify(string avro, string? source = null) =>
-        Verifier.Verify(GenerateOutput(source is null ? [] : [source], [avro]));
-
     public static SettingsTask VerifySourceCode(
         string schema,
         string? source = null,

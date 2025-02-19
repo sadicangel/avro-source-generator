@@ -176,16 +176,7 @@ public sealed class AvroFixedTests
             "type": "fixed",
             "namespace": "SchemaNamespace",
             "name": "Fixed",
-            "fields": [
-                {
-                    "name": "FixedCode",
-                    "type": "int"
-                },
-                {
-                    "name": "FixedText",
-                    "type": "string"
-                }
-            ]
+            "size": 16
         }
         """;
 
@@ -211,15 +202,7 @@ public sealed class AvroFixedTests
             "type": "fixed",
             "namespace": "SchemaNamespace",
             "name": "Fixed",
-            "fields": [
-                {
-                    "name": "FixedCode",
-                    "type": "int"
-                },
-                {
-                    "name": "FixedText",
-                    "type": "string"
-                }]
+            "size": 16
         }
         """;
 

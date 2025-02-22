@@ -1,0 +1,70 @@
+{
+  "type": "record",
+  "name": "Primitives",
+  "fields": [
+    {
+      "name": "intField",
+      "type": "int"
+    },
+    {
+      "name": "longField",
+      "type": "long"
+    },
+    {
+      "name": "floatField",
+      "type": "float"
+    },
+    {
+      "name": "doubleField",
+      "type": "double"
+    },
+    {
+      "name": "boolField",
+      "type": "boolean"
+    },
+    {
+      "name": "stringField",
+      "type": "string"
+    },
+    {
+      "name": "bytesField",
+      "type": "bytes"
+    },
+
+    {
+      "name": "nullableInt",
+      "type": [ "null", "int" ],
+      "default": null
+    },
+    {
+      "name": "nullableLong",
+      "type": [ "null", "long" ],
+      "default": null
+    },
+    {
+      "name": "nullableFloat",
+      "type": [ "null", "float" ],
+      "default": null
+    },
+    {
+      "name": "nullableDouble",
+      "type": [ "null", "double" ],
+      "default": null
+    },
+    {
+      "name": "nullableBool",
+      "type": [ "null", "boolean" ],
+      "default": null
+    },
+    {
+      "name": "nullableString",
+      "type": [ "null", "string" ],
+      "default": null
+    },
+    {
+      "name": "nullableBytes",
+      "type": [ "null", "bytes" ],
+      "default": null
+    }
+  ]
+}

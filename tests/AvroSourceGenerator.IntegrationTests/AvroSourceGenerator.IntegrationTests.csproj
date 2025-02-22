@@ -19,10 +19,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="Transaction.avsc" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
@@ -34,7 +30,7 @@
     <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
-    <AdditionalFiles Include="*.avsc" />
+    <AdditionalFiles Include="Schemas\*.avsc" />
   </ItemGroup>
 
   <ItemGroup>

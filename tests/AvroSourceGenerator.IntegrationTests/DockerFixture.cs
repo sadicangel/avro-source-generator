@@ -81,13 +81,11 @@ public sealed class DockerFixture : IAsyncLifetime
         await SchemaRegistry.StartAsync(TestContext.Current.CancellationToken);
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        await SchemaRegistry.StopAsync(TestContext.Current.CancellationToken);
-        await Kafka.StopAsync(TestContext.Current.CancellationToken);
-        await Zookeeper.StopAsync(TestContext.Current.CancellationToken);
-        await Network.DeleteAsync(TestContext.Current.CancellationToken);
-    }
+    public async ValueTask DisposeAsync() => await Task.WhenAll(
+        SchemaRegistry.StopAsync(TestContext.Current.CancellationToken),
+        Kafka.StopAsync(TestContext.Current.CancellationToken),
+        Zookeeper.StopAsync(TestContext.Current.CancellationToken),
+        Network.DeleteAsync(TestContext.Current.CancellationToken));
 
     public ISchemaRegistryClient CreateSchemaRegistryClient(Action<SchemaRegistryConfig>? configure = null)
     {

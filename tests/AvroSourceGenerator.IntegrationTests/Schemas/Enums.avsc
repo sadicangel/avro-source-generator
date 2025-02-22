@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "Enums",
+  "fields": [
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "Status",
+        "symbols": [ "ACTIVE", "INACTIVE", "PENDING" ]
+      }
+    },
+    {
+      "name": "nullableStatus",
+      "type": [ "null", "Status" ],
+      "default": null
+    }
+  ]
+}

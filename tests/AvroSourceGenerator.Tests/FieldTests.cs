@@ -14,10 +14,63 @@ public class FieldTests
         {
             "type": "{{@class}}",
             "name": "Class",
+            "namespace": "SchemaNamespace",
             "fields": [
                 {
                     "type": "{{field}}",
                     "name": "Field"
+                }
+            ]
+        }
+        """;
+        return TestHelper.VerifySourceCode(schema);
+    }
+
+    [Theory]
+    [InlineData("record"), InlineData("error")]
+    public Task Verify_Enum(string @class)
+    {
+        var schema = $$"""
+        {
+            "type": "{{@class}}",
+            "name": "Class",
+            "namespace": "SchemaNamespace",
+            "fields": [
+                {
+                    "type": {
+                        "type": "enum",
+                        "name": "Enum",
+                        "symbols": ["A", "B", "C"]
+                    },
+                    "name": "Field"
+                }
+            ]
+        }
+        """;
+        return TestHelper.VerifySourceCode(schema);
+    }
+
+    [Theory]
+    [InlineData("record"), InlineData("error")]
+    public Task Verify_Enum_Nullable(string @class)
+    {
+        var schema = $$"""
+        {
+            "type": "{{@class}}",
+            "name": "Class",
+            "namespace": "SchemaNamespace",
+            "fields": [
+                {
+                    "type": {
+                        "type": "enum",
+                        "name": "Enum",
+                        "symbols": ["A", "B", "C"]
+                    },
+                    "name": "Field"
+                },
+                {
+                    "type": ["null", "Enum"],
+                    "name": "NullableField"
                 }
             ]
         }
@@ -33,6 +86,7 @@ public class FieldTests
         {
             "type": "{{@class}}",
             "name": "Class",
+            "namespace": "SchemaNamespace",
             "fields": [
                 {
                     "type": ["null", "{{field}}"],
@@ -63,6 +117,7 @@ public class FieldTests
         {
             "type": "record",
             "name": "Record",
+            "namespace": "SchemaNamespace",
             "fields": [
                 {
                     "type": "{{type}}",

@@ -38,15 +38,20 @@ internal sealed class SchemaRegistry(bool useNullableReferenceTypes)
 
         return type switch
         {
-            "null" => QualifiedName.Object(useNullableReferenceTypes & nullable),
+            "null" => QualifiedName.Object(useNullableReferenceTypes && nullable),
             "boolean" => QualifiedName.Boolean(nullable),
             "int" => QualifiedName.Int(nullable),
             "long" => QualifiedName.Long(nullable),
             "float" => QualifiedName.Float(nullable),
             "double" => QualifiedName.Double(nullable),
-            "bytes" => QualifiedName.Bytes(useNullableReferenceTypes & nullable),
-            "string" => QualifiedName.String(useNullableReferenceTypes & nullable),
-            _ when _schemas.TryGetValue(new QualifiedName(JsonElementExtensions.GetValid(type), containingNamespace), out var registeredType) => registeredType.QualifiedName,
+            "bytes" => QualifiedName.Bytes(useNullableReferenceTypes && nullable),
+            "string" => QualifiedName.String(useNullableReferenceTypes && nullable),
+            _ when _schemas.TryGetValue(new QualifiedName(JsonElementExtensions.GetValid(type), containingNamespace), out var registeredSchema) => registeredSchema switch
+            {
+                EnumSchema when nullable => registeredSchema.QualifiedName.ToNullable(),
+                _ when useNullableReferenceTypes && nullable => registeredSchema.QualifiedName.ToNullable(),
+                _ => registeredSchema.QualifiedName,
+            },
             _ => throw new InvalidSchemaException($"Unknown schema '{type}' in {schema.GetRawText()}")
         };
     }
@@ -146,7 +151,7 @@ internal sealed class SchemaRegistry(bool useNullableReferenceTypes)
             _schemas[name] = new RecordSchema(schema, name, documentation, aliases, fields);
         }
 
-        return useNullableReferenceTypes & nullable ? name.ToNullable() : name;
+        return useNullableReferenceTypes && nullable ? name.ToNullable() : name;
     }
 
     private QualifiedName Error(JsonElement schema, string? containingNamespace, bool nullable)
@@ -164,7 +169,7 @@ internal sealed class SchemaRegistry(bool useNullableReferenceTypes)
             _schemas[name] = new ErrorSchema(schema, name, documentation, aliases, fields);
         }
 
-        return useNullableReferenceTypes & nullable ? name.ToNullable() : name;
+        return useNullableReferenceTypes && nullable ? name.ToNullable() : name;
     }
 
     private ImmutableArray<Field> Fields(JsonElement schema, string? containingNamespace) =>
@@ -235,7 +240,7 @@ internal sealed class SchemaRegistry(bool useNullableReferenceTypes)
             _schemas[name] = new FixedSchema(schema, name, documentation, aliases, size);
         }
 
-        return useNullableReferenceTypes & nullable ? name.ToNullable() : name;
+        return useNullableReferenceTypes && nullable ? name.ToNullable() : name;
     }
 
     private QualifiedName Logical(JsonElement schema, bool nullable)

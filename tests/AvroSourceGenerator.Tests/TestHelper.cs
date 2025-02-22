@@ -24,19 +24,12 @@ internal static class TestHelper
             [schema],
             config);
 
-        if (documents is [var document])
-        {
-            return Verifier.Verify(document.Content);
-        }
-
         if (diagnostics.Length > 0)
         {
-            Assert.Fail(string.Join("; ", documents.Select(d => d.Content)));
+            Assert.Fail(string.Join("; ", diagnostics.Select(d => d.GetMessage())));
         }
 
-        Assert.Single(diagnostics);
-
-        return default! /*Unreachable*/;
+        return Verifier.Verify(documents.Select(document => new Target("txt", document.Content)));
     }
 
     public static SettingsTask VerifyDiagnostic(

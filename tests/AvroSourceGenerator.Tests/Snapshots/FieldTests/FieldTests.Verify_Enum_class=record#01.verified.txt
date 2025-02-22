@@ -6,7 +6,7 @@ namespace SchemaNamespace
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial record Class : global::Avro.Specific.ISpecificRecord
     {
-        public required object Field { get; init; }
+        public required global::SchemaNamespace.Enum Field { get; init; }
     
         public global::Avro.Schema Schema { get => Class._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
@@ -16,7 +16,15 @@ namespace SchemaNamespace
           "namespace": "SchemaNamespace",
           "fields": [
             {
-              "type": "null",
+              "type": {
+                "type": "enum",
+                "name": "Enum",
+                "symbols": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              },
               "name": "Field"
             }
           ]
@@ -37,9 +45,9 @@ namespace SchemaNamespace
             switch (fieldPos)
             {
                 case 0:
-                    Set_Field(this, (object)fieldValue!); break;
+                    Set_Field(this, (global::SchemaNamespace.Enum)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Field")]
-                    extern static void Set_Field(Class obj, object value);
+                    extern static void Set_Field(Class obj, global::SchemaNamespace.Enum value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

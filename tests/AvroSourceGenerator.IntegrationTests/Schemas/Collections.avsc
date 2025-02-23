@@ -1,0 +1,20 @@
+{
+  "type": "record",
+  "name": "Collections",
+  "fields": [
+    {
+      "name": "stringList",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "intMap",
+      "type": {
+        "type": "map",
+        "values": "int"
+      }
+    }
+  ]
+}

@@ -32,37 +32,73 @@
     },
 
     {
-      "name": "nullableInt",
+      "name": "nullableInt1",
       "type": [ "null", "int" ],
       "default": null
     },
     {
-      "name": "nullableLong",
+      "name": "nullableLong1",
       "type": [ "null", "long" ],
       "default": null
     },
     {
-      "name": "nullableFloat",
+      "name": "nullableFloat1",
       "type": [ "null", "float" ],
       "default": null
     },
     {
-      "name": "nullableDouble",
+      "name": "nullableDouble1",
       "type": [ "null", "double" ],
       "default": null
     },
     {
-      "name": "nullableBool",
+      "name": "nullableBool1",
       "type": [ "null", "boolean" ],
       "default": null
     },
     {
-      "name": "nullableString",
+      "name": "nullableString1",
       "type": [ "null", "string" ],
       "default": null
     },
     {
-      "name": "nullableBytes",
+      "name": "nullableBytes1",
+      "type": [ "null", "bytes" ],
+      "default": null
+    },
+
+    {
+      "name": "nullableInt2",
+      "type": [ "null", "int" ],
+      "default": null
+    },
+    {
+      "name": "nullableLong2",
+      "type": [ "null", "long" ],
+      "default": null
+    },
+    {
+      "name": "nullableFloat2",
+      "type": [ "null", "float" ],
+      "default": null
+    },
+    {
+      "name": "nullableDouble2",
+      "type": [ "null", "double" ],
+      "default": null
+    },
+    {
+      "name": "nullableBool2",
+      "type": [ "null", "boolean" ],
+      "default": null
+    },
+    {
+      "name": "nullableString2",
+      "type": [ "null", "string" ],
+      "default": null
+    },
+    {
+      "name": "nullableBytes2",
       "type": [ "null", "bytes" ],
       "default": null
     }

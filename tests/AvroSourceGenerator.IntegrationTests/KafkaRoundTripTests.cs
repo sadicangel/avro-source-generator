@@ -21,13 +21,21 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
             stringField = "Hello, Avro!",
             bytesField = Encoding.UTF8.GetBytes("Hello, Avro!"),
 
-            nullableInt = 42,
-            nullableLong = 42L,
-            nullableFloat = 42.42f,
-            nullableDouble = 42.42,
-            nullableBool = true,
-            nullableString = "Hello, Avro!",
-            nullableBytes = Encoding.UTF8.GetBytes("Hello, Avro!"),
+            nullableInt1 = 42,
+            nullableLong1 = 42L,
+            nullableFloat1 = 42.42f,
+            nullableDouble1 = 42.42,
+            nullableBool1 = true,
+            nullableString1 = "Hello, Avro!",
+            nullableBytes1 = Encoding.UTF8.GetBytes("Hello, Avro!"),
+
+            nullableInt2 = null,
+            nullableLong2 = null,
+            nullableFloat2 = null,
+            nullableDouble2 = null,
+            nullableBool2 = null,
+            nullableString2 = null,
+            nullableBytes2 = null,
         };
 
         var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
@@ -49,16 +57,16 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
         AssertEqual(expected, actual);
     }
 
-    // TODO: Fix nested enums not being nullable when they should.
-    //[Fact]
-    //public async Task Enums_remain_unchanged_after_roundtrip_to_kafka()
-    //{
-    //    var expected = new Enums
-    //    {
-    //        status = Status.ACTIVE,
-    //        nullableStatus = null,
-    //    };
-    //    var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
-    //    AssertEqual(expected, actual);
-    //}
+    [Fact]
+    public async Task Enums_remain_unchanged_after_roundtrip_to_kafka()
+    {
+        var expected = new Enums
+        {
+            status = Status.ACTIVE,
+            // nullableStatus1 = Status.INACTIVE, // TODO: Fix nullable enum serialization when not null.
+            nullableStatus2 = null,
+        };
+        var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
+        AssertEqual(expected, actual);
+    }
 }

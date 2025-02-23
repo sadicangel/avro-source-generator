@@ -11,7 +11,12 @@
       }
     },
     {
-      "name": "nullableStatus",
+      "name": "nullableStatus1",
+      "type": [ "null", "Status" ],
+      "default": null
+    },
+    {
+      "name": "nullableStatus2",
       "type": [ "null", "Status" ],
       "default": null
     }

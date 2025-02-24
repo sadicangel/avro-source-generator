@@ -26,15 +26,16 @@ internal static class Parser
         {
             diagnostics.Add(InvalidJsonDiagnostic.Create(path.GetLocation(text), "The file is empty."));
 
-            return new AvroFile(path, text, default, default, diagnostics.ToImmutable());
+            return new AvroFile(path, text, default, string.Empty, default, diagnostics.ToImmutable());
         }
 
         try
         {
             using var jsonDocument = JsonDocument.Parse(text!);
             var json = jsonDocument.RootElement.Clone();
-            var name = new QualifiedName(json.GetLocalName(), json.GetNamespace());
-            return new AvroFile(path, text, json, name, diagnostics.ToImmutable());
+            var name = json.GetName();
+            var @namespace = json.GetNamespace();
+            return new AvroFile(path, text, json, name, @namespace, diagnostics.ToImmutable());
         }
         catch (JsonException ex)
         {
@@ -45,7 +46,7 @@ internal static class Parser
             diagnostics.Add(InvalidSchemaDiagnostic.Create(path.GetLocation(text), ex.Message));
         }
 
-        return new AvroFile(path, text, default, default, diagnostics.ToImmutable());
+        return new AvroFile(path, text, default, string.Empty, default, diagnostics.ToImmutable());
     }
 
     public static GeneratorSettings GetGeneratorSettings(AnalyzerConfigOptionsProvider provider, CancellationToken cancellationToken)
@@ -105,9 +106,8 @@ internal static class Parser
         _ = cancellationToken;
 
         var symbol = Unsafe.As<INamedTypeSymbol>(context.TargetSymbol);
-        var typeName = new QualifiedName(
-            symbol.Name,
-            symbol.ContainingNamespace?.ToDisplayString(s_partiallyQualifiedFormat));
+        var typeName = symbol.Name;
+        var typeNamespace = symbol.ContainingNamespace?.ToDisplayString(s_partiallyQualifiedFormat);
 
         var declaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
         var recordDeclaration = declaration.IsKind(SyntaxKind.RecordDeclaration) ? "record" : "class";
@@ -134,6 +134,7 @@ internal static class Parser
 
         return new AvroOptions(
             typeName,
+            typeNamespace,
             accessModifier,
             recordDeclaration,
             languageFeatures,

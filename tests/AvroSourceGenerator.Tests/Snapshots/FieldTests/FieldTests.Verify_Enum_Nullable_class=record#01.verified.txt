@@ -58,7 +58,7 @@ namespace SchemaNamespace
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Field")]
                     extern static void Set_Field(Class obj, global::SchemaNamespace.Enum value);
                 case 1:
-                    Set_NullableField(this, (global::SchemaNamespace.Enum?)fieldValue!); break;
+                    Set_NullableField(this, fieldValue! is null ? null : (global::SchemaNamespace.Enum)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_NullableField")]
                     extern static void Set_NullableField(Class obj, global::SchemaNamespace.Enum? value);
                 default:

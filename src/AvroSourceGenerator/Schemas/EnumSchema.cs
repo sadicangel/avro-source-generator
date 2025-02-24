@@ -5,9 +5,10 @@ namespace AvroSourceGenerator.Schemas;
 
 internal sealed record class EnumSchema(
     JsonElement Json,
-    QualifiedName QualifiedName,
+    string Name,
+    string? Namespace,
     string? Documentation,
     ImmutableArray<string> Aliases,
     ImmutableArray<string> Symbols,
     string? Default)
-    : AvroSchema(SchemaType.Enum, Json, QualifiedName, Documentation, Aliases);
+    : NamedSchema(SchemaType.Enum, Json, Name, Namespace, Documentation, Aliases);

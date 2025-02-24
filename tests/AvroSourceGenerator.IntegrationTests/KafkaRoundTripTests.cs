@@ -63,7 +63,7 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
         var expected = new Enums
         {
             status = Status.ACTIVE,
-            // nullableStatus1 = Status.INACTIVE, // TODO: Fix nullable enum serialization when not null.
+            nullableStatus1 = Status.INACTIVE,
             nullableStatus2 = null,
         };
         var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);

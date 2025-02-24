@@ -105,7 +105,7 @@ internal static class JsonElementExtensions
 
     public static ReadOnlySpan<char> GetValid(ReadOnlySpan<char> name) => IsReserved(name, out var replacement) ? replacement.AsSpan() : name;
 
-    public static string GetLocalName(this JsonElement schema)
+    public static string GetName(this JsonElement schema)
     {
         if (!schema.TryGetProperty("name", out var json))
         {

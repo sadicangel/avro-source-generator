@@ -17,7 +17,8 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
     switch (fieldPos)
     {
         {{~ for field in $.schema.Fields ~}}
-        case {{ for.index }}: this.{{ field.Name }} = ({{ field.Type }}){{ $fieldValue }}; break;
+        {{~ $expr = !field.IsNullable ? $"({ field.Type }){ $fieldValue }" : $"{ $fieldValue } is null ? null : ({ field.UnderlyingType }){ $fieldValue }" ~}}
+        case {{ for.index }}: this.{{ field.Name }} = {{ $expr }}; break;
         {{~ end ~}}
         default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
     }
@@ -28,8 +29,9 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
     switch (fieldPos)
     {
         {{~ for field in $.schema.Fields ~}}
+        {{~ $expr = !field.IsNullable ? $"({ field.Type }){ $fieldValue }" : $"{ $fieldValue } is null ? null : ({ field.UnderlyingType }){ $fieldValue }" ~}}
         case {{ for.index }}:
-            Set_{{ field.Name }}(this, ({{ field.Type }}){{ $fieldValue }}); break;
+            Set_{{ field.Name }}(this, {{ $expr }}); break;
             [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = {{ $"\"set_{ field.Name }\"" }})]
             extern static void Set_{{ field.Name }}({{ $.schema.Name }} obj, {{ field.Type }} value);
         {{~ end ~}}
@@ -43,7 +45,8 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
     switch (fieldPos)
     {
         {{~ for field in $.schema.Fields ~}}
-        case {{ for.index }}: {{ $.schema.Name }}Reflection.Set_{{ field.Name }}(this, ({{ field.Type }}){{ $fieldValue }}); break;
+        {{~ $expr = !field.IsNullable ? $"({ field.Type }){ $fieldValue }" : $"{ $fieldValue } is null ? null : ({ field.UnderlyingType }){ $fieldValue }" ~}}
+        case {{ for.index }}: {{ $.schema.Name }}Reflection.Set_{{ field.Name }}(this, {{ $expr }}); break;
         {{~ end ~}}
         default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
     }

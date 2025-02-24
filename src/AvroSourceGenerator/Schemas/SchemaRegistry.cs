@@ -5,113 +5,115 @@ using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
-internal sealed class SchemaRegistry(bool useNullableReferenceTypes)
-    : IEnumerable<AvroSchema>
+internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnumerable<NamedSchema>
 {
-    private readonly Dictionary<QualifiedName, AvroSchema> _schemas = [];
+    private readonly record struct SchemaKey(string Name, string? Namespace);
 
-    public IEnumerator<AvroSchema> GetEnumerator() => _schemas.Values.GetEnumerator();
+    private readonly Dictionary<SchemaKey, NamedSchema> _schemas = [];
+
+    public IEnumerator<NamedSchema> GetEnumerator() => _schemas.Values.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public AvroSchema Register(JsonElement schema)
+    public static SchemaRegistry Register(JsonElement schema, bool useNullableReferenceTypes)
     {
-        var name = Type(schema, containingNamespace: null, nullable: false);
+        var registry = new SchemaRegistry(useNullableReferenceTypes);
+
+        var namedSchema = registry.Schema(schema, containingNamespace: null);
 
         // The schema will only be registered if it's a named schema.
-        return _schemas[name];
+        if (namedSchema is not NamedSchema)
+            throw new InvalidSchemaException($"Schema is not a named schema: {schema.GetRawText()}");
+
+        return registry;
     }
 
-    private QualifiedName Type(JsonElement schema, string? containingNamespace, bool nullable)
+    private AvroSchema Schema(JsonElement schema, string? containingNamespace)
     {
         return schema.ValueKind switch
         {
-            JsonValueKind.String => KnownType(schema, containingNamespace, nullable),
-            JsonValueKind.Object => ComplexType(schema, containingNamespace, nullable),
+            JsonValueKind.String => WellKnown(schema, containingNamespace),
+            JsonValueKind.Object => Complex(schema, containingNamespace),
             JsonValueKind.Array => Union(schema, containingNamespace),
             _ => throw new InvalidSchemaException($"Invalid schema: {schema.GetRawText()}")
         };
     }
 
-    private QualifiedName KnownType(JsonElement schema, string? containingNamespace, bool nullable)
+    private AvroSchema WellKnown(JsonElement schema, string? containingNamespace)
     {
         var type = schema.GetString()!;
 
         return type switch
         {
-            "null" => QualifiedName.Object(useNullableReferenceTypes && nullable),
-            "boolean" => QualifiedName.Boolean(nullable),
-            "int" => QualifiedName.Int(nullable),
-            "long" => QualifiedName.Long(nullable),
-            "float" => QualifiedName.Float(nullable),
-            "double" => QualifiedName.Double(nullable),
-            "bytes" => QualifiedName.Bytes(useNullableReferenceTypes && nullable),
-            "string" => QualifiedName.String(useNullableReferenceTypes && nullable),
-            _ when _schemas.TryGetValue(new QualifiedName(JsonElementExtensions.GetValid(type), containingNamespace), out var registeredSchema) => registeredSchema switch
-            {
-                EnumSchema when nullable => registeredSchema.QualifiedName.ToNullable(),
-                _ when useNullableReferenceTypes && nullable => registeredSchema.QualifiedName.ToNullable(),
-                _ => registeredSchema.QualifiedName,
-            },
+            "null" => AvroSchema.Object,
+            "boolean" => AvroSchema.Boolean,
+            "int" => AvroSchema.Int,
+            "long" => AvroSchema.Long,
+            "float" => AvroSchema.Float,
+            "double" => AvroSchema.Double,
+            "bytes" => AvroSchema.Bytes,
+            "string" => AvroSchema.String,
+            _ when _schemas.TryGetValue(new SchemaKey(JsonElementExtensions.GetValid(type), containingNamespace), out var registeredSchema) => registeredSchema,
             _ => throw new InvalidSchemaException($"Unknown schema '{type}' in {schema.GetRawText()}")
         };
     }
 
-    private QualifiedName ComplexType(JsonElement schema, string? containingNamespace, bool nullable)
+    private AvroSchema Complex(JsonElement schema, string? containingNamespace)
     {
         if (schema.IsSupportedLogicalSchema())
         {
-            return Logical(schema, nullable);
+            return Logical(schema);
         }
 
         var type = schema.GetSchemaTypeString();
 
         return type switch
         {
-            "array" => Array(schema, containingNamespace, nullable),
-            "map" => Map(schema, containingNamespace, nullable),
-            "enum" => Enum(schema, containingNamespace, nullable),
-            "record" => Record(schema, containingNamespace, nullable),
-            "error" => Error(schema, containingNamespace, nullable),
-            "fixed" => Fixed(schema, containingNamespace, nullable),
+            "array" => Array(schema, containingNamespace),
+            "map" => Map(schema, containingNamespace),
+            "enum" => Enum(schema, containingNamespace),
+            "record" => Record(schema, containingNamespace),
+            "error" => Error(schema, containingNamespace),
+            "fixed" => Fixed(schema, containingNamespace),
             _ => throw new InvalidSchemaException($"Unknown schema '{type}' in {schema.GetRawText()}")
         };
     }
 
-    private QualifiedName Array(JsonElement schema, string? containingNamespace, bool nullable)
+    private ArraySchema Array(JsonElement schema, string? containingNamespace)
     {
         var itemsSchema = schema.GetSchemaItems();
 
-        var items = Type(itemsSchema, containingNamespace, nullable: false);
+        var items = Schema(itemsSchema, containingNamespace);
 
-        return QualifiedName.Array(items, nullable);
+        return new ArraySchema(items);
     }
 
-    private QualifiedName Map(JsonElement schema, string? containingNamespace, bool nullable)
+    private MapSchema Map(JsonElement schema, string? containingNamespace)
     {
         var valuesSchema = schema.GetSchemaValues();
 
-        var values = Type(valuesSchema, containingNamespace, nullable: false);
+        var values = Schema(valuesSchema, containingNamespace);
 
-        return QualifiedName.Map(values, nullable);
+        return new MapSchema(values);
     }
 
-    private QualifiedName Enum(JsonElement schema, string? containingNamespace, bool nullable)
+    private EnumSchema Enum(JsonElement schema, string? containingNamespace)
     {
-        var localName = schema.GetLocalName();
+        var name = schema.GetName();
         var @namespace = schema.GetNamespace() ?? containingNamespace;
-        var name = new QualifiedName(localName, @namespace);
+        var schemaKey = new SchemaKey(name, @namespace);
 
-        if (!_schemas.ContainsKey(name))
-        {
-            var documentation = schema.GetDocumentation();
-            var aliases = schema.GetAliases();
-            var symbols = schema.GetSymbols();
-            var @default = GetValue(symbols, schema.GetSchemaDefault());
+        if (_schemas.ContainsKey(schemaKey))
+            throw new InvalidSchemaException($"Redeclaration of schema '{name}' in namespace '{@namespace}'");
 
-            _schemas[name] = new EnumSchema(schema, name, documentation, aliases, symbols, @default);
-        }
+        var documentation = schema.GetDocumentation();
+        var aliases = schema.GetAliases();
+        var symbols = schema.GetSymbols();
+        var @default = GetValue(symbols, schema.GetSchemaDefault());
 
-        return nullable ? name.ToNullable() : name;
+        var enumSchema = new EnumSchema(schema, name, @namespace, documentation, aliases, symbols, @default);
+        _schemas[schemaKey] = enumSchema;
+
+        return enumSchema;
 
         static string? GetValue(ImmutableArray<string> symbols, JsonElement json)
         {
@@ -136,57 +138,74 @@ internal sealed class SchemaRegistry(bool useNullableReferenceTypes)
         }
     }
 
-    private QualifiedName Record(JsonElement schema, string? containingNamespace, bool nullable)
+    private RecordSchema Record(JsonElement schema, string? containingNamespace)
     {
-        var localName = schema.GetLocalName();
+        var name = schema.GetName();
         var @namespace = schema.GetNamespace() ?? containingNamespace;
-        var name = new QualifiedName(localName, @namespace);
+        var schemaKey = new SchemaKey(name, @namespace);
 
-        if (!_schemas.ContainsKey(name))
-        {
-            var documentation = schema.GetDocumentation();
-            var aliases = schema.GetAliases();
-            var fields = Fields(schema, @namespace);
+        if (_schemas.ContainsKey(schemaKey))
+            throw new InvalidSchemaException($"Redeclaration of schema '{name}' in namespace '{@namespace}'");
 
-            _schemas[name] = new RecordSchema(schema, name, documentation, aliases, fields);
-        }
+        var documentation = schema.GetDocumentation();
+        var aliases = schema.GetAliases();
+        var fields = Fields(schema, @namespace);
 
-        return useNullableReferenceTypes && nullable ? name.ToNullable() : name;
+        var recordSchema = new RecordSchema(schema, name, @namespace, documentation, aliases, fields);
+
+        _schemas[schemaKey] = recordSchema;
+
+        return recordSchema;
     }
 
-    private QualifiedName Error(JsonElement schema, string? containingNamespace, bool nullable)
+    private ErrorSchema Error(JsonElement schema, string? containingNamespace)
     {
-        var localName = schema.GetLocalName();
+        var name = schema.GetName();
         var @namespace = schema.GetNamespace() ?? containingNamespace;
-        var name = new QualifiedName(localName, @namespace);
+        var schemaKey = new SchemaKey(name, @namespace);
 
-        if (!_schemas.ContainsKey(name))
-        {
-            var documentation = schema.GetDocumentation();
-            var aliases = schema.GetAliases();
-            var fields = Fields(schema, @namespace);
+        if (_schemas.ContainsKey(schemaKey))
+            throw new InvalidSchemaException($"Redeclaration of schema '{name}' in namespace '{@namespace}'");
 
-            _schemas[name] = new ErrorSchema(schema, name, documentation, aliases, fields);
-        }
+        var documentation = schema.GetDocumentation();
+        var aliases = schema.GetAliases();
+        var fields = Fields(schema, @namespace);
 
-        return useNullableReferenceTypes && nullable ? name.ToNullable() : name;
+        var errorSchema = new ErrorSchema(schema, name, @namespace, documentation, aliases, fields);
+        _schemas[schemaKey] = errorSchema;
+
+        return errorSchema;
     }
 
-    private ImmutableArray<Field> Fields(JsonElement schema, string? containingNamespace) =>
-        [.. schema.GetSchemaFields().Select(field => Field(field, containingNamespace))];
+    private ImmutableArray<Field> Fields(JsonElement schema, string? containingNamespace)
+    {
+        var fields = ImmutableArray.CreateBuilder<Field>();
+        foreach (var field in schema.GetSchemaFields())
+        {
+            fields.Add(Field(field, containingNamespace));
+        }
+        return fields.ToImmutable();
+    }
 
     private Field Field(JsonElement field, string? containingNamespace)
     {
-        var name = field.GetLocalName();
-        var type = Type(field.GetSchemaType(), containingNamespace, nullable: false);
+        var name = field.GetName();
+        var type = Schema(field.GetSchemaType(), containingNamespace);
+        var underlyingType = type;
+        var isNullable = false;
+        if (type is UnionSchema union)
+        {
+            isNullable = union.IsNullable;
+            underlyingType = union.UnderlyingSchema;
+        }
         var documentation = field.GetDocumentation();
         var aliases = field.GetAliases();
         var @default = GetValue(type, field.GetSchemaDefault());
         var order = field.GetFieldOrder();
-        return new Field(name, type, documentation, aliases, @default, order);
+        return new Field(name, type, underlyingType, isNullable, documentation, aliases, @default, order);
     }
 
-    private string? GetValue(QualifiedName type, JsonElement value)
+    private string? GetValue(AvroSchema type, JsonElement value)
     {
         if (value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
         {
@@ -194,17 +213,17 @@ internal sealed class SchemaRegistry(bool useNullableReferenceTypes)
         }
 
         // TODO: Actually validate the value so that we don't generate invalid code.
-        return type.LocalName switch
+        return type.Name switch
         {
-            "object" or "object?" => value.GetRawText(),
-            "bool" or "bool?" => value.GetRawText(),
-            "int" or "int?" => value.GetRawText(),
-            "long" or "long?" => value.GetRawText(),
-            "float" or "float?" => GetFloatValue(value),
-            "double" or "double?" => value.GetRawText(),
-            "byte[]" or "byte[]?" => GetBytesValue(value),
-            "string" or "string?" => value.GetRawText(),
-            _ when _schemas.TryGetValue(type, out var namedSchema) && namedSchema.Type is SchemaType.Enum => $"{type}.{value.GetString()}",
+            "object" => value.GetRawText(),
+            "bool" => value.GetRawText(),
+            "int" => value.GetRawText(),
+            "long" => value.GetRawText(),
+            "float" => GetFloatValue(value),
+            "double" => value.GetRawText(),
+            "byte[]" => GetBytesValue(value),
+            "string" => value.GetRawText(),
+            _ when _schemas.TryGetValue(new SchemaKey(type.Name, type.Namespace), out var namedSchema) && namedSchema.Type is SchemaType.Enum => $"{type}.{value.GetString()}",
 
             // TODO: Do we need to handle complex types? Should they be supported?
             _ => null,
@@ -225,64 +244,94 @@ internal sealed class SchemaRegistry(bool useNullableReferenceTypes)
         }
     }
 
-    private QualifiedName Fixed(JsonElement schema, string? containingNamespace, bool nullable)
+    private FixedSchema Fixed(JsonElement schema, string? containingNamespace)
     {
-        var localName = schema.GetLocalName();
+        var name = schema.GetName();
         var @namespace = schema.GetNamespace() ?? containingNamespace;
-        var name = new QualifiedName(localName, @namespace);
+        var schemaKey = new SchemaKey(name, @namespace);
 
-        if (!_schemas.ContainsKey(name))
-        {
-            var documentation = schema.GetDocumentation();
-            var aliases = schema.GetAliases();
-            var size = schema.GetFixedSize();
+        if (_schemas.ContainsKey(schemaKey))
+            throw new InvalidSchemaException($"Redeclaration of schema '{name}' in namespace '{@namespace}'");
 
-            _schemas[name] = new FixedSchema(schema, name, documentation, aliases, size);
-        }
+        var documentation = schema.GetDocumentation();
+        var aliases = schema.GetAliases();
+        var size = schema.GetFixedSize();
 
-        return useNullableReferenceTypes && nullable ? name.ToNullable() : name;
+        var fixedSchema = new FixedSchema(schema, name, @namespace, documentation, aliases, size);
+        _schemas[schemaKey] = fixedSchema;
+
+        return fixedSchema;
     }
 
-    private QualifiedName Logical(JsonElement schema, bool nullable)
+    private AvroSchema Logical(JsonElement schema)
     {
         var logicalType = schema.GetLogicalType();
 
         return logicalType switch
         {
-            "date" => QualifiedName.Date(nullable),
-            "decimal" => QualifiedName.Decimal(nullable),
+            "date" => AvroSchema.Date,
+            "decimal" => AvroSchema.Decimal,
             // "duration" => handled as a fixed type,
-            "time-micros" => QualifiedName.TimeMicros(nullable),
-            "time-millis" => QualifiedName.TimeMillis(nullable),
-            "timestamp-micros" => QualifiedName.TimestampMicros(nullable),
-            "timestamp-millis" => QualifiedName.TimestampMillis(nullable),
-            "local-timestamp-micros" => QualifiedName.LocalTimestampMicros(nullable),
-            "local-timestamp-millis" => QualifiedName.LocalTimestampMillis(nullable),
-            "uuid" => QualifiedName.Uuid(nullable),
+            "time-micros" => AvroSchema.TimeMicros,
+            "time-millis" => AvroSchema.TimeMillis,
+            "timestamp-micros" => AvroSchema.TimestampMicros,
+            "timestamp-millis" => AvroSchema.TimestampMillis,
+            "local-timestamp-micros" => AvroSchema.LocalTimestampMicros,
+            "local-timestamp-millis" => AvroSchema.LocalTimestampMillis,
+            "uuid" => AvroSchema.Uuid,
             _ => throw new InvalidSchemaException($"Unsupported logical type '{logicalType}' in schema: {schema.GetRawText()}"),
         };
     }
 
-    private QualifiedName Union(JsonElement schema, string? containingNamespace)
+    private UnionSchema Union(JsonElement schema, string? containingNamespace)
     {
-        var length = schema.GetArrayLength();
+        var builder = ImmutableArray.CreateBuilder<AvroSchema>();
+        foreach (var innerSchema in schema.EnumerateArray())
+            builder.Add(Schema(innerSchema, containingNamespace));
 
-        return length switch
+        var schemas = builder.ToImmutable();
+        var isNullable = schemas.Any(static schema => schema.Type == SchemaType.Null);
+        var underlyingSchema = GetUnderlyingSchema(schemas);
+        while (underlyingSchema is UnionSchema union)
+            underlyingSchema = GetUnderlyingSchema(union.Schemas);
+        var hasQuestionMark = isNullable && (useNullableReferenceTypes || MapsToValueType(underlyingSchema.Type));
+        var name = underlyingSchema.Name + (hasQuestionMark ? "?" : "");
+        var @namespace = underlyingSchema.Namespace;
+
+        return new UnionSchema(name, @namespace, schemas, underlyingSchema, isNullable);
+
+        static AvroSchema GetUnderlyingSchema(ImmutableArray<AvroSchema> schemas)
         {
-            1 => Type(schema[0], containingNamespace, nullable: false),
-            2 => (JsonElementExtensions.IsNullSchema(schema[0]), JsonElementExtensions.IsNullSchema(schema[1])) switch
+            return schemas.Length switch
             {
-                // "null" | "null"
-                (true, true) => QualifiedName.Object(useNullableReferenceTypes),
-                // "null" | T
-                (true, false) => Type(schema[1], containingNamespace, nullable: true),
-                // T | "null"
-                (false, true) => Type(schema[0], containingNamespace, nullable: true),
+                // T1
+                1 => schemas[0],
                 // T1 | T2
-                _ => QualifiedName.Object(nullable: false),
-            },
-            // T1 | T2 | ... | Tn
-            _ => QualifiedName.Object(useNullableReferenceTypes & schema.EnumerateArray().Any(JsonElementExtensions.IsNullSchema)),
+                2 => (schemas[0].Type, schemas[1].Type) switch
+                {
+                    // "null" | "null"
+                    (SchemaType.Null, SchemaType.Null) => AvroSchema.Object,
+                    // "null" | T
+                    (SchemaType.Null, _) => schemas[1],
+                    // T | "null"
+                    (_, SchemaType.Null) => schemas[0],
+                    // T1 | T2
+                    _ => AvroSchema.Object,
+                },
+                // T1 | T2 | ... | Tn
+                _ => AvroSchema.Object,
+            };
+        }
+
+        static bool MapsToValueType(SchemaType type) => type switch
+        {
+            SchemaType.Boolean => true,
+            SchemaType.Int => true,
+            SchemaType.Long => true,
+            SchemaType.Float => true,
+            SchemaType.Double => true,
+            SchemaType.Enum => true,
+            _ => false,
         };
     }
 }

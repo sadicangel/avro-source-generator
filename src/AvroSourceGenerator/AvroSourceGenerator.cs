@@ -53,7 +53,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
                     return null;
                 }
 
-                return AttributeMismatchDiagnostic.Create(avroOptions.Location, avroOptions.Name);
+                return AttributeMismatchDiagnostic.Create(avroOptions.Location, avroOptions.Name, avroOptions.Namespace);
             });
 
         context.RegisterImplementationSourceOutput(diagnosticsProvider, (context, diagnostic) =>

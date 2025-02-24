@@ -13,7 +13,7 @@ internal static class AttributeMismatchDiagnostic
         isEnabledByDefault: true);
 
     // TODO: Add class location also.
-    public static Diagnostic Create(Location location, QualifiedName name) =>
-        Diagnostic.Create(s_invalidAttributeDescriptor, location, name.PartiallyQualifiedName, name.LocalName, name.Namespace ?? string.Empty);
+    public static Diagnostic Create(Location location, string name, string? @namespace) =>
+        Diagnostic.Create(s_invalidAttributeDescriptor, location, @namespace is null ? name : $"{@namespace}.{name}", name, @namespace ?? string.Empty);
 }
 

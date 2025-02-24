@@ -3,11 +3,11 @@ using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
-internal sealed record class FixedSchema(
+internal abstract record class NamedSchema(
+    SchemaType Type,
     JsonElement Json,
     string Name,
     string? Namespace,
     string? Documentation,
-    ImmutableArray<string> Aliases,
-    int Size)
-    : NamedSchema(SchemaType.Fixed, Json, Name, Namespace, Documentation, Aliases);
+    ImmutableArray<string> Aliases)
+    : AvroSchema(Type, Name, Namespace);

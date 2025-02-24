@@ -5,8 +5,9 @@ namespace AvroSourceGenerator.Schemas;
 
 internal sealed record class ErrorSchema(
     JsonElement Json,
-    QualifiedName QualifiedName,
+    string Name,
+    string? Namespace,
     string? Documentation,
     ImmutableArray<string> Aliases,
     ImmutableArray<Field> Fields)
-    : AvroSchema(SchemaType.Error, Json, QualifiedName, Documentation, Aliases);
+    : NamedSchema(SchemaType.Error, Json, Name, Namespace, Documentation, Aliases);

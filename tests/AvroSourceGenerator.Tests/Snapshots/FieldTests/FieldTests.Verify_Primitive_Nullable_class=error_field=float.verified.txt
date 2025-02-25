@@ -40,7 +40,7 @@ namespace SchemaNamespace
             switch (fieldPos)
             {
                 case 0:
-                    Set_Field(this, (float?)fieldValue!); break;
+                    Set_Field(this, fieldValue! is null ? null : (float)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Field")]
                     extern static void Set_Field(Class obj, float? value);
                 default:

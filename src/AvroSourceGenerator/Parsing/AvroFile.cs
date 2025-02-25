@@ -9,11 +9,12 @@ internal readonly record struct AvroFile(
     string Path,
     string? Text,
     JsonElement Json,
-    QualifiedName Name,
+    string Name,
+    string? Namespace,
     ImmutableArray<Diagnostic> Diagnostics)
     : IEquatable<AvroFile>
 {
-    public bool IsValid => Json.ValueKind is not JsonValueKind.Undefined && Name.IsValid;
+    public bool IsValid => Json.ValueKind is not JsonValueKind.Undefined && !string.IsNullOrEmpty(Name);
 
     public Location GetLocation() => Path.GetLocation(Text);
 

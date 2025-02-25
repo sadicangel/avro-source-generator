@@ -3,7 +3,8 @@
 namespace AvroSourceGenerator.Parsing;
 
 internal sealed record class AvroOptions(
-    QualifiedName Name,
+    string Name,
+    string? Namespace,
     string AccessModifier,
     string RecordDeclaration,
     LanguageFeatures? LanguageFeatures,

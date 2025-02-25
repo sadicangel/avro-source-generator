@@ -5,8 +5,9 @@ namespace AvroSourceGenerator.Schemas;
 
 internal sealed record class RecordSchema(
     JsonElement Json,
-    QualifiedName QualifiedName,
+    string Name,
+    string? Namespace,
     string? Documentation,
     ImmutableArray<string> Aliases,
     ImmutableArray<Field> Fields)
-    : AvroSchema(SchemaType.Record, Json, QualifiedName, Documentation, Aliases);
+    : NamedSchema(SchemaType.Record, Json, Name, Namespace, Documentation, Aliases);

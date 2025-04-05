@@ -1,6 +1,9 @@
 ﻿using System.CodeDom.Compiler;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Reflection;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -26,7 +29,9 @@ internal static class TestHelper
 
         if (diagnostics.Length > 0)
         {
-            Assert.Fail(string.Join("; ", diagnostics.Select(d => d.GetMessage())));
+            Assert.Fail(string.Join(
+                Environment.NewLine,
+                diagnostics.Select(d => $"{d.Id}: {d.GetMessage(CultureInfo.InvariantCulture)}")));
         }
 
         return Verifier.Verify(documents.Select(document => new Target("txt", document.Content)));
@@ -57,25 +62,36 @@ internal static class TestHelper
         var references = AppDomain.CurrentDomain.GetAssemblies()
             .Where(assembly => !assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
             .Select(assembly => MetadataReference.CreateFromFile(assembly.Location))
-            .Concat(
-            [
+            .Concat([
                 MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(AvroAttribute).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(GeneratedCodeAttribute).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Avro.Schema).Assembly.Location),
             ]);
 
         var compilation = CSharpCompilation.Create(
             "GeneratorAssemblyName",
             syntaxTrees,
             references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            new CSharpCompilationOptions(
+                outputKind: OutputKind.DynamicallyLinkedLibrary,
+                warningLevel: int.MaxValue));
+
+        var analyzerConfigOptions = new AnalyzerConfigOptionsProviderImplementation(projectConfig.GlobalOptions);
 
         CSharpGeneratorDriver
             .Create(new AvroSourceGenerator())
             .AddAdditionalTexts([.. additionalTexts.Select(t => new AdditionalTextImplementation(t))])
             .WithUpdatedParseOptions(parseOptions)
-            .WithUpdatedAnalyzerConfigOptions(new AnalyzerConfigOptionsProviderImplementation(projectConfig.GlobalOptions))
+            .WithUpdatedAnalyzerConfigOptions(analyzerConfigOptions)
             .RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
+
+        var compilationWithAnalyzers = outputCompilation
+            .WithAnalyzers(DiagnosticAnalyzers.Analyzers, new AnalyzerOptions([], analyzerConfigOptions));
+
+        diagnostics = diagnostics.AddRange(compilationWithAnalyzers
+            .GetAllDiagnosticsAsync().GetAwaiter().GetResult()
+            .RemoveAll(x => x.DefaultSeverity < DiagnosticSeverity.Warning));
 
         var documents = outputCompilation.SyntaxTrees
             .Where(st => !string.IsNullOrEmpty(st.FilePath))
@@ -83,6 +99,63 @@ internal static class TestHelper
             .ToImmutableArray();
 
         return new(diagnostics, documents);
+    }
+}
+
+file static class DiagnosticAnalyzers
+{
+    public static ImmutableArray<DiagnosticAnalyzer> Analyzers { get; }
+
+    static DiagnosticAnalyzers()
+    {
+        var folder = GetAnalizersFolder("8");
+
+        var asmLoader = new AnalyzerAssemblyLoaderImplementation();
+        var analyzerReferences = Directory.EnumerateFiles(folder, "*.dll")
+            .Select(dll => new AnalyzerFileReference(dll, asmLoader))
+            .SelectMany(x => x.GetAnalyzers(LanguageNames.CSharp))
+            .ToImmutableArray();
+
+        Analyzers = analyzerReferences;
+    }
+
+    private static string GetAnalizersFolder(string sdkHint)
+    {
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = "--list-sdks",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        process.Start();
+        var output = process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+
+        var sdks = output
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(line =>
+            {
+                var parts = line.Split(['[', ']'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                return (Version: parts[0], Path: Path.Combine(parts[1], parts[0]));
+            })
+            .OrderBy(x => x.Version)
+            .ToList();
+
+        var sdk = sdks.Find(x => x.Version.StartsWith(sdkHint)).Path ?? sdks[^1].Path;
+
+        return Path.Combine(sdk, "Sdks", "Microsoft.NET.Sdk", "analyzers");
+    }
+
+    private sealed class AnalyzerAssemblyLoaderImplementation : IAnalyzerAssemblyLoader
+    {
+        public void AddDependencyLocation(string fullPath) { }
+        public Assembly LoadFromPath(string fullPath) => Assembly.LoadFrom(fullPath);
     }
 }
 
@@ -99,18 +172,15 @@ file sealed class AnalyzerConfigOptionsProviderImplementation(IEnumerable<KeyVal
 {
     public override AnalyzerConfigOptions GlobalOptions { get; } = new AnalyzerConfigOptionsImplementation(globalOptions);
 
-    public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) =>
-        throw new NotImplementedException();
-    public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) =>
-        throw new NotImplementedException();
+    public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => GlobalOptions;
+    public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => GlobalOptions;
 
     private sealed class AnalyzerConfigOptionsImplementation(IEnumerable<KeyValuePair<string, string>> options)
         : AnalyzerConfigOptions
     {
-        public static readonly AnalyzerConfigOptionsImplementation Empty = new([]);
-
-        private readonly Dictionary<string, string> _options = new(options
-            .Select(kvp => new KeyValuePair<string, string>($"build_property.{kvp.Key}", kvp.Value)));
+        private readonly Dictionary<string, string> _options = new([
+            .. options.Select(kvp => new KeyValuePair<string, string>($"build_property.{kvp.Key}", kvp.Value))
+        ]);
 
         public string this[string key] { get => _options[key]; init => _options[key] = value; }
 

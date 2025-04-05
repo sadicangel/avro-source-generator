@@ -44,24 +44,18 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
         context.RegisterImplementationSourceOutput(avroProvider, Emitter.Emit);
 
         var diagnosticsProvider = avroOptionsProvider.Combine(avroFileProvider.Collect())
+            .Where(source =>
+            {
+                var (avroOptions, avroFiles) = source;
+                return !avroFiles.Any(file => file.Name == avroOptions.Name);
+            })
             .Select((source, _) =>
             {
                 var (avroOptions, avroFiles) = source;
 
-                if (avroFiles.Any(file => file.Name == avroOptions.Name))
-                {
-                    return null;
-                }
-
                 return AttributeMismatchDiagnostic.Create(avroOptions.Location, avroOptions.Name, avroOptions.Namespace);
             });
 
-        context.RegisterImplementationSourceOutput(diagnosticsProvider, (context, diagnostic) =>
-        {
-            if (diagnostic is not null)
-            {
-                context.ReportDiagnostic(diagnostic);
-            }
-        });
+        context.RegisterImplementationSourceOutput(diagnosticsProvider, (context, diagnostic) => context.ReportDiagnostic(diagnostic));
     }
 }

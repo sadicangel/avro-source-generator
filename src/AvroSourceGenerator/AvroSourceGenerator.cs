@@ -14,7 +14,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             .Where(Parser.IsAvroFile)
             .Select(Parser.GetAvroFile);
 
-        var generatorSettings = context.AnalyzerConfigOptionsProvider
+        var generatorSettingsProvider = context.AnalyzerConfigOptionsProvider
             .Select(Parser.GetGeneratorSettings);
 
         var compilationInfoProvider = context.CompilationProvider
@@ -25,7 +25,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
                 predicate: Parser.IsCandidateDeclaration,
                 transform: Parser.GetAvroOptions);
 
-        var avroProvider = avroFileProvider.Combine(generatorSettings.Combine(compilationInfoProvider).Combine(avroOptionsProvider.Collect()))
+        var emitterInputProvider = avroFileProvider.Combine(generatorSettingsProvider.Combine(compilationInfoProvider).Combine(avroOptionsProvider.Collect()))
             .Select((source, _) =>
             {
                 var (avroFile, ((generatorSettings, compilationInfo), avroOptionsCollection)) = source;
@@ -41,7 +41,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
                 return (avroFile, generatorSettings, compilationInfo, avroOptions);
             });
 
-        context.RegisterImplementationSourceOutput(avroProvider, Emitter.Emit);
+        context.RegisterImplementationSourceOutput(emitterInputProvider, Emitter.Emit);
 
         var diagnosticsProvider = avroOptionsProvider.Combine(avroFileProvider.Collect())
             .Where(source =>

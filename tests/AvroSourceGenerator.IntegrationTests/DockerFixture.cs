@@ -72,7 +72,6 @@ public sealed class DockerFixture : IAsyncLifetime
             .Build();
     }
 
-
     public async ValueTask InitializeAsync()
     {
         await Network.CreateAsync(TestContext.Current.CancellationToken);
@@ -153,7 +152,9 @@ public sealed class DockerFixture : IAsyncLifetime
 
         var deleteTopicResult = await Kafka.ExecAsync(["kafka-topics", "--delete", "--topic", topicName, "--bootstrap-server", "localhost:9092"], cancellationToken);
         if (!string.IsNullOrEmpty(deleteTopicResult.Stderr))
+        {
             throw new InvalidOperationException($"Failed to delete topic: {deleteTopicResult.Stderr}");
+        }
 
         return message;
     }

@@ -26,12 +26,13 @@
     <PackageTags>apache;avro;apacheavro;generator;generation;codegen;codegenerator;codegeneration</PackageTags>
     <RepositoryUrl>https://github.com/sadicangel/avro-source-generator</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <!--<PackageIcon>icon.png</PackageIcon>-->
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Templates\**\*" />
     <None Include="../../README.md" Pack="true" PackagePath="\" />
+    <None Include="../../icon.png" Pack="true" PackagePath="\" />
     <None Include="../../AvroSourceGenerator.props" Pack="true" PackagePath="build" Visible="false" />
   </ItemGroup>
 

@@ -1,5 +1,9 @@
 # Avro Source Generator
 
+![Avro Source Generator](icon.png)
+
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Avro Source Generator is a .NET source generator that generates C# code from Avro schemas.
 
 It produces models that use modern C# features, such as nullable reference types, init-only properties, required properties, and more.

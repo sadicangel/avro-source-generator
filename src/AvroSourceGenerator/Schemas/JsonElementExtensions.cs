@@ -220,7 +220,7 @@ internal static class JsonElementExtensions
             throw new InvalidSchemaException($"'aliases' property must be an array in schema: {schema.GetRawText()}");
         }
 
-        return ali
+        return [.. ali
             .EnumerateArray()
             .Select(json =>
             {
@@ -235,9 +235,9 @@ internal static class JsonElementExtensions
                 {
                     throw new InvalidSchemaException($"'aliases' property cannot whitespace only aliases in schema: {schema.GetRawText()}");
                 }
+
                 return alias!;
-            })
-            .ToImmutableArray();
+            })];
     }
 
     public static JsonElement GetSchemaValues(this JsonElement schema)
@@ -256,6 +256,7 @@ internal static class JsonElementExtensions
         {
             throw new InvalidSchemaException($"'items' property is required in schema: {schema.GetRawText()}");
         }
+
         return itemsSchema;
     }
 
@@ -271,7 +272,7 @@ internal static class JsonElementExtensions
             throw new InvalidSchemaException($"'symbols' property must be an array in schema: {schema.GetRawText()}");
         }
 
-        return symbols
+        return [.. symbols
             .EnumerateArray()
             .Select(json =>
             {
@@ -287,8 +288,7 @@ internal static class JsonElementExtensions
                 }
 
                 return GetValid(symbol!);
-            })
-            .ToImmutableArray();
+            })];
     }
 
     public static JsonElement.ArrayEnumerator GetSchemaFields(this JsonElement schema)
@@ -297,6 +297,7 @@ internal static class JsonElementExtensions
         {
             throw new InvalidSchemaException($"'fields' property is required in schema: {schema.GetRawText()}");
         }
+
         if (fields.ValueKind is not JsonValueKind.Array)
         {
             throw new InvalidSchemaException($"'fields' property must be an array in schema: {schema.GetRawText()}");
@@ -311,14 +312,17 @@ internal static class JsonElementExtensions
         {
             throw new InvalidSchemaException($"'size' property is required in schema: {schema.GetRawText()}");
         }
+
         if (json.ValueKind is not JsonValueKind.Number)
         {
             throw new InvalidSchemaException($"'size' property must be a number in schema: {schema.GetRawText()}");
         }
+
         if (!json.TryGetInt32(out var size))
         {
             throw new InvalidSchemaException($"'size' property must be an integer in schema: {schema.GetRawText()}");
         }
+
         if (size <= 0)
         {
             throw new InvalidSchemaException($"'size' property must be a positive integer in schema: {schema.GetRawText()}");
@@ -352,6 +356,7 @@ internal static class JsonElementExtensions
         {
             throw new InvalidSchemaException($"'logicalType' property is required in schema: {schema.GetRawText()}");
         }
+
         if (logicalType.ValueKind is not JsonValueKind.String)
         {
             throw new InvalidSchemaException($"'logicalType' property must be a string in schema: {schema.GetRawText()}");
@@ -377,6 +382,7 @@ internal static class JsonElementExtensions
 
             return order;
         }
+
         return null;
     }
 
@@ -386,6 +392,7 @@ internal static class JsonElementExtensions
         {
             return json;
         }
+
         return default;
     }
 }
@@ -417,6 +424,7 @@ file readonly ref struct SplitEnumerable(ReadOnlySpan<char> value, char separato
             {
                 return false;
             }
+
             var end = _value[(_start + 1)..].IndexOf(_separator);
             if (end == -1)
             {
@@ -424,8 +432,10 @@ file readonly ref struct SplitEnumerable(ReadOnlySpan<char> value, char separato
                 _start = _value.Length;
                 return true;
             }
+
             Current = _value.Slice(_start + 1, end);
             _start += end + 1;
+
             return true;
         }
     }

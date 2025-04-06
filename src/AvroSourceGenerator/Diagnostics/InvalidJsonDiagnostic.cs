@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.Diagnostics;
+
 internal static class InvalidJsonDiagnostic
 {
     private static readonly DiagnosticDescriptor s_invalidJsonSchemaDescriptor = new(

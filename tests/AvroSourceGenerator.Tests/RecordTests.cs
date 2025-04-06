@@ -1,4 +1,6 @@
-﻿namespace AvroSourceGenerator.Tests;
+﻿using AvroSourceGenerator.Tests.Helpers;
+
+namespace AvroSourceGenerator.Tests;
 
 public sealed class RecordTests
 {

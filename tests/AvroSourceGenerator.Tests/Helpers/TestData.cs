@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace AvroSourceGenerator.Tests;
+namespace AvroSourceGenerator.Tests.Helpers;
 
 internal static class TestData
 {

@@ -22,7 +22,9 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
 
         // The schema will only be registered if it's a named schema.
         if (namedSchema is not NamedSchema)
+        {
             throw new InvalidSchemaException($"Schema is not a named schema: {schema.GetRawText()}");
+        }
 
         return registry;
     }
@@ -184,6 +186,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
         {
             fields.Add(Field(field, containingNamespace));
         }
+
         return fields.ToImmutable();
     }
 
@@ -198,6 +201,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
             isNullable = union.IsNullable;
             underlyingType = union.UnderlyingSchema;
         }
+
         var documentation = field.GetDocumentation();
         var aliases = field.GetAliases();
         var @default = GetValue(type, field.GetSchemaDefault());
@@ -263,7 +267,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
         return fixedSchema;
     }
 
-    private AvroSchema Logical(JsonElement schema)
+    private static AvroSchema Logical(JsonElement schema)
     {
         var logicalType = schema.GetLogicalType();
 

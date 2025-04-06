@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.Diagnostics;
+
 internal static class InvalidSchemaDiagnostic
 {
     private static readonly DiagnosticDescriptor s_invalidSchemaDescriptor = new(

@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace AvroSourceGenerator.Parsing;
+
 internal static class Parser
 {
     private static readonly SymbolDisplayFormat s_partiallyQualifiedFormat =
@@ -85,8 +86,6 @@ internal static class Parser
         return new CompilationInfo(languageVersion);
     }
 
-
-
     public static bool IsCandidateDeclaration(SyntaxNode node, CancellationToken cancellationToken)
     {
         _ = cancellationToken;
@@ -124,11 +123,9 @@ internal static class Parser
             var name = kvp.Key;
             var value = kvp.Value.Value;
 
-            switch (name)
+            if (name is nameof(AvroAttribute.LanguageFeatures) && value is not null)
             {
-                case nameof(AvroAttribute.LanguageFeatures) when value is not null:
-                    languageFeatures = (LanguageFeatures)value;
-                    break;
+                languageFeatures = (LanguageFeatures)value;
             }
         }
 

@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator.Parsing;
+
 internal static class LocationExtensions
 {
     public static Location GetLocation(this string path, string? text) =>

@@ -6,9 +6,11 @@ namespace AvroSourceGenerator.Emit;
 
 internal sealed class TemplateScriptObject : BuiltinFunctions
 {
-    private static readonly DynamicCustomFunction s_text_RawStringLiteral =
-        CreateFunction(static (JsonElement json) => JsonSerializer.Serialize(json, new JsonSerializerOptions { WriteIndented = true }));
-    private static readonly DynamicCustomFunction s_text_VerbatimStringLiteral =
+    private static readonly JsonSerializerOptions s_jsonOptionsRawStringLiteral =
+        new() { WriteIndented = true };
+    private static readonly DynamicCustomFunction s_textRawStringLiteral =
+        CreateFunction(static (JsonElement json) => JsonSerializer.Serialize(json, s_jsonOptionsRawStringLiteral));
+    private static readonly DynamicCustomFunction s_textVerbatimStringLiteral =
         CreateFunction(static (JsonElement json) => StringFunctions.Literal(JsonSerializer.Serialize(json)));
 
     public TemplateScriptObject(
@@ -16,7 +18,7 @@ internal sealed class TemplateScriptObject : BuiltinFunctions
         string accessModifier,
         string recordDeclaration)
     {
-        SetValue("text", (languageFeatures & LanguageFeatures.RawStringLiterals) != 0 ? s_text_RawStringLiteral : s_text_VerbatimStringLiteral, readOnly: true);
+        SetValue("text", (languageFeatures & LanguageFeatures.RawStringLiterals) != 0 ? s_textRawStringLiteral : s_textVerbatimStringLiteral, readOnly: true);
         SetValue("AccessModifier", accessModifier, readOnly: true);
         SetValue("RecordDeclaration", recordDeclaration, readOnly: true);
         SetValue("UseNullableReferenceTypes", (languageFeatures & LanguageFeatures.NullableReferenceTypes) != 0, readOnly: true);

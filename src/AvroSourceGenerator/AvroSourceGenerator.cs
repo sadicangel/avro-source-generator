@@ -12,18 +12,22 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
     {
         var avroFileProvider = context.AdditionalTextsProvider
             .Where(Parser.IsAvroFile)
-            .Select(Parser.GetAvroFile);
+            .Select(Parser.GetAvroFile)
+            .WithTrackingName(TrackingNames.AvroFiles);
 
         var generatorSettingsProvider = context.AnalyzerConfigOptionsProvider
-            .Select(Parser.GetGeneratorSettings);
+            .Select(Parser.GetGeneratorSettings)
+            .WithTrackingName(TrackingNames.GeneratorSettings);
 
         var compilationInfoProvider = context.CompilationProvider
-            .Select(Parser.GetCompilationInfo);
+            .Select(Parser.GetCompilationInfo)
+            .WithTrackingName(TrackingNames.CompilationInfo);
 
         var avroOptionsProvider = context.SyntaxProvider
             .ForAttributeWithMetadataName("AvroSourceGenerator.AvroAttribute",
                 predicate: Parser.IsCandidateDeclaration,
-                transform: Parser.GetAvroOptions);
+                transform: Parser.GetAvroOptions)
+            .WithTrackingName(TrackingNames.AvroOptions);
 
         var emitterInputProvider = avroFileProvider.Combine(generatorSettingsProvider.Combine(compilationInfoProvider).Combine(avroOptionsProvider.Collect()))
             .Select((source, _) =>
@@ -39,7 +43,8 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
                     .FirstOrDefault(options => options.Name == avroFile.Name);
 
                 return (avroFile, generatorSettings, compilationInfo, avroOptions);
-            });
+            })
+            .WithTrackingName(TrackingNames.EmitterInput);
 
         context.RegisterImplementationSourceOutput(emitterInputProvider, Emitter.Emit);
 

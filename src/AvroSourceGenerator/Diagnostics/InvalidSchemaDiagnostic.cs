@@ -8,7 +8,7 @@ internal static class InvalidSchemaDiagnostic
         id: "AVROSG0002",
         title: "Invalid Schema",
         messageFormat: "The schema defined in the JSON is invalid: {0}",
-        category: "Semantic",
+        category: "Compiler",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 

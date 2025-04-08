@@ -75,7 +75,7 @@ internal static class Emitter
             LanguageVersion.CSharp10 => LanguageFeatures.CSharp10,
             LanguageVersion.CSharp11 => LanguageFeatures.CSharp11,
             LanguageVersion.CSharp12 => LanguageFeatures.CSharp12,
-            LanguageVersion.CSharp13 => LanguageFeatures.CSharp13,
+            //LanguageVersion.CSharp13 => LanguageFeatures.CSharp13,
             _ => LanguageFeatures.Latest,
         };
     }

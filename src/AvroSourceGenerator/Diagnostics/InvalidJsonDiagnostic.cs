@@ -8,7 +8,7 @@ internal static class InvalidJsonDiagnostic
         id: "AVROSG0001",
         title: "Invalid JSON",
         messageFormat: "The provided JSON is invalid: {0}",
-        category: "Syntax",
+        category: "Compiler",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 

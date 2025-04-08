@@ -13,7 +13,7 @@ The schema defined in the JSON is invalid: 'doc' property must be a string in sc
     Id: AVROSG0002,
     Title: Invalid Schema,
     MessageFormat: The schema defined in the JSON is invalid: {0},
-    Category: Semantic,
+    Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true
   }

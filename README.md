@@ -10,15 +10,16 @@ It produces models that use modern C# features, such as nullable reference types
 
 ## Prerequisites
 
-- .NET SDK 6.0 or later
+- .NET SDK 8.0 or later
 
 ## Usage
 
-To use the Avro Source Generator in your project, add a reference to the `AvroSourceGenerator` package in your `.csproj` file:
+To use the Avro Source Generator in your project, add a reference to the `AvroSourceGenerator` package in your `.csproj` file. Since it generated code compatible with Apache.Avro, make sure you also add that package:
 ```pwsh
 dotnet add package AvroSourceGenerator
+dotnet add package Apache.Avro
 ```
-You can mark the package as `PrivateAssets="all"` to prevent projects referencing yours from getting a reference to `AvroSourceGenerator`. Additionally, use `ExcludeAssets="runtime"` to ensure that `AvroSourceGenerator.Attributes` is not copied to the build output, since it is not required at runtime.
+You can mark the `AvroSourceGenerator` package as `PrivateAssets="all"` to prevent projects referencing yours from getting a reference to it. Additionally, use `ExcludeAssets="runtime"` to ensure that `AvroSourceGenerator.Attributes` is not copied to the build output, since it is not required at runtime.
 
 ```xml
 <PackageReference Include="AvroSourceGenerator" Version="*" PrivateAssets="all" ExcludeAssets="runtime" />

@@ -5,6 +5,6 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
-AVROSG0001 | Syntax | Error | InvalidJsonDiagnostic
-AVROSG0002 | Semantic | Error | InvalidSchemaDiagnostic
-AVROSG0003 | Usage | Warning | AttributeMismatchDiagnostic
+AVROSG0001 | Compiler | Error | Invalid JSON — can't parse
+AVROSG0002 | Compiler | Error | Invalid schema logic
+AVROSG0003 | Usage | Warning | Attribute mismatch

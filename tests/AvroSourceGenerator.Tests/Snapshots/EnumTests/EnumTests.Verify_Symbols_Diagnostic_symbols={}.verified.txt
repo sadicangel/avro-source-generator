@@ -12,7 +12,7 @@ The schema defined in the JSON is invalid: 'symbols' property must be an array i
     Id: AVROSG0002,
     Title: Invalid Schema,
     MessageFormat: The schema defined in the JSON is invalid: {0},
-    Category: Semantic,
+    Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true
   }

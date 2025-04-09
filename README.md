@@ -7,7 +7,7 @@
 
 ![Avro Source Generator](icon.png)
 
-Avro Source Generator is a .NET source generator that generates C# code from Avro schemas.
+Avro Source Generator is a .NET source generator that generates C# code from Avro schemas and is compatible with Apache Avro.
 
 It produces models that use modern C# features, such as nullable reference types, init-only properties, required properties, and more.
 
@@ -20,7 +20,6 @@ It produces models that use modern C# features, such as nullable reference types
 To use the Avro Source Generator in your project, add a reference to the `AvroSourceGenerator` package in your `.csproj` file. Since it generated code compatible with Apache.Avro, make sure you also add that package:
 ```pwsh
 dotnet add package AvroSourceGenerator
-dotnet add package Apache.Avro
 ```
 You can mark the `AvroSourceGenerator` package as `PrivateAssets="all"` to prevent projects referencing yours from getting a reference to it. Additionally, use `ExcludeAssets="runtime"` to ensure that `AvroSourceGenerator.Attributes` is not copied to the build output, since it is not required at runtime.
 
@@ -36,7 +35,7 @@ Then, configure the `.csproj` to include Avro schema files as `AdditionalFiles`.
 </ItemGroup>
 ```
 
-Add the schema file to your project.
+Add the schema file to the `schemas` folder in your project.
 
 _schemas/user.avsc_
 ```json

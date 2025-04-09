@@ -7,7 +7,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <DevelopmentDependency>true</DevelopmentDependency>
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
@@ -21,9 +20,9 @@
     <Title>Avro Source Generator</Title>
     <Authors>sadicangel</Authors>
     <Company>sadicangel</Company>
-    <Description>A source generator for creating models from Apache Avro schemas.</Description>
+    <Description>A source generator that generates C# code from Avro schemas and is compatible with Apache Avro.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>apache;avro;apacheavro;generator;generation;codegen;codegenerator;codegeneration</PackageTags>
+    <PackageTags>apache;avro;apache-avro;source-generator;codegen;csharp;c#;net;dotnet;schema;serialization;avsc;models</PackageTags>
     <RepositoryUrl>https://github.com/sadicangel/avro-source-generator</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageIcon>icon.png</PackageIcon>
@@ -34,6 +33,10 @@
     <None Include="../../README.md" Pack="true" PackagePath="\" />
     <None Include="../../icon.png" Pack="true" PackagePath="\" />
     <None Include="../../AvroSourceGenerator.props" Pack="true" PackagePath="build" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Apache.Avro" />
   </ItemGroup>
 
   <ItemGroup>

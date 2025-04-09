@@ -1,8 +1,11 @@
 # Avro Source Generator
 
-![Avro Source Generator](icon.png)
+[![NuGet](https://img.shields.io/nuget/v/AvroSourceGenerator.svg)](https://www.nuget.org/packages/AvroSourceGenerator)
+[![NuGet](https://img.shields.io/nuget/vpre/AvroSourceGenerator.svg)](https://www.nuget.org/packages/AvroSourceGenerator)
+[![License: MIT](https://img.shields.io/github/license/sadicangel/avro-source-generator)](LICENSE)
+[![Build](https://img.shields.io/github/actions/workflow/status/sadicangel/avro-source-generator/build.yml?label=build)](https://github.com/sadicangel/avro-source-generator/actions)
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Avro Source Generator](icon.png)
 
 Avro Source Generator is a .NET source generator that generates C# code from Avro schemas.
 

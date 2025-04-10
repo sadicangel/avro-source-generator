@@ -25,9 +25,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Example", "samples\AvroSourceGenerator.Example\AvroSourceGenerator.Example.csproj", "{D773E625-772E-61F1-22AB-0C17B28097CF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.ApacheAvro", "samples\AvroSourceGenerator.ApacheAvro\AvroSourceGenerator.ApacheAvro.csproj", "{D773E625-772E-61F1-22AB-0C17B28097CF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.IntegrationTests", "tests\AvroSourceGenerator.IntegrationTests\AvroSourceGenerator.IntegrationTests.csproj", "{E4A6B678-D5DB-45BE-BD31-FEE67366AAB8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.ConfluentKafka", "samples\AvroSourceGenerator.ConfluentKafka\AvroSourceGenerator.ConfluentKafka.csproj", "{EADD63E8-5F5C-470F-AC07-8A03A01E9094}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,12 +57,17 @@ Global
 		{E4A6B678-D5DB-45BE-BD31-FEE67366AAB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4A6B678-D5DB-45BE-BD31-FEE67366AAB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4A6B678-D5DB-45BE-BD31-FEE67366AAB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EADD63E8-5F5C-470F-AC07-8A03A01E9094}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EADD63E8-5F5C-470F-AC07-8A03A01E9094}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EADD63E8-5F5C-470F-AC07-8A03A01E9094}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EADD63E8-5F5C-470F-AC07-8A03A01E9094}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D773E625-772E-61F1-22AB-0C17B28097CF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{EADD63E8-5F5C-470F-AC07-8A03A01E9094} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A445B110-9D42-4551-96AD-66E601FFDA4A}

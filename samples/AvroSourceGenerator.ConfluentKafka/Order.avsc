@@ -1,0 +1,84 @@
+{
+  "type": "record",
+  "name": "Order",
+  "namespace": "AvroSourceGenerator.ConfluentKafka",
+  "fields": [
+    {
+      "name": "OrderId",
+      "type": "string"
+    },
+    {
+      "name": "Customer",
+      "type": {
+        "type": "record",
+        "name": "Customer",
+        "fields": [
+          {
+            "name": "CustomerId",
+            "type": "string"
+          },
+          {
+            "name": "Name",
+            "type": "string"
+          },
+          {
+            "name": "Email",
+            "type": [ "null", "string" ],
+            "default": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "Items",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "OrderItem",
+          "fields": [
+            {
+              "name": "ProductId",
+              "type": "string"
+            },
+            {
+              "name": "Quantity",
+              "type": "int"
+            },
+            {
+              "name": "Price",
+              "type": "double"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Status",
+      "type": {
+        "type": "enum",
+        "name": "OrderStatus",
+        "symbols": [ "Pending", "Processing", "Shipped", "Delivered", "Cancelled" ]
+      }
+    },
+    {
+      "name": "OrderDate",
+      "type": {
+        "type": "int",
+        "logicalType": "date"
+      }
+    },
+    {
+      "name": "LastUpdated",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    },
+    {
+      "name": "Notes",
+      "type": [ "null", "string" ],
+      "default": null
+    }
+  ]
+}

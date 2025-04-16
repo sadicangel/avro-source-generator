@@ -27,10 +27,20 @@ internal static class AvroTemplate
         foreach (var schema in schemaRegistry)
         {
             templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
-            var safeName = schema.Name[0] is '@' ? schema.Name[1..] : schema.Name;
+            var safeName = GetSafeFileName(schema);
             var hintName = $"{safeName}.Avro.g.cs";
             var sourceText = template.Render(templateContext);
             yield return new RenderOutput(hintName, sourceText);
         }
+    }
+
+    private static string GetSafeFileName(NamedSchema schema)
+    {
+        if (schema.Namespace is null)
+        {
+            return schema.Name[0] is '@' ? schema.Name[1..] : schema.Name;
+        }
+
+        return $"{schema.Namespace}.{schema.Name}".Replace("@", "");
     }
 }

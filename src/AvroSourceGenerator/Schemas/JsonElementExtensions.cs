@@ -105,6 +105,48 @@ internal static class JsonElementExtensions
 
     public static ReadOnlySpan<char> GetValid(ReadOnlySpan<char> name) => IsReserved(name, out var replacement) ? replacement.AsSpan() : name;
 
+    public static string GetName(this JsonElement schema, out string? @namespace)
+    {
+        var name = schema.GetName();
+
+        if (name.IndexOf("..") >= 0)
+        {
+            throw new InvalidSchemaException($"'name' property contains an invalid full name format in schema: {schema.GetRawText()}");
+        }
+
+        // Only use 'namespace' if 'name' isn't a full name.
+        if (!SplitFullName(name, out name, out @namespace))
+            @namespace = schema.GetNamespace();
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new InvalidSchemaException($"'name' property contains an invalid full name format in schema: {schema.GetRawText()}");
+        }
+
+        if (@namespace is "")
+        {
+            throw new InvalidSchemaException($"'name' property contains an invalid full name format in schema: {schema.GetRawText()}");
+        }
+
+        return name;
+
+        static bool SplitFullName(string fullName, out string name, out string? @namespace)
+        {
+            var indexOfLast = fullName.LastIndexOf('.');
+            if (indexOfLast < 0)
+            {
+                name = fullName;
+                @namespace = null;
+                return false;
+            }
+
+            name = fullName[(indexOfLast + 1)..];
+            @namespace = GetSafeNamespace(fullName.AsSpan(0, indexOfLast));
+
+            return true;
+        }
+    }
+
     public static string GetName(this JsonElement schema)
     {
         if (!schema.TryGetProperty("name", out var json))
@@ -147,11 +189,16 @@ internal static class JsonElementExtensions
             return GetValid(@namespace);
         }
 
+        return GetSafeNamespace(@namespace);
+    }
+
+    private static string GetSafeNamespace(ReadOnlySpan<char> @namespace)
+    {
         // TODO: Might be a good idea to pool this builder.
         var builder = new StringBuilder();
 
         var first = true;
-        foreach (var part in new SplitEnumerable(@namespace.AsSpan(), '.'))
+        foreach (var part in new SplitEnumerable(@namespace, '.'))
         {
             var name = GetValid(part);
             if (first) first = false; else builder.Append('.');

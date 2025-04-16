@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -18,7 +19,7 @@ internal static class TestHelper
         .Where(x => !string.IsNullOrEmpty(x))];
 
     public static SettingsTask VerifySourceCode(
-        string schema,
+        [StringSyntax(StringSyntaxAttribute.Json)] string schema,
         string? source = null,
         ProjectConfig? config = null)
     {

@@ -2,7 +2,9 @@
 
 internal abstract record class AvroSchema(SchemaType Type, string Name, string? Namespace)
 {
-    public sealed override string ToString() => Namespace is null ? Name : $"global::{Namespace}.{Name}";
+    public string FullName { get; } = Namespace is null ? Name : $"global::{Namespace}.{Name}";
+
+    public sealed override string ToString() => FullName;
 
     public static readonly AvroSchema Object = new PrimitiveSchema(SchemaType.Null, "object", null);
     public static readonly AvroSchema Boolean = new PrimitiveSchema(SchemaType.Boolean, "bool", null);

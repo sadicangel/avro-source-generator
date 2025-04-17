@@ -6,11 +6,13 @@ using AvroSourceGenerator.Schemas.Extensions;
 
 namespace AvroSourceGenerator.Schemas;
 
-internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnumerable<NamedSchema>
+internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadOnlyCollection<NamedSchema>
 {
     private readonly record struct SchemaKey(string Name, string? Namespace);
 
     private readonly Dictionary<SchemaKey, NamedSchema> _schemas = [];
+
+    public int Count => _schemas.Count;
 
     public IEnumerator<NamedSchema> GetEnumerator() => _schemas.Values.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -19,12 +21,11 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
     {
         var registry = new SchemaRegistry(useNullableReferenceTypes);
 
-        var namedSchema = registry.Schema(schema, containingNamespace: null);
+        _ = registry.Schema(schema, containingNamespace: null);
 
-        // The schema will only be registered if it's a named schema.
-        if (namedSchema is not NamedSchema)
+        if (registry.Count == 0)
         {
-            throw new InvalidSchemaException($"Schema is not a named schema: {schema.GetRawText()}");
+            throw new InvalidSchemaException($"Atleast a named schema must be present in schema: {schema.GetRawText()}");
         }
 
         return registry;

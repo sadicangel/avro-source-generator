@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Schemas.Extensions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;

@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Text;
 using System.Text.Json;
+using AvroSourceGenerator.Schemas.Extensions;
 
 namespace AvroSourceGenerator.Schemas;
 
@@ -54,7 +55,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
             "double" => AvroSchema.Double,
             "bytes" => AvroSchema.Bytes,
             "string" => AvroSchema.String,
-            _ when _schemas.TryGetValue(new SchemaKey(JsonElementExtensions.GetValid(type), containingNamespace), out var registeredSchema) => registeredSchema,
+            _ when _schemas.TryGetValue(new SchemaKey(JsonElementExtensions.GetValidName(type), containingNamespace), out var registeredSchema) => registeredSchema,
             _ => throw new InvalidSchemaException($"Unknown schema '{type}' in {schema.GetRawText()}")
         };
     }
@@ -66,7 +67,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
             return Logical(schema);
         }
 
-        var type = schema.GetSchemaTypeString();
+        var type = schema.GetSchemaType();
 
         return type switch
         {
@@ -82,7 +83,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
 
     private ArraySchema Array(JsonElement schema, string? containingNamespace)
     {
-        var itemsSchema = schema.GetSchemaItems();
+        var itemsSchema = schema.GetRequiredProperty("items");
 
         var items = Schema(itemsSchema, containingNamespace);
 
@@ -91,7 +92,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
 
     private MapSchema Map(JsonElement schema, string? containingNamespace)
     {
-        var valuesSchema = schema.GetSchemaValues();
+        var valuesSchema = schema.GetRequiredProperty("values");
 
         var values = Schema(valuesSchema, containingNamespace);
 
@@ -110,34 +111,12 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
         var documentation = schema.GetDocumentation();
         var aliases = schema.GetAliases();
         var symbols = schema.GetSymbols();
-        var @default = GetValue(symbols, schema.GetSchemaDefault());
+        var @default = schema.GetNullableString("default");
 
         var enumSchema = new EnumSchema(schema, name, @namespace, documentation, aliases, symbols, @default);
         _schemas[schemaKey] = enumSchema;
 
         return enumSchema;
-
-        static string? GetValue(ImmutableArray<string> symbols, JsonElement json)
-        {
-            if (json.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-            {
-                return null;
-            }
-
-            if (json.ValueKind is not JsonValueKind.String)
-            {
-                // TODO: Allow ignoring invalid non-required properties.
-                throw new InvalidSchemaException($"'default' must be a string in schema: {json.GetRawText()}");
-            }
-
-            var value = json.GetString();
-            if (symbols.IndexOf(value!) == -1)
-            {
-                throw new InvalidSchemaException($"Default value '{value}' not found in enum symbols: {string.Join(", ", symbols)}");
-            }
-
-            return value;
-        }
     }
 
     private RecordSchema Record(JsonElement schema, string? containingNamespace)
@@ -182,7 +161,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
     private ImmutableArray<Field> Fields(JsonElement schema, string? containingNamespace)
     {
         var fields = ImmutableArray.CreateBuilder<Field>();
-        foreach (var field in schema.GetSchemaFields())
+        foreach (var field in schema.GetRequiredArray("fields"))
         {
             fields.Add(Field(field, containingNamespace));
         }
@@ -193,7 +172,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
     private Field Field(JsonElement field, string? containingNamespace)
     {
         var name = field.GetName();
-        var type = Schema(field.GetSchemaType(), containingNamespace);
+        var type = Schema(field.GetRequiredProperty("type"), containingNamespace);
         var underlyingType = type;
         var isNullable = false;
         if (type is UnionSchema union)
@@ -204,17 +183,19 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
 
         var documentation = field.GetDocumentation();
         var aliases = field.GetAliases();
-        var @default = GetValue(type, field.GetSchemaDefault());
-        var order = field.GetFieldOrder();
+        var @default = GetValue(type, field.GetNullableProperty("default"));
+        var order = field.GetNullableInt32("order");
         return new Field(name, type, underlyingType, isNullable, documentation, aliases, @default, order);
     }
 
-    private string? GetValue(AvroSchema type, JsonElement value)
+    private string? GetValue(AvroSchema type, JsonElement? json)
     {
-        if (value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+        if (json is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined })
         {
             return null;
         }
+
+        var value = json.Value;
 
         // TODO: Actually validate the value so that we don't generate invalid code.
         return type.Name switch
@@ -269,7 +250,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
 
     private static AvroSchema Logical(JsonElement schema)
     {
-        var logicalType = schema.GetLogicalType();
+        var logicalType = schema.GetRequiredString("logicalType");
 
         return logicalType switch
         {

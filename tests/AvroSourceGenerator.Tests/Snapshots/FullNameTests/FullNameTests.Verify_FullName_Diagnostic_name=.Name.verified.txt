@@ -1,7 +1,7 @@
 ﻿{
   Location: schema.avsc: (0,0)-(4,1),
   Message:
-The schema defined in the JSON is invalid: 'name' property contains an invalid full name format in schema: {
+The schema defined in the JSON is invalid: Property 'name' has an invalid format: 'cannot start or end with a dot' in schema: {
   "type": "record",
   "name": ".Name",
   "fields": []

@@ -21,12 +21,11 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
     {
         var registry = new SchemaRegistry(useNullableReferenceTypes);
 
-        var namedSchema = registry.Schema(schema, containingNamespace: null);
+        _ = registry.Schema(schema, containingNamespace: null);
 
-        // The schema will only be registered if it's a named schema.
-        if (namedSchema is not NamedSchema)
+        if (registry.Count == 0)
         {
-            throw new InvalidSchemaException($"Schema is not a named schema: {schema.GetRawText()}");
+            throw new InvalidSchemaException($"Atleast a named schema must be present in schema: {schema.GetRawText()}");
         }
 
         return registry;

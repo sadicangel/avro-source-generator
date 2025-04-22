@@ -132,8 +132,12 @@ internal static class JsonElementExtensions
 
         return json;
     }
+
     public static JsonElement? GetNullableProperty(this JsonElement schema, string propertyName) =>
         schema.TryGetProperty(propertyName, out var json) ? json : null;
+
+    public static JsonElement? GetOptionalProperty(this JsonElement schema, string propertyName) =>
+        schema.ValueKind is JsonValueKind.Object && schema.TryGetProperty(propertyName, out var json) ? json : null;
 
     public static string? GetNullableString(this JsonElement json)
     {
@@ -168,7 +172,7 @@ internal static class JsonElementExtensions
 
     public static string? GetOptionalString(this JsonElement schema, string propertyName)
     {
-        var maybeJson = schema.GetNullableProperty(propertyName);
+        var maybeJson = schema.GetOptionalProperty(propertyName);
         if (maybeJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }) return null;
 
         var json = maybeJson.Value;

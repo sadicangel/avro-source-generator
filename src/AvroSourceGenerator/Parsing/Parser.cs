@@ -28,15 +28,14 @@ internal static class Parser
         {
             diagnostics.Add(InvalidJsonDiagnostic.Create(path.GetLocation(text), "The file is empty."));
 
-            return new AvroFile(path, text, default, string.Empty, default, diagnostics.ToImmutable());
+            return new AvroFile(path, text, default, default, default, diagnostics.ToImmutable());
         }
 
         try
         {
             using var jsonDocument = JsonDocument.Parse(text!);
             var json = jsonDocument.RootElement.Clone();
-            var name = json.GetName();
-            var @namespace = json.GetNamespace();
+            var name = json.GetFullName(throwIfMissingName: false, out var @namespace);
             return new AvroFile(path, text, json, name, @namespace, diagnostics.ToImmutable());
         }
         catch (JsonException ex)
@@ -48,7 +47,7 @@ internal static class Parser
             diagnostics.Add(InvalidSchemaDiagnostic.Create(path.GetLocation(text), ex.Message));
         }
 
-        return new AvroFile(path, text, default, string.Empty, default, diagnostics.ToImmutable());
+        return new AvroFile(path, text, default, default, default, diagnostics.ToImmutable());
     }
 
     public static GeneratorSettings GetGeneratorSettings(AnalyzerConfigOptionsProvider provider, CancellationToken cancellationToken)

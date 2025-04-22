@@ -102,7 +102,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
     private EnumSchema Enum(JsonElement schema, string? containingNamespace)
     {
-        var name = schema.GetName(out var @namespace);
+        var name = schema.GetFullName(out var @namespace);
         @namespace ??= containingNamespace;
         var schemaKey = new SchemaKey(name, @namespace);
 
@@ -122,7 +122,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
     private RecordSchema Record(JsonElement schema, string? containingNamespace)
     {
-        var name = schema.GetName(out var @namespace);
+        var name = schema.GetFullName(out var @namespace);
         @namespace ??= containingNamespace;
         var schemaKey = new SchemaKey(name, @namespace);
 
@@ -142,7 +142,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
     private ErrorSchema Error(JsonElement schema, string? containingNamespace)
     {
-        var name = schema.GetName(out var @namespace);
+        var name = schema.GetFullName(out var @namespace);
         @namespace ??= containingNamespace;
         var schemaKey = new SchemaKey(name, @namespace);
 
@@ -172,7 +172,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
     private Field Field(JsonElement field, string? containingNamespace)
     {
-        var name = field.GetName();
+        var name = field.GetRequiredString("name").GetValidName();
         var type = Schema(field.GetRequiredProperty("type"), containingNamespace);
         var underlyingType = type;
         var isNullable = false;
@@ -232,7 +232,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
     private FixedSchema Fixed(JsonElement schema, string? containingNamespace)
     {
-        var name = schema.GetName(out var @namespace);
+        var name = schema.GetFullName(out var @namespace);
         @namespace ??= containingNamespace;
         var schemaKey = new SchemaKey(name, @namespace);
 

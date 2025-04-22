@@ -6,11 +6,13 @@ using AvroSourceGenerator.Schemas.Extensions;
 
 namespace AvroSourceGenerator.Schemas;
 
-internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnumerable<NamedSchema>
+internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadOnlyCollection<NamedSchema>
 {
     private readonly record struct SchemaKey(string Name, string? Namespace);
 
     private readonly Dictionary<SchemaKey, NamedSchema> _schemas = [];
+
+    public int Count => _schemas.Count;
 
     public IEnumerator<NamedSchema> GetEnumerator() => _schemas.Values.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -101,7 +103,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
 
     private EnumSchema Enum(JsonElement schema, string? containingNamespace)
     {
-        var name = schema.GetName(out var @namespace);
+        var name = schema.GetFullName(out var @namespace);
         @namespace ??= containingNamespace;
         var schemaKey = new SchemaKey(name, @namespace);
 
@@ -121,7 +123,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
 
     private RecordSchema Record(JsonElement schema, string? containingNamespace)
     {
-        var name = schema.GetName(out var @namespace);
+        var name = schema.GetFullName(out var @namespace);
         @namespace ??= containingNamespace;
         var schemaKey = new SchemaKey(name, @namespace);
 
@@ -141,7 +143,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
 
     private ErrorSchema Error(JsonElement schema, string? containingNamespace)
     {
-        var name = schema.GetName(out var @namespace);
+        var name = schema.GetFullName(out var @namespace);
         @namespace ??= containingNamespace;
         var schemaKey = new SchemaKey(name, @namespace);
 
@@ -171,7 +173,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
 
     private Field Field(JsonElement field, string? containingNamespace)
     {
-        var name = field.GetName();
+        var name = field.GetRequiredString("name").GetValidName();
         var type = Schema(field.GetRequiredProperty("type"), containingNamespace);
         var underlyingType = type;
         var isNullable = false;
@@ -231,7 +233,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IEnume
 
     private FixedSchema Fixed(JsonElement schema, string? containingNamespace)
     {
-        var name = schema.GetName(out var @namespace);
+        var name = schema.GetFullName(out var @namespace);
         @namespace ??= containingNamespace;
         var schemaKey = new SchemaKey(name, @namespace);
 

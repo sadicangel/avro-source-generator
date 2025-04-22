@@ -159,8 +159,20 @@ internal static class JsonElementExtensions
         if (maybeJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }) return null;
 
         var json = maybeJson.Value;
-        if (json.ValueKind is not JsonValueKind.String and not JsonValueKind.Null)
+        if (json.ValueKind is not JsonValueKind.String)
             throw new InvalidSchemaException($"'{propertyName}' property must be a string (found '{json}') in schema: {schema.GetRawText()}");
+
+        var value = json.GetString();
+        return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
+    public static string? GetOptionalString(this JsonElement schema, string propertyName)
+    {
+        var maybeJson = schema.GetNullableProperty(propertyName);
+        if (maybeJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }) return null;
+
+        var json = maybeJson.Value;
+        if (json.ValueKind is not JsonValueKind.String) return null;
 
         var value = json.GetString();
         return string.IsNullOrWhiteSpace(value) ? null : value;
@@ -204,9 +216,22 @@ internal static class JsonElementExtensions
         return json.EnumerateArray();
     }
 
-    public static string GetName(this JsonElement schema, out string? @namespace)
+    public static string GetFullName(this JsonElement schema, out string? @namespace) =>
+        schema.GetFullName(throwIfMissingName: true, out @namespace) ?? throw new InvalidOperationException("Unexpected: 'name' was null");
+
+    public static string? GetFullName(this JsonElement schema, [DoesNotReturnIf(true)] bool throwIfMissingName, out string? @namespace)
     {
-        var name = schema.GetName();
+        var name = (throwIfMissingName
+            ? schema.GetRequiredString("name")
+            : schema.GetOptionalString("name"))?.GetValidName();
+
+        // 'name' was null (and it was allowed), so we
+        // return null and set the namespace to null.
+        if (name is null)
+        {
+            @namespace = null;
+            return name;
+        }
 
         if (name.IndexOf("..") >= 0)
             throw new InvalidSchemaException(
@@ -214,7 +239,7 @@ internal static class JsonElementExtensions
 
         // Only use 'namespace' if 'name' isn't a full name.
         if (!SplitFullName(name, out name, out @namespace))
-            @namespace = schema.GetNamespace();
+            @namespace = schema.GetNullableString("namespace")?.GetValidNamespace();
 
         if (string.IsNullOrWhiteSpace(name) || @namespace is "")
             throw new InvalidSchemaException(
@@ -238,12 +263,6 @@ internal static class JsonElementExtensions
             return true;
         }
     }
-
-    public static string GetName(this JsonElement schema) =>
-        schema.GetRequiredString("name").GetValidName();
-
-    public static string? GetNamespace(this JsonElement schema) =>
-        schema.GetNullableString("namespace")?.GetValidNamespace();
 
     public static string GetSchemaType(this JsonElement schema) =>
         schema.GetRequiredString("type");

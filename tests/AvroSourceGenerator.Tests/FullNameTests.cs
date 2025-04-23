@@ -82,6 +82,24 @@ public sealed class FullNameTests
     """);
 
     [Fact]
+    public Task Verify_FullName_Does_Not_Match_Options_Diagnostic() => TestHelper.VerifyDiagnostic("""
+    {
+        "type": "record",
+        "name": "AnotherNamespace.Example",
+        "fields": []
+    }
+    """,
+    """
+    using System;
+    using AvroSourceGenerator;
+        
+    namespace SchemaNamespace;
+        
+    [Avro]
+    internal partial class Example;
+    """);
+
+    [Fact]
     public Task Verify_FullName_Reference() => TestHelper.VerifySourceCode("""
     {
         "type": "record",

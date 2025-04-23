@@ -1,0 +1,21 @@
+﻿{
+  Location: /*
+    
+[Avro]
+^^^^^^
+internal partial class Example;
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+*/
+ : (5,0)-(6,31),
+  Message: No Avro schema found for class 'SchemaNamespace.Example'. Expected a file containing a schema with name 'Example' and namespace 'SchemaNamespace'.,
+  Severity: Warning,
+  WarningLevel: 1,
+  Descriptor: {
+    Id: AVROSG0003,
+    Title: Attribute Mismatch,
+    MessageFormat: No Avro schema found for class '{0}'. Expected a file containing a schema with name '{1}' and namespace '{2}'.,
+    Category: Usage,
+    DefaultSeverity: Warning,
+    IsEnabledByDefault: true
+  }
+}

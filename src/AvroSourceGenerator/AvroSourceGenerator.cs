@@ -40,7 +40,8 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
                 // different declarations with the same fully qualified name.
 
                 var avroOptions = avroOptionsCollection
-                    .FirstOrDefault(options => options.Name == avroFile.Name);
+                    .FirstOrDefault(options => options.Name == avroFile.SchemaName.Name
+                        && options.Namespace == avroFile.SchemaName.Namespace);
 
                 return (avroFile, generatorSettings, compilationInfo, avroOptions);
             })
@@ -52,7 +53,8 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             .Where(source =>
             {
                 var (avroOptions, avroFiles) = source;
-                return !avroFiles.Any(file => file.Name == avroOptions.Name);
+                return !avroFiles.Any(file => file.SchemaName.Name == avroOptions.Name
+                    && file.SchemaName.Namespace == avroOptions.Namespace);
             })
             .Select((source, _) =>
             {

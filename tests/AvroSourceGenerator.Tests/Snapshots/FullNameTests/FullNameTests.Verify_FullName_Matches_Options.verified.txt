@@ -8,10 +8,12 @@ namespace SchemaNamespace
     {
     
         public global::Avro.Schema Schema { get => Example._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        """
         {
           "type": "record",
-          "name": "SchemaNamespace.Example",
+          "name": "Example",
+          "namespace": "SchemaNamespace",
           "fields": []
         }
         """);

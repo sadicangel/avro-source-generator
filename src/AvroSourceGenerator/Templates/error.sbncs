@@ -1,13 +1,12 @@
-{{ AccessModifier }} partial class {{ $.schema.Name }} : global::Avro.Specific.SpecificException
+{{ AccessModifier }} partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificException
 {
     {{~ for field in $.schema.Fields ~}}
     {{ include 'field' field: field }}
     {{~ end ~}}
     
-    public override global::Avro.Schema Schema { get => {{ $.schema.Name }}._SCHEMA; }
-    public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse({{ UseRawStringLiterals ? '"""' : '' }}
-    {{ $.schema.Json | text }}
-    {{ UseRawStringLiterals ? '"""' : '' }});
+    public override global::Avro.Schema Schema { get => {{ $.schema.CSharpName.Name }}._SCHEMA; }
+    public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+    {{ $.schema | json }});
 
     {{ include 'getput' schema: $.schema override: true ~}}
 }

@@ -220,21 +220,33 @@ internal static class JsonElementExtensions
         return json.EnumerateArray();
     }
 
-    public static string GetFullName(this JsonElement schema, out string? @namespace) =>
-        schema.GetFullName(throwIfMissingName: true, out @namespace) ?? throw new InvalidOperationException("Unexpected: 'name' was null");
-
-    public static string? GetFullName(this JsonElement schema, [DoesNotReturnIf(true)] bool throwIfMissingName, out string? @namespace)
+    public static SchemaName GetRequiredSchemaName(this JsonElement schema, string? containingNamespace = null)
     {
-        var name = (throwIfMissingName
-            ? schema.GetRequiredString("name")
-            : schema.GetOptionalString("name"))?.GetValidName();
+        var name = schema.GetRequiredString("name");
 
-        // 'name' was null (and it was allowed), so we
-        // return null and set the namespace to null.
+        if (name.IndexOf("..") >= 0)
+            throw new InvalidSchemaException(
+                $"Property 'name' has an invalid format: 'consecutive dots are not allowed in names or namespaces' in schema: {schema.GetRawText()}");
+
+        // Only use 'namespace' if 'name' isn't a full name.
+        if (!SplitFullName(name, out name, out var @namespace))
+            @namespace = schema.GetNullableString("namespace");
+
+        if (string.IsNullOrWhiteSpace(name) || @namespace is "")
+            throw new InvalidSchemaException(
+                $"Property 'name' has an invalid format: 'cannot start or end with a dot' in schema: {schema.GetRawText()}");
+
+        return new SchemaName(name, @namespace ?? containingNamespace);
+    }
+
+    public static SchemaName GetOptionalSchemaName(this JsonElement schema)
+    {
+        var name = schema.GetOptionalString("name");
+
+        // 'name' was null (and it was allowed), so we return default.
         if (name is null)
         {
-            @namespace = null;
-            return name;
+            return default;
         }
 
         if (name.IndexOf("..") >= 0)
@@ -242,30 +254,41 @@ internal static class JsonElementExtensions
                 $"Property 'name' has an invalid format: 'consecutive dots are not allowed in names or namespaces' in schema: {schema.GetRawText()}");
 
         // Only use 'namespace' if 'name' isn't a full name.
-        if (!SplitFullName(name, out name, out @namespace))
-            @namespace = schema.GetNullableString("namespace")?.GetValidNamespace();
+        if (!SplitFullName(name, out name, out var @namespace))
+            @namespace = schema.GetNullableString("namespace");
 
         if (string.IsNullOrWhiteSpace(name) || @namespace is "")
             throw new InvalidSchemaException(
                 $"Property 'name' has an invalid format: 'cannot start or end with a dot' in schema: {schema.GetRawText()}");
 
-        return name;
+        return new SchemaName(name, @namespace);
+    }
 
-        static bool SplitFullName(string fullName, out string name, out string? @namespace)
+    public static SchemaName GetRequiredSchemaName(this string name, string? containingNamespace = null)
+    {
+        _ = SplitFullName(name, out name, out var @namespace);
+
+        if (string.IsNullOrWhiteSpace(name) || @namespace is "")
+            throw new InvalidSchemaException(
+                $"Argument has an invalid name format: 'cannot start or end with a dot'");
+
+        return new SchemaName(name, @namespace ?? containingNamespace);
+    }
+
+    private static bool SplitFullName(string fullName, out string name, out string? @namespace)
+    {
+        var indexOfLast = fullName.LastIndexOf('.');
+        if (indexOfLast < 0)
         {
-            var indexOfLast = fullName.LastIndexOf('.');
-            if (indexOfLast < 0)
-            {
-                name = fullName;
-                @namespace = null;
-                return false;
-            }
-
-            name = fullName[(indexOfLast + 1)..];
-            @namespace = GetValidNamespace(fullName.AsSpan(0, indexOfLast));
-
-            return true;
+            name = fullName;
+            @namespace = null;
+            return false;
         }
+
+        name = fullName[(indexOfLast + 1)..];
+        @namespace = GetValidNamespace(fullName.AsSpan(0, indexOfLast));
+
+        return true;
     }
 
     public static string GetSchemaType(this JsonElement schema) =>
@@ -296,22 +319,5 @@ internal static class JsonElementExtensions
         return json.ValueKind is JsonValueKind.Number && json.TryGetInt32(out var size) && size > 0
             ? size
             : throw new InvalidSchemaException($"'size' property must be a positive integer (found '{json}') in schema: {schema.GetRawText()}");
-    }
-
-    public static bool IsSupportedLogicalSchema(this JsonElement schema)
-    {
-        if (!schema.TryGetProperty("logicalType", out var logicalType) || logicalType.ValueKind is not JsonValueKind.String)
-            return false;
-
-        return logicalType.ValueEquals("date")
-            || logicalType.ValueEquals("decimal")
-            // logicalType.ValueEquals("duration") is handled as a fixed type
-            || logicalType.ValueEquals("time-millis")
-            || logicalType.ValueEquals("time-micros")
-            || logicalType.ValueEquals("timestamp-millis")
-            || logicalType.ValueEquals("timestamp-micros")
-            || logicalType.ValueEquals("local-timestamp-millis")
-            || logicalType.ValueEquals("local-timestamp-micros")
-            || logicalType.ValueEquals("uuid");
     }
 }

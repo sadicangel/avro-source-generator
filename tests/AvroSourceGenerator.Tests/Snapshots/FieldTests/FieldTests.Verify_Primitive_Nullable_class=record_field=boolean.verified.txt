@@ -9,18 +9,19 @@ namespace SchemaNamespace
         public bool? Field { get; init; }
     
         public global::Avro.Schema Schema { get => Class._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        """
         {
           "type": "record",
           "name": "Class",
           "namespace": "SchemaNamespace",
           "fields": [
             {
+              "name": "Field",
               "type": [
                 "null",
                 "boolean"
-              ],
-              "name": "Field"
+              ]
             }
           ]
         }
@@ -42,7 +43,7 @@ namespace SchemaNamespace
                 case 0:
                     Set_Field(this, fieldValue! is null ? null : (bool)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Field")]
-                    extern static void Set_Field(Class obj, bool? value);
+                    extern static void Set_Field(global::SchemaNamespace.Class obj, bool? value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

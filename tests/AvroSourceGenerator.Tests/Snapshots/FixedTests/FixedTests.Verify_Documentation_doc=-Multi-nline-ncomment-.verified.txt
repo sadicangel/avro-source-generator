@@ -15,7 +15,8 @@ namespace SchemaNamespace
         public uint Size { get => (uint)Value.Length; }
     
         public override global::Avro.Schema Schema { get => Fixed._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        """
         {
           "type": "fixed",
           "name": "Fixed",

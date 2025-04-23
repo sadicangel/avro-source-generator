@@ -10,11 +10,12 @@ namespace SchemaNamespace
         public required string ErrorText { get; init; }
         
         public override global::Avro.Schema Schema { get => Error._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        """
         {
           "type": "error",
-          "namespace": "SchemaNamespace",
           "name": "Error",
+          "namespace": "SchemaNamespace",
           "fields": [
             {
               "name": "ErrorCode",
@@ -55,11 +56,11 @@ namespace SchemaNamespace
         
             private static global::System.Action<Error, TProperty> CreateSetter<TProperty>(string propertyName)
             {
-                var obj = global::System.Linq.Expressions.Expression.Parameter(typeof(Error), "obj");
+                var obj = global::System.Linq.Expressions.Expression.Parameter(typeof(global::SchemaNamespace.Error), "obj");
                 var value = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");
-                var property = global::System.Linq.Expressions.Expression.Property(obj, typeof(Error).GetProperty(propertyName)!);
+                var property = global::System.Linq.Expressions.Expression.Property(obj, typeof(global::SchemaNamespace.Error).GetProperty(propertyName)!);
                 var assign = global::System.Linq.Expressions.Expression.Assign(property, value);
-                var lambda = global::System.Linq.Expressions.Expression.Lambda<global::System.Action<Error, TProperty>>(assign, obj, value);
+                var lambda = global::System.Linq.Expressions.Expression.Lambda<global::System.Action<global::SchemaNamespace.Error, TProperty>>(assign, obj, value);
                 return lambda.Compile();
             }
         }

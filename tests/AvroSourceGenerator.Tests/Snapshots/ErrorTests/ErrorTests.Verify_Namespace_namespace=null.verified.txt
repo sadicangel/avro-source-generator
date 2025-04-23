@@ -6,11 +6,11 @@
     {
         
         public override global::Avro.Schema Schema { get => Error._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        """
         {
           "type": "error",
           "name": "Error",
-          "namespace": null,
           "fields": []
         }
         """);

@@ -1,27 +1,29 @@
-﻿namespace AvroSourceGenerator.Schemas;
+﻿using System.Text;
+using System.Text.Json;
 
-internal abstract record class AvroSchema(SchemaType Type, string Name, string? Namespace)
+namespace AvroSourceGenerator.Schemas;
+
+internal abstract record class AvroSchema(SchemaType Type, CSharpName CSharpName, SchemaName SchemaName)
 {
-    public string FullName { get; } = Namespace is null ? Name : $"global::{Namespace}.{Name}";
+    public sealed override string ToString() => CSharpName.FullName;
 
-    public sealed override string ToString() => FullName;
+    public string ToJsonString(JsonWriterOptions options = default)
+    {
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream, options);
+        WriteTo(writer, [], SchemaName.Namespace);
+        writer.Flush();
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
 
-    public static readonly AvroSchema Object = new PrimitiveSchema(SchemaType.Null, "object", null);
-    public static readonly AvroSchema Boolean = new PrimitiveSchema(SchemaType.Boolean, "bool", null);
-    public static readonly AvroSchema Int = new PrimitiveSchema(SchemaType.Int, "int", null);
-    public static readonly AvroSchema Long = new PrimitiveSchema(SchemaType.Long, "long", null);
-    public static readonly AvroSchema Float = new PrimitiveSchema(SchemaType.Float, "float", null);
-    public static readonly AvroSchema Double = new PrimitiveSchema(SchemaType.Double, "double", null);
-    public static readonly AvroSchema Bytes = new PrimitiveSchema(SchemaType.Bytes, "byte[]", null);
-    public static readonly AvroSchema String = new PrimitiveSchema(SchemaType.String, "string", null);
+    public abstract void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace);
 
-    public static readonly AvroSchema Date = new LogicalSchema("DateTime", "System");
-    public static readonly AvroSchema Decimal = new LogicalSchema("AvroDecimal", "Avro");
-    public static readonly AvroSchema TimeMillis = new LogicalSchema("TimeSpan", "System");
-    public static readonly AvroSchema TimeMicros = new LogicalSchema("TimeSpan", "System");
-    public static readonly AvroSchema TimestampMillis = new LogicalSchema("DateTime", "System");
-    public static readonly AvroSchema TimestampMicros = new LogicalSchema("DateTime", "System");
-    public static readonly AvroSchema LocalTimestampMillis = new LogicalSchema("DateTime", "System");
-    public static readonly AvroSchema LocalTimestampMicros = new LogicalSchema("DateTime", "System");
-    public static readonly AvroSchema Uuid = new LogicalSchema("Guid", "System");
+    public static readonly AvroSchema Object = new PrimitiveSchema(SchemaType.Null, new CSharpName("object"), new SchemaName("null"));
+    public static readonly AvroSchema Boolean = new PrimitiveSchema(SchemaType.Boolean, new CSharpName("bool"), new SchemaName("boolean"));
+    public static readonly AvroSchema Int = new PrimitiveSchema(SchemaType.Int, new CSharpName("int"), new SchemaName("int"));
+    public static readonly AvroSchema Long = new PrimitiveSchema(SchemaType.Long, new CSharpName("long"), new SchemaName("long"));
+    public static readonly AvroSchema Float = new PrimitiveSchema(SchemaType.Float, new CSharpName("float"), new SchemaName("float"));
+    public static readonly AvroSchema Double = new PrimitiveSchema(SchemaType.Double, new CSharpName("double"), new SchemaName("double"));
+    public static readonly AvroSchema Bytes = new PrimitiveSchema(SchemaType.Bytes, new CSharpName("byte[]"), new SchemaName("bytes"));
+    public static readonly AvroSchema String = new PrimitiveSchema(SchemaType.String, new CSharpName("string"), new SchemaName("string"));
 }

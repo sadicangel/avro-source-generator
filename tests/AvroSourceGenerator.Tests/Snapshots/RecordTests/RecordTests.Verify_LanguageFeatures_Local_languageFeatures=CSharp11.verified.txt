@@ -10,11 +10,12 @@ namespace SchemaNamespace
         public required string Value2 { get; init; }
     
         public global::Avro.Schema Schema { get => Record._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        """
         {
           "type": "record",
-          "namespace": "SchemaNamespace",
           "name": "Record",
+          "namespace": "SchemaNamespace",
           "fields": [
             {
               "name": "Value1",
@@ -55,11 +56,11 @@ namespace SchemaNamespace
         
             private static global::System.Action<Record, TProperty> CreateSetter<TProperty>(string propertyName)
             {
-                var obj = global::System.Linq.Expressions.Expression.Parameter(typeof(Record), "obj");
+                var obj = global::System.Linq.Expressions.Expression.Parameter(typeof(global::SchemaNamespace.Record), "obj");
                 var value = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");
-                var property = global::System.Linq.Expressions.Expression.Property(obj, typeof(Record).GetProperty(propertyName)!);
+                var property = global::System.Linq.Expressions.Expression.Property(obj, typeof(global::SchemaNamespace.Record).GetProperty(propertyName)!);
                 var assign = global::System.Linq.Expressions.Expression.Assign(property, value);
-                var lambda = global::System.Linq.Expressions.Expression.Lambda<global::System.Action<Record, TProperty>>(assign, obj, value);
+                var lambda = global::System.Linq.Expressions.Expression.Lambda<global::System.Action<global::SchemaNamespace.Record, TProperty>>(assign, obj, value);
                 return lambda.Compile();
             }
         }

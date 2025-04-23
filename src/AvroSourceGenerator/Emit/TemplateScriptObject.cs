@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+﻿using AvroSourceGenerator.Schemas;
 using Scriban.Functions;
 using Scriban.Runtime;
 
@@ -6,19 +6,18 @@ namespace AvroSourceGenerator.Emit;
 
 internal sealed class TemplateScriptObject : BuiltinFunctions
 {
-    private static readonly JsonSerializerOptions s_jsonOptionsRawStringLiteral =
-        new() { WriteIndented = true };
-    private static readonly DynamicCustomFunction s_textRawStringLiteral =
-        CreateFunction(static (JsonElement json) => JsonSerializer.Serialize(json, s_jsonOptionsRawStringLiteral));
-    private static readonly DynamicCustomFunction s_textVerbatimStringLiteral =
-        CreateFunction(static (JsonElement json) => StringFunctions.Literal(JsonSerializer.Serialize(json)));
+    private static readonly DynamicCustomFunction s_jsonRawString = CreateFunction(static (AvroSchema schema) =>
+        string.Join("\n", "\"\"\"", schema.ToJsonString(new() { Indented = true }), "\"\"\""));
+
+    private static readonly DynamicCustomFunction s_jsonVerbatimString = CreateFunction(static (AvroSchema schema) =>
+        StringFunctions.Literal(schema.ToJsonString()));
 
     public TemplateScriptObject(
         LanguageFeatures languageFeatures,
         string accessModifier,
         string recordDeclaration)
     {
-        SetValue("text", (languageFeatures & LanguageFeatures.RawStringLiterals) != 0 ? s_textRawStringLiteral : s_textVerbatimStringLiteral, readOnly: true);
+        SetValue("json", (languageFeatures & LanguageFeatures.RawStringLiterals) != 0 ? s_jsonRawString : s_jsonVerbatimString, readOnly: true);
         SetValue("AccessModifier", accessModifier, readOnly: true);
         SetValue("RecordDeclaration", recordDeclaration, readOnly: true);
         SetValue("UseNullableReferenceTypes", (languageFeatures & LanguageFeatures.NullableReferenceTypes) != 0, readOnly: true);

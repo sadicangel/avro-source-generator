@@ -8,9 +8,9 @@ namespace AvroSourceGenerator.Schemas;
 
 internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadOnlyCollection<NamedSchema>
 {
-    private readonly record struct SchemaKey(string Name, string? Namespace);
+    private readonly Dictionary<SchemaName, NamedSchema> _schemas = [];
+    private static readonly HashSet<string> s_reservedProperties = ["type", "name", "namespace", "fields", "items", "size", "symbols", "values", "aliases", "order", "doc", "default", "logicalType"];
 
-    private readonly Dictionary<SchemaKey, NamedSchema> _schemas = [];
 
     public int Count => _schemas.Count;
 
@@ -44,7 +44,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
     private AvroSchema WellKnown(JsonElement schema, string? containingNamespace)
     {
-        var type = schema.GetString()!;
+        var type = schema.GetString() ?? throw new InvalidOperationException($"Unexpected json value '{schema}'. Expected 'string'");
 
         return type switch
         {
@@ -56,105 +56,112 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             "double" => AvroSchema.Double,
             "bytes" => AvroSchema.Bytes,
             "string" => AvroSchema.String,
-            _ when _schemas.TryGetValue(new SchemaKey(JsonElementExtensions.GetValidName(type), containingNamespace), out var registeredSchema) => registeredSchema,
+            _ when _schemas.TryGetValue(type.GetRequiredSchemaName(containingNamespace), out var registeredSchema) => registeredSchema,
             _ => throw new InvalidSchemaException($"Unknown schema '{type}' in {schema.GetRawText()}")
         };
     }
 
     private AvroSchema Complex(JsonElement schema, string? containingNamespace)
     {
-        if (schema.IsSupportedLogicalSchema())
+        var properties = GetProperties(schema);
+
+        if (schema.TryGetProperty("logicalType", out var logicalType) && logicalType.ValueKind is JsonValueKind.String)
         {
-            return Logical(schema);
+            return Logical(schema, properties, containingNamespace);
         }
 
         var type = schema.GetSchemaType();
 
         return type switch
         {
-            "array" => Array(schema, containingNamespace),
-            "map" => Map(schema, containingNamespace),
-            "enum" => Enum(schema, containingNamespace),
-            "record" => Record(schema, containingNamespace),
-            "error" => Error(schema, containingNamespace),
-            "fixed" => Fixed(schema, containingNamespace),
+            "array" => Array(schema, properties, containingNamespace),
+            "map" => Map(schema, properties, containingNamespace),
+            "enum" => Enum(schema, properties, containingNamespace),
+            "record" => Record(schema, properties, containingNamespace),
+            "error" => Error(schema, properties, containingNamespace),
+            "fixed" => Fixed(schema, properties, containingNamespace),
             _ => throw new InvalidSchemaException($"Unknown schema '{type}' in {schema.GetRawText()}")
         };
     }
 
-    private ArraySchema Array(JsonElement schema, string? containingNamespace)
+    private ImmutableSortedDictionary<string, JsonElement> GetProperties(JsonElement schema)
+    {
+        var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
+        foreach (var property in schema.EnumerateObject())
+        {
+            if (!s_reservedProperties.Contains(property.Name))
+                properties.Add(property.Name, property.Value);
+        }
+        return properties.ToImmutable();
+    }
+
+    private ArraySchema Array(JsonElement schema, ImmutableSortedDictionary<string, JsonElement> properties, string? containingNamespace)
     {
         var itemsSchema = schema.GetRequiredProperty("items");
 
         var items = Schema(itemsSchema, containingNamespace);
 
-        return new ArraySchema(items);
+        return new ArraySchema(items, properties);
     }
 
-    private MapSchema Map(JsonElement schema, string? containingNamespace)
+    private MapSchema Map(JsonElement schema, ImmutableSortedDictionary<string, JsonElement> properties, string? containingNamespace)
     {
         var valuesSchema = schema.GetRequiredProperty("values");
 
         var values = Schema(valuesSchema, containingNamespace);
 
-        return new MapSchema(values);
+        return new MapSchema(values, properties);
     }
 
-    private EnumSchema Enum(JsonElement schema, string? containingNamespace)
+    private EnumSchema Enum(JsonElement schema, ImmutableSortedDictionary<string, JsonElement> properties, string? containingNamespace)
     {
-        var name = schema.GetFullName(out var @namespace);
-        @namespace ??= containingNamespace;
-        var schemaKey = new SchemaKey(name, @namespace);
+        var schemaName = schema.GetRequiredSchemaName(containingNamespace);
 
-        if (_schemas.ContainsKey(schemaKey))
-            throw new InvalidSchemaException($"Redeclaration of schema '{name}' in namespace '{@namespace}'");
+        if (_schemas.ContainsKey(schemaName))
+            throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
 
         var documentation = schema.GetDocumentation();
         var aliases = schema.GetAliases();
         var symbols = schema.GetSymbols();
         var @default = schema.GetNullableString("default");
 
-        var enumSchema = new EnumSchema(schema, name, @namespace, documentation, aliases, symbols, @default);
-        _schemas[schemaKey] = enumSchema;
+        var enumSchema = new EnumSchema(schema, schemaName, documentation, aliases, symbols, @default, properties);
+        _schemas[schemaName] = enumSchema;
 
         return enumSchema;
     }
 
-    private RecordSchema Record(JsonElement schema, string? containingNamespace)
+    private RecordSchema Record(JsonElement schema, ImmutableSortedDictionary<string, JsonElement> properties, string? containingNamespace)
     {
-        var name = schema.GetFullName(out var @namespace);
-        @namespace ??= containingNamespace;
-        var schemaKey = new SchemaKey(name, @namespace);
+        var schemaName = schema.GetRequiredSchemaName(containingNamespace);
 
-        if (_schemas.ContainsKey(schemaKey))
-            throw new InvalidSchemaException($"Redeclaration of schema '{name}' in namespace '{@namespace}'");
+        if (_schemas.ContainsKey(schemaName))
+            throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
 
         var documentation = schema.GetDocumentation();
         var aliases = schema.GetAliases();
-        var fields = Fields(schema, @namespace);
+        var fields = Fields(schema, schemaName.Namespace);
 
-        var recordSchema = new RecordSchema(schema, name, @namespace, documentation, aliases, fields);
+        var recordSchema = new RecordSchema(schema, schemaName, documentation, aliases, fields, properties);
 
-        _schemas[schemaKey] = recordSchema;
+        _schemas[schemaName] = recordSchema;
 
         return recordSchema;
     }
 
-    private ErrorSchema Error(JsonElement schema, string? containingNamespace)
+    private ErrorSchema Error(JsonElement schema, ImmutableSortedDictionary<string, JsonElement> properties, string? containingNamespace)
     {
-        var name = schema.GetFullName(out var @namespace);
-        @namespace ??= containingNamespace;
-        var schemaKey = new SchemaKey(name, @namespace);
+        var schemaName = schema.GetRequiredSchemaName(containingNamespace);
 
-        if (_schemas.ContainsKey(schemaKey))
-            throw new InvalidSchemaException($"Redeclaration of schema '{name}' in namespace '{@namespace}'");
+        if (_schemas.ContainsKey(schemaName))
+            throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
 
         var documentation = schema.GetDocumentation();
         var aliases = schema.GetAliases();
-        var fields = Fields(schema, @namespace);
+        var fields = Fields(schema, schemaName.Namespace);
 
-        var errorSchema = new ErrorSchema(schema, name, @namespace, documentation, aliases, fields);
-        _schemas[schemaKey] = errorSchema;
+        var errorSchema = new ErrorSchema(schema, schemaName, documentation, aliases, fields, properties);
+        _schemas[schemaName] = errorSchema;
 
         return errorSchema;
     }
@@ -163,9 +170,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
     {
         var fields = ImmutableArray.CreateBuilder<Field>();
         foreach (var field in schema.GetRequiredArray("fields"))
-        {
             fields.Add(Field(field, containingNamespace));
-        }
 
         return fields.ToImmutable();
     }
@@ -184,9 +189,10 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
         var documentation = field.GetDocumentation();
         var aliases = field.GetAliases();
-        var @default = GetValue(type, field.GetNullableProperty("default"));
+        var defaultJson = field.GetNullableProperty("default");
+        var @default = GetValue(type, defaultJson);
         var order = field.GetNullableInt32("order");
-        return new Field(name, type, underlyingType, isNullable, documentation, aliases, @default, order);
+        return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order);
     }
 
     private string? GetValue(AvroSchema type, JsonElement? json)
@@ -199,7 +205,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
         var value = json.Value;
 
         // TODO: Actually validate the value so that we don't generate invalid code.
-        return type.Name switch
+        return type.CSharpName.Name switch
         {
             "object" => value.GetRawText(),
             "bool" => value.GetRawText(),
@@ -209,7 +215,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             "double" => value.GetRawText(),
             "byte[]" => GetBytesValue(value),
             "string" => value.GetRawText(),
-            _ when _schemas.TryGetValue(new SchemaKey(type.Name, type.Namespace), out var namedSchema) && namedSchema.Type is SchemaType.Enum => $"{type}.{value.GetString()}",
+            _ when _schemas.TryGetValue(type.SchemaName, out var namedSchema) && namedSchema.Type is SchemaType.Enum => $"{type}.{value.GetString()}",
 
             // TODO: Do we need to handle complex types? Should they be supported?
             _ => null,
@@ -230,41 +236,60 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
         }
     }
 
-    private FixedSchema Fixed(JsonElement schema, string? containingNamespace)
+    private FixedSchema Fixed(JsonElement schema, ImmutableSortedDictionary<string, JsonElement> properties, string? containingNamespace)
     {
-        var name = schema.GetFullName(out var @namespace);
-        @namespace ??= containingNamespace;
-        var schemaKey = new SchemaKey(name, @namespace);
+        var schemaName = schema.GetRequiredSchemaName(containingNamespace);
 
-        if (_schemas.ContainsKey(schemaKey))
-            throw new InvalidSchemaException($"Redeclaration of schema '{name}' in namespace '{@namespace}'");
+        if (_schemas.ContainsKey(schemaName))
+            throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
 
         var documentation = schema.GetDocumentation();
         var aliases = schema.GetAliases();
         var size = schema.GetFixedSize();
 
-        var fixedSchema = new FixedSchema(schema, name, @namespace, documentation, aliases, size);
-        _schemas[schemaKey] = fixedSchema;
+        var fixedSchema = new FixedSchema(schema, schemaName, documentation, aliases, size, properties);
+        _schemas[schemaName] = fixedSchema;
 
         return fixedSchema;
     }
 
-    private static AvroSchema Logical(JsonElement schema)
+    private AvroSchema Logical(JsonElement schema, ImmutableSortedDictionary<string, JsonElement> properties, string? containingNamespace)
     {
         var logicalType = schema.GetRequiredString("logicalType");
 
+        var underlyingType = schema.GetRequiredString("type");
+        var underlyingSchema = underlyingType switch
+        {
+            "null" => AvroSchema.Object,
+            "boolean" => AvroSchema.Boolean,
+            "int" => AvroSchema.Int,
+            "long" => AvroSchema.Long,
+            "float" => AvroSchema.Float,
+            "double" => AvroSchema.Double,
+            "bytes" => AvroSchema.Bytes,
+            "string" => AvroSchema.String,
+            "array" => Array(schema, ImmutableSortedDictionary<string, JsonElement>.Empty, containingNamespace),
+            "map" => Map(schema, ImmutableSortedDictionary<string, JsonElement>.Empty, containingNamespace),
+            "enum" => Enum(schema, ImmutableSortedDictionary<string, JsonElement>.Empty, containingNamespace),
+            "record" => Record(schema, ImmutableSortedDictionary<string, JsonElement>.Empty, containingNamespace),
+            "error" => Error(schema, ImmutableSortedDictionary<string, JsonElement>.Empty, containingNamespace),
+            "fixed" => Fixed(schema, ImmutableSortedDictionary<string, JsonElement>.Empty, containingNamespace),
+            _ when _schemas.TryGetValue(new SchemaName(JsonElementExtensions.GetValidName(underlyingType), containingNamespace), out var registeredSchema) => registeredSchema,
+            _ => throw new InvalidSchemaException($"Unknown schema '{underlyingType}' in {schema.GetRawText()}")
+        };
+
         return logicalType switch
         {
-            "date" => AvroSchema.Date,
-            "decimal" => AvroSchema.Decimal,
-            // "duration" => handled as a fixed type,
-            "time-micros" => AvroSchema.TimeMicros,
-            "time-millis" => AvroSchema.TimeMillis,
-            "timestamp-micros" => AvroSchema.TimestampMicros,
-            "timestamp-millis" => AvroSchema.TimestampMillis,
-            "local-timestamp-micros" => AvroSchema.LocalTimestampMicros,
-            "local-timestamp-millis" => AvroSchema.LocalTimestampMillis,
-            "uuid" => AvroSchema.Uuid,
+            "date" => new LogicalSchema(underlyingSchema, new CSharpName("DateTime", "System"), new SchemaName(logicalType), properties),
+            "decimal" => new LogicalSchema(underlyingSchema, new CSharpName("AvroDecimal", "Avro"), new SchemaName(logicalType), properties),
+            "duration" => new LogicalSchema(underlyingSchema, underlyingSchema.CSharpName, new SchemaName(logicalType), properties),
+            "time-micros" => new LogicalSchema(underlyingSchema, new CSharpName("TimeSpan", "System"), new SchemaName(logicalType), properties),
+            "time-millis" => new LogicalSchema(underlyingSchema, new CSharpName("TimeSpan", "System"), new SchemaName(logicalType), properties),
+            "timestamp-micros" => new LogicalSchema(underlyingSchema, new CSharpName("DateTime", "System"), new SchemaName(logicalType), properties),
+            "timestamp-millis" => new LogicalSchema(underlyingSchema, new CSharpName("DateTime", "System"), new SchemaName(logicalType), properties),
+            "local-timestamp-micros" => new LogicalSchema(underlyingSchema, new CSharpName("DateTime", "System"), new SchemaName(logicalType), properties),
+            "local-timestamp-millis" => new LogicalSchema(underlyingSchema, new CSharpName("DateTime", "System"), new SchemaName(logicalType), properties),
+            "uuid" => new LogicalSchema(underlyingSchema, new CSharpName("Guid", "System"), new SchemaName(logicalType), properties),
             _ => throw new InvalidSchemaException($"Unsupported logical type '{logicalType}' in schema: {schema.GetRawText()}"),
         };
     }
@@ -281,10 +306,11 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
         while (underlyingSchema is UnionSchema union)
             underlyingSchema = GetUnderlyingSchema(union.Schemas);
         var hasQuestionMark = isNullable && (useNullableReferenceTypes || MapsToValueType(underlyingSchema.Type));
-        var name = underlyingSchema.Name + (hasQuestionMark ? "?" : "");
-        var @namespace = underlyingSchema.Namespace;
+        var csharpName = new CSharpName(
+            underlyingSchema.CSharpName.Name + (hasQuestionMark ? "?" : ""),
+            underlyingSchema.CSharpName.Namespace);
 
-        return new UnionSchema(name, @namespace, schemas, underlyingSchema, isNullable);
+        return new UnionSchema(csharpName, schemas, underlyingSchema, isNullable);
 
         static AvroSchema GetUnderlyingSchema(ImmutableArray<AvroSchema> schemas)
         {

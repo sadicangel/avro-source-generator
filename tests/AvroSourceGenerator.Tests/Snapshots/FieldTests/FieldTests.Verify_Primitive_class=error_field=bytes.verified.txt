@@ -9,15 +9,16 @@ namespace SchemaNamespace
         public required byte[] Field { get; init; }
         
         public override global::Avro.Schema Schema { get => Class._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        """
         {
           "type": "error",
           "name": "Class",
           "namespace": "SchemaNamespace",
           "fields": [
             {
-              "type": "bytes",
-              "name": "Field"
+              "name": "Field",
+              "type": "bytes"
             }
           ]
         }
@@ -39,7 +40,7 @@ namespace SchemaNamespace
                 case 0:
                     Set_Field(this, (byte[])fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Field")]
-                    extern static void Set_Field(Class obj, byte[] value);
+                    extern static void Set_Field(global::SchemaNamespace.Class obj, byte[] value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

@@ -1,4 +1,4 @@
-{{ AccessModifier }} enum {{ $.schema.Name }}
+{{ AccessModifier }} enum {{ $.schema.CSharpName.Name }}
 {
     {{~ for symbol in $.schema.Symbols ~}}
     {{ symbol }},

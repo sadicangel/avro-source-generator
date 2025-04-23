@@ -1,4 +1,10 @@
-﻿namespace AvroSourceGenerator.Schemas;
+﻿using System.Text.Json;
 
-internal sealed record class PrimitiveSchema(SchemaType Type, string Name, string? Namespace)
-    : AvroSchema(Type, Name, Namespace);
+namespace AvroSourceGenerator.Schemas;
+
+internal sealed record class PrimitiveSchema(SchemaType Type, CSharpName CSharpName, SchemaName SchemaName)
+    : AvroSchema(Type, CSharpName, SchemaName)
+{
+    public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace) =>
+        writer.WriteStringValue(SchemaName.Name);
+}

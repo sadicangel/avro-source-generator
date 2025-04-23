@@ -1,11 +1,12 @@
 ﻿using System.Text;
+using Avro.Specific;
 
 namespace AvroSourceGenerator.IntegrationTests;
 
 public class KafkaRoundTripTests(DockerFixture dockerFixture)
 {
     // To avoid reference type comparison, use JSON.
-    private static void AssertEqual<T>(T expected, T actual) =>
+    private static void AssertEqual<T>(T expected, T actual) where T : ISpecificRecord =>
         Assert.Equal(expected, actual, new JsonEqualityComparer<T>());
 
     [Fact]
@@ -67,6 +68,33 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
             nullableStatus2 = null,
         };
         var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
+        AssertEqual(expected, actual);
+    }
+
+    [Fact]
+    public async Task Records_remain_unchanged_after_roundtrip_to_kafka()
+    {
+        var expected = new com.example.finance.TransactionEvent
+        {
+            Id = Guid.NewGuid(),
+            Amount = new Avro.AvroDecimal(123.45m),
+            Currency = "USD",
+            Timestamp = DateTime.UtcNow.Date + TimeSpan.FromMilliseconds((long)DateTime.UtcNow.TimeOfDay.TotalMilliseconds),
+            Status = com.example.finance.TransactionStatus.COMPLETED,
+            RecipientId = "123456",
+            Metadata = new Dictionary<string, string>
+            {
+                { "key1", "value1" },
+                { "key2", "value2" },
+            },
+            Signature = new com.example.finance.Signature(),
+            LegacyId = "abc123",
+        };
+
+        Random.Shared.NextBytes(expected.Signature.Value);
+
+        var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
+
         AssertEqual(expected, actual);
     }
 }

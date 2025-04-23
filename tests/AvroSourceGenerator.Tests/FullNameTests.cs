@@ -65,19 +65,59 @@ public sealed class FullNameTests
 
     [Fact]
     public Task Verify_FullName_Matches_Options() => TestHelper.VerifySourceCode("""
-        {
-            "type": "record",
-            "name": "SchemaNamespace.Example",
-            "fields": []
-        }
-        """,
-        """
-        using System;
-        using AvroSourceGenerator;
+    {
+        "type": "record",
+        "name": "SchemaNamespace.Example",
+        "fields": []
+    }
+    """,
+    """
+    using System;
+    using AvroSourceGenerator;
         
-        namespace SchemaNamespace;
+    namespace SchemaNamespace;
         
-        [Avro]
-        internal partial class Example;
-        """);
+    [Avro]
+    internal partial class Example;
+    """);
+
+    [Fact]
+    public Task Verify_FullName_Does_Not_Match_Options_Diagnostic() => TestHelper.VerifyDiagnostic("""
+    {
+        "type": "record",
+        "name": "AnotherNamespace.Example",
+        "fields": []
+    }
+    """,
+    """
+    using System;
+    using AvroSourceGenerator;
+        
+    namespace SchemaNamespace;
+        
+    [Avro]
+    internal partial class Example;
+    """);
+
+    [Fact]
+    public Task Verify_FullName_Reference() => TestHelper.VerifySourceCode("""
+    {
+        "type": "record",
+        "name": "Wrapper",
+        "fields": [
+            {
+                "name": "Field1",
+                "type": {
+                    "type": "record",
+                    "name": "This.Is.A.Full.Name",
+                    "fields": []
+                }
+            },
+            {
+                "name": "Field2",
+                "type": "This.Is.A.Full.Name"
+            }
+        ]
+    }
+    """);
 }

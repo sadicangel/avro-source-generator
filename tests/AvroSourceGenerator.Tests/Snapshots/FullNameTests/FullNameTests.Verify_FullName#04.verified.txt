@@ -12,7 +12,8 @@
         public required global::a.full.Name fullName { get; init; }
     
         public global::Avro.Schema Schema { get => Example._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        """
         {
           "type": "record",
           "name": "Example",
@@ -44,8 +45,8 @@
               "name": "fullName",
               "type": {
                 "type": "record",
-                "name": "a.full.Name",
-                "namespace": "ignored",
+                "name": "Name",
+                "namespace": "a.full",
                 "doc": "A name attribute with a full name, so the namespace attribute is ignored. The full name is \u0027a.full.Name\u0027, and the namespace is \u0027a.full\u0027.",
                 "fields": [
                   {
@@ -53,6 +54,7 @@
                     "type": {
                       "type": "enum",
                       "name": "Understanding",
+                      "namespace": "a.full",
                       "doc": "A simple name (attribute) and no namespace attribute: inherit the namespace of the enclosing type \u0027a.full.Name\u0027. The full name is \u0027a.full.Understanding\u0027.",
                       "symbols": [
                         "d",

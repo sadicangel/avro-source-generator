@@ -33,7 +33,7 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
         case {{ for.index }}:
             Set_{{ field.Name }}(this, {{ $expr }}); break;
             [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = {{ $"\"set_{ field.Name }\"" }})]
-            extern static void Set_{{ field.Name }}({{ $.schema.Name }} obj, {{ field.Type }} value);
+            extern static void Set_{{ field.Name }}({{ $.schema.CSharpName }} obj, {{ field.Type }} value);
         {{~ end ~}}
         default:
             throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
@@ -46,25 +46,25 @@ public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object
     {
         {{~ for field in $.schema.Fields ~}}
         {{~ $expr = !field.IsNullable ? $"({ field.Type }){ $fieldValue }" : $"{ $fieldValue } is null ? null : ({ field.UnderlyingType }){ $fieldValue }" ~}}
-        case {{ for.index }}: {{ $.schema.Name }}Reflection.Set_{{ field.Name }}(this, {{ $expr }}); break;
+        case {{ for.index }}: {{ $.schema.CSharpName.Name }}Reflection.Set_{{ field.Name }}(this, {{ $expr }}); break;
         {{~ end ~}}
         default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
     }
 }
 
-private static class {{ $.schema.Name }}Reflection
+private static class {{ $.schema.CSharpName.Name }}Reflection
 {
     {{~ for field in $.schema.Fields ~}}
-    public static readonly global::System.Action<{{ $.schema.Name }}, {{ field.Type }}> Set_{{ field.Name }} = CreateSetter<{{ field.Type }}>({{ field.Name | string.literal }});
+    public static readonly global::System.Action<{{ $.schema.CSharpName.Name }}, {{ field.Type }}> Set_{{ field.Name }} = CreateSetter<{{ field.Type }}>({{ field.Name | string.literal }});
     {{~ end ~}}
 
-    private static global::System.Action<{{ $.schema.Name }}, TProperty> CreateSetter<TProperty>(string propertyName)
+    private static global::System.Action<{{ $.schema.CSharpName.Name }}, TProperty> CreateSetter<TProperty>(string propertyName)
     {
-        var obj = global::System.Linq.Expressions.Expression.Parameter(typeof({{ $.schema.Name }}), "obj");
+        var obj = global::System.Linq.Expressions.Expression.Parameter(typeof({{ $.schema.CSharpName }}), "obj");
         var value = global::System.Linq.Expressions.Expression.Parameter(typeof(TProperty), "value");
-        var property = global::System.Linq.Expressions.Expression.Property(obj, typeof({{ $.schema.Name }}).GetProperty(propertyName){{~ UseNullableReferenceTypes ? '!' : '' ~}});
+        var property = global::System.Linq.Expressions.Expression.Property(obj, typeof({{ $.schema.CSharpName }}).GetProperty(propertyName){{~ UseNullableReferenceTypes ? '!' : '' ~}});
         var assign = global::System.Linq.Expressions.Expression.Assign(property, value);
-        var lambda = global::System.Linq.Expressions.Expression.Lambda<global::System.Action<{{ $.schema.Name }}, TProperty>>(assign, obj, value);
+        var lambda = global::System.Linq.Expressions.Expression.Lambda<global::System.Action<{{ $.schema.CSharpName }}, TProperty>>(assign, obj, value);
         return lambda.Compile();
     }
 }

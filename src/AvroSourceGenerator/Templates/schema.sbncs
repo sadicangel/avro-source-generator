@@ -5,8 +5,8 @@
 #nullable enable
 {{~ end ~}}
 {{~ end ~}}
-{{~ if !string.whitespace Schema.Namespace ~}}
-namespace {{ Schema.Namespace }}
+{{~ if !string.whitespace Schema.CSharpName.Namespace ~}}
+namespace {{ Schema.CSharpName.Namespace }}
 {
 {{~ end ~}}
     {{~ if !string.whitespace Schema.Documentation ~}}
@@ -32,7 +32,7 @@ namespace {{ Schema.Namespace }}
             include 'error' schema: Schema
         end
     }}
-{{~ if Schema.Namespace ~}}
+{{~ if Schema.CSharpName.Namespace ~}}
 }
 {{~ end ~}}
 {{~ if Schema.Type == 'Record' || Schema.Type == 'Error' ~}}

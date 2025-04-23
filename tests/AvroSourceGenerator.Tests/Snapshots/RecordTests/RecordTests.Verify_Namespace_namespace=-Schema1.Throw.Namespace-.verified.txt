@@ -8,7 +8,8 @@ namespace Schema1.Throw.Namespace
     {
     
         public global::Avro.Schema Schema { get => Record._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        """
         {
           "type": "record",
           "name": "Record",

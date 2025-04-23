@@ -3,9 +3,8 @@
 namespace AvroSourceGenerator.Tests;
 public class LogicalTests
 {
-    [Theory]
-    [InlineData("bytes", "4", "2"), InlineData("bytes", "4", "null"), InlineData("fixed", "4", "2"), InlineData("fixed", "4", "null")]
-    public Task Verify_Decimal(string type, string precision, string scale) => TestHelper.VerifySourceCode($$"""
+    [Fact]
+    public Task Verify_Decimal_Bytes() => TestHelper.VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -14,10 +13,10 @@ public class LogicalTests
             {
                 "name": "DecimalField",
                 "type": {
-                    "type": "{{type}}",
+                    "type": "bytes",
                     "logicalType": "decimal",
-                    "precision": {{precision}},
-                    "scale": {{scale}}
+                    "precision": 4,
+                    "scale": 2
                 }
             }
         ]
@@ -25,7 +24,29 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Uuid() => TestHelper.VerifySourceCode("""
+    public Task Verify_Decimal_Fixed() => TestHelper.VerifySourceCode("""
+    {
+        "type": "record",
+        "namespace": "SchemaNamespace",
+        "name": "Container",
+        "fields": [
+            {
+                "name": "DecimalField",
+                "type": {
+                    "type": "fixed",
+                    "name": "Decimal",
+                    "size": 20,
+                    "logicalType": "decimal",
+                    "precision": 4,
+                    "scale": 2
+                }
+            }
+        ]
+    }
+    """);
+
+    [Fact]
+    public Task Verify_Uuid_String() => TestHelper.VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -35,6 +56,26 @@ public class LogicalTests
                 "name": "UuidField",
                 "type": {
                     "type": "string",
+                    "logicalType": "uuid"
+                }
+            }
+        ]
+    }
+    """);
+
+    [Fact]
+    public Task Verify_Uuid_Fixed() => TestHelper.VerifySourceCode("""
+    {
+        "type": "record",
+        "namespace": "SchemaNamespace",
+        "name": "Container",
+        "fields": [
+            {
+                "name": "UuidField",
+                "type": {
+                    "type": "fixed",
+                    "name": "Uuid",
+                    "size": 16,
                     "logicalType": "uuid"
                 }
             }

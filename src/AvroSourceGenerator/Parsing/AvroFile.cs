@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Schemas;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
@@ -9,8 +10,7 @@ internal readonly record struct AvroFile(
     string Path,
     string? Text,
     JsonElement Json,
-    string? Name,
-    string? Namespace,
+    SchemaName SchemaName,
     ImmutableArray<Diagnostic> Diagnostics)
     : IEquatable<AvroFile>
 {

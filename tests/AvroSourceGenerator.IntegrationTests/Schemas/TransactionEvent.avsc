@@ -1,0 +1,59 @@
+{
+  "type": "record",
+  "name": "TransactionEvent",
+  "namespace": "com.example.finance",
+  "doc": "Represents a financial transaction between accounts.",
+  "fields": [
+    {
+      "name": "Id",
+      "type": { "type": "string", "logicalType": "uuid" },
+      "doc": "Unique identifier for the transaction."
+    },
+    {
+      "name": "Amount",
+      "type": { "type": "bytes", "logicalType": "decimal", "precision": 10, "scale": 2 },
+      "doc": "Transaction amount in the specified currency."
+    },
+    {
+      "name": "Currency",
+      "type": "string",
+      "doc": "ISO 4217 currency code (e.g., USD, EUR).",
+      "default": "USD"
+    },
+    {
+      "name": "Timestamp",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "Timestamp of when the transaction occurred."
+    },
+    {
+      "name": "Status",
+      "type": { "type": "enum", "name": "TransactionStatus", "symbols": ["PENDING", "COMPLETED", "FAILED"] },
+      "doc": "Current status of the transaction.",
+      "default": "PENDING"
+    },
+    {
+      "name": "RecipientId",
+      "type": ["null", "string"],
+      "doc": "Optional recipient account ID for peer-to-peer transfers.",
+      "default": null
+    },
+    {
+      "name": "Metadata",
+      "type": { "type": "map", "values": "string" },
+      "doc": "Additional metadata associated with the transaction.",
+      "default": {}
+    },
+    {
+      "name": "Signature",
+      "type": { "type": "fixed", "size": 64, "name": "Signature" },
+      "doc": "Cryptographic signature to verify transaction authenticity."
+    },
+    {
+      "name": "LegacyId",
+      "type": ["null", "string"],
+      "aliases": ["old_transaction_id", "previous_id"],
+      "doc": "Legacy identifier for backward compatibility.",
+      "default": null
+    }
+  ]
+}

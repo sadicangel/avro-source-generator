@@ -6,8 +6,8 @@ namespace AvroSourceGenerator.Schemas;
 internal abstract record class NamedSchema(
     SchemaType Type,
     JsonElement Json,
-    string Name,
-    string? Namespace,
+    SchemaName SchemaName,
     string? Documentation,
-    ImmutableArray<string> Aliases)
-    : AvroSchema(Type, Name, Namespace);
+    ImmutableArray<string> Aliases,
+    ImmutableSortedDictionary<string, JsonElement> Properties)
+    : AvroSchema(Type, CSharpName.FromSchemaName(SchemaName), SchemaName);

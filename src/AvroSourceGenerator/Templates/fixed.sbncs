@@ -1,11 +1,10 @@
-{{ AccessModifier }} partial class {{ $.schema.Name }} : global::Avro.Specific.SpecificFixed
+{{ AccessModifier }} partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificFixed
 {
-    public {{ $.schema.Name }}() : base({{ $.schema.Size }}) { }
+    public {{ $.schema.CSharpName.Name }}() : base({{ $.schema.Size }}) { }
 
     public uint Size { get => (uint)Value.Length; }
 
-    public override global::Avro.Schema Schema { get => {{ $.schema.Name }}._SCHEMA; }
-    public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse({{ UseRawStringLiterals ? '"""' : '' }}
-    {{ $.schema.Json | text }}
-    {{ UseRawStringLiterals ? '"""' : '' }});
+    public override global::Avro.Schema Schema { get => {{ $.schema.CSharpName.Name }}._SCHEMA; }
+    public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+    {{ $.schema | json }});
 }

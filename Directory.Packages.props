@@ -31,7 +31,6 @@
     <PackageVersion Include="System.CodeDom" Version="9.0.4" />
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
-    <PackageVersion Include="Testcontainers" Version="4.3.0" />
     <PackageVersion Include="Testcontainers" Version="4.4.0" />
     <PackageVersion Include="Verify.DiffPlex" Version="3.1.2" />
     <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0" />

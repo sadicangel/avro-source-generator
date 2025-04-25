@@ -1,7 +1,6 @@
 {
   "type": "record",
   "name": "TransactionEvent",
-  "namespace": "com.example.finance",
   "doc": "Represents a financial transaction between accounts.",
   "fields": [
     {

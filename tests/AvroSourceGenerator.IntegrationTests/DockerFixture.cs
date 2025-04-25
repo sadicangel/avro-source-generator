@@ -8,8 +8,6 @@ using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
 
-[assembly: AssemblyFixture(typeof(DockerFixture))]
-
 namespace AvroSourceGenerator.IntegrationTests;
 
 public sealed class DockerFixture : IAsyncLifetime

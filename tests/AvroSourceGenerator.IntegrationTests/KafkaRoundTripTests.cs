@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Avro.Specific;
+using AvroSourceGenerator.IntegrationTests.Schemas;
 
 namespace AvroSourceGenerator.IntegrationTests;
 
@@ -8,6 +9,10 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
     // To avoid reference type comparison, use JSON.
     private static void AssertEqual<T>(T expected, T actual) where T : ISpecificRecord =>
         Assert.Equal(expected, actual, new JsonEqualityComparer<T>());
+
+    // Avoid precision loss when converting to underlying type.
+    private static DateTime FixPrecisionLoss(DateTime dateTime) =>
+        dateTime.Date + TimeSpan.FromMilliseconds((long)dateTime.TimeOfDay.TotalMilliseconds);
 
     [Fact]
     public async Task Primitives_remain_unchanged_after_roundtrip_to_kafka()
@@ -79,7 +84,7 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
             Id = Guid.NewGuid(),
             Amount = new Avro.AvroDecimal(123.45m),
             Currency = "USD",
-            Timestamp = DateTime.UtcNow.Date + TimeSpan.FromMilliseconds((long)DateTime.UtcNow.TimeOfDay.TotalMilliseconds),
+            Timestamp = FixPrecisionLoss(DateTime.UtcNow),
             Status = TransactionStatus.COMPLETED,
             RecipientId = "123456",
             Metadata = new Dictionary<string, string>
@@ -92,6 +97,30 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
         };
 
         Random.Shared.NextBytes(expected.Signature.Value);
+
+        var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
+
+        AssertEqual(expected, actual);
+    }
+
+    [Fact]
+    public async Task Logical_types_remain_unchanged_after_roundtrip_to_kafka()
+    {
+        var expected = new LogicalTypes
+        {
+            birthDate = new DateOnly(1990, 1, 1).ToDateTime(default, DateTimeKind.Utc),
+            price = new Avro.AvroDecimal(99.99m),
+            //taxRate = new Avro.AvroDecimal(0.15m),
+            //subscriptionPeriod = new SubscriptionDuration { Months = 1, Days = 2, Milliseconds = 43200000 },
+            checkInTime = TimeSpan.FromHours(9),
+            preciseCheckInTime = TimeSpan.FromMicroseconds(10000),
+            createdAt = FixPrecisionLoss(DateTime.UtcNow),
+            updatedAt = FixPrecisionLoss(DateTime.UtcNow),
+            localPublishedTime = FixPrecisionLoss(DateTime.Now),
+            localEditedTime = FixPrecisionLoss(DateTime.Now),
+            sessionId = Guid.NewGuid(),
+            //paymentTransaction = Guid.NewGuid(),
+        };
 
         var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
 

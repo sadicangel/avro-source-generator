@@ -1,6 +1,7 @@
 {
   "type": "record",
   "name": "Enums",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
   "fields": [
     {
       "name": "status",

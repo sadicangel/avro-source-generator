@@ -18,7 +18,7 @@ public sealed class DockerFixture : IAsyncLifetime
     public DockerFixture()
     {
         Network = new NetworkBuilder()
-            .WithName("avro-source-generator")
+            .WithName(Guid.NewGuid().ToString())
             .Build();
 
         Kafka = new ContainerBuilder()

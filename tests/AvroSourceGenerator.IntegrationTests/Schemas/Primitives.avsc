@@ -1,6 +1,7 @@
 {
   "type": "record",
   "name": "Primitives",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
   "fields": [
     {
       "name": "intField",

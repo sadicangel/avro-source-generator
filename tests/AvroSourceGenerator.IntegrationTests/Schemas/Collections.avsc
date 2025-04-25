@@ -1,6 +1,7 @@
 {
   "type": "record",
   "name": "Collections",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
   "fields": [
     {
       "name": "stringList",

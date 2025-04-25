@@ -77,7 +77,7 @@ public sealed class DockerFixture : IAsyncLifetime
     {
         var config = new SchemaRegistryConfig
         {
-            Url = $"http://localhost:{SchemaRegistry.GetMappedPublicPort(8081)}",
+            Url = $"{SchemaRegistry.Hostname}:{SchemaRegistry.GetMappedPublicPort(8081)}",
         };
         configure?.Invoke(config);
         return new CachedSchemaRegistryClient(config);
@@ -87,7 +87,7 @@ public sealed class DockerFixture : IAsyncLifetime
     {
         var config = new ProducerConfig
         {
-            BootstrapServers = $"localhost:{Kafka.GetMappedPublicPort(9092)}",
+            BootstrapServers = $"{Kafka.Hostname}:{Kafka.GetMappedPublicPort(9092)}",
             MessageTimeoutMs = 10000
         };
         configure?.Invoke(config);
@@ -100,7 +100,7 @@ public sealed class DockerFixture : IAsyncLifetime
     {
         var config = new ConsumerConfig
         {
-            BootstrapServers = $"localhost:{Kafka.GetMappedPublicPort(9092)}",
+            BootstrapServers = $"{Kafka.Hostname}:{Kafka.GetMappedPublicPort(9092)}",
             GroupId = Guid.NewGuid().ToString(),
             AutoOffsetReset = AutoOffsetReset.Earliest,
         };
@@ -168,4 +168,3 @@ public sealed class DockerFixture : IAsyncLifetime
         return message;
     }
 }
-

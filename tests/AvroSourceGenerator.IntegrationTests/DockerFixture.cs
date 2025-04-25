@@ -1,5 +1,4 @@
 ﻿using Avro.Specific;
-using AvroSourceGenerator.IntegrationTests;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
@@ -8,15 +7,12 @@ using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
 
-[assembly: AssemblyFixture(typeof(DockerFixture))]
-
 namespace AvroSourceGenerator.IntegrationTests;
 
 public sealed class DockerFixture : IAsyncLifetime
 {
     public INetwork Network { get; }
     public IContainer Kafka { get; }
-    public IContainer Zookeeper { get; }
     public IContainer SchemaRegistry { get; }
 
     public DockerFixture()
@@ -26,56 +22,48 @@ public sealed class DockerFixture : IAsyncLifetime
             .Build();
 
         Kafka = new ContainerBuilder()
-            .WithImage("confluentinc/cp-kafka:latest")
-            .WithName("broker2")
+            .WithImage("confluentinc/cp-kafka:7.6.1")
+            .WithName("kraft-kafka")
             .WithPortBinding(9092)
-            .WithNetworkAliases("broker2")
+            .WithNetworkAliases("kraft-kafka")
             .WithNetwork(Network)
             .WithEnvironment(new Dictionary<string, string>
             {
-                ["KAFKA_BROKER_ID"] = "1",
-                ["KAFKA_ZOOKEEPER_CONNECT"] = "zookeeper:2181",
-                ["KAFKA_LISTENER_SECURITY_PROTOCOL_MAP"] = "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT",
-                ["KAFKA_INTER_BROKER_LISTENER_NAME"] = "PLAINTEXT",
-                ["KAFKA_ADVERTISED_LISTENERS"] = "PLAINTEXT://broker2:29092,PLAINTEXT_HOST://localhost:9092",
-                ["KAFKA_AUTO_CREATE_TOPICS_ENABLE"] = "true",
+                ["KAFKA_NODE_ID"] = "1",
+                ["KAFKA_LISTENER_SECURITY_PROTOCOL_MAP"] = "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT",
+                ["KAFKA_LISTENERS"] = "PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093",
+                ["KAFKA_ADVERTISED_LISTENERS"] = "PLAINTEXT://kraft-kafka:29092,PLAINTEXT_HOST://localhost:9092",
+                ["KAFKA_PROCESS_ROLES"] = "broker,controller",
                 ["KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR"] = "1",
-                ["KAFKA_TRANSACTION_STATE_LOG_MIN_ISR"] = "1",
-                ["KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR"] = "1",
-                ["KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS"] = "100",
+                ["KAFKA_CONTROLLER_QUORUM_VOTERS"] = "1@kraft-kafka:9093",
+                ["KAFKA_INTER_BROKER_LISTENER_NAME"] = "PLAINTEXT",
+                ["KAFKA_CONTROLLER_LISTENER_NAMES"] = "CONTROLLER",
+                ["CLUSTER_ID"] = "MkU3OEVBNTcwNTJENDM2Qk"
             })
-            .Build();
-
-        Zookeeper = new ContainerBuilder()
-            .WithImage("confluentinc/cp-zookeeper:latest")
-            .WithName("zookeeper")
-            .WithExposedPort(2181)
-            .WithNetworkAliases("zookeeper")
-            .WithNetwork(Network)
-            .WithEnvironment("ZOOKEEPER_CLIENT_PORT", "2181")
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(29092))
             .Build();
 
         SchemaRegistry = new ContainerBuilder()
-            .WithImage("confluentinc/cp-schema-registry:latest")
+            .WithImage("confluentinc/cp-schema-registry:7.6.0")
             .WithName("schema-registry")
-            .WithExposedPort(8081)
-            .WithPortBinding(8081, true)
+            .WithPortBinding(8081)
             .WithNetworkAliases("schema-registry")
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(8081))
             .WithNetwork(Network)
             .WithEnvironment(new Dictionary<string, string>
             {
-                ["SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS"] = "broker2:29092",
+                ["SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS"] = "kraft-kafka:29092",
                 ["SCHEMA_REGISTRY_HOST_NAME"] = "schema-registry",
                 ["SCHEMA_REGISTRY_HOST_LISTENERS"] = "http://0.0.0.0:8081",
+                ["SCHEMA_REGISTRY_DEBUG"] = "true",
             })
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(8081))
             .Build();
+
     }
 
     public async ValueTask InitializeAsync()
     {
         await Network.CreateAsync(TestContext.Current.CancellationToken);
-        await Zookeeper.StartAsync(TestContext.Current.CancellationToken);
         await Kafka.StartAsync(TestContext.Current.CancellationToken);
         await SchemaRegistry.StartAsync(TestContext.Current.CancellationToken);
     }
@@ -83,7 +71,6 @@ public sealed class DockerFixture : IAsyncLifetime
     public async ValueTask DisposeAsync() => await Task.WhenAll(
         SchemaRegistry.StopAsync(TestContext.Current.CancellationToken),
         Kafka.StopAsync(TestContext.Current.CancellationToken),
-        Zookeeper.StopAsync(TestContext.Current.CancellationToken),
         Network.DeleteAsync(TestContext.Current.CancellationToken));
 
     public ISchemaRegistryClient CreateSchemaRegistryClient(Action<SchemaRegistryConfig>? configure = null)
@@ -101,6 +88,7 @@ public sealed class DockerFixture : IAsyncLifetime
         var config = new ProducerConfig
         {
             BootstrapServers = $"{Kafka.Hostname}:{Kafka.GetMappedPublicPort(9092)}",
+            MessageTimeoutMs = 10000
         };
         configure?.Invoke(config);
         return new ProducerBuilder<string, T>(config)
@@ -122,14 +110,38 @@ public sealed class DockerFixture : IAsyncLifetime
             .Build();
     }
 
+    public async Task CreateTopicAsync(string topicName, int partitionCount = 1, int replicationFactor = 1, CancellationToken cancellationToken = default)
+    {
+        var createTopicResult = await Kafka.ExecAsync([
+            "kafka-topics", "--create",
+            "--topic", topicName,
+            "--partitions", partitionCount.ToString(),
+            "--replication-factor", replicationFactor.ToString(),
+            "--bootstrap-server", "0.0.0.0:9092"],
+            cancellationToken);
+
+        if (!string.IsNullOrEmpty(createTopicResult.Stderr))
+            throw new InvalidOperationException($"Failed to create topic '{topicName}': {createTopicResult.Stderr}");
+    }
+
+    public async Task DeleteTopicAsync(string topicName, CancellationToken cancellationToken = default)
+    {
+        var deleteTopicResult = await Kafka.ExecAsync([
+            "kafka-topics", "--delete",
+            "--topic", topicName,
+            "--bootstrap-server", "0.0.0.0:9092"]
+            , cancellationToken);
+
+        if (!string.IsNullOrEmpty(deleteTopicResult.Stderr))
+            throw new InvalidOperationException($"Failed to delete topic '{topicName}': {deleteTopicResult.Stderr}");
+    }
+
     public async Task<T> RoundtripAsync<T>(T message, CancellationToken cancellationToken = default)
         where T : class, ISpecificRecord
     {
         var topicName = Guid.NewGuid().ToString();
 
-        var createTopicResult = await Kafka.ExecAsync(["kafka-topics", "--create", "--topic", topicName, "--partitions", "1", "--replication-factor", "1", "--bootstrap-server", "localhost:9092"], cancellationToken);
-        if (!string.IsNullOrEmpty(createTopicResult.Stderr))
-            throw new InvalidOperationException($"Failed to create topic: {createTopicResult.Stderr}");
+        await CreateTopicAsync(topicName, cancellationToken: cancellationToken);
 
         using var registry = CreateSchemaRegistryClient();
         using var producer = CreateProducer<T>(registry);
@@ -143,18 +155,15 @@ public sealed class DockerFixture : IAsyncLifetime
                 Value = message,
             },
             cancellationToken);
+
         if (deliveryResult.Status != PersistenceStatus.Persisted)
             throw new InvalidOperationException($"Failed to produce message: {deliveryResult.Status}");
 
         consumer.Subscribe(topicName);
-        message = consumer.Consume(TimeSpan.FromSeconds(5))?.Message?.Value
+        message = consumer.Consume(TimeSpan.FromSeconds(10))?.Message?.Value
             ?? throw new InvalidOperationException("Failed to consume message");
 
-        var deleteTopicResult = await Kafka.ExecAsync(["kafka-topics", "--delete", "--topic", topicName, "--bootstrap-server", "localhost:9092"], cancellationToken);
-        if (!string.IsNullOrEmpty(deleteTopicResult.Stderr))
-        {
-            throw new InvalidOperationException($"Failed to delete topic: {deleteTopicResult.Stderr}");
-        }
+        await DeleteTopicAsync(topicName, cancellationToken: cancellationToken);
 
         return message;
     }

@@ -6,7 +6,7 @@
     <PackageVersion Include="Apache.Avro" Version="1.12.0" />
     <PackageVersion Include="AutoFixture" Version="4.18.1" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
-    <PackageVersion Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.9.0" />
+    <PackageVersion Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.10.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="F0.CodeAnalysis.CSharp.IncrementalGenerator.Benchmarking" Version="0.3.0" />
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.4" />
@@ -31,7 +31,7 @@
     <PackageVersion Include="System.CodeDom" Version="9.0.4" />
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
-    <PackageVersion Include="Testcontainers" Version="4.3.0" />
+    <PackageVersion Include="Testcontainers" Version="4.4.0" />
     <PackageVersion Include="Verify.DiffPlex" Version="3.1.2" />
     <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0" />
     <PackageVersion Include="Verify.XunitV3" Version="29.2.0" />

@@ -1,0 +1,81 @@
+{
+  "type": "record",
+  "name": "LogicalTypes",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
+  "fields": [
+    {
+      "name": "birthDate",
+      "type": {
+        "type": "int",
+        "logicalType": "date"
+      },
+      "doc": "Represents a calendar date without a time (e.g., YYYY-MM-DD)."
+    },
+    {
+      "name": "price",
+      "type": {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 10,
+        "scale": 2
+      },
+      "doc": "Monetary value with two decimal places."
+    },
+    {
+      "name": "checkInTime",
+      "type": {
+        "type": "int",
+        "logicalType": "time-millis"
+      },
+      "doc": "Time of day represented in milliseconds since midnight."
+    },
+    {
+      "name": "preciseCheckInTime",
+      "type": {
+        "type": "long",
+        "logicalType": "time-micros"
+      },
+      "doc": "Time of day in microseconds since midnight."
+    },
+    {
+      "name": "createdAt",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Date and time since epoch (1970-01-01T00:00:00Z) in milliseconds."
+    },
+    {
+      "name": "updatedAt",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-micros"
+      },
+      "doc": "Date and time in microseconds since epoch."
+    },
+    {
+      "name": "localPublishedTime",
+      "type": {
+        "type": "long",
+        "logicalType": "local-timestamp-millis"
+      },
+      "doc": "Local timestamp (no time zone) in milliseconds."
+    },
+    {
+      "name": "localEditedTime",
+      "type": {
+        "type": "long",
+        "logicalType": "local-timestamp-micros"
+      },
+      "doc": "Local timestamp in microseconds with no time zone."
+    },
+    {
+      "name": "sessionId",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      },
+      "doc": "Universally unique identifier in standard 36-char format."
+    }
+  ]
+}

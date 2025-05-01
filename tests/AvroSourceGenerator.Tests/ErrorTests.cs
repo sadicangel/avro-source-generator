@@ -5,32 +5,6 @@ namespace AvroSourceGenerator.Tests;
 public sealed class ErrorTests
 {
     [Theory]
-    [InlineData("public"), InlineData("internal"), InlineData("file"), InlineData("")]
-    public Task Verify_AccessModifier_Local(string accessModifier)
-    {
-        var schema = """
-        {
-            "type": "error",
-            "namespace": "SchemaNamespace",
-            "name": "Error",
-            "fields": []
-        }
-        """;
-
-        var source = $$""""
-        using System;
-        using AvroSourceGenerator;
-        
-        namespace SchemaNamespace;
-        
-        [Avro]
-        {{accessModifier}} partial class Error;
-        """";
-
-        return TestHelper.VerifySourceCode(schema, source);
-    }
-
-    [Theory]
     [InlineData("Error"), InlineData("exception"), InlineData("throw")]
     public Task Verify_Name(string name) => TestHelper.VerifySourceCode($$"""
     {

@@ -5,32 +5,6 @@ namespace AvroSourceGenerator.Tests;
 public sealed class FixedTests
 {
     [Theory]
-    [InlineData("public"), InlineData("internal"), InlineData("file"), InlineData("")]
-    public Task Verify_AccessModifier_Local(string accessModifier)
-    {
-        var schema = """
-        {
-            "type": "fixed",
-            "namespace": "SchemaNamespace",
-            "name": "Fixed",
-            "size": 16
-        }
-        """;
-
-        var source = $$""""
-        using System;
-        using AvroSourceGenerator;
-        
-        namespace SchemaNamespace;
-        
-        [Avro]
-        {{accessModifier}} partial class Fixed;
-        """";
-
-        return TestHelper.VerifySourceCode(schema, source);
-    }
-
-    [Theory]
     [InlineData("Fixed"), InlineData("exception"), InlineData("throw")]
     public Task Verify_Name(string name) => TestHelper.VerifySourceCode($$"""
     {

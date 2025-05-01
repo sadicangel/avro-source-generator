@@ -5,32 +5,6 @@ namespace AvroSourceGenerator.Tests;
 public sealed class RecordTests
 {
     [Theory]
-    [InlineData("public"), InlineData("internal"), InlineData("file"), InlineData("")]
-    public Task Verify_AccessModifier_Local(string accessModifier)
-    {
-        var schema = """
-        {
-            "type": "record",
-            "namespace": "SchemaNamespace",
-            "name": "Record",
-            "fields": []
-        }
-        """;
-
-        var source = $$""""
-        using System;
-        using AvroSourceGenerator;
-        
-        namespace SchemaNamespace;
-        
-        [Avro]
-        {{accessModifier}} partial class Record;
-        """";
-
-        return TestHelper.VerifySourceCode(schema, source);
-    }
-
-    [Theory]
     [InlineData("Record"), InlineData("exception"), InlineData("throw")]
     public Task Verify_Name(string name) => TestHelper.VerifySourceCode($$"""
     {

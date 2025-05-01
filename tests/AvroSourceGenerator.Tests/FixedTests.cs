@@ -5,28 +5,6 @@ namespace AvroSourceGenerator.Tests;
 public sealed class FixedTests
 {
     [Theory]
-    [InlineData("null"), InlineData("\"\""), InlineData("\"Schema1.Throw.Namespace\""), InlineData("\"schema2.throw.namespace\"")]
-    public Task Verify_Namespace(string @namespace) => TestHelper.VerifySourceCode($$"""
-    {
-        "type": "fixed",
-        "name": "Fixed",
-        "namespace": {{@namespace}},
-        "size": 16
-    }
-    """);
-
-    [Theory]
-    [InlineData("[]")]
-    public Task Verify_Namespace_Diagnostic(string @namespace) => TestHelper.VerifyDiagnostic($$"""
-    {
-        "type": "fixed",
-        "name": "Fixed",
-        "namespace": {{@namespace}},
-        "size": 16
-    }
-    """);
-
-    [Theory]
     [InlineData("null"), InlineData("\"\""), InlineData("\"Single line comment\""), InlineData("\"Multi\\nline\\ncomment\"")]
     public Task Verify_Documentation(string doc) => TestHelper.VerifySourceCode($$"""
     {

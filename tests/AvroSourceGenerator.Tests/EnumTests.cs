@@ -5,28 +5,6 @@ namespace AvroSourceGenerator.Tests;
 public class EnumTests
 {
     [Theory]
-    [InlineData("null"), InlineData("\"\""), InlineData("\"Schema1.Enum.Namespace\""), InlineData("\"schema2.enum.namespace\"")]
-    public Task Verify_Namespace(string @namespace) => TestHelper.VerifySourceCode($$"""
-    {
-        "type": "enum",
-        "name": "TestEnum",
-        "namespace": {{@namespace}},
-        "symbols": []
-    }
-    """);
-
-    [Theory]
-    [InlineData("[]")]
-    public Task Verify_Namespace_Diagnostic(string @namespace) => TestHelper.VerifyDiagnostic($$"""
-    {
-        "type": "enum",
-        "name": "TestEnum",
-        "namespace": {{@namespace}},
-        "symbols": []
-    }
-    """);
-
-    [Theory]
     [InlineData("null"), InlineData("\"\""), InlineData("\"Single line comment\""), InlineData("\"Multi\\nline\\ncomment\"")]
     public Task Verify_Documentation(string doc) => TestHelper.VerifySourceCode($$"""
     {

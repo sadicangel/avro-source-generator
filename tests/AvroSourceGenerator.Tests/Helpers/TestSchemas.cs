@@ -50,10 +50,10 @@ public static class TestSchemas
     public static JsonNode Fixed => Get("fixed");
     public static JsonNode Record => Get("record");
 
-    public static JsonNode With(this JsonNode @this, string propertyName, JsonNode value)
+    public static JsonNode With(this JsonNode @this, string propertyName, JsonNode propertyValue)
     {
         var clone = @this.DeepClone();
-        clone[propertyName] = value;
+        clone[propertyName] = propertyValue;
         return clone;
     }
 }

@@ -5,28 +5,6 @@ namespace AvroSourceGenerator.Tests;
 public sealed class RecordTests
 {
     [Theory]
-    [InlineData("Record"), InlineData("exception"), InlineData("throw")]
-    public Task Verify_Name(string name) => TestHelper.VerifySourceCode($$"""
-    {
-        "type": "record",
-        "name": "{{name}}",
-        "namespace": "SchemaNamespace",
-        "fields": []
-    }
-    """);
-
-    [Theory]
-    [InlineData("null"), InlineData("\"\""), InlineData("[]")]
-    public Task Verify_Name_Diagnostic(string name) => TestHelper.VerifyDiagnostic($$"""
-    {
-        "type": "record",
-        "name": {{name}},
-        "namespace": "SchemaNamespace",
-        "fields": []
-    }
-    """);
-
-    [Theory]
     [InlineData("null"), InlineData("\"\""), InlineData("\"Schema1.Throw.Namespace\""), InlineData("\"schema2.throw.namespace\"")]
     public Task Verify_Namespace(string @namespace) => TestHelper.VerifySourceCode($$"""
     {

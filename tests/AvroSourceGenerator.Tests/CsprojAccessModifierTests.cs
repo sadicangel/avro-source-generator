@@ -7,7 +7,7 @@ public sealed class CsprojAccessModifierTests
     [MemberData(nameof(AccessModifierSchemaPairs))]
     public Task Verify(string accessModifier, string schemaType)
     {
-        var schema = s_schemas[schemaType];
+        var schema = TestSchemas.Get(schemaType).ToString();
 
         var config = ProjectConfig.Default with
         {
@@ -23,43 +23,4 @@ public sealed class CsprojAccessModifierTests
     public static MatrixTheoryData<string, string> AccessModifierSchemaPairs() => new(
         ["public", "internal", "invalid"],
         ["enum", "error", "fixed", "record"]);
-
-    private static readonly Dictionary<string, string> s_schemas = new()
-    {
-        ["enum"] = """
-        {
-            "type": "enum",
-            "name": "Enum",
-            "namespace": "SchemaNamespace",
-            "symbols": []
-        }
-        """,
-
-        ["error"] = """
-        {
-            "type": "error",
-            "namespace": "SchemaNamespace",
-            "name": "Error",
-            "fields": []
-        }
-        """,
-
-        ["fixed"] = """
-        {
-            "type": "fixed",
-            "namespace": "SchemaNamespace",
-            "name": "Fixed",
-            "size": 16
-        }
-        """,
-
-        ["record"] = """
-        {
-            "type": "record",
-            "namespace": "SchemaNamespace",
-            "name": "Record",
-            "fields": []
-        }
-        """
-    };
 }

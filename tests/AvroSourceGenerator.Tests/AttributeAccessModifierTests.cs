@@ -8,7 +8,7 @@ public sealed class AttributeAccessModifierTests
     [MemberData(nameof(AccessModifierSchemaPairs))]
     public Task Verify(string accessModifier, string schemaType)
     {
-        var schema = s_schemas[schemaType];
+        var schema = TestSchemas.Get(schemaType).ToString();
 
         var source = s_sources[schemaType].Replace("$accessModifier$", accessModifier);
 
@@ -18,36 +18,6 @@ public sealed class AttributeAccessModifierTests
     public static MatrixTheoryData<string, string> AccessModifierSchemaPairs() => new(
         ["", "public", "internal", "file"],
         ["error", "fixed", "record"]);
-
-    private static readonly Dictionary<string, string> s_schemas = new()
-    {
-        ["error"] = """
-        {
-            "type": "error",
-            "namespace": "SchemaNamespace",
-            "name": "Error",
-            "fields": []
-        }
-        """,
-
-        ["fixed"] = """
-        {
-            "type": "fixed",
-            "namespace": "SchemaNamespace",
-            "name": "Fixed",
-            "size": 16
-        }
-        """,
-
-        ["record"] = """
-        {
-            "type": "record",
-            "namespace": "SchemaNamespace",
-            "name": "Record",
-            "fields": []
-        }
-        """
-    };
 
     private static readonly Dictionary<string, string> s_sources = new()
     {

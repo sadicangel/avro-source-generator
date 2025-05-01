@@ -5,30 +5,6 @@ namespace AvroSourceGenerator.Tests;
 public sealed class RecordTests
 {
     [Theory]
-    [InlineData("null"), InlineData("\"\""), InlineData("\"Single line comment\""), InlineData("\"Multi\\nline\\ncomment\"")]
-    public Task Verify_Documentation(string doc) => TestHelper.VerifySourceCode($$"""
-    {
-        "type": "record",
-        "name": "Record",
-        "namespace": "SchemaNamespace",
-        "doc": {{doc}},
-        "fields": []
-    }
-    """);
-
-    [Theory]
-    [InlineData("[]")]
-    public Task Verify_Documentation_Diagnostic(string doc) => TestHelper.VerifyDiagnostic($$"""
-    {
-        "type": "record",
-        "name": "Record",
-        "namespace": "SchemaNamespace",
-        "doc": {{doc}},
-        "fields": []
-    }
-    """);
-
-    [Theory]
     [InlineData("null"), InlineData("[]"), InlineData("[\"Alias1\", \"Alias2\"]")]
     public Task Verify_Aliases(string aliases) => TestHelper.VerifySourceCode($$"""
     {

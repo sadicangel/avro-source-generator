@@ -5,30 +5,6 @@ namespace AvroSourceGenerator.Tests;
 public sealed class FixedTests
 {
     [Theory]
-    [InlineData("null"), InlineData("[]"), InlineData("[\"Alias1\", \"Alias2\"]")]
-    public Task Verify_Aliases(string aliases) => TestHelper.VerifySourceCode($$"""
-    {
-        "type": "fixed",
-        "name": "Fixed",
-        "namespace": "SchemaNamespace",
-        "aliases": {{aliases}},
-        "size": 16
-    }
-    """);
-
-    [Theory]
-    [InlineData("{}")]
-    public Task Verify_Aliases_Diagnostic(string aliases) => TestHelper.VerifyDiagnostic($$"""
-    {
-        "type": "fixed",
-        "name": "Fixed",
-        "namespace": "SchemaNamespace",
-        "aliases": {{aliases}},
-        "size": 16
-    }
-    """);
-
-    [Theory]
     [InlineData("16")]
     public Task Verify_Size(string size) => TestHelper.VerifySourceCode($$"""
     {

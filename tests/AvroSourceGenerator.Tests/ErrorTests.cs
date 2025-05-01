@@ -5,30 +5,6 @@ namespace AvroSourceGenerator.Tests;
 public sealed class ErrorTests
 {
     [Theory]
-    [InlineData("null"), InlineData("[]"), InlineData("[\"Alias1\", \"Alias2\"]")]
-    public Task Verify_Aliases(string aliases) => TestHelper.VerifySourceCode($$"""
-    {
-        "type": "error",
-        "name": "Error",
-        "namespace": "SchemaNamespace",
-        "aliases": {{aliases}},
-        "fields": []
-    }
-    """);
-
-    [Theory]
-    [InlineData("{}")]
-    public Task Verify_Aliases_Diagnostic(string aliases) => TestHelper.VerifyDiagnostic($$"""
-    {
-        "type": "error",
-        "name": "Error",
-        "namespace": "SchemaNamespace",
-        "aliases": {{aliases}},
-        "fields": []
-    }
-    """);
-
-    [Theory]
     [InlineData("null"), InlineData("{}")]
     public Task Verify_Fields_Diagnostic(string fields) => TestHelper.VerifyDiagnostic($$""""
     {

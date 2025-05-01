@@ -56,4 +56,11 @@ public static class TestSchemas
         clone[propertyName] = propertyValue;
         return clone;
     }
+
+    public static JsonNode With(this JsonNode @this, string propertyName, IEnumerable<object> propertyValue)
+    {
+        var clone = @this.DeepClone();
+        clone[propertyName] = propertyValue is null ? null : new JsonArray([.. propertyValue.Select(x => (JsonNode)(dynamic)x)]);
+        return clone;
+    }
 }

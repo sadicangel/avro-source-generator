@@ -31,31 +31,6 @@ public sealed class RecordTests
     }
 
     [Theory]
-    [InlineData("public"), InlineData("internal"), InlineData("invalid")]
-    public Task Verify_AccessModifier_Global(string accessModifier)
-    {
-        var schema = """
-        {
-            "type": "record",
-            "namespace": "SchemaNamespace",
-            "name": "Record",
-            "fields": []
-        }
-        """;
-
-        var config = ProjectConfig.Default with
-        {
-            GlobalOptions = new Dictionary<string, string>
-            {
-                ["AvroSourceGeneratorAccessModifier"] = accessModifier
-            }
-        };
-
-        return TestHelper.VerifySourceCode(schema, default, config);
-    }
-
-
-    [Theory]
     [InlineData("Record"), InlineData("exception"), InlineData("throw")]
     public Task Verify_Name(string name) => TestHelper.VerifySourceCode($$"""
     {

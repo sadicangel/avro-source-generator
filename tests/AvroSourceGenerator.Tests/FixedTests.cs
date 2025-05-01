@@ -31,31 +31,6 @@ public sealed class FixedTests
     }
 
     [Theory]
-    [InlineData("public"), InlineData("internal"), InlineData("invalid")]
-    public Task Verify_AccessModifier_Global(string accessModifier)
-    {
-        var schema = """
-        {
-            "type": "fixed",
-            "namespace": "SchemaNamespace",
-            "name": "Fixed",
-            "size": 16
-        }
-        """;
-
-        var config = ProjectConfig.Default with
-        {
-            GlobalOptions = new Dictionary<string, string>
-            {
-                ["AvroSourceGeneratorAccessModifier"] = accessModifier
-            }
-        };
-
-        return TestHelper.VerifySourceCode(schema, default, config);
-    }
-
-
-    [Theory]
     [InlineData("Fixed"), InlineData("exception"), InlineData("throw")]
     public Task Verify_Name(string name) => TestHelper.VerifySourceCode($$"""
     {

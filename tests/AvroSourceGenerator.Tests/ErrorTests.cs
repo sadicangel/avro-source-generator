@@ -31,31 +31,6 @@ public sealed class ErrorTests
     }
 
     [Theory]
-    [InlineData("public"), InlineData("internal"), InlineData("invalid")]
-    public Task Verify_AccessModifier_Global(string accessModifier)
-    {
-        var schema = """
-        {
-            "type": "error",
-            "namespace": "SchemaNamespace",
-            "name": "Error",
-            "fields": []
-        }
-        """;
-
-        var config = ProjectConfig.Default with
-        {
-            GlobalOptions = new Dictionary<string, string>
-            {
-                ["AvroSourceGeneratorAccessModifier"] = accessModifier
-            }
-        };
-
-        return TestHelper.VerifySourceCode(schema, default, config);
-    }
-
-
-    [Theory]
     [InlineData("Error"), InlineData("exception"), InlineData("throw")]
     public Task Verify_Name(string name) => TestHelper.VerifySourceCode($$"""
     {

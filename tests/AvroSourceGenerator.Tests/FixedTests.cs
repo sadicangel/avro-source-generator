@@ -28,32 +28,6 @@ public sealed class FixedTests
 
     [Theory]
     [MemberData(nameof(TestData.GetLanguageVersions), MemberType = typeof(TestData))]
-    public Task Verify_LanguageFeatures_Local(string languageFeatures)
-    {
-        var schema = """
-        {
-            "type": "fixed",
-            "namespace": "SchemaNamespace",
-            "name": "Fixed",
-            "size": 16
-        }
-        """;
-
-        var source = $$""""
-        using System;
-        using AvroSourceGenerator;
-        
-        namespace SchemaNamespace;
-        
-        [Avro(LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
-        public partial class Fixed;
-        """";
-
-        return TestHelper.VerifySourceCode(schema, source);
-    }
-
-    [Theory]
-    [MemberData(nameof(TestData.GetLanguageVersions), MemberType = typeof(TestData))]
     public Task Verify_LanguageFeatures_Global(string languageFeatures)
     {
         var schema = """

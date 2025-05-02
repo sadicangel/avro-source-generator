@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace AvroSourceGenerator.Tests.Helpers;
 
@@ -60,7 +61,9 @@ public static class TestSchemas
     public static JsonNode With(this JsonNode @this, string propertyName, IEnumerable<object> propertyValue)
     {
         var clone = @this.DeepClone();
-        clone[propertyName] = propertyValue is null ? null : new JsonArray([.. propertyValue.Select(x => (JsonNode)(dynamic)x)]);
+        clone[propertyName] = propertyValue is null ? null : new JsonArray([.. propertyValue.Select(Parse)]);
         return clone;
+
+        static JsonNode Parse(object x) => x is null ? JsonNode.Parse("null")! : JsonNode.Parse(JsonSerializer.Serialize(x, x.GetType()))!;
     }
 }

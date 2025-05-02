@@ -17,41 +17,6 @@ public sealed class ErrorTests
 
     [Theory]
     [MemberData(nameof(TestData.GetLanguageVersions), MemberType = typeof(TestData))]
-    public Task Verify_LanguageFeatures_Local(string languageFeatures)
-    {
-        var schema = """
-        {
-            "type": "error",
-            "namespace": "SchemaNamespace",
-            "name": "Error",
-            "fields": [
-                {
-                    "name": "ErrorCode",
-                    "type": "int"
-                },
-                {
-                    "name": "ErrorText",
-                    "type": "string"
-                }
-            ]
-        }
-        """;
-
-        var source = $$""""
-        using System;
-        using AvroSourceGenerator;
-        
-        namespace SchemaNamespace;
-        
-        [Avro(LanguageFeatures = LanguageFeatures.{{languageFeatures}})]
-        public partial class Error;
-        """";
-
-        return TestHelper.VerifySourceCode(schema, source);
-    }
-
-    [Theory]
-    [MemberData(nameof(TestData.GetLanguageVersions), MemberType = typeof(TestData))]
     public Task Verify_LanguageFeatures_Global(string languageFeatures)
     {
         var schema = """

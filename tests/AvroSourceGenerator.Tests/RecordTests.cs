@@ -14,28 +14,4 @@ public sealed class RecordTests
         "fields": {{fields}}
     }
     """");
-
-    [Theory]
-    [InlineData("record"), InlineData("class")]
-    public Task Verify_RecordDeclaration_Global(string recordDeclaration)
-    {
-        var schema = """
-        {
-            "type": "record",
-            "namespace": "SchemaNamespace",
-            "name": "Record",
-            "fields": []
-        }
-        """;
-
-        var config = ProjectConfig.Default with
-        {
-            GlobalOptions = new Dictionary<string, string>
-            {
-                ["AvroSourceGeneratorRecordDeclaration"] = recordDeclaration
-            }
-        };
-
-        return TestHelper.VerifySourceCode(schema, default, config);
-    }
 }

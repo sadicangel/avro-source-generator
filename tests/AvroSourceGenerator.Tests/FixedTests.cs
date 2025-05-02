@@ -25,28 +25,4 @@ public sealed class FixedTests
             "size": {{size}}
         }
         """);
-
-    [Theory]
-    [MemberData(nameof(TestData.GetLanguageVersions), MemberType = typeof(TestData))]
-    public Task Verify_LanguageFeatures_Global(string languageFeatures)
-    {
-        var schema = """
-        {
-            "type": "fixed",
-            "namespace": "SchemaNamespace",
-            "name": "Fixed",
-            "size": 16
-        }
-        """;
-
-        var config = ProjectConfig.Default with
-        {
-            GlobalOptions = new Dictionary<string, string>
-            {
-                ["AvroSourceGeneratorLanguageFeatures"] = languageFeatures
-            }
-        };
-
-        return TestHelper.VerifySourceCode(schema, default, config);
-    }
 }

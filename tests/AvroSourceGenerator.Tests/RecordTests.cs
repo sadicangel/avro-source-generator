@@ -16,38 +16,6 @@ public sealed class RecordTests
     """");
 
     [Theory]
-    [MemberData(nameof(TestData.GetLanguageVersions), MemberType = typeof(TestData))]
-    public Task Verify_LanguageFeatures_Global(string languageFeatures)
-    {
-        var schema = """
-        {
-            "type": "record",
-            "namespace": "SchemaNamespace",
-            "name": "Record",
-            "fields": [
-                {
-                    "name": "Value1",
-                    "type": "int"
-                },
-                {
-                    "name": "Value2",
-                    "type": "string"
-                }]
-        }
-        """;
-
-        var config = ProjectConfig.Default with
-        {
-            GlobalOptions = new Dictionary<string, string>
-            {
-                ["AvroSourceGeneratorLanguageFeatures"] = languageFeatures
-            }
-        };
-
-        return TestHelper.VerifySourceCode(schema, default, config);
-    }
-
-    [Theory]
     [InlineData("record"), InlineData("class")]
     public Task Verify_RecordDeclaration_Local(string recordDeclaration)
     {

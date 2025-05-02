@@ -42,6 +42,63 @@ public static class TestSchemas
             "fields": []
         }
         """,
+
+        ["array<string>"] = """
+        {
+            "type": "array",
+            "items": "string"
+        }
+        """,
+
+        ["array<record>"] = """
+        {
+            "type": "array",
+            "items": {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Record",
+                "fields": []
+            }
+        }
+        """,
+
+        ["map<string>"] = """
+        {
+            "type": "map",
+            "values": "string"
+        }
+        """,
+
+        ["map<record>"] = """
+        {
+            "type": "map",
+            "values": {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Record",
+                "fields": []
+            }
+        }
+        """,
+
+        ["[null, string]"] = """
+        [
+            "null",
+            "string"
+        ]
+        """,
+
+        ["[null, record]"] = """
+        [
+            "null",
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "Record",
+                "fields": []
+            }
+        ]
+        """
     };
 
     public static JsonNode Get(string schemaType) => JsonNode.Parse(s_schemas[schemaType])!;
@@ -50,6 +107,12 @@ public static class TestSchemas
     public static JsonNode Error => Get("error");
     public static JsonNode Fixed => Get("fixed");
     public static JsonNode Record => Get("record");
+    public static JsonNode ArrayOfString => Get("array<string>");
+    public static JsonNode ArrayOfRecord => Get("array<record>");
+    public static JsonNode MapOfString => Get("map<string>");
+    public static JsonNode MapOfRecord => Get("map<record>");
+    public static JsonNode UnionOfNullAndString => Get("[null, string]");
+    public static JsonNode UnionOfNullAndRecord => Get("[null, record]");
 
     public static JsonNode With(this JsonNode @this, string propertyName, JsonNode propertyValue)
     {

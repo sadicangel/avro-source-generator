@@ -1,10 +1,10 @@
 ﻿{
   Location: schema.avsc: (0,0)-(3,1),
   Message:
-The schema defined in the JSON is invalid: 'items' property is required in schema: {
-    "type": "array",
-    "values": "string"
-},
+The schema defined in the JSON is invalid: Atleast a named schema must be present in schema: [
+  "null",
+  "string"
+],
   Severity: Error,
   Descriptor: {
     Id: AVROSG0002,

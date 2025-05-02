@@ -2,8 +2,8 @@
   Location: schema.avsc: (0,0)-(3,1),
   Message:
 The schema defined in the JSON is invalid: Atleast a named schema must be present in schema: {
-    "type": "array",
-    "items": "string"
+  "type": "map",
+  "values": "string"
 },
   Severity: Error,
   Descriptor: {

@@ -6,6 +6,7 @@ namespace SchemaNamespace
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial class Error : global::Avro.Specific.SpecificException
     {
+        public required string Field { get; init; }
         
         public override global::Avro.Schema Schema { get => Error._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
@@ -14,7 +15,12 @@ namespace SchemaNamespace
           "type": "error",
           "name": "Error",
           "namespace": "SchemaNamespace",
-          "fields": []
+          "fields": [
+            {
+              "name": "Field",
+              "type": "string"
+            }
+          ]
         }
         """);
     
@@ -22,6 +28,7 @@ namespace SchemaNamespace
         {
             switch (fieldPos)
             {
+                case 0: return this.Field;
                 default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
             }
         }
@@ -30,6 +37,10 @@ namespace SchemaNamespace
         {
             switch (fieldPos)
             {
+                case 0:
+                    Set_Field(this, (string)fieldValue!); break;
+                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Field")]
+                    extern static void Set_Field(global::SchemaNamespace.Error obj, string value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

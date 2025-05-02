@@ -5,15 +5,17 @@ namespace SchemaNamespace
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial class Record : global::Avro.Specific.ISpecificRecord
     {
+        public string Field { get; set; }
     
         public global::Avro.Schema Schema { get => Record._SCHEMA; }
         public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
-        "{\"type\":\"record\",\"name\":\"Record\",\"namespace\":\"SchemaNamespace\",\"fields\":[]}");
+        "{\"type\":\"record\",\"name\":\"Record\",\"namespace\":\"SchemaNamespace\",\"fields\":[{\"name\":\"Field\",\"type\":\"string\"}]}");
     
         public object Get(int fieldPos)
         {
             switch (fieldPos)
             {
+                case 0: return this.Field;
                 default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
             }
         }
@@ -22,6 +24,7 @@ namespace SchemaNamespace
         {
             switch (fieldPos)
             {
+                case 0: this.Field = (string)fieldValue; break;
                 default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }
         }

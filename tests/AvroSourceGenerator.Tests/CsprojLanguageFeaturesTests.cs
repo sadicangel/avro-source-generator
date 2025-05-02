@@ -8,7 +8,7 @@ public sealed class CsprojLanguageFeaturesTests
     [MemberData(nameof(LanguageFeaturesSchemaPairs))]
     public Task Verify(string languageFeatures, string schemaType)
     {
-        var schema = TestSchemas.Get(schemaType).ToString();
+        var schema = TestSchemas.Get(schemaType).With("fields", [new { type = "string", name = "Field" }]).ToString();
 
         var config = ProjectConfig.Default with
         {
@@ -22,6 +22,6 @@ public sealed class CsprojLanguageFeaturesTests
     }
 
     public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new(
-        [.. Enum.GetNames<LanguageFeatures>().Where(n => n.StartsWith("CSharp"))],
+        [.. Enum.GetNames<LanguageFeatures>().Where(n => n.StartsWith("CSharp")), "invalid"],
         ["enum", "error", "fixed", "record"]);
 }

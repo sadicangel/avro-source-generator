@@ -57,7 +57,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             "bytes" => AvroSchema.Bytes,
             "string" => AvroSchema.String,
             _ when _schemas.TryGetValue(type.GetRequiredSchemaName(containingNamespace), out var registeredSchema) => registeredSchema,
-            _ => throw new InvalidSchemaException($"Unknown schema '{type}' in {schema.GetRawText()}")
+            _ => throw new InvalidSchemaException($"Unknown schema '{type}'")
         };
     }
 
@@ -80,7 +80,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             "record" => Record(schema, properties, containingNamespace),
             "error" => Error(schema, properties, containingNamespace),
             "fixed" => Fixed(schema, properties, containingNamespace),
-            _ => throw new InvalidSchemaException($"Unknown schema '{type}' in {schema.GetRawText()}")
+            _ => throw new InvalidSchemaException($"Unknown schema type '{type}' in {schema.GetRawText()}")
         };
     }
 
@@ -275,7 +275,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             "error" => Error(schema, ImmutableSortedDictionary<string, JsonElement>.Empty, containingNamespace),
             "fixed" => Fixed(schema, ImmutableSortedDictionary<string, JsonElement>.Empty, containingNamespace),
             _ when _schemas.TryGetValue(new SchemaName(JsonElementExtensions.GetValidName(underlyingType), containingNamespace), out var registeredSchema) => registeredSchema,
-            _ => throw new InvalidSchemaException($"Unknown schema '{underlyingType}' in {schema.GetRawText()}")
+            _ => throw new InvalidSchemaException($"Unknown schema type '{underlyingType}' in {schema.GetRawText()}")
         };
 
         return logicalType switch

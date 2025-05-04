@@ -5,7 +5,7 @@ namespace AvroSourceGenerator.Tests;
 public sealed class SelfContainedSchemaTests
 {
     [Fact]
-    public Task Verify_record_schema_is_self_contained() => TestHelper.VerifySourceCode("""
+    public Task Verify() => TestHelper.VerifySourceCode("""
     [
         {
             "type": "record",

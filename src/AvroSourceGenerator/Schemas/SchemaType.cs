@@ -18,4 +18,5 @@ internal enum SchemaType
     Fixed,
     Error,
     Logical,
+    Protocol,
 }

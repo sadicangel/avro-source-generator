@@ -17,7 +17,7 @@ namespace {{ Schema.CSharpName.Namespace }}
     /// </summary>
     {{~ end ~}}
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    {{~ if Schema.Aliases.size > 0 ~}}
+    {{~ if Schema.Aliases?.size > 0 ~}}
     [global::AvroSourceGenerator.AvroAliases({{ Schema.Aliases | array.each @string.literal | array.join ', ' }})]
     {{~ end ~}}
     {{
@@ -30,6 +30,8 @@ namespace {{ Schema.CSharpName.Namespace }}
             include 'record' schema: Schema
         when 'Error'
             include 'error' schema: Schema
+        when 'Protocol'
+            include 'protocol' schema: Schema
         end
     }}
 {{~ if Schema.CSharpName.Namespace ~}}

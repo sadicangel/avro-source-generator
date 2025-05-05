@@ -31,12 +31,13 @@ internal sealed record class ProtocolSchema(
         }
         if (Messages.Length > 0)
         {
-            writer.WriteStartArray("messages");
+            writer.WriteStartObject("messages");
             foreach (var message in Messages)
             {
+                writer.WritePropertyName(message.MethodName is ['@', ..] ? message.MethodName[1..] : message.MethodName);
                 message.WriteTo(writer, writtenSchemas, SchemaName.Namespace);
             }
-            writer.WriteEndArray();
+            writer.WriteEndObject();
         }
         foreach (var entry in Properties)
         {

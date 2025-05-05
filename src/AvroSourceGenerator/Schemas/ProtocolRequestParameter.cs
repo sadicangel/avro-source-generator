@@ -14,7 +14,7 @@ internal sealed record class ProtocolRequestParameter(
     public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();
-        writer.WriteString("name", Name);
+        writer.WriteString("name", Name is ['@', ..] ? Name[1..] : Name);
         writer.WritePropertyName("type");
         Type.WriteTo(writer, writtenSchemas, containingNamespace);
         if (Documentation is not null)

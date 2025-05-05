@@ -20,6 +20,7 @@ internal sealed class TemplateLoader : ITemplateLoader
             ["field"] = "AvroSourceGenerator.Templates.field.sbncs",
             ["fixed"] = "AvroSourceGenerator.Templates.fixed.sbncs",
             ["getput"] = "AvroSourceGenerator.Templates.getput.sbncs",
+            ["protocol"] = "AvroSourceGenerator.Templates.protocol.sbncs",
             ["record"] = "AvroSourceGenerator.Templates.record.sbncs",
             ["schema"] = "AvroSourceGenerator.Templates.schema.sbncs",
         };

@@ -333,10 +333,13 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
 
         var documentation = schema.GetDocumentation();
-        var types = ProtocolTypes(schema.GetRequiredArray("types"), containingNamespace);
-        var messages = ProtocolMessages(schema.GetRequiredObject("messages"), containingNamespace);
+        var types = ProtocolTypes(schema.GetRequiredArray("types"), schemaName.Namespace);
+        var messages = ProtocolMessages(schema.GetRequiredObject("messages"), schemaName.Namespace);
 
-        return new ProtocolSchema(schema, schemaName, documentation, types, messages, properties);
+        var protocolSchema = new ProtocolSchema(schema, schemaName, documentation, types, messages, properties);
+        _schemas[schemaName] = protocolSchema;
+
+        return protocolSchema;
     }
 
     private ImmutableArray<NamedSchema> ProtocolTypes(JsonElement.ArrayEnumerator schemas, string? containingNamespace)
@@ -358,7 +361,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
     private ProtocolMessage Message(JsonProperty property, string? containingNamespace)
     {
-        var methodName = property.Name;
+        var methodName = property.Name.GetValidName();
         var documentation = property.Value.GetDocumentation();
         var requestParameters = ProtocolRequestParameters(property.Value, containingNamespace);
         var response = ProtocolResponse(property.Value.GetRequiredProperty("response"), containingNamespace);

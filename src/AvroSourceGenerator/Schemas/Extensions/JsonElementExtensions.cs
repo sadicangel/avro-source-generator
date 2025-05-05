@@ -220,9 +220,18 @@ internal static class JsonElementExtensions
         return json.EnumerateArray();
     }
 
-    public static SchemaName GetRequiredSchemaName(this JsonElement schema, string? containingNamespace = null)
+    public static JsonElement.ObjectEnumerator GetRequiredObject(this JsonElement schema, string propertyName)
     {
-        var name = schema.GetRequiredString("name");
+        var json = schema.GetRequiredProperty(propertyName);
+        if (json.ValueKind is not JsonValueKind.Object)
+            throw new InvalidSchemaException($"'{propertyName}' property must be an object (found '{json}') in schema: {schema.GetRawText()}");
+
+        return json.EnumerateObject();
+    }
+
+    public static SchemaName GetRequiredSchemaName(this JsonElement schema, string? containingNamespace = null, string propertyName = "name")
+    {
+        var name = schema.GetRequiredString(propertyName);
 
         if (name.IndexOf("..") >= 0)
             throw new InvalidSchemaException(
@@ -241,7 +250,7 @@ internal static class JsonElementExtensions
 
     public static SchemaName GetOptionalSchemaName(this JsonElement schema)
     {
-        var name = schema.GetOptionalString("name");
+        var name = schema.GetOptionalString("name") ?? schema.GetOptionalString("protocol");
 
         // 'name' was null (and it was allowed), so we return default.
         if (name is null)

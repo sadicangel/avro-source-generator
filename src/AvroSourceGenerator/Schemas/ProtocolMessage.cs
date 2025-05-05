@@ -8,7 +8,7 @@ internal sealed record class ProtocolMessage(
     string? Documentation,
     ImmutableArray<ProtocolRequestParameter> RequestParameters,
     ProtocolResponse Response,
-    ImmutableArray<ErrorSchema> Errors)
+    ImmutableArray<AvroSchema> Errors)
 {
     public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {

@@ -8,8 +8,8 @@ namespace Namespace1
     {
         public required string field1 { get; init; }
     
-        public global::Avro.Schema Schema { get => Record1._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        public global::Avro.Schema Schema { get => Record1.s_schema; }
+        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
           "type": "record",

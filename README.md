@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/github/license/sadicangel/avro-source-generator)](LICENSE)
 [![Build](https://img.shields.io/github/actions/workflow/status/sadicangel/avro-source-generator/build.yml?label=build)](https://github.com/sadicangel/avro-source-generator/actions)
 
-![Avro Source Generator](icon.png)
+![Avro Source Generator](https://raw.githubusercontent.com/sadicangel/avro-source-generator/refs/heads/main/icon.png)
 
 Avro Source Generator is a .NET source generator that generates C# code from Avro schemas and is compatible with Apache Avro.
 
@@ -84,8 +84,8 @@ namespace example
         public string? Email { get; init; }
         public required global::System.DateTime CreatedAt { get; init; }
     
-        public global::Avro.Schema Schema { get => User._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
+        public global::Avro.Schema Schema { get => User.s_schema; }
+        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse("""
         {
           "type": "record",
           "name": "User",
@@ -250,6 +250,8 @@ public partial record User;
 ```
 
 ## Limitations
+
+### `partial enum`
 In C#, `enum` types cannot be declared as `partial`, so it's not possible to configure code generation for just a single `enum` type.  
 A possible workaround for this is to wrap the `enum` schema in a `record` schema.
 
@@ -345,4 +347,4 @@ Contributions are welcome! If you have any ideas, suggestions, or bug reports, p
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/sadicangel/avro-source-generator/blob/main/LICENSE) file for details.

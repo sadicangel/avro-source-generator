@@ -11,8 +11,8 @@
         public required global::This.Is.A.Full.Name Field2 { get; init; }
         public required global::This.Is.A.Full.OtherName Field3 { get; init; }
     
-        public global::Avro.Schema Schema { get => Wrapper._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        public global::Avro.Schema Schema { get => Wrapper.s_schema; }
+        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
           "type": "record",

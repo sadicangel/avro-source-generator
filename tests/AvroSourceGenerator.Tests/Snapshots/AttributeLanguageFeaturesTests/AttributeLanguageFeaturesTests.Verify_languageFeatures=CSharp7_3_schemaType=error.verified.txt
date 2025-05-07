@@ -7,8 +7,8 @@ namespace SchemaNamespace
     {
         public string Field { get; set; }
         
-        public override global::Avro.Schema Schema { get => Error._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        public override global::Avro.Schema Schema { get => Error.s_schema; }
+        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         "{\"type\":\"error\",\"name\":\"Error\",\"namespace\":\"SchemaNamespace\",\"fields\":[{\"name\":\"Field\",\"type\":\"string\"}]}");
     
         public override object Get(int fieldPos)

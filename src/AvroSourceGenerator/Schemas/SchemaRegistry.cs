@@ -64,12 +64,12 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
     private AvroSchema Complex(JsonElement schema, string? containingNamespace)
     {
-        if (schema.TryGetProperty("logicalType", out var logicalType) && logicalType.ValueKind is JsonValueKind.String)
+        if (schema.TryGetProperty("logicalType", out var _))
         {
             return Logical(schema, GetProperties(schema), containingNamespace);
         }
 
-        if (schema.TryGetProperty("protocol", out var protocol) && protocol.ValueKind is JsonValueKind.String)
+        if (schema.TryGetProperty("protocol", out _))
         {
             return Protocol(schema, GetProperties(schema), containingNamespace);
         }

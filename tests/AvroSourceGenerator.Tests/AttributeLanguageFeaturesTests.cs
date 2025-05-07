@@ -17,7 +17,7 @@ public sealed class AttributeLanguageFeaturesTests
 
     public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new(
         [.. Enum.GetNames<LanguageFeatures>().Where(n => n.StartsWith("CSharp"))],
-        ["error", "fixed", "record"]);
+        ["error", "fixed", "record", "protocol"]);
 
     private static readonly Dictionary<string, string> s_sources = new()
     {
@@ -49,6 +49,16 @@ public sealed class AttributeLanguageFeaturesTests
 
         [Avro(LanguageFeatures = LanguageFeatures.$languageFeatures$)]
         public partial class Record;
-        """
+        """,
+
+        ["protocol"] = """
+        using System;
+        using AvroSourceGenerator;
+
+        namespace SchemaNamespace;
+
+        [Avro(LanguageFeatures = LanguageFeatures.$languageFeatures$)]
+        public partial class RpcProtocol;
+        """,
     };
 }

@@ -98,6 +98,15 @@ public static class TestSchemas
                 "fields": []
             }
         ]
+        """,
+
+        ["protocol"] = """
+        {
+            "protocol": "RpcProtocol",
+            "namespace": "SchemaNamespace",
+            "types": [],
+            "messages": {}
+        }
         """
     };
 
@@ -113,6 +122,7 @@ public static class TestSchemas
     public static JsonNode MapOfRecord => Get("map<record>");
     public static JsonNode UnionOfNullAndString => Get("[null, string]");
     public static JsonNode UnionOfNullAndRecord => Get("[null, record]");
+    public static JsonNode Protocol => Get("protocol");
 
     public static JsonNode With(this JsonNode @this, string propertyName, JsonNode propertyValue)
     {

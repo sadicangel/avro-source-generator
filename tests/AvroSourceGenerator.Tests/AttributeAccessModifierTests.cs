@@ -17,7 +17,7 @@ public sealed class AttributeAccessModifierTests
 
     public static MatrixTheoryData<string, string> AccessModifierSchemaPairs() => new(
         ["", "public", "internal", "file"],
-        ["error", "fixed", "record"]);
+        ["error", "fixed", "record", "protocol"]);
 
     private static readonly Dictionary<string, string> s_sources = new()
     {
@@ -49,6 +49,16 @@ public sealed class AttributeAccessModifierTests
 
         [Avro]
         $accessModifier$ partial class Record;
-        """
+        """,
+
+        ["protocol"] = """
+        using System;
+        using AvroSourceGenerator;
+
+        namespace SchemaNamespace;
+
+        [Avro]
+        $accessModifier$ partial class RpcProtocol;
+        """,
     };
 }

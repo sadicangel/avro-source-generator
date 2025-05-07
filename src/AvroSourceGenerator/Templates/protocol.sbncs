@@ -1,0 +1,55 @@
+{{ AccessModifier }} abstract partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificProtocol
+{
+    {{~ for message in $.schema.Messages ~}}
+    {{~ if !string.whitespace message.Documentation ~}}
+    /// <summary>
+    {{~ for line in message.Documentation | string.split '\n' | array.each @string.strip ~}}
+    /// {{ line }}
+    {{~ end ~}}
+    /// </summary>
+    {{~ end ~}}
+    public abstract {{ message.Response.Type.CSharpName }} {{ message.MethodName }}(
+        {{- for parameter in message.RequestParameters -}}
+        {{ parameter.Type.CSharpName }} {{ parameter.Name }}{{ if !for.last }}, {{ end }}
+        {{- end -}});
+
+    {{~ end ~}}
+
+    public global::Avro.Protocol Protocol { get => {{ $.schema.CSharpName.Name }}.s_protocol; }
+    private static readonly global::Avro.Protocol s_protocol = global::Avro.Protocol.Parse(
+    {{ $.schema | json }});
+
+    public void Request(global::Avro.Specific.ICallbackRequestor requestor, string messageName, object[] args, object callback)
+    {
+        switch (messageName)
+        {
+            {{~ for message in $.schema.Messages ~}}
+            case "{{ message.MethodName }}":
+                requestor.Request<{{ message.Response.Type.CSharpName }}>(messageName, args, callback);
+                break;
+            {{~ end ~}}
+            default:
+                throw new global::Avro.AvroRuntimeException($"Unknown message: {messageName}");
+        }
+    }
+}
+
+{{ AccessModifier }} abstract partial class {{ $.schema.CSharpName.Name }}Callback : {{ $.schema.CSharpName }}
+{
+    {{~ for message in $.schema.Messages ~}}
+    {{~ if !string.whitespace message.Documentation ~}}
+    /// <summary>
+    {{~ for line in message.Documentation | string.split '\n' | array.each @string.strip ~}}
+    /// {{ line }}
+    {{~ end ~}}
+    /// </summary>
+    {{~ end ~}}
+    [global::System.Obsolete("'Avro.IO.ICallback<T>' will be removed from the public API in a future version.")]
+    public abstract void {{ message.MethodName }}(
+        {{- for parameter in message.RequestParameters -}}
+        {{ parameter.Type.CSharpName }} {{ parameter.Name }}{{ ", " }}
+        {{- end -}}
+        global::Avro.IO.ICallback<{{ message.Response.Type.CSharpName }}> callback);
+
+    {{~ end ~}}
+}

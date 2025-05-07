@@ -1,0 +1,111 @@
+﻿{
+  "protocol": "UserDirectory",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
+  "doc": "Service for managing user accounts in an organization.",
+  "types": [
+    {
+      "type": "record",
+      "name": "User",
+      "doc": "Represents a user in the directory.",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "type": "string",
+            "logicalType": "uuid"
+          }
+        },
+        {
+          "name": "username",
+          "type": "string"
+        },
+        {
+          "name": "email",
+          "type": "string"
+        },
+        {
+          "name": "createdAt",
+          "type": {
+            "type": "long",
+            "logicalType": "timestamp-millis"
+          }
+        }
+      ]
+    },
+    {
+      "type": "record",
+      "name": "CreateUserRequest",
+      "fields": [
+        {
+          "name": "username",
+          "type": "string"
+        },
+        {
+          "name": "email",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "type": "record",
+      "name": "CreateUserResponse",
+      "fields": [
+        {
+          "name": "user",
+          "type": "User"
+        }
+      ]
+    },
+    {
+      "type": "record",
+      "name": "GetUserRequest",
+      "fields": [
+        {
+          "name": "userId",
+          "type": {
+            "type": "string",
+            "logicalType": "uuid"
+          }
+        }
+      ]
+    },
+    {
+      "type": "record",
+      "name": "ErrorResponse",
+      "fields": [
+        {
+          "name": "errorCode",
+          "type": "int"
+        },
+        {
+          "name": "message",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "messages": {
+    "createUser": {
+      "doc": "Creates a new user with the given information.",
+      "request": [
+        {
+          "name": "request",
+          "type": "CreateUserRequest"
+        }
+      ],
+      "response": "CreateUserResponse",
+      "errors": [ "ErrorResponse" ]
+    },
+    "getUser": {
+      "doc": "Fetches a user by their UUID.",
+      "request": [
+        {
+          "name": "request",
+          "type": "GetUserRequest"
+        }
+      ],
+      "response": "User",
+      "errors": [ "ErrorResponse" ]
+    }
+  }
+}

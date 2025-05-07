@@ -311,7 +311,9 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             "local-timestamp-micros" => new LogicalSchema(underlyingSchema, new CSharpName("DateTime", "System"), new SchemaName(logicalType), properties),
             "local-timestamp-millis" => new LogicalSchema(underlyingSchema, new CSharpName("DateTime", "System"), new SchemaName(logicalType), properties),
             "uuid" => new LogicalSchema(underlyingSchema, new CSharpName("Guid", "System"), new SchemaName(logicalType), properties),
-            _ => throw new InvalidSchemaException($"Unsupported logical type '{logicalType}' in schema: {schema.GetRawText()}"),
+            // _ => throw new InvalidSchemaException($"Unsupported logical type '{logicalType}' in schema: {schema.GetRawText()}"),
+            // TODO: We should report a warning for unsupported logical types, maybe? But always return the underlying schema.
+            _ => underlyingSchema,
         };
     }
 

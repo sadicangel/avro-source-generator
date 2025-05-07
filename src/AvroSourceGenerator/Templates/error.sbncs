@@ -4,8 +4,8 @@
     {{ include 'field' field: field }}
     {{~ end ~}}
     
-    public override global::Avro.Schema Schema { get => {{ $.schema.CSharpName.Name }}._SCHEMA; }
-    public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+    public override global::Avro.Schema Schema { get => {{ $.schema.CSharpName.Name }}.s_schema; }
+    private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
     {{ $.schema | json }});
 
     {{ include 'getput' schema: $.schema override: true ~}}

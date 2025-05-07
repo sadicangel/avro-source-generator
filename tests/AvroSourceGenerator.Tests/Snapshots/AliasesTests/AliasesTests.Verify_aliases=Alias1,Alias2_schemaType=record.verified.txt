@@ -8,8 +8,8 @@ namespace SchemaNamespace
     public partial record Record : global::Avro.Specific.ISpecificRecord
     {
     
-        public global::Avro.Schema Schema { get => Record._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        public global::Avro.Schema Schema { get => Record.s_schema; }
+        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
           "type": "record",

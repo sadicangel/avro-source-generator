@@ -9,8 +9,8 @@ namespace SchemaNamespace
     
         public uint Size { get => (uint)Value.Length; }
     
-        public override global::Avro.Schema Schema { get => snake_case._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        public override global::Avro.Schema Schema { get => snake_case.s_schema; }
+        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
           "type": "fixed",

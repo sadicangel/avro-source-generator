@@ -23,7 +23,7 @@ public sealed class AvroSchemaTests
     private static Avro.Schema GetGeneratedTypeSchema(string typeName)
     {
         var type = Type.GetType($"AvroSourceGenerator.IntegrationTests.Schemas.{typeName}", throwOnError: true)!;
-        var field = type.GetField("_SCHEMA", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!;
+        var field = type.GetField("s_schema", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!;
         return (Avro.Schema)field.GetValue(null)!;
     }
 }

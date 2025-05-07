@@ -7,8 +7,8 @@ namespace SchemaNamespace
     public partial class PascalCase : global::Avro.Specific.SpecificException
     {
         
-        public override global::Avro.Schema Schema { get => PascalCase._SCHEMA; }
-        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+        public override global::Avro.Schema Schema { get => PascalCase.s_schema; }
+        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
           "type": "error",

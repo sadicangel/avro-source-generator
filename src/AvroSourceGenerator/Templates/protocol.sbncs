@@ -1,4 +1,4 @@
-{{ AccessModifier }} abstract class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificProtocol
+{{ AccessModifier }} abstract partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificProtocol
 {
     {{~ for message in $.schema.Messages ~}}
     {{~ if !string.whitespace message.Documentation ~}}
@@ -34,7 +34,7 @@
     }
 }
 
-{{ AccessModifier }} abstract class {{ $.schema.CSharpName.Name }}Callback : {{ $.schema.CSharpName }}
+{{ AccessModifier }} abstract partial class {{ $.schema.CSharpName.Name }}Callback : {{ $.schema.CSharpName }}
 {
     {{~ for message in $.schema.Messages ~}}
     {{~ if !string.whitespace message.Documentation ~}}

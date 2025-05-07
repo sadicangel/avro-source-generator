@@ -23,5 +23,5 @@ public sealed class CsprojLanguageFeaturesTests
 
     public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new(
         [.. Enum.GetNames<LanguageFeatures>().Where(n => n.StartsWith("CSharp")), "invalid"],
-        ["enum", "error", "fixed", "record"]);
+        ["enum", "error", "fixed", "record", "protocol"]);
 }

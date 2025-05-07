@@ -3,7 +3,7 @@
 namespace PascalCase.snake_case.@object
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public abstract class RpcProtocol : global::Avro.Specific.ISpecificProtocol
+    public abstract partial class RpcProtocol : global::Avro.Specific.ISpecificProtocol
     {
     
         public global::Avro.Protocol Protocol { get => RpcProtocol.s_protocol; }
@@ -28,7 +28,8 @@ namespace PascalCase.snake_case.@object
         }
     }
     
-    public abstract class RpcProtocolCallback : global::PascalCase.snake_case.@object.RpcProtocol
+    public abstract partial class RpcProtocolCallback : global::PascalCase.snake_case.@object.RpcProtocol
     {
     }
+
 }

@@ -8,7 +8,7 @@ namespace SchemaNamespace
     /// comment
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public abstract class RpcProtocol : global::Avro.Specific.ISpecificProtocol
+    public abstract partial class RpcProtocol : global::Avro.Specific.ISpecificProtocol
     {
     
         public global::Avro.Protocol Protocol { get => RpcProtocol.s_protocol; }
@@ -33,7 +33,8 @@ namespace SchemaNamespace
         }
     }
     
-    public abstract class RpcProtocolCallback : global::SchemaNamespace.RpcProtocol
+    public abstract partial class RpcProtocolCallback : global::SchemaNamespace.RpcProtocol
     {
     }
+
 }

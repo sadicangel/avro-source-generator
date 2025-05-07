@@ -3,7 +3,7 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public abstract class PascalCase : global::Avro.Specific.ISpecificProtocol
+    public abstract partial class PascalCase : global::Avro.Specific.ISpecificProtocol
     {
     
         public global::Avro.Protocol Protocol { get => PascalCase.s_protocol; }
@@ -28,7 +28,8 @@ namespace SchemaNamespace
         }
     }
     
-    public abstract class PascalCaseCallback : global::SchemaNamespace.PascalCase
+    public abstract partial class PascalCaseCallback : global::SchemaNamespace.PascalCase
     {
     }
+
 }

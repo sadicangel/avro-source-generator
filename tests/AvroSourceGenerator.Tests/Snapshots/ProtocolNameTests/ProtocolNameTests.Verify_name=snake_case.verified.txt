@@ -3,7 +3,7 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public abstract class snake_case : global::Avro.Specific.ISpecificProtocol
+    public abstract partial class snake_case : global::Avro.Specific.ISpecificProtocol
     {
     
         public global::Avro.Protocol Protocol { get => snake_case.s_protocol; }
@@ -28,7 +28,8 @@ namespace SchemaNamespace
         }
     }
     
-    public abstract class snake_caseCallback : global::SchemaNamespace.snake_case
+    public abstract partial class snake_caseCallback : global::SchemaNamespace.snake_case
     {
     }
+
 }

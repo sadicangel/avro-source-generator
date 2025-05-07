@@ -3,7 +3,7 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public abstract class @object : global::Avro.Specific.ISpecificProtocol
+    public abstract partial class @object : global::Avro.Specific.ISpecificProtocol
     {
     
         public global::Avro.Protocol Protocol { get => @object.s_protocol; }
@@ -28,7 +28,8 @@ namespace SchemaNamespace
         }
     }
     
-    public abstract class @objectCallback : global::SchemaNamespace.@object
+    public abstract partial class @objectCallback : global::SchemaNamespace.@object
     {
     }
+
 }

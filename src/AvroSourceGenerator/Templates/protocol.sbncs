@@ -44,7 +44,8 @@
     {{~ end ~}}
     /// </summary>
     {{~ end ~}}
-    public abstract {{ message.Response.Type.CSharpName }} {{ message.MethodName }}(
+    [global::System.Obsolete("'Avro.IO.ICallback<T>' will be removed from the public API in a future version.")]
+    public abstract void {{ message.MethodName }}(
         {{- for parameter in message.RequestParameters -}}
         {{ parameter.Type.CSharpName }} {{ parameter.Name }}{{ ", " }}
         {{- end -}}

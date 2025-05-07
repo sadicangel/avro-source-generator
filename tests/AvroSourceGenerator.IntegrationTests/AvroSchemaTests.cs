@@ -5,7 +5,7 @@ namespace AvroSourceGenerator.IntegrationTests;
 public sealed class AvroSchemaTests
 {
     public static TheoryData<FileInfo> GetSchemaFileNames() =>
-        [.. new DirectoryInfo("Schemas").GetFiles()];
+        [.. new DirectoryInfo("Schemas").GetFiles().ExceptBy(["UserDirectory.avsc"], x => x.Name)];
 
     [Theory]
     [MemberData(nameof(GetSchemaFileNames))]

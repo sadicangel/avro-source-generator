@@ -33,3 +33,22 @@
         }
     }
 }
+
+{{ AccessModifier }} abstract class {{ $.schema.CSharpName.Name }}Callback : {{ $.schema.CSharpName }}
+{
+    {{~ for message in $.schema.Messages ~}}
+    {{~ if !string.whitespace message.Documentation ~}}
+    /// <summary>
+    {{~ for line in message.Documentation | string.split '\n' | array.each @string.strip ~}}
+    /// {{ line }}
+    {{~ end ~}}
+    /// </summary>
+    {{~ end ~}}
+    public abstract {{ message.Response.Type.CSharpName }} {{ message.MethodName }}(
+        {{- for parameter in message.RequestParameters -}}
+        {{ parameter.Type.CSharpName }} {{ parameter.Name }}{{ ", " }}
+        {{- end -}}
+        global::Avro.IO.ICallback<{{ message.Response.Type.CSharpName }}> callback);
+
+    {{~ end ~}}
+}

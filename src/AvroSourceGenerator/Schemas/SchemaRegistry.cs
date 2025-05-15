@@ -210,7 +210,8 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
         var defaultJson = field.GetNullableProperty("default");
         var @default = GetValue(type, defaultJson);
         var order = field.GetNullableInt32("order");
-        return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order);
+        var properties = GetProperties(field);
+        return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order, properties);
     }
 
     private string? GetValue(AvroSchema type, JsonElement? json)

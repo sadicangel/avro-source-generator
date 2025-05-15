@@ -100,6 +100,30 @@ public class FieldTests
         return TestHelper.VerifySourceCode(schema);
     }
 
+    [Theory]
+    [InlineData("record"), InlineData("error")]
+    public Task Verify_Metadata_Properties(string @class)
+    {
+        var schema = $$"""
+        {
+            "type": "{{@class}}",
+            "name": "Class",
+            "namespace": "SchemaNamespace",
+            "fields": [
+                {
+                    "type": ["null", "string"],
+                    "name": "Field",
+                    "tags": ["Tag1", "Tag2"],
+                    "parent": {
+                        "name": "object1"                        
+                    }
+                }
+            ]
+        }
+        """;
+        return TestHelper.VerifySourceCode(schema);
+    }
+
     public static TheoryData<string, string> Defaults => new([
         ("null", "null"),
         ("boolean", "true"),

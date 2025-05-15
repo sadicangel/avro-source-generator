@@ -3,6 +3,9 @@
   "name": "TransactionEvent",
   "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
   "doc": "Represents a financial transaction between accounts.",
+  "metadata": {
+    "timestamp": "20:20"
+  },
   "fields": [
     {
       "name": "Id",
@@ -10,6 +13,7 @@
         "type": "string",
         "logicalType": "uuid"
       },
+      "tags": ["tag1", "tag2"],
       "doc": "Unique identifier for the transaction."
     },
     {

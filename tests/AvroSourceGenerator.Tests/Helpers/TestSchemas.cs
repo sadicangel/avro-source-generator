@@ -7,12 +7,37 @@ public static class TestSchemas
 {
     private static readonly Dictionary<string, string> s_schemas = new()
     {
+        ["null"] = "\"null\"",
+
+        ["boolean"] = "\"boolean\"",
+
+        ["int"] = "\"int\"",
+
+        ["long"] = "\"long\"",
+
+        ["float"] = "\"float\"",
+
+        ["double"] = "\"double\"",
+
+        ["bytes"] = "\"bytes\"",
+
+        ["string"] = "\"string\"",
+
         ["enum"] = """
         {
             "type": "enum",
             "name": "Enum",
             "namespace": "SchemaNamespace",
             "symbols": []
+        }
+        """,
+
+        ["enum<A,B,C>"] = """
+        {
+            "type": "enum",
+            "name": "Enum",
+            "namespace": "SchemaNamespace",
+            "symbols": ["A", "B", "C"]
         }
         """,
 
@@ -112,24 +137,21 @@ public static class TestSchemas
 
     public static JsonNode Get(string schemaType) => JsonNode.Parse(s_schemas[schemaType])!;
 
-    public static JsonNode Enum => Get("enum");
-    public static JsonNode Error => Get("error");
-    public static JsonNode Fixed => Get("fixed");
-    public static JsonNode Record => Get("record");
-    public static JsonNode ArrayOfString => Get("array<string>");
-    public static JsonNode ArrayOfRecord => Get("array<record>");
-    public static JsonNode MapOfString => Get("map<string>");
-    public static JsonNode MapOfRecord => Get("map<record>");
-    public static JsonNode UnionOfNullAndString => Get("[null, string]");
-    public static JsonNode UnionOfNullAndRecord => Get("[null, record]");
-    public static JsonNode Protocol => Get("protocol");
-
     public static JsonNode With(this JsonNode @this, string propertyName, JsonNode propertyValue)
     {
         var clone = @this.DeepClone();
         clone[propertyName] = propertyValue;
         return clone;
     }
+
+    public static JsonNode With(this JsonNode @this, string propertyName, JsonObject propertyValue) =>
+        @this.With(propertyName, (JsonNode)propertyValue);
+
+    public static JsonNode With(this JsonNode @this, string propertyName, JsonArray propertyValue) =>
+        @this.With(propertyName, (JsonNode)propertyValue);
+
+    public static JsonNode With(this JsonNode @this, string propertyName, JsonValue propertyValue) =>
+        @this.With(propertyName, (JsonNode)propertyValue);
 
     public static JsonNode With(this JsonNode @this, string propertyName, IEnumerable<object> propertyValue)
     {

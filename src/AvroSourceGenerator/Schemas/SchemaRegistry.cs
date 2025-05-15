@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
-using System.Text;
 using System.Text.Json;
 using AvroSourceGenerator.Schemas.Extensions;
 
@@ -230,9 +229,9 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             "bool" => value.GetRawText(),
             "int" => value.GetRawText(),
             "long" => value.GetRawText(),
-            "float" => GetFloatValue(value),
+            "float" => $"{value.GetRawText()}f",
             "double" => value.GetRawText(),
-            "byte[]" => GetBytesValue(value),
+            "byte[]" => $"[{string.Join(", ", value.GetBytesFromBase64().Select(bytes => $"0x{bytes:X2}"))}]",
             "string" => value.GetRawText(),
             _ when _schemas.TryGetValue(type.SchemaName, out var namedSchema) && namedSchema.Type is SchemaType.Enum => $"{type}.{value.GetString()}",
 
@@ -240,19 +239,6 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             _ => null,
 
         };
-
-        static string GetFloatValue(JsonElement value)
-        {
-            var text = value.GetRawText();
-            return text.Contains('.') ? $"{text}f" : text;
-        }
-
-        static string GetBytesValue(JsonElement value)
-        {
-            var text = value.GetString();
-            var bytes = Encoding.UTF8.GetBytes(text);
-            return $"[{string.Join(", ", bytes.Select(bytes => $"0x{bytes:X2}"))}]";
-        }
     }
 
     private FixedSchema Fixed(JsonElement schema, ImmutableSortedDictionary<string, JsonElement> properties, string? containingNamespace)

@@ -4,21 +4,31 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial record Class : global::Avro.Specific.ISpecificRecord
+    public partial record Record : global::Avro.Specific.ISpecificRecord
     {
-        public required string Field { get; init; }
+        public global::SchemaNamespace.Enum Field { get; init; } = global::SchemaNamespace.Enum.B;
     
-        public global::Avro.Schema Schema { get => Class.s_schema; }
+        public global::Avro.Schema Schema { get => Record.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
           "type": "record",
-          "name": "Class",
+          "name": "Record",
           "namespace": "SchemaNamespace",
           "fields": [
             {
               "name": "Field",
-              "type": "string"
+              "type": {
+                "type": "enum",
+                "name": "Enum",
+                "namespace": "SchemaNamespace",
+                "symbols": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              },
+              "default": "B"
             }
           ]
         }
@@ -38,9 +48,9 @@ namespace SchemaNamespace
             switch (fieldPos)
             {
                 case 0:
-                    Set_Field(this, (string)fieldValue!); break;
+                    Set_Field(this, (global::SchemaNamespace.Enum)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Field")]
-                    extern static void Set_Field(global::SchemaNamespace.Class obj, string value);
+                    extern static void Set_Field(global::SchemaNamespace.Record obj, global::SchemaNamespace.Enum value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

@@ -4,46 +4,56 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class Class : global::Avro.Specific.SpecificException
+    public partial record Class : global::Avro.Specific.ISpecificRecord
     {
-        public float? Field { get; init; }
-        
-        public override global::Avro.Schema Schema { get => Class.s_schema; }
+        public required bool Field { get; init; }
+        public bool? NullableField { get; init; }
+    
+        public global::Avro.Schema Schema { get => Class.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
-          "type": "error",
+          "type": "record",
           "name": "Class",
           "namespace": "SchemaNamespace",
           "fields": [
             {
               "name": "Field",
+              "type": "boolean"
+            },
+            {
+              "name": "NullableField",
               "type": [
                 "null",
-                "float"
+                "boolean"
               ]
             }
           ]
         }
         """);
     
-        public override object? Get(int fieldPos)
+        public object? Get(int fieldPos)
         {
             switch (fieldPos)
             {
                 case 0: return this.Field;
+                case 1: return this.NullableField;
                 default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
             }
         }
         
-        public override void Put(int fieldPos, object? fieldValue)
+        public void Put(int fieldPos, object? fieldValue)
         {
             switch (fieldPos)
             {
                 case 0:
-                    Set_Field(this, fieldValue! is null ? null : (float)fieldValue!); break;
+                    Set_Field(this, (bool)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Field")]
-                    extern static void Set_Field(global::SchemaNamespace.Class obj, float? value);
+                    extern static void Set_Field(global::SchemaNamespace.Class obj, bool value);
+                case 1:
+                    Set_NullableField(this, fieldValue! is null ? null : (bool)fieldValue!); break;
+                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_NullableField")]
+                    extern static void Set_NullableField(global::SchemaNamespace.Class obj, bool? value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

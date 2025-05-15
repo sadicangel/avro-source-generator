@@ -4,27 +4,28 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class Class : global::Avro.Specific.SpecificException
+    public partial record Record : global::Avro.Specific.ISpecificRecord
     {
-        public required double Field { get; init; }
-        
-        public override global::Avro.Schema Schema { get => Class.s_schema; }
+        public byte[] Field { get; init; } = [0x34, 0x32];
+    
+        public global::Avro.Schema Schema { get => Record.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
-          "type": "error",
-          "name": "Class",
+          "type": "record",
+          "name": "Record",
           "namespace": "SchemaNamespace",
           "fields": [
             {
               "name": "Field",
-              "type": "double"
+              "type": "bytes",
+              "default": "NDI="
             }
           ]
         }
         """);
     
-        public override object? Get(int fieldPos)
+        public object? Get(int fieldPos)
         {
             switch (fieldPos)
             {
@@ -33,14 +34,14 @@ namespace SchemaNamespace
             }
         }
         
-        public override void Put(int fieldPos, object? fieldValue)
+        public void Put(int fieldPos, object? fieldValue)
         {
             switch (fieldPos)
             {
                 case 0:
-                    Set_Field(this, (double)fieldValue!); break;
+                    Set_Field(this, (byte[])fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Field")]
-                    extern static void Set_Field(global::SchemaNamespace.Class obj, double value);
+                    extern static void Set_Field(global::SchemaNamespace.Record obj, byte[] value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

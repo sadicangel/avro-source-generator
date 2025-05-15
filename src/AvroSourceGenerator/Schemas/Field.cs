@@ -12,7 +12,8 @@ internal sealed record class Field(
     ImmutableArray<string> Aliases,
     JsonElement? DefaultJson,
     object? Default,
-    int? Order)
+    int? Order,
+    ImmutableSortedDictionary<string, JsonElement> Properties)
 {
     public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
@@ -35,6 +36,13 @@ internal sealed record class Field(
             writer.WritePropertyName("default");
             DefaultJson.Value.WriteTo(writer);
         }
+
+        foreach (var entry in Properties)
+        {
+            writer.WritePropertyName(entry.Key);
+            entry.Value.WriteTo(writer);
+        }
+
         writer.WriteEndObject();
     }
 }

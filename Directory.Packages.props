@@ -20,6 +20,7 @@
     <PackageVersion Include="PolySharp" Version="1.15.0" />
     <PackageVersion Include="Scriban" Version="6.2.0" />
     <PackageVersion Include="System.Buffers" Version="4.6.1" />
+    <PackageVersion Include="System.Collections.Immutable" Version="8.0.0" />
     <PackageVersion Include="System.Formats.Asn1" Version="9.0.4" />
     <PackageVersion Include="System.IO.Pipelines" Version="9.0.4" />
     <PackageVersion Include="System.Memory" Version="4.6.3" />

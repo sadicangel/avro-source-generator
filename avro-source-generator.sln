@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Integra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.ConfluentKafka", "samples\AvroSourceGenerator.ConfluentKafka\AvroSourceGenerator.ConfluentKafka.csproj", "{EADD63E8-5F5C-470F-AC07-8A03A01E9094}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.AvroIDL", "src\AvroSourceGenerator.AvroIDL\AvroSourceGenerator.AvroIDL.csproj", "{7CA97F7D-1B41-4E82-A9E5-8182CF4D630F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

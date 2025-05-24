@@ -1,0 +1,33 @@
+{
+  "namespace": "com.example.logging",
+  "type": "record",
+  "name": "LogEntry",
+  "fields": [
+    {
+      "name": "timestamp",
+      "type": "string",
+      "doc": "ISO 8601 formatted timestamp"
+    },
+    {
+      "name": "level",
+      "type": {
+        "type": "enum",
+        "name": "LogLevel",
+        "symbols": ["DEBUG", "INFO", "WARN", "ERROR"]
+      }
+    },
+    {
+      "name": "message",
+      "type": "string"
+    },
+    {
+      "name": "context",
+      "type": {
+        "type": "map",
+        "values": "string"
+      },
+      "default": {},
+      "doc": "Additional metadata for structured logging"
+    }
+  ]
+}

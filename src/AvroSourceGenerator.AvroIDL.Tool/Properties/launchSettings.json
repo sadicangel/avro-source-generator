@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "AvroSourceGenerator.AvroIDL.Tool": {
+      "commandName": "Project"
+    }
+  }
+}

@@ -5,8 +5,8 @@ namespace AvroSourceGenerator.AvroIDL.Parsing;
 
 internal static partial class Parser
 {
-    private delegate T ParseNode<out T>(SyntaxTree syntaxTree, SyntaxIterator iterator) where T : SyntaxNode;
-    private delegate T? ParseNodeOptional<out T>(SyntaxTree syntaxTree, SyntaxIterator iterator) where T : SyntaxNode;
+    private delegate T ParseFunc<out T>(SyntaxTree syntaxTree, SyntaxIterator iterator) where T : SyntaxNode;
+    private delegate T? ParseOptionalFunc<out T>(SyntaxTree syntaxTree, SyntaxIterator iterator) where T : SyntaxNode;
 
     internal static CompilationUnitSyntax Parse(SyntaxTree syntaxTree)
     {
@@ -16,7 +16,7 @@ internal static partial class Parser
 
         var iterator = new SyntaxIterator(tokens);
 
-        var expressions = ParseSyntaxList<SyntaxNode>(syntaxTree, iterator, [SyntaxKind.EofToken], ParseDeclaration);
+        var expressions = ParseSyntaxList(syntaxTree, iterator, [SyntaxKind.EofToken], ParseNode);
 
         var eofToken = iterator.Match(SyntaxKind.EofToken);
 

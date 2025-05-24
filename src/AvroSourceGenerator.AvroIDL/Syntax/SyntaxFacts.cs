@@ -51,6 +51,11 @@ public static class SyntaxFacts
             SyntaxKind.ErrorKeyword => "error",
             SyntaxKind.ProtocolKeyword => "protocol",
 
+            SyntaxKind.SchemaKeyword => "schema",
+            SyntaxKind.ImportKeyword => "import",
+            SyntaxKind.IdlKeyword => "idl",
+            SyntaxKind.TypedefKeyword => "typedef",
+
             SyntaxKind.DecimalKeyword => "decimal",
             SyntaxKind.DateKeyword => "date",
             SyntaxKind.TimeMsKeyword => "time_ms",
@@ -61,8 +66,6 @@ public static class SyntaxFacts
             SyntaxKind.ThrowsKeyword => "throws",
             SyntaxKind.OneWayKeyword => "oneway",
 
-            SyntaxKind.SchemaKeyword => "schema",
-            SyntaxKind.ImportKeyword => "import",
 
             SyntaxKind.LineBreakTrivia => null,
             SyntaxKind.SingleLineCommentTrivia => null,
@@ -85,6 +88,13 @@ public static class SyntaxFacts
             SyntaxKind.DoubleType => null,
             SyntaxKind.BytesType => null,
 
+            SyntaxKind.ArrayType => null,
+            SyntaxKind.MapType => null,
+            SyntaxKind.NamedType => null,
+
+            SyntaxKind.Annotation => null,
+            SyntaxKind.Import => null,
+
             SyntaxKind.EnumDeclaration => null,
             SyntaxKind.RecordDeclaration => null,
             SyntaxKind.ErrorDeclaration => null,
@@ -97,7 +107,6 @@ public static class SyntaxFacts
             SyntaxKind.ParameterDeclaration => null,
             SyntaxKind.OneWayClause => null,
             SyntaxKind.ThrowsErrorClause => null,
-
             _ => throw new InvalidOperationException($"Unexpected {nameof(SyntaxKind)}: '{syntaxKind}'")
         };
     }
@@ -140,6 +149,8 @@ public static class SyntaxFacts
 
             "schema" => SyntaxKind.SchemaKeyword,
             "import" => SyntaxKind.ImportKeyword,
+            "idl" => SyntaxKind.IdlKeyword,
+            "typedef" => SyntaxKind.TypedefKeyword,
 
             _ => SyntaxKind.IdentifierToken,
         };

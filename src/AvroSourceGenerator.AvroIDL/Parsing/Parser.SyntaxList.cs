@@ -9,7 +9,7 @@ partial class Parser
         SyntaxTree syntaxTree,
         SyntaxIterator iterator,
         ReadOnlySpan<SyntaxKind> endingKinds,
-        ParseNode<TNode> parseNode)
+        ParseFunc<TNode> parseNode)
         where TNode : SyntaxNode
     {
         var nodes = ImmutableArray.CreateBuilder<TNode>();
@@ -23,7 +23,7 @@ partial class Parser
         SyntaxTree syntaxTree,
         SyntaxIterator iterator,
         ReadOnlySpan<SyntaxKind> endingKinds,
-        ParseNode<TNode> parseNode,
+        ParseFunc<TNode> parseNode,
         Action<TNode> nodeParsed)
         where TNode : SyntaxNode
     {
@@ -43,7 +43,7 @@ partial class Parser
     private static SyntaxList<TNode> ParseSyntaxList<TNode>(
         SyntaxTree syntaxTree,
         SyntaxIterator iterator,
-        ParseNodeOptional<TNode> parseNode)
+        ParseOptionalFunc<TNode> parseNode)
         where TNode : SyntaxNode
     {
         var nodes = ImmutableArray.CreateBuilder<TNode>();
@@ -74,7 +74,7 @@ partial class Parser
         SyntaxIterator iterator,
         SyntaxKind separatorKind,
         ReadOnlySpan<SyntaxKind> endingKinds,
-        ParseNode<TNode> parseNode)
+        ParseFunc<TNode> parseNode)
         where TNode : SyntaxNode
     {
         var nodes = ImmutableArray.CreateBuilder<SyntaxNode>();
@@ -89,7 +89,7 @@ partial class Parser
         SyntaxIterator iterator,
         SyntaxKind separatorKind,
         ReadOnlySpan<SyntaxKind> endingKinds,
-        ParseNode<TNode> parseNode,
+        ParseFunc<TNode> parseNode,
         Action<SyntaxNode> nodeParsed)
         where TNode : SyntaxNode
     {

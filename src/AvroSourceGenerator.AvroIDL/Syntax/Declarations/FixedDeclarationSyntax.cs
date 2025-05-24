@@ -8,7 +8,8 @@ public sealed record class FixedDeclarationSyntax(
     SimpleNameSyntax Name,
     SyntaxToken ParenthesisOpenToken,
     SyntaxToken SizeLiteralToken,
-    SyntaxToken ParenthesisCloseToken)
+    SyntaxToken ParenthesisCloseToken,
+    SyntaxToken SemicolonToken)
     : SchemaDeclarationSyntax(SyntaxKind.FixedDeclaration, SyntaxTree)
 {
     public override IEnumerable<SyntaxNode> Children()
@@ -18,5 +19,6 @@ public sealed record class FixedDeclarationSyntax(
         yield return ParenthesisOpenToken;
         yield return SizeLiteralToken;
         yield return ParenthesisCloseToken;
+        yield return SemicolonToken;
     }
 }

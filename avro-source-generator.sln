@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Conflue
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.AvroIDL", "src\AvroSourceGenerator.AvroIDL\AvroSourceGenerator.AvroIDL.csproj", "{7CA97F7D-1B41-4E82-A9E5-8182CF4D630F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.AvroIDL.Tool", "src\AvroSourceGenerator.AvroIDL.Tool\AvroSourceGenerator.AvroIDL.Tool.csproj", "{44DC48E5-C244-4F9B-9917-ACA9F7C2143D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,14 @@ Global
 		{EADD63E8-5F5C-470F-AC07-8A03A01E9094}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EADD63E8-5F5C-470F-AC07-8A03A01E9094}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EADD63E8-5F5C-470F-AC07-8A03A01E9094}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7CA97F7D-1B41-4E82-A9E5-8182CF4D630F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CA97F7D-1B41-4E82-A9E5-8182CF4D630F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CA97F7D-1B41-4E82-A9E5-8182CF4D630F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CA97F7D-1B41-4E82-A9E5-8182CF4D630F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44DC48E5-C244-4F9B-9917-ACA9F7C2143D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44DC48E5-C244-4F9B-9917-ACA9F7C2143D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44DC48E5-C244-4F9B-9917-ACA9F7C2143D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44DC48E5-C244-4F9B-9917-ACA9F7C2143D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

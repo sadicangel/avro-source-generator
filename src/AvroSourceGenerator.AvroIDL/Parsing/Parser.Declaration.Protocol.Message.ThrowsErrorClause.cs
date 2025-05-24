@@ -9,7 +9,7 @@ partial class Parser
     {
         if (iterator.TryMatch(out var throwsKeyword, SyntaxKind.ThrowsKeyword))
         {
-            var errors = ParseSyntaxList(syntaxTree, iterator, [SyntaxKind.SemicolonToken], ParseNamedType);
+            var errors = ParseSyntaxList(syntaxTree, iterator, SyntaxKind.CommaToken, [SyntaxKind.SemicolonToken], ParseNamedType);
 
             return new ThrowsErrorClauseSyntax(syntaxTree, throwsKeyword, errors);
         }

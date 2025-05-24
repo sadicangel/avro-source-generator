@@ -7,7 +7,7 @@ partial class Parser
 {
     private static TypeSyntax ParseType(SyntaxTree syntaxTree, SyntaxIterator iterator)
     {
-        return iterator.Current.SyntaxKind switch
+        TypeSyntax type = iterator.Current.SyntaxKind switch
         {
             SyntaxKind.VoidKeyword => ParsePrimitiveType(syntaxTree, iterator),
             SyntaxKind.NullKeyword => ParsePrimitiveType(syntaxTree, iterator),
@@ -21,8 +21,17 @@ partial class Parser
 
             SyntaxKind.ArrayKeyword => ParseArrayType(syntaxTree, iterator),
             SyntaxKind.MapKeyword => ParseMapType(syntaxTree, iterator),
+            SyntaxKind.UnionKeyword => ParseUnionType(syntaxTree, iterator),
 
             _ => ParseNamedType(syntaxTree, iterator),
         };
+
+        if (iterator.Current.SyntaxKind is SyntaxKind.HookToken)
+        {
+            var hookToken = iterator.Match(SyntaxKind.HookToken);
+            type = new OptionalTypeSyntax(syntaxTree, type, hookToken);
+        }
+
+        return type;
     }
 }

@@ -47,12 +47,18 @@ public enum SyntaxKind
 
     ArrayKeyword,
     MapKeyword,
+    UnionKeyword,
 
     EnumKeyword,
     FixedKeyword,
     RecordKeyword,
     ErrorKeyword,
     ProtocolKeyword,
+
+    SchemaKeyword,
+    ImportKeyword,
+    IdlKeyword,
+    TypedefKeyword,
 
     DecimalKeyword,
     DateKeyword,
@@ -63,9 +69,6 @@ public enum SyntaxKind
 
     ThrowsKeyword,
     OneWayKeyword,
-
-    SchemaKeyword,
-    ImportKeyword,
 
     LineBreakTrivia,
     SingleLineCommentTrivia,
@@ -90,10 +93,14 @@ public enum SyntaxKind
 
     ArrayType,
     MapType,
+    UnionType,
+    OptionalType,
 
     NamedType,
 
     Annotation,
+
+    Import,
 
     EnumDeclaration,
     RecordDeclaration,

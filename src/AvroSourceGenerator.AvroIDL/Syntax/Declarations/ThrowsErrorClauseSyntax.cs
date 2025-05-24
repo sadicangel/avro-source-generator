@@ -5,7 +5,7 @@ namespace AvroSourceGenerator.AvroIDL.Syntax.Declarations;
 public sealed record class ThrowsErrorClauseSyntax(
     SyntaxTree SyntaxTree,
     SyntaxToken ThrowsKeyword,
-    SyntaxList<NamedTypeSyntax> Errors)
+    SeparatedSyntaxList<NamedTypeSyntax> Errors)
     : SyntaxNode(SyntaxKind.ThrowsErrorClause, SyntaxTree)
 {
     public override IEnumerable<SyntaxNode> Children()

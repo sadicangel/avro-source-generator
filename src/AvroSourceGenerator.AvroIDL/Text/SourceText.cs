@@ -21,7 +21,7 @@ public sealed record class SourceText(string Text, string FilePath)
         }
     }
 
-    internal int GetLineIndex(Index position)
+    public int GetLineIndex(int offset)
     {
         var lower = 0;
         var upper = Lines.Count - 1;
@@ -31,10 +31,10 @@ public sealed record class SourceText(string Text, string FilePath)
             var index = lower + (upper - lower) / 2;
             var start = Lines[index].SourceSpan.Offset;
 
-            if (position.Value == start)
+            if (offset == start)
                 return index;
 
-            if (start > position.Value)
+            if (start > offset)
                 upper = index - 1;
             else
                 lower = index + 1;

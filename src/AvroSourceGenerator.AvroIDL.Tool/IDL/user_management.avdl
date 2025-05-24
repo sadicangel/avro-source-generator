@@ -1,0 +1,80 @@
+/** 
+ * A full-featured user management service.
+ */
+@namespace("com.example.user")
+import idl "common_types.avdl";
+import schema "logging.avsc";
+
+/** A service for managing user accounts. */
+protocol UserService {
+
+    /** Fixed-size UUID identifier. */
+    fixed UUID(16);
+
+    /** Common status values for entities. */
+    enum Status {
+        ACTIVE,
+        INACTIVE,
+        PENDING
+    }
+
+    /** User roles. */
+    enum Role {
+        ADMIN,
+        MODERATOR,
+        USER
+    }
+
+    /** A user record. */
+    record User {
+        UUID id;
+        string username;
+        string email;
+        Role role;
+        Status status = ACTIVE;
+        map<string> metadata;
+    }
+
+    /** Error for not found entities. */
+    error NotFound {
+        string entityType;
+        string id;
+    }
+
+    /** Error for validation failures. */
+    error ValidationError {
+        string field;
+        string message;
+    }
+
+    /** Error for security-related violations. */
+    error Unauthorized {
+        string reason;
+    }
+
+    /** Request to create a user. */
+    record CreateUserRequest {
+        string username;
+        string email;
+        Role role = USER;
+        map<string> metadata = {};
+    }
+
+    /** Union return type: either user or null if not created. */
+    User? createUser(CreateUserRequest request) throws ValidationError;
+
+    /** Retrieve a user or fail with error. */
+    User getUser(UUID id) throws NotFound;
+
+    /** Update a user's role and status. */
+    User updateUser(UUID id, Role role, Status status) throws NotFound, Unauthorized, ValidationError;
+
+    /** Deletes a user by ID. Returns true if deleted. */
+    boolean deleteUser(UUID id) throws NotFound, Unauthorized;
+
+    /** Returns a map of users indexed by ID. */
+    map<User> listUsers();
+
+    /** Retrieves metadata for a user. */
+    map<string> getUserMetadata(UUID id) throws NotFound;
+}

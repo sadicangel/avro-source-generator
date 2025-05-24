@@ -12,6 +12,7 @@ partial class Parser
         var parenthesisOpenToken = iterator.Match(SyntaxKind.ParenthesisOpenToken);
         var sizeLiteralToken = iterator.Match(SyntaxKind.IntegerLiteralToken);
         var parenthesisCloseToken = iterator.Match(SyntaxKind.ParenthesisCloseToken);
+        var semicolonToken = iterator.Match(SyntaxKind.SemicolonToken);
 
         return new FixedDeclarationSyntax(
             syntaxTree,
@@ -19,6 +20,7 @@ partial class Parser
             name,
             parenthesisOpenToken,
             sizeLiteralToken,
-            parenthesisCloseToken);
+            parenthesisCloseToken,
+            semicolonToken);
     }
 }

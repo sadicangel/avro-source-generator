@@ -1,0 +1,40 @@
+/**
+ * Common types shared across services.
+ */
+@namespace("com.example.shared")
+protocol CommonTypes {
+
+  /** Represents a paginated request. */
+  record PageRequest {
+    int page = 1;
+    int size = 20;
+  }
+
+  /** Represents a paginated response. */
+  record PageResponse<T> {
+    int totalItems;
+    int totalPages;
+    int page;
+    int size;
+    array<T> items;
+  }
+
+  /** Represents a standard response envelope. */
+  record Result<T> {
+    boolean success;
+    string? message;
+    T data;
+  }
+
+  /** Optional string alias. */
+  typedef string? OptionalString;
+
+  /** Optional boolean alias. */
+  typedef boolean? OptionalBoolean;
+
+  /** ISO 8601 formatted date string. */
+  typedef string IsoDateTime;
+
+  /** A flexible metadata map. */
+  typedef map<string> Metadata;
+}

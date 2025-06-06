@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
+using System.Text;
 using System.Text.Json;
 using AvroSourceGenerator.Schemas.Extensions;
 
@@ -311,7 +312,21 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             builder.Add(Schema(innerSchema, containingNamespace));
         var schemas = builder.ToImmutable();
 
-        return UnionSchema.FromArray(schemas, useNullableReferenceTypes);
+        var union = UnionSchema.FromArray(schemas, useNullableReferenceTypes, containingNamespace);
+
+        if (union.UnderlyingSchema.Type is SchemaType.Abstract)
+        {
+            _schemas.Add(union.UnderlyingSchema.SchemaName, (TopLevelSchema)union.UnderlyingSchema);
+
+            foreach (var item in union.Schemas)
+            {
+                ((RecordSchema)item).InheritsFrom = new CSharpName(
+                    Name: union.Schemas.Aggregate(new StringBuilder("OneOf"), (acc, val) => acc.Append(val.CSharpName.Name), acc => acc.ToString()),
+                    Namespace: containingNamespace);
+            }
+        }
+
+        return union;
     }
 
     private ProtocolSchema Protocol(JsonElement schema, ImmutableSortedDictionary<string, JsonElement> properties, string? containingNamespace)
@@ -416,3 +431,11 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
         return builder.ToImmutable();
     }
 }
+
+abstract record Base()
+{
+
+}
+
+sealed record D1 : Base;
+sealed record D2 : Base;

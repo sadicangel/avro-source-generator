@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Text;
 using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
@@ -17,12 +18,12 @@ internal sealed record class UnionSchema(
         writer.WriteEndArray();
     }
 
-    public static UnionSchema FromArray(ImmutableArray<AvroSchema> schemas, bool useNullableReferenceTypes)
+    public static UnionSchema FromArray(ImmutableArray<AvroSchema> schemas, bool useNullableReferenceTypes, string? containingNamespace)
     {
         var isNullable = schemas.Any(static schema => schema.Type == SchemaType.Null);
-        var underlyingSchema = GetUnderlyingSchema(schemas);
+        var underlyingSchema = GetUnderlyingSchema(schemas, containingNamespace);
         while (underlyingSchema is UnionSchema union)
-            underlyingSchema = GetUnderlyingSchema(union.Schemas);
+            underlyingSchema = GetUnderlyingSchema(union.Schemas, containingNamespace);
         var hasQuestionMark = isNullable && (useNullableReferenceTypes || MapsToValueType(underlyingSchema.Type));
         var csharpName = new CSharpName(
             underlyingSchema.CSharpName.Name + (hasQuestionMark ? "?" : ""),
@@ -30,7 +31,7 @@ internal sealed record class UnionSchema(
 
         return new UnionSchema(csharpName, schemas, underlyingSchema, isNullable);
 
-        static AvroSchema GetUnderlyingSchema(ImmutableArray<AvroSchema> schemas)
+        static AvroSchema GetUnderlyingSchema(ImmutableArray<AvroSchema> schemas, string? containingNamespace)
         {
             return schemas.Length switch
             {
@@ -40,16 +41,16 @@ internal sealed record class UnionSchema(
                 2 => (schemas[0].Type, schemas[1].Type) switch
                 {
                     // "null" | "null"
-                    (SchemaType.Null, SchemaType.Null) => AvroSchema.Object,
+                    (SchemaType.Null, SchemaType.Null) => Object,
                     // "null" | T
                     (SchemaType.Null, _) => schemas[1],
                     // T | "null"
                     (_, SchemaType.Null) => schemas[0],
                     // T1 | T2
-                    _ => AvroSchema.Object,
+                    _ => Object,
                 },
                 // T1 | T2 | ... | Tn
-                _ => AvroSchema.Object,
+                _ => MakeUnionBase(schemas, containingNamespace),
             };
         }
 
@@ -63,5 +64,21 @@ internal sealed record class UnionSchema(
             SchemaType.Enum => true,
             _ => false,
         };
+
+        static bool MapsToCSharpClass(SchemaType type) => type is SchemaType.Record;
+
+        static AvroSchema MakeUnionBase(ImmutableArray<AvroSchema> schemas, string? containingNamespace)
+        {
+            if (schemas.Any(x => !MapsToCSharpClass(x.Type)))
+            {
+                return Object;
+            }
+
+            return new AbstractRecordSchema(
+                SchemaName: new SchemaName(
+                    Name: schemas.Aggregate(new StringBuilder("OneOf"), (acc, val) => acc.Append(val.CSharpName.Name), acc => acc.ToString()),
+                    Namespace: containingNamespace),
+                DerivedSchemas: schemas);
+        }
     }
 }

@@ -1,4 +1,4 @@
-{{ AccessModifier }} partial {{ RecordDeclaration }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificRecord
+{{ AccessModifier }} partial {{ RecordDeclaration }} {{ $.schema.CSharpName.Name }} : {{ if $.schema.InheritsFrom -}}{{ $.schema.InheritsFrom }}, {{ end -}} global::Avro.Specific.ISpecificRecord
 {
     {{~ for field in $.schema.Fields ~}}
     {{ include 'field' field: field }}

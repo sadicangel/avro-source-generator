@@ -15,6 +15,7 @@ internal sealed class TemplateLoader : ITemplateLoader
     {
         s_templatePaths = new()
         {
+            ["abstract"] = "AvroSourceGenerator.Templates.abstract.sbncs",
             ["enum"] = "AvroSourceGenerator.Templates.enum.sbncs",
             ["error"] = "AvroSourceGenerator.Templates.error.sbncs",
             ["field"] = "AvroSourceGenerator.Templates.field.sbncs",

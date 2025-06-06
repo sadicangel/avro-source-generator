@@ -19,4 +19,5 @@ internal enum SchemaType
     Error,
     Logical,
     Protocol,
+    Abstract,
 }

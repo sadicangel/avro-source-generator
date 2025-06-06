@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Tests;
 
-public sealed class UnionTaggedTests
+public sealed class UnionObjectBaseTests
 {
     [Fact]
     public Task Verify()
@@ -14,17 +14,9 @@ public sealed class UnionTaggedTests
               "namespace": "com.example.notifications",
               "fields": [
                 {
-                  "name": "type",
-                  "type": {
-                    "type": "enum",
-                    "name": "NotificationType",
-                    "symbols": ["EMAIL", "SMS", "PUSH"]
-                  },
-                  "doc": "Indicates which type of content is stored in the 'content' field"
-                },
-                {
                   "name": "content",
                   "type": [
+                    "string",
                     {
                       "type": "record",
                       "name": "EmailContent",

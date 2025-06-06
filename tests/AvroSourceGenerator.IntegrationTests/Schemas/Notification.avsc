@@ -4,15 +4,6 @@
   "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
   "fields": [
     {
-      "name": "type",
-      "type": {
-        "type": "enum",
-        "name": "NotificationType",
-        "symbols": [ "EMAIL", "SMS", "PUSH" ]
-      },
-      "doc": "Indicates which type of content is stored in the 'content' field"
-    },
-    {
       "name": "content",
       "type": [
         {

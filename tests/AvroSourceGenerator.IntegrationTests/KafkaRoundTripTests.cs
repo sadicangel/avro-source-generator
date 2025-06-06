@@ -152,45 +152,32 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
 
     [Theory]
     [MemberData(nameof(NotificationVariants))]
-    public async Task Union_types_mapped_to_abstract_remain_unchanged_after_roundtrip_to_kafka(NotificationType type, OneOfEmailContentSmsContentPushContent content)
+    public async Task Union_types_mapped_to_abstract_remain_unchanged_after_roundtrip_to_kafka(OneOfEmailContentSmsContentPushContent content)
     {
-        var expected = new Notification
-        {
-            type = type,
-            content = content
-        };
+        var expected = new Notification { content = content };
 
         var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
 
         AssertEqual(expected, actual);
     }
 
-    public static TheoryData<NotificationType, OneOfEmailContentSmsContentPushContent> NotificationVariants() => [
-        (
-            NotificationType.EMAIL,
-            new EmailContent
-            {
-                subject = "Welcome!",
-                body = "Thanks for signing up.",
-                recipientEmail = "user@example.com"
-            }
-        ),
-        (
-            NotificationType.SMS,
-            new SmsContent
-            {
-                message = "Your code is 123456",
-                phoneNumber = "+1234567890"
-            }
-        ),
-        (
-            NotificationType.PUSH,
-            new PushContent
-            {
-                title = "New Message",
-                message = "You have a new message waiting.",
-                deviceToken = "abcdef123456"
-            }
-        )
+    public static TheoryData<OneOfEmailContentSmsContentPushContent> NotificationVariants() => [
+        new EmailContent
+        {
+            subject = "Welcome!",
+            body = "Thanks for signing up.",
+            recipientEmail = "user@example.com"
+        },
+        new SmsContent
+        {
+            message = "Your code is 123456",
+            phoneNumber = "+1234567890"
+        },
+        new PushContent
+        {
+            title = "New Message",
+            message = "You have a new message waiting.",
+            deviceToken = "abcdef123456"
+        }
     ];
 }

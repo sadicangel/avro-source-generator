@@ -487,11 +487,3 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
         return builder.ToImmutable();
     }
 }
-
-abstract record Base()
-{
-
-}
-
-sealed record D1 : Base;
-sealed record D2 : Base;

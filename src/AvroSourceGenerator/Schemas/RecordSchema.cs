@@ -12,6 +12,8 @@ internal sealed record class RecordSchema(
     ImmutableSortedDictionary<string, JsonElement> Properties)
     : NamedSchema(SchemaType.Record, Json, SchemaName, Documentation, Aliases, Properties)
 {
+    public AvroSchema? InheritsFrom { get; set; }
+
     public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         if (!writtenSchemas.Add(SchemaName))

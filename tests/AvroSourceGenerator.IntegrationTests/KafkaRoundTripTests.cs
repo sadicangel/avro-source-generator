@@ -126,4 +126,58 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
 
         AssertEqual(expected, actual);
     }
+
+    [Theory]
+    [InlineData(null), InlineData(2), InlineData("cash"), MemberData(nameof(CreditCardPaymentVariant))]
+    public async Task Union_types_mapped_to_object_remain_unchanged_after_roundtrip_to_kafka(object? variant)
+    {
+        var expected = new PaymentRecord
+        {
+            paymentMethod = variant
+        };
+
+        var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
+
+        AssertEqual(expected, actual);
+    }
+
+    public static TheoryData<CreditCardPayment> CreditCardPaymentVariant() => [
+        new CreditCardPayment
+        {
+            cardNumber = "4111111111111111",
+            cardHolder = "Alice Example",
+            expirationDate = "12/26",
+        }
+    ];
+
+    [Theory]
+    [MemberData(nameof(NotificationVariants))]
+    public async Task Union_types_mapped_to_abstract_remain_unchanged_after_roundtrip_to_kafka(OneOfEmailContentSmsContentPushContent content)
+    {
+        var expected = new Notification { content = content };
+
+        var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
+
+        AssertEqual(expected, actual);
+    }
+
+    public static TheoryData<OneOfEmailContentSmsContentPushContent> NotificationVariants() => [
+        new EmailContent
+        {
+            subject = "Welcome!",
+            body = "Thanks for signing up.",
+            recipientEmail = "user@example.com"
+        },
+        new SmsContent
+        {
+            message = "Your code is 123456",
+            phoneNumber = "+1234567890"
+        },
+        new PushContent
+        {
+            title = "New Message",
+            message = "You have a new message waiting.",
+            deviceToken = "abcdef123456"
+        }
+    ];
 }

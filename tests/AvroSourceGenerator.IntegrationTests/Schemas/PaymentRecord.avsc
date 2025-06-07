@@ -1,0 +1,35 @@
+{
+  "type": "record",
+  "name": "PaymentRecord",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
+  "fields": [
+    {
+      "name": "paymentMethod",
+      "type": [
+        "null",
+        "string",
+        "int",
+        {
+          "type": "record",
+          "name": "CreditCardPayment",
+          "fields": [
+            {
+              "name": "cardNumber",
+              "type": "string"
+            },
+            {
+              "name": "cardHolder",
+              "type": "string"
+            },
+            {
+              "name": "expirationDate",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "default": null,
+      "doc": "The method used for payment: a string name, ID, or credit card record"
+    }
+  ]
+}

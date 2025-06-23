@@ -152,7 +152,7 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
 
     [Theory]
     [MemberData(nameof(NotificationVariants))]
-    public async Task Union_types_mapped_to_abstract_remain_unchanged_after_roundtrip_to_kafka(OneOfEmailContentSmsContentPushContent content)
+    public async Task Union_types_mapped_to_abstract_remain_unchanged_after_roundtrip_to_kafka(NotificationContentVariant content)
     {
         var expected = new Notification { content = content };
 
@@ -161,7 +161,7 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
         AssertEqual(expected, actual);
     }
 
-    public static TheoryData<OneOfEmailContentSmsContentPushContent> NotificationVariants() => [
+    public static TheoryData<NotificationContentVariant> NotificationVariants() => [
         new EmailContent
         {
             subject = "Welcome!",

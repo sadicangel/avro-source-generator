@@ -3,6 +3,6 @@
 namespace com.example.notifications
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public abstract partial record OneOfEmailContentSmsContentPushContent;
+    public abstract partial record NotificationContentVariant;
 
 }

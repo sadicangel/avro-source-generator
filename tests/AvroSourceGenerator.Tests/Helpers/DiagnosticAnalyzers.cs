@@ -62,4 +62,3 @@ internal static class DiagnosticAnalyzers
         public Assembly LoadFromPath(string fullPath) => Assembly.LoadFrom(fullPath);
     }
 }
-

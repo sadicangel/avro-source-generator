@@ -56,7 +56,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             "bytes" => AvroSchema.Bytes,
             "string" => AvroSchema.String,
             _ when _schemas.TryGetValue(type.GetRequiredSchemaName(containingNamespace), out var topLevelSchema)
-            && topLevelSchema is NamedSchema namedSchema => namedSchema,
+                && topLevelSchema is NamedSchema namedSchema => namedSchema,
             _ => throw new InvalidSchemaException($"Unknown schema '{type}'")
         };
     }
@@ -157,7 +157,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
         var documentation = schema.GetDocumentation();
         var aliases = schema.GetAliases();
-        var fields = Fields(schema, schemaName.Namespace);
+        var fields = Fields(schema, schemaName);
 
         var recordSchema = new RecordSchema(schema, schemaName, documentation, aliases, fields, properties);
 
@@ -175,7 +175,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
         var documentation = schema.GetDocumentation();
         var aliases = schema.GetAliases();
-        var fields = Fields(schema, schemaName.Namespace);
+        var fields = Fields(schema, schemaName);
 
         var errorSchema = new ErrorSchema(schema, schemaName, documentation, aliases, fields, properties);
         _schemas[schemaName] = errorSchema;
@@ -183,23 +183,49 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
         return errorSchema;
     }
 
-    private ImmutableArray<Field> Fields(JsonElement schema, string? containingNamespace)
+    private ImmutableArray<Field> Fields(JsonElement schema, SchemaName containingSchemaName)
     {
         var fields = ImmutableArray.CreateBuilder<Field>();
         foreach (var field in schema.GetRequiredArray("fields"))
-            fields.Add(Field(field, containingNamespace));
+            fields.Add(Field(field, containingSchemaName));
 
         return fields.ToImmutable();
     }
 
-    private Field Field(JsonElement field, string? containingNamespace)
+    private Field Field(JsonElement field, SchemaName containingSchemaName)
     {
         var name = field.GetRequiredString("name").GetValidName();
-        var type = Schema(field.GetRequiredProperty("type"), containingNamespace);
+        var type = Schema(field.GetRequiredProperty("type"), containingSchemaName.Namespace);
         var underlyingType = type;
         var isNullable = false;
         if (type is UnionSchema union)
         {
+            // TODO: Can we extend this to Fixed and Error types in the future?
+            if (union.Schemas.All(x => x.Type is SchemaType.Record or SchemaType.Null) && union.Schemas.Any(x => x.Type is not SchemaType.Null))
+            {
+                var underlyingSchema = new AbstractRecordSchema(
+                    SchemaName: new SchemaName(
+                        Name: MakeVariantName(containingSchemaName.Name, name),
+                        Namespace: containingSchemaName.Namespace),
+                    DerivedSchemas: union.Schemas);
+
+                union = union with
+                {
+                    CSharpName = new CSharpName(
+                        underlyingSchema.CSharpName.Name + (union.IsNullable ? "?" : ""),
+                        underlyingSchema.CSharpName.Namespace),
+                    UnderlyingSchema = underlyingSchema
+                };
+
+                _schemas.Add(underlyingSchema.SchemaName, underlyingSchema);
+
+                foreach (var record in union.Schemas.OfType<RecordSchema>())
+                {
+                    record.InheritsFrom = underlyingSchema;
+                }
+            }
+
+            type = union;
             isNullable = union.IsNullable;
             underlyingType = union.UnderlyingSchema;
         }
@@ -210,7 +236,20 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
         var @default = GetValue(type, defaultJson);
         var order = field.GetNullableInt32("order");
         var properties = GetProperties(field);
+
         return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order, properties);
+
+        static string MakeVariantName(string schemaName, string fieldName)
+        {
+            var builder = new StringBuilder(schemaName.Length + fieldName.Length + 7)
+                .Append(schemaName)
+                .Append(fieldName)
+                .Append("Variant");
+
+            builder[schemaName.Length] = char.ToUpperInvariant(builder[schemaName.Length]);
+
+            return builder.ToString();
+        }
     }
 
     private string? GetValue(AvroSchema type, JsonElement? json)
@@ -298,7 +337,6 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             "local-timestamp-micros" => new LogicalSchema(underlyingSchema, new CSharpName("DateTime", "System"), new SchemaName(logicalType), properties),
             "local-timestamp-millis" => new LogicalSchema(underlyingSchema, new CSharpName("DateTime", "System"), new SchemaName(logicalType), properties),
             "uuid" => new LogicalSchema(underlyingSchema, new CSharpName("Guid", "System"), new SchemaName(logicalType), properties),
-            // _ => throw new InvalidSchemaException($"Unsupported logical type '{logicalType}' in schema: {schema.GetRawText()}"),
             // TODO: We should report a warning for unsupported logical types, maybe? But always return the underlying schema.
             _ => underlyingSchema,
         };
@@ -320,16 +358,6 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             underlyingSchema.CSharpName.Name + (hasQuestionMark ? "?" : ""),
             underlyingSchema.CSharpName.Namespace);
 
-        if (underlyingSchema.Type is SchemaType.Abstract)
-        {
-            _schemas.Add(underlyingSchema.SchemaName, (TopLevelSchema)underlyingSchema);
-
-            foreach (var record in schemas.OfType<RecordSchema>())
-            {
-                record.InheritsFrom = underlyingSchema;
-            }
-        }
-
         return new UnionSchema(csharpName, schemas, underlyingSchema, isNullable);
 
         static bool MapsToValueType(SchemaType type) => type switch
@@ -345,43 +373,19 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
         static AvroSchema GetUnderlyingSchema(ImmutableArray<AvroSchema> schemas, string? containingNamespace)
         {
-            return schemas.Length switch
+            return schemas switch
             {
                 // T1
-                1 => schemas[0],
-                // T1 | T2
-                2 => (schemas[0].Type, schemas[1].Type) switch
-                {
-                    // "null" | "null"
-                    (SchemaType.Null, SchemaType.Null) => AvroSchema.Object,
-                    // "null" | T
-                    (SchemaType.Null, _) => schemas[1],
-                    // T | "null"
-                    (_, SchemaType.Null) => schemas[0],
-                    // T1 | T2
-                    _ => AvroSchema.Object,
-                },
+                [var t1] => t1,
+                // "null" | "null"
+                [{ Type: SchemaType.Null }, { Type: SchemaType.Null }] => AvroSchema.Object,
+                // T1 | "null"
+                [var t1, { Type: SchemaType.Null }] => t1,
+                // "null" | T2
+                [{ Type: SchemaType.Null }, var t2] => t2,
                 // T1 | T2 | ... | Tn
-                _ => MakeUnionBase(schemas, containingNamespace),
+                _ => AvroSchema.Object,
             };
-        }
-
-        static AvroSchema MakeUnionBase(ImmutableArray<AvroSchema> schemas, string? containingNamespace)
-        {
-            // TODO: We can extend this to Fixed and Error types 'easily'.
-            if (schemas.All(x => x.Type is SchemaType.Record or SchemaType.Null))
-            {
-                return new AbstractRecordSchema(
-                    SchemaName: new SchemaName(
-                        Name: schemas
-                            .Where(x => x.Type is not SchemaType.Null)
-                            .Aggregate(new StringBuilder("OneOf"), (acc, val) => acc.Append(val.CSharpName.Name))
-                            .ToString(),
-                        Namespace: containingNamespace),
-                    DerivedSchemas: schemas);
-            }
-
-            return AvroSchema.Object;
         }
     }
 

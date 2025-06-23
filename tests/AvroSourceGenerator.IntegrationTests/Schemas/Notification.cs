@@ -7,7 +7,7 @@ namespace AvroSourceGenerator.IntegrationTests.Schemas;
 partial record Notification { }
 
 [SuppressMessage("Extensibility", "xUnit3001:Classes that are marked as serializable (or created by the test framework at runtime) must have a public parameterless constructor", Justification = "<Pending>")]
-partial record OneOfEmailContentSmsContentPushContent : IXunitSerializable
+partial record NotificationContentVariant : IXunitSerializable
 {
     public abstract void Deserialize(IXunitSerializationInfo info);
 

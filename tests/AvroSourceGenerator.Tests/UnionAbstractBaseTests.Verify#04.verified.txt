@@ -9,7 +9,7 @@ namespace com.example.notifications
         /// <summary>
         /// The type-specific notification payload
         /// </summary>
-        public required global::com.example.notifications.OneOfEmailContentSmsContentPushContent content { get; init; }
+        public required global::com.example.notifications.NotificationContentVariant content { get; init; }
     
         public global::Avro.Schema Schema { get => Notification.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
@@ -96,9 +96,9 @@ namespace com.example.notifications
             switch (fieldPos)
             {
                 case 0:
-                    Set_content(this, (global::com.example.notifications.OneOfEmailContentSmsContentPushContent)fieldValue!); break;
+                    Set_content(this, (global::com.example.notifications.NotificationContentVariant)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_content")]
-                    extern static void Set_content(global::com.example.notifications.Notification obj, global::com.example.notifications.OneOfEmailContentSmsContentPushContent value);
+                    extern static void Set_content(global::com.example.notifications.Notification obj, global::com.example.notifications.NotificationContentVariant value);
                 default:
                     throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }

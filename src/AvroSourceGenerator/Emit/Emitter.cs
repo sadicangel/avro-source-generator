@@ -55,8 +55,7 @@ internal static class Emitter
         }
         catch (JsonException ex)
         {
-            // TODO: We can probably get a better location for the error.
-            context.ReportDiagnostic(InvalidJsonDiagnostic.Create(avroFile.GetLocation(), ex.Message));
+            context.ReportDiagnostic(InvalidJsonDiagnostic.Create(avroFile.GetLocation(ex), ex.Message));
         }
         catch (InvalidSchemaException ex)
         {

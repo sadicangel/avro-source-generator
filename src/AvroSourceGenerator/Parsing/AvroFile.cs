@@ -20,6 +20,8 @@ internal readonly record struct AvroFile(
 
     public Location GetLocation(TextSpan textSpan, LinePositionSpan lineSpan) => Path.GetLocation(textSpan, lineSpan);
 
+    public Location GetLocation(JsonException exception) => Path.GetLocation(Text, exception);
+
     public bool Equals(AvroFile other) => Path == other.Path && Text == other.Text;
 
     public override int GetHashCode() => HashCode.Combine(Path, Text);

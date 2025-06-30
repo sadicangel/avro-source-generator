@@ -40,7 +40,7 @@ internal static class Parser
         }
         catch (JsonException ex)
         {
-            diagnostics.Add(InvalidJsonDiagnostic.Create(path.GetLocation(text), ex.Message));
+            diagnostics.Add(InvalidJsonDiagnostic.Create(path.GetLocation(text, ex), ex.Message));
         }
         catch (InvalidSchemaException ex)
         {

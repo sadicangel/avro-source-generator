@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Text.Json;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator.Parsing;
@@ -10,6 +11,26 @@ internal static class LocationExtensions
 
     public static Location GetLocation(this string path, TextSpan textSpan, LinePositionSpan lineSpan) =>
         Location.Create(path, textSpan, lineSpan);
+
+    public static Location GetLocation(this string path, string? text, JsonException exception)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return path.GetLocation(text);
+        }
+
+        var sourceText = SourceText.From(text!);
+        var lineNumber = exception.LineNumber ?? 0;
+        var bytePositionInLine = exception.BytePositionInLine ?? 0;
+
+        var line = sourceText.Lines[Math.Min((int)lineNumber, sourceText.Lines.Count - 1)];
+        var charIndex = Math.Min((int)bytePositionInLine, line.Span.Length);
+
+        var span = new TextSpan(line.Start + charIndex, line.End);
+        var lineSpan = sourceText.Lines.GetLinePositionSpan(span);
+
+        return path.GetLocation(span, lineSpan);
+    }
 
     public static LinePosition GetLastLinePosition(this string? text) => text.AsSpan().GetLastLinePosition();
 

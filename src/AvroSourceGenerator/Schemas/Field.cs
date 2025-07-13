@@ -13,7 +13,8 @@ internal sealed record class Field(
     JsonElement? DefaultJson,
     object? Default,
     int? Order,
-    ImmutableSortedDictionary<string, JsonElement> Properties)
+    ImmutableSortedDictionary<string, JsonElement> Properties,
+    string? Remarks)
 {
     public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {

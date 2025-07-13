@@ -7,3 +7,4 @@ namespace PascalCase.snake_case.@object
     {
     }
 }
+#pragma warning restore CS8618, CS8633, CS8714, CS8775

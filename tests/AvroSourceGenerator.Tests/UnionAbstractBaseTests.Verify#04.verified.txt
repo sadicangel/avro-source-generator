@@ -9,6 +9,14 @@ namespace com.example.notifications
         /// <summary>
         /// The type-specific notification payload
         /// </summary>
+        /// <remarks>
+        /// Represents a union schema that can be one of the following types:
+        /// <list type="bullet">
+        /// <item><see cref="global::com.example.notifications.EmailContent"/></item>
+        /// <item><see cref="global::com.example.notifications.SmsContent"/></item>
+        /// <item><see cref="global::com.example.notifications.PushContent"/></item>
+        /// </list>
+        /// </remarks>
         public required global::com.example.notifications.NotificationContentVariant content { get; init; }
     
         public global::Avro.Schema Schema { get => Notification.s_schema; }

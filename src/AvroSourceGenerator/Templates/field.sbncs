@@ -5,6 +5,13 @@
 {{~ end ~}}
 /// </summary>
 {{~ end ~}}
+{{~ if !string.whitespace field.Remarks ~}}
+/// <remarks>
+{{~ for line in $.field.Remarks | string.split '\n' | array.each @string.strip ~}}
+/// {{ line }}
+{{~ end ~}}
+/// </remarks>
+{{~ end ~}}
 {{~ if $.field.Aliases.size > 0 ~}}
 [global::AvroSourceGenerator.AvroAliases({{ $.field.Aliases | array.each @string.literal | array.join ', ' }})]
 {{~ end ~}}

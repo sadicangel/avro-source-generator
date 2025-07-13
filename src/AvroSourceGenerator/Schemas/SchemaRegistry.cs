@@ -198,6 +198,8 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
         var type = Schema(field.GetRequiredProperty("type"), containingSchemaName.Namespace);
         var underlyingType = type;
         var isNullable = false;
+        string? remarks = null;
+
         if (type is UnionSchema union)
         {
             // TODO: Can we extend this to Fixed and Error types in the future?
@@ -219,6 +221,8 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
 
                 _schemas.Add(underlyingSchema.SchemaName, underlyingSchema);
 
+                remarks = underlyingSchema.Documentation;
+
                 foreach (var record in union.Schemas.OfType<RecordSchema>())
                 {
                     record.InheritsFrom = underlyingSchema;
@@ -237,7 +241,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
         var order = field.GetNullableInt32("order");
         var properties = GetProperties(field);
 
-        return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order, properties);
+        return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order, properties, remarks);
 
         static string MakeVariantName(string schemaName, string fieldName)
         {

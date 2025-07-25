@@ -203,7 +203,7 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
         if (type is UnionSchema union)
         {
             // TODO: Can we extend this to Fixed and Error types in the future?
-            if (union.Schemas.All(x => x.Type is SchemaType.Record or SchemaType.Null) && union.Schemas.Any(x => x.Type is not SchemaType.Null))
+            if (IsEligibleForAbstractRecord(union))
             {
                 var underlyingSchema = new AbstractRecordSchema(
                     SchemaName: new SchemaName(
@@ -253,6 +253,19 @@ internal readonly struct SchemaRegistry(bool useNullableReferenceTypes) : IReadO
             builder[schemaName.Length] = char.ToUpperInvariant(builder[schemaName.Length]);
 
             return builder.ToString();
+        }
+
+        static bool IsEligibleForAbstractRecord(UnionSchema union)
+        {
+            if (union.Schemas is [] or [_] or [{ Type: SchemaType.Null }, _] or [_, { Type: SchemaType.Null }])
+            {
+                // Empty union, single type union, or union with nulls only are not eligible for generating abstract base records.
+                return false;
+            }
+
+            // Check if all schemas are either Record or Null, and at least one is not Null.
+            return union.Schemas.All(x => x.Type is SchemaType.Record or SchemaType.Null)
+                && union.Schemas.Any(x => x.Type is not SchemaType.Null);
         }
     }
 

@@ -3,12 +3,12 @@
 namespace com.example.notifications
 {
     /// <summary>
-    /// Represents a union schema that can be one of the following types:
+    /// Represents a union schema that can be one of the following:
     /// <list type="bullet">
-    /// <item><see cref="object"/></item>
+    /// <item><see langword="null"/></item>
     /// <item><see cref="global::com.example.notifications.EmailContent"/></item>
-    /// <item><see cref="global::com.example.notifications.SmsContent"/></item>
     /// <item><see cref="global::com.example.notifications.PushContent"/></item>
+    /// <item><see cref="global::com.example.notifications.SmsContent"/></item>
     /// </list>
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]

@@ -10,12 +10,12 @@ namespace com.example.notifications
         /// The type-specific notification payload
         /// </summary>
         /// <remarks>
-        /// Represents a union schema that can be one of the following types:
+        /// Represents a union schema that can be one of the following:
         /// <list type="bullet">
-        /// <item><see cref="object"/></item>
+        /// <item><see langword="null"/></item>
         /// <item><see cref="global::com.example.notifications.EmailContent"/></item>
-        /// <item><see cref="global::com.example.notifications.SmsContent"/></item>
         /// <item><see cref="global::com.example.notifications.PushContent"/></item>
+        /// <item><see cref="global::com.example.notifications.SmsContent"/></item>
         /// </list>
         /// </remarks>
         public global::com.example.notifications.NotificationContentVariant? content { get; init; }

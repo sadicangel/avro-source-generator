@@ -9,7 +9,7 @@ namespace com.example.user
         public required string createdAt { get; init; }
         public string? lastLogin { get; init; }
     
-        public global::Avro.Schema Schema { get => ProfileMetadata.s_schema; }
+        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => ProfileMetadata.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
@@ -33,7 +33,7 @@ namespace com.example.user
         }
         """);
     
-        public object? Get(int fieldPos)
+        object? global::Avro.Specific.ISpecificRecord.Get(int fieldPos)
         {
             switch (fieldPos)
             {
@@ -43,7 +43,7 @@ namespace com.example.user
             }
         }
         
-        public void Put(int fieldPos, object? fieldValue)
+        void global::Avro.Specific.ISpecificRecord.Put(int fieldPos, object? fieldValue)
         {
             switch (fieldPos)
             {

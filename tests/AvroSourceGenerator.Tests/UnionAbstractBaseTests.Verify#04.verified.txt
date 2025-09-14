@@ -19,7 +19,7 @@ namespace com.example.notifications
         /// </remarks>
         public required global::com.example.notifications.NotificationContentVariant content { get; init; }
     
-        public global::Avro.Schema Schema { get => Notification.s_schema; }
+        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Notification.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
@@ -90,7 +90,7 @@ namespace com.example.notifications
         }
         """);
     
-        public object? Get(int fieldPos)
+        object? global::Avro.Specific.ISpecificRecord.Get(int fieldPos)
         {
             switch (fieldPos)
             {
@@ -99,7 +99,7 @@ namespace com.example.notifications
             }
         }
         
-        public void Put(int fieldPos, object? fieldValue)
+        void global::Avro.Specific.ISpecificRecord.Put(int fieldPos, object? fieldValue)
         {
             switch (fieldPos)
             {

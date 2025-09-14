@@ -7,7 +7,7 @@ namespace SchemaNamespace
     file partial class Record : global::Avro.Specific.ISpecificRecord
     {
     
-        public global::Avro.Schema Schema { get => Record.s_schema; }
+        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Record.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
@@ -18,7 +18,7 @@ namespace SchemaNamespace
         }
         """);
     
-        public object? Get(int fieldPos)
+        object? global::Avro.Specific.ISpecificRecord.Get(int fieldPos)
         {
             switch (fieldPos)
             {
@@ -26,7 +26,7 @@ namespace SchemaNamespace
             }
         }
         
-        public void Put(int fieldPos, object? fieldValue)
+        void global::Avro.Specific.ISpecificRecord.Put(int fieldPos, object? fieldValue)
         {
             switch (fieldPos)
             {

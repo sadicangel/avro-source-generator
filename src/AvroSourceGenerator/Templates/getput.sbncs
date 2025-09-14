@@ -1,5 +1,5 @@
 {{~ $object = UseNullableReferenceTypes ? 'object?' : 'object' ~}}
-public {{~ $.override ? ' override ' : ' ' ~}} {{ $object}} Get(int fieldPos)
+{{~ $.override ? 'public override ' : 'public ' ~}} {{ $object}} Get(int fieldPos)
 {
     switch (fieldPos)
     {
@@ -11,7 +11,7 @@ public {{~ $.override ? ' override ' : ' ' ~}} {{ $object}} Get(int fieldPos)
 }
 
 {{~ $fieldValue = UseNullableReferenceTypes ? 'fieldValue!' : 'fieldValue' ~}}
-public {{~ $.override ? ' override ' : ' ' ~}} void Put(int fieldPos, {{ $object }} fieldValue)
+{{~ $.override ? 'public override ' : 'public ' ~}} void Put(int fieldPos, {{ $object }} fieldValue)
 {
     switch (fieldPos)
     {

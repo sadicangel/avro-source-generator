@@ -9,7 +9,7 @@ namespace SchemaNamespace
         public required object Field { get; init; }
         public object? NullableField { get; init; }
     
-        public global::Avro.Schema Schema { get => Class.s_schema; }
+        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Class.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {

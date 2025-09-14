@@ -38,7 +38,7 @@ namespace com.example.user
         /// </remarks>
         public global::com.example.user.UserProfileContactVariant? contact { get; init; }
     
-        public global::Avro.Schema Schema { get => UserProfile.s_schema; }
+        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => UserProfile.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {

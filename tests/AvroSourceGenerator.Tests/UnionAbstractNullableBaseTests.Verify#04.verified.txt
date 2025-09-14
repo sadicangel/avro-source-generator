@@ -20,7 +20,7 @@ namespace com.example.notifications
         /// </remarks>
         public global::com.example.notifications.NotificationContentVariant? content { get; init; }
     
-        public global::Avro.Schema Schema { get => Notification.s_schema; }
+        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Notification.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {

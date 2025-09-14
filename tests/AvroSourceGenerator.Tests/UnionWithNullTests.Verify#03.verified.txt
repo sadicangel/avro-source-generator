@@ -8,7 +8,7 @@ namespace com.example.user
     {
         public required string email { get; init; }
     
-        public global::Avro.Schema Schema { get => EmailContact.s_schema; }
+        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => EmailContact.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {

@@ -18,7 +18,7 @@ namespace PascalCase.snake_case.@object
         }
         """);
     
-        public object? Get(int fieldPos)
+        object? global::Avro.Specific.ISpecificRecord.Get(int fieldPos)
         {
             switch (fieldPos)
             {
@@ -26,7 +26,7 @@ namespace PascalCase.snake_case.@object
             }
         }
         
-        public void Put(int fieldPos, object? fieldValue)
+        void global::Avro.Specific.ISpecificRecord.Put(int fieldPos, object? fieldValue)
         {
             switch (fieldPos)
             {

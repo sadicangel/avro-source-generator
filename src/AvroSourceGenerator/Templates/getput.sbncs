@@ -1,5 +1,5 @@
 {{~ $object = UseNullableReferenceTypes ? 'object?' : 'object' ~}}
-{{~ $.override ? 'public override ' : 'public ' ~}} {{ $object}} Get(int fieldPos)
+{{~ $.override ? $"public override {$object} Get" : $"{$object} global::Avro.Specific.ISpecificRecord.Get" ~}}(int fieldPos)
 {
     switch (fieldPos)
     {
@@ -11,7 +11,7 @@
 }
 
 {{~ $fieldValue = UseNullableReferenceTypes ? 'fieldValue!' : 'fieldValue' ~}}
-{{~ $.override ? 'public override ' : 'public ' ~}} void Put(int fieldPos, {{ $object }} fieldValue)
+{{~ $.override ? 'public override void Put' : 'void global::Avro.Specific.ISpecificRecord.Put' ~}}(int fieldPos, {{ $object }} fieldValue)
 {
     switch (fieldPos)
     {

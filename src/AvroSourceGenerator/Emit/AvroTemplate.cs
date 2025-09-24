@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Schemas;
+﻿using AvroSourceGenerator.Registry;
 using Scriban;
 using Scriban.Syntax;
 

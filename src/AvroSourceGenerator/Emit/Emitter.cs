@@ -2,6 +2,7 @@
 using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Parsing;
+using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;

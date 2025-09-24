@@ -2,8 +2,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
+using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Schemas.Extensions;
+namespace AvroSourceGenerator.Registry.Extensions;
 
 internal static class JsonElementExtensions
 {

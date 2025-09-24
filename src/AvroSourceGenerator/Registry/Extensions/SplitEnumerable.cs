@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace AvroSourceGenerator.Schemas.Extensions;
+namespace AvroSourceGenerator.Registry.Extensions;
 
 internal readonly ref struct SplitEnumerable(ReadOnlySpan<char> value, char separator)
 {

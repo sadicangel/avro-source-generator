@@ -1,4 +1,4 @@
-{{ AccessModifier }} abstract partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificProtocol
+{{ AccessModifier }} abstract partial class {{ $.schema.CSharpName.Name }}
 {
     {{~ for message in $.schema.Messages ~}}
     {{~ if !string.whitespace message.Documentation ~}}
@@ -12,9 +12,11 @@
         {{- for parameter in message.RequestParameters -}}
         {{ parameter.Type.CSharpName }} {{ parameter.Name }}{{ if !for.last }}, {{ end }}
         {{- end -}});
-
     {{~ end ~}}
+}
 
+partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificProtocol
+{
     public global::Avro.Protocol Protocol { get => {{ $.schema.CSharpName.Name }}.s_protocol; }
     private static readonly global::Avro.Protocol s_protocol = global::Avro.Protocol.Parse(
     {{ $.schema | json }});

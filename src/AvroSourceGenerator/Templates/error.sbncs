@@ -1,9 +1,12 @@
-{{ AccessModifier }} partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificException
+{{ AccessModifier }} partial class {{ $.schema.CSharpName.Name }}
 {
     {{~ for field in $.schema.Fields ~}}
     {{ include 'field' field: field }}
     {{~ end ~}}
-    
+}
+
+partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificException
+{
     public override global::Avro.Schema Schema { get => {{ $.schema.CSharpName.Name }}.s_schema; }
     private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
     {{ $.schema | json }});

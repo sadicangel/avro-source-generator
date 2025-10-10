@@ -4,10 +4,13 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial record Record : global::Avro.Specific.ISpecificRecord
+    public partial record Record
     {
         public bool Field { get; init; } = true;
+    }
     
+    partial record Record : global::Avro.Specific.ISpecificRecord
+    {
         global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Record.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
@@ -47,7 +50,6 @@ namespace SchemaNamespace
             }
         }
     }
-
 }
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

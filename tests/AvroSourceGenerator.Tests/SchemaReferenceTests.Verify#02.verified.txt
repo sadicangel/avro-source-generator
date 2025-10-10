@@ -2,7 +2,7 @@
 #pragma warning disable CS8618, CS8633, CS8714, CS8775, CS8981
 #nullable enable
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial record Wrapper : global::Avro.Specific.ISpecificRecord
+    public partial record Wrapper
     {
         public required global::This.Is.A.Full.Name Field1 { get; init; }
         /// <summary>
@@ -10,7 +10,10 @@
         /// </summary>
         public required global::This.Is.A.Full.Name Field2 { get; init; }
         public required global::This.Is.A.Full.OtherName Field3 { get; init; }
+    }
     
+    partial record Wrapper : global::Avro.Specific.ISpecificRecord
+    {
         global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Wrapper.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
@@ -83,6 +86,5 @@
             }
         }
     }
-
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

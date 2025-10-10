@@ -7,7 +7,7 @@ namespace com.example.user
     /// User profile showing various types of union fields
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial record UserProfile : global::Avro.Specific.ISpecificRecord
+    public partial record UserProfile
     {
         /// <summary>
         /// Invalid in Avro: Demonstrates an empty union (included for test purposes only)
@@ -37,7 +37,10 @@ namespace com.example.user
         /// </list>
         /// </remarks>
         public global::com.example.user.UserProfileContactVariant? contact { get; init; }
+    }
     
+    partial record UserProfile : global::Avro.Specific.ISpecificRecord
+    {
         global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => UserProfile.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
@@ -211,7 +214,6 @@ namespace com.example.user
             }
         }
     }
-
 }
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

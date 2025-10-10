@@ -6,11 +6,14 @@ namespace @explicit
     /// A simple name (attribute) and a namespace (attribute); the full name is 'explicit.Simple' (this is a different type than of the 'inheritNull' field).
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class Simple : global::Avro.Specific.SpecificFixed
+    public partial class Simple
+    {
+        public int Size { get => 12; }
+    }
+    
+    partial class Simple : global::Avro.Specific.SpecificFixed
     {
         public Simple() : base(12) { }
-    
-        public uint Size { get => (uint)Value.Length; }
     
         public override global::Avro.Schema Schema { get => Simple.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
@@ -24,6 +27,5 @@ namespace @explicit
         }
         """);
     }
-
 }
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

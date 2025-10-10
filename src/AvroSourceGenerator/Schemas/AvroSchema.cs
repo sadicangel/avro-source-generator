@@ -5,6 +5,8 @@ namespace AvroSourceGenerator.Schemas;
 
 internal abstract record class AvroSchema(SchemaType Type, CSharpName CSharpName, SchemaName SchemaName)
 {
+    public bool RequiresNullability => Type is SchemaType.Record or SchemaType.Error;
+
     public sealed override string ToString() => CSharpName.FullName;
 
     public string ToJsonString(JsonWriterOptions options = default)

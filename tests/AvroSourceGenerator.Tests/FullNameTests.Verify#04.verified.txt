@@ -5,12 +5,15 @@
     /// A simple name (attribute) and no namespace attribute: use the null namespace (""); the full name is 'Example'.
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial record Example : global::Avro.Specific.ISpecificRecord
+    public partial record Example
     {
         public required Simple inheritNull { get; init; }
         public required global::@explicit.Simple explicitNamespace { get; init; }
         public required global::a.full.Name fullName { get; init; }
+    }
     
+    partial record Example : global::Avro.Specific.ISpecificRecord
+    {
         global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Example.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
@@ -101,6 +104,5 @@
             }
         }
     }
-
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

@@ -1,8 +1,11 @@
-{{ AccessModifier }} partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificFixed
+{{ AccessModifier }} partial class {{ $.schema.CSharpName.Name }}
+{
+    public int Size { get => {{ $.schema.Size }}; }
+}
+
+partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificFixed
 {
     public {{ $.schema.CSharpName.Name }}() : base({{ $.schema.Size }}) { }
-
-    public uint Size { get => (uint)Value.Length; }
 
     public override global::Avro.Schema Schema { get => {{ $.schema.CSharpName.Name }}.s_schema; }
     private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(

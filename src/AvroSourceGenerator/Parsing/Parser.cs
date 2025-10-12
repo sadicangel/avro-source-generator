@@ -54,6 +54,20 @@ internal static class Parser
     {
         _ = cancellationToken;
 
+        var avroLibrary = default(AvroLibrary?);
+        if (provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorAvroLibrary", out var avroLibraryString) &&
+            Enum.TryParse<AvroLibrary>(avroLibraryString, ignoreCase: true, out var parsedAvroLibrary))
+        {
+            avroLibrary = parsedAvroLibrary;
+        }
+
+        var languageFeatures = default(LanguageFeatures?);
+        if (provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorLanguageFeatures", out var languageFeaturesString) &&
+            Enum.TryParse<LanguageFeatures>(languageFeaturesString, ignoreCase: true, out var parsedLanguageFeatures))
+        {
+            languageFeatures = parsedLanguageFeatures;
+        }
+
         if (!provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorAccessModifier", out var accessModifier) ||
             accessModifier is not ("public" or "internal"))
         {
@@ -66,14 +80,7 @@ internal static class Parser
             recordDeclaration = null;
         }
 
-        var languageFeatures = default(LanguageFeatures?);
-        if (provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorLanguageFeatures", out var languageFeaturesString) &&
-            Enum.TryParse<LanguageFeatures>(languageFeaturesString, ignoreCase: true, out var parsedLanguageFeatures))
-        {
-            languageFeatures = parsedLanguageFeatures;
-        }
-
-        return new GeneratorSettings(accessModifier, recordDeclaration, languageFeatures);
+        return new GeneratorSettings(avroLibrary, languageFeatures, accessModifier, recordDeclaration);
     }
 
     public static CompilationInfo GetCompilationInfo(Compilation compilation, CancellationToken cancellationToken)
@@ -108,16 +115,11 @@ internal static class Parser
         var typeName = symbol.Name;
         var typeNamespace = symbol.ContainingNamespace?.ToDisplayString(s_partiallyQualifiedFormat);
 
-        var declaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
-        var recordDeclaration = declaration.IsKind(SyntaxKind.RecordDeclaration) ? "record" : "class";
-        var accessModifier = GetAccessModifier(declaration);
-
         var attribute = context.Attributes
             .Single(attr => attr.AttributeClass?.Name == nameof(AvroAttribute));
 
+        var avroLibrary = default(AvroLibrary?);
         var languageFeatures = default(LanguageFeatures?);
-        var location = context.TargetNode.GetLocation();
-
         foreach (var kvp in attribute.NamedArguments)
         {
             var name = kvp.Key;
@@ -129,12 +131,19 @@ internal static class Parser
             }
         }
 
+        var declaration = Unsafe.As<TypeDeclarationSyntax>(context.TargetNode);
+        var recordDeclaration = declaration.IsKind(SyntaxKind.RecordDeclaration) ? "record" : "class";
+        var accessModifier = GetAccessModifier(declaration);
+
+        var location = context.TargetNode.GetLocation();
+
         return new AvroOptions(
             typeName,
             typeNamespace,
+            avroLibrary,
+            languageFeatures,
             accessModifier,
             recordDeclaration,
-            languageFeatures,
             location);
     }
 

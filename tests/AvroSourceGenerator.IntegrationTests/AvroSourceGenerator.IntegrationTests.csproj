@@ -27,9 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <CompilerVisibleProperty Include="AvroSourceGeneratorAvroLibrary" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
     <AdditionalFiles Include="Schemas\*.avsc" />
   </ItemGroup>
 

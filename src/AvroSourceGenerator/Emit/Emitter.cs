@@ -54,7 +54,11 @@ internal static class Emitter
                 ?? generatorSettings.RecordDeclaration
                 ?? (languageFeatures.HasFlag(LanguageFeatures.Records) ? "record" : "class");
 
-            var schemaRegistry = SchemaRegistry.Register(avroFile.Json, languageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes));
+            var schemaRegistry = SchemaRegistry.Register(
+                schema: avroFile.Json,
+                avroLibrary: avroLibrary,
+                languageVersion: compilationInfo.LanguageVersion,
+                useNullableReferenceTypes: languageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes));
 
             // We should get no render errors, so we don't have to handle anything else.
             var renderOutputs = AvroTemplate.Render(

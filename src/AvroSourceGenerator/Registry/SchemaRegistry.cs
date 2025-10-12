@@ -3,10 +3,11 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Registry.Extensions;
 using AvroSourceGenerator.Schemas;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace AvroSourceGenerator.Registry;
 
-internal readonly partial struct SchemaRegistry(bool useNullableReferenceTypes) : IReadOnlyCollection<TopLevelSchema>
+internal readonly partial struct SchemaRegistry(AvroLibrary avroLibrary, LanguageVersion languageVersion, bool useNullableReferenceTypes) : IReadOnlyCollection<TopLevelSchema>
 {
     private readonly Dictionary<SchemaName, TopLevelSchema> _schemas = [];
     private static readonly HashSet<string> s_reservedProperties = ["type", "name", "namespace", "fields", "items", "size", "symbols", "values", "aliases", "order", "doc", "default", "logicalType"];
@@ -16,9 +17,9 @@ internal readonly partial struct SchemaRegistry(bool useNullableReferenceTypes) 
     public IEnumerator<TopLevelSchema> GetEnumerator() => _schemas.Values.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public static SchemaRegistry Register(JsonElement schema, bool useNullableReferenceTypes)
+    public static SchemaRegistry Register(JsonElement schema, AvroLibrary avroLibrary, LanguageVersion languageVersion, bool useNullableReferenceTypes)
     {
-        var registry = new SchemaRegistry(useNullableReferenceTypes);
+        var registry = new SchemaRegistry(avroLibrary, languageVersion, useNullableReferenceTypes);
 
         _ = registry.Schema(schema, containingNamespace: null);
 

@@ -4,7 +4,7 @@
     {{ include 'field' field: field }}
     {{~ end ~}}
 }
-
+{{ if AvroLibrary == 'Apache' }}
 partial {{ RecordDeclaration }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificRecord
 {
     global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => {{ $.schema.CSharpName.Name }}.s_schema; }
@@ -13,3 +13,4 @@ partial {{ RecordDeclaration }} {{ $.schema.CSharpName.Name }} : global::Avro.Sp
 
     {{ include 'getput' schema: $.schema override: false ~}}
 }
+{{- end }}

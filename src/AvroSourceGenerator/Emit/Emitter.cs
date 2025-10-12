@@ -28,6 +28,8 @@ internal static class Emitter
 
         try
         {
+            var avroLibrary = AvroLibrary.Apache;
+
             var languageFeatures = avroOptions?.LanguageFeatures
                 ?? generatorSettings.LanguageFeatures
                 ?? MapVersionToFeatures(compilationInfo.LanguageVersion);
@@ -45,6 +47,7 @@ internal static class Emitter
             // We should get no render errors, so we don't have to handle anything else.
             var renderOutputs = AvroTemplate.Render(
                 schemaRegistry,
+                avroLibrary,
                 languageFeatures,
                 accessModifier,
                 recordDeclaration);

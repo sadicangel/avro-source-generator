@@ -1,6 +1,9 @@
 {{ AccessModifier }} partial class {{ $.schema.CSharpName.Name }}
 {
     public int Size { get => {{ $.schema.Size }}; }
+    {{~ if AvroLibrary == 'None' ~}}
+    public byte[] Value { get; } = new byte[{{ $.schema.Size }}];
+    {{~ end ~}}
 }
 {{ if AvroLibrary == 'Apache' }}
 partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificFixed

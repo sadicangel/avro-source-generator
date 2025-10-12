@@ -28,7 +28,19 @@ internal static class Emitter
 
         try
         {
-            var avroLibrary = AvroLibrary.Apache;
+            var avroLibrary = avroOptions?.AvroLibrary
+                ?? generatorSettings.AvroLibrary
+                ?? AvroLibrary.Auto;
+
+            if (avroLibrary is AvroLibrary.Auto)
+            {
+                if (!compilationInfo.AvroLibraryFlags.TryGetSingleOrDefault(out avroLibrary))
+                {
+                    context.ReportDiagnostic(MultipleAvroLibrariesDetectedDiagnostic.Create(
+                        avroOptions?.AvroLibrary is not null ? avroOptions.Location : Location.None,
+                        compilationInfo.AvroLibraryFlags));
+                }
+            }
 
             var languageFeatures = avroOptions?.LanguageFeatures
                 ?? generatorSettings.LanguageFeatures

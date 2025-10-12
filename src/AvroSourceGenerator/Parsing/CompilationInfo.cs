@@ -2,4 +2,4 @@
 
 namespace AvroSourceGenerator.Parsing;
 
-internal readonly record struct CompilationInfo(LanguageVersion LanguageVersion);
+internal readonly record struct CompilationInfo(AvroLibraryFlags AvroLibraryFlags, LanguageVersion LanguageVersion);

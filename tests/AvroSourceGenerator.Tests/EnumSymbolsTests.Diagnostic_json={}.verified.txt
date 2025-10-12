@@ -11,6 +11,9 @@ The schema defined in the JSON is invalid: 'symbols' property must be an array (
   Descriptor: {
     Id: AVROSG0002,
     Title: Invalid Schema,
+    Description:
+The JSON parsed, but the Avro schema is not valid according to the Avro specification
+(e.g., duplicate field names, invalid union members, unresolved references, etc.).,
     MessageFormat: The schema defined in the JSON is invalid: {0},
     Category: Compiler,
     DefaultSeverity: Error,

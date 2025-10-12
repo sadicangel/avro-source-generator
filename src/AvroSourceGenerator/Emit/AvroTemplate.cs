@@ -8,11 +8,12 @@ internal static class AvroTemplate
 {
     public static IEnumerable<RenderOutput> Render(
         SchemaRegistry schemaRegistry,
+        AvroLibrary avroLibrary,
         LanguageFeatures languageFeatures,
         string accessModifier,
         string recordDeclaration)
     {
-        var templateContext = new TemplateContext(new TemplateScriptObject(languageFeatures, accessModifier, recordDeclaration))
+        var templateContext = new TemplateContext(new TemplateScriptObject(avroLibrary, languageFeatures, accessModifier, recordDeclaration))
         {
             MemberRenamer = member => member.Name,
             TemplateLoader = new TemplateLoader(),

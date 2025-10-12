@@ -33,7 +33,7 @@ namespace {{ Schema.CSharpName.Namespace }}
         when 'Abstract'
             include 'abstract' schema: Schema
         end
-    }}
+    ~}}
 {{~ if !string.whitespace Schema.CSharpName.Namespace ~}}
 }
 {{~ end ~}}

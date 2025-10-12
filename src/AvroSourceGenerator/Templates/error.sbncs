@@ -4,7 +4,7 @@
     {{ include 'field' field: field }}
     {{~ end ~}}
 }
-
+{{ if AvroLibrary == 'Apache' }}
 partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificException
 {
     public override global::Avro.Schema Schema { get => {{ $.schema.CSharpName.Name }}.s_schema; }
@@ -13,3 +13,4 @@ partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificExc
 
     {{ include 'getput' schema: $.schema override: true ~}}
 }
+{{- end }}

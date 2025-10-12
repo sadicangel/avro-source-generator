@@ -13,6 +13,5 @@ namespace com.example.notifications
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public abstract partial record NotificationContentVariant;
-
 }
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

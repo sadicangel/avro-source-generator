@@ -7,14 +7,17 @@ internal partial class Example;
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 */
  : (5,0)-(6,31),
-  Message: No Avro schema found for class 'SchemaNamespace.Example'. Expected a file containing a schema with name 'Example' and namespace 'SchemaNamespace'.,
+  Message: No Avro schema found for type 'SchemaNamespace.Example'. Expected a schema named 'Example' with namespace 'SchemaNamespace'.,
   Severity: Warning,
   WarningLevel: 1,
   Descriptor: {
     Id: AVROSG0003,
     Title: Attribute Mismatch,
-    MessageFormat: No Avro schema found for class '{0}'. Expected a file containing a schema with name '{1}' and namespace '{2}'.,
-    Category: Usage,
+    Description:
+A type attributed for Avro generation did not match any available Avro schema.
+Ensure the schema's name and namespace match the attributed type, and that the schema file is included in the project.,
+    MessageFormat: No Avro schema found for type '{0}'. Expected a schema named '{1}' with namespace '{2}'.,
+    Category: Configuration,
     DefaultSeverity: Warning,
     IsEnabledByDefault: true
   }

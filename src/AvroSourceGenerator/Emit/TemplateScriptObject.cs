@@ -13,11 +13,13 @@ internal sealed class TemplateScriptObject : BuiltinFunctions
         StringFunctions.Literal(schema.ToJsonString()));
 
     public TemplateScriptObject(
+        AvroLibrary avroLibrary,
         LanguageFeatures languageFeatures,
         string accessModifier,
         string recordDeclaration)
     {
         SetValue("json", (languageFeatures & LanguageFeatures.RawStringLiterals) != 0 ? s_jsonRawString : s_jsonVerbatimString, readOnly: true);
+        SetValue("AvroLibrary", avroLibrary, readOnly: true);
         SetValue("AccessModifier", accessModifier, readOnly: true);
         SetValue("RecordDeclaration", recordDeclaration, readOnly: true);
         SetValue("UseNullableReferenceTypes", (languageFeatures & LanguageFeatures.NullableReferenceTypes) != 0, readOnly: true);

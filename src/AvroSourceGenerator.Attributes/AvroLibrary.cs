@@ -2,7 +2,7 @@
 
 public enum AvroLibrary
 {
-    Auto = 0,
-    None = 1,
-    Apache = 2,
+    None,
+    Apache,
+    Auto = 2147483647,
 }

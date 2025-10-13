@@ -17,7 +17,7 @@
     <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
     <PackageReference Include="Apache.Avro" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <AdditionalFiles Include="*.avsc" />
   </ItemGroup>

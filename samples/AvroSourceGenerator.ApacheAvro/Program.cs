@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Avro;
 using com.example.finance;
 
 internal static class Program
@@ -10,7 +9,7 @@ internal static class Program
         var transaction = new Transaction
         {
             id = Guid.NewGuid(),
-            amount = new AvroDecimal(123.45m),
+            amount = 123.45m,
             currency = "USD",
             timestamp = DateTime.UtcNow,
             status = TransactionStatus.COMPLETED,

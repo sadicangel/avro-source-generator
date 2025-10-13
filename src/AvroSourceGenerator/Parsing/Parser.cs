@@ -88,9 +88,13 @@ internal static class Parser
         _ = cancellationToken;
 
         var csharpCompilation = (CSharpCompilation)compilation;
-        var languageVersion = csharpCompilation.LanguageVersion;
 
-        return new CompilationInfo(languageVersion);
+        var avroLibraries = ImmutableArray.CreateBuilder<AvroLibrary>();
+
+        if (csharpCompilation.GetTypeByMetadataName("Avro.Specific.ISpecificRecord") is not null)
+            avroLibraries.Add(AvroLibrary.Apache);
+
+        return new CompilationInfo(avroLibraries.ToImmutable(), csharpCompilation.LanguageVersion);
     }
 
     public static bool IsCandidateDeclaration(SyntaxNode node, CancellationToken cancellationToken)

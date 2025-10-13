@@ -28,7 +28,14 @@ internal static class Emitter
 
         try
         {
-            var avroLibrary = AvroLibrary.Apache;
+            var avroLibrary = avroOptions?.AvroLibrary
+                ?? generatorSettings.AvroLibrary
+                ?? AvroLibrary.Auto;
+
+            if (avroLibrary is AvroLibrary.Auto)
+            {
+                avroLibrary = GetAvroLibrary(context, compilationInfo);
+            }
 
             var languageFeatures = avroOptions?.LanguageFeatures
                 ?? generatorSettings.LanguageFeatures
@@ -42,7 +49,11 @@ internal static class Emitter
                 ?? generatorSettings.RecordDeclaration
                 ?? (languageFeatures.HasFlag(LanguageFeatures.Records) ? "record" : "class");
 
-            var schemaRegistry = SchemaRegistry.Register(avroFile.Json, languageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes));
+            var schemaRegistry = SchemaRegistry.Register(
+                schema: avroFile.Json,
+                avroLibrary: avroLibrary,
+                languageVersion: compilationInfo.LanguageVersion,
+                useNullableReferenceTypes: languageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes));
 
             // We should get no render errors, so we don't have to handle anything else.
             var renderOutputs = AvroTemplate.Render(
@@ -65,6 +76,23 @@ internal static class Emitter
         {
             // TODO: We can probably get a better location for the error.
             context.ReportDiagnostic(InvalidSchemaDiagnostic.Create(avroFile.GetLocation(), ex.Message));
+        }
+    }
+
+    private static AvroLibrary GetAvroLibrary(SourceProductionContext context, CompilationInfo compilationInfo)
+    {
+        switch (compilationInfo.AvroLibraries)
+        {
+            case []:
+                context.ReportDiagnostic(NoAvroLibraryDetectedDiagnostic.Create(Location.None));
+                return AvroLibrary.None;
+
+            case [var singleAvroLibrary]:
+                return singleAvroLibrary;
+
+            default:
+                context.ReportDiagnostic(MultipleAvroLibrariesDetectedDiagnostic.Create(Location.None, compilationInfo.AvroLibraries));
+                return AvroLibrary.None;
         }
     }
 

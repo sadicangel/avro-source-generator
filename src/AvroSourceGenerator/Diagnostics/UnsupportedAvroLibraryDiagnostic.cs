@@ -6,7 +6,7 @@ namespace AvroSourceGenerator.Diagnostics;
 internal static class MultipleAvroLibrariesDetectedDiagnostic
 {
     private static readonly DiagnosticDescriptor s_descriptor = new(
-        id: "AVROSG0005",
+        id: "AVROSG0004",
         title: "Multiple Avro libraries detected",
         messageFormat:
             "Multiple Avro libraries are referenced: {0}. " +

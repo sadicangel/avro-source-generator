@@ -8,7 +8,7 @@ internal static class NoAvroLibraryDetectedDiagnostic
     private static readonly string s_listOfLibraries = string.Join(", ", ((AvroLibrary[])Enum.GetValues(typeof(AvroLibrary))).Except([AvroLibrary.None, AvroLibrary.Auto]).Select(x => x.PackageName));
 
     private static readonly DiagnosticDescriptor s_descriptor = new(
-        id: "AVROSG0004",
+        id: "AVROSG0003",
         title: "No Avro library detected (Auto)",
         messageFormat:
             "AvroLibrary is set to 'Auto', but no supported Avro library was found. " +

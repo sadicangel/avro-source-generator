@@ -1,5 +1,6 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Collections.Immutable;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace AvroSourceGenerator.Parsing;
 
-internal readonly record struct CompilationInfo(AvroLibraryFlags AvroLibraryFlags, LanguageVersion LanguageVersion);
+internal readonly record struct CompilationInfo(ImmutableArray<AvroLibrary> AvroLibraries, LanguageVersion LanguageVersion);

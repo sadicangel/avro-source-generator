@@ -34,12 +34,7 @@ internal static class Emitter
 
             if (avroLibrary is AvroLibrary.Auto)
             {
-                if (!compilationInfo.AvroLibraryFlags.TryGetSingleOrDefault(out avroLibrary))
-                {
-                    context.ReportDiagnostic(MultipleAvroLibrariesDetectedDiagnostic.Create(
-                        avroOptions?.AvroLibrary is not null ? avroOptions.Location : Location.None,
-                        compilationInfo.AvroLibraryFlags));
-                }
+                avroLibrary = GetAvroLibrary(context, compilationInfo);
             }
 
             var languageFeatures = avroOptions?.LanguageFeatures
@@ -81,6 +76,23 @@ internal static class Emitter
         {
             // TODO: We can probably get a better location for the error.
             context.ReportDiagnostic(InvalidSchemaDiagnostic.Create(avroFile.GetLocation(), ex.Message));
+        }
+    }
+
+    private static AvroLibrary GetAvroLibrary(SourceProductionContext context, CompilationInfo compilationInfo)
+    {
+        switch (compilationInfo.AvroLibraries)
+        {
+            case []:
+                context.ReportDiagnostic(NoAvroLibraryDetectedDiagnostic.Create(Location.None));
+                return AvroLibrary.None;
+
+            case [var singleAvroLibrary]:
+                return singleAvroLibrary;
+
+            default:
+                context.ReportDiagnostic(MultipleAvroLibrariesDetectedDiagnostic.Create(Location.None, compilationInfo.AvroLibraries));
+                return AvroLibrary.None;
         }
     }
 

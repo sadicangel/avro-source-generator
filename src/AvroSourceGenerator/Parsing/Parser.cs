@@ -89,11 +89,12 @@ internal static class Parser
 
         var csharpCompilation = (CSharpCompilation)compilation;
 
-        var avroLibraryFlags = AvroLibraryFlags.None;
-        if (csharpCompilation.GetTypeByMetadataName("Avro.Specific.ISpecificRecord") is not null)
-            avroLibraryFlags |= AvroLibraryFlags.Apache;
+        var avroLibraries = ImmutableArray.CreateBuilder<AvroLibrary>();
 
-        return new CompilationInfo(avroLibraryFlags, csharpCompilation.LanguageVersion);
+        if (csharpCompilation.GetTypeByMetadataName("Avro.Specific.ISpecificRecord") is not null)
+            avroLibraries.Add(AvroLibrary.Apache);
+
+        return new CompilationInfo(avroLibraries.ToImmutable(), csharpCompilation.LanguageVersion);
     }
 
     public static bool IsCandidateDeclaration(SyntaxNode node, CancellationToken cancellationToken)

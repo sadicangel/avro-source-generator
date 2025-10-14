@@ -1,7 +1,4 @@
-﻿using System.Text.Json.Nodes;
-using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public class FieldDefaultTests
 {
@@ -27,6 +24,6 @@ public class FieldDefaultTests
             ["default"] = JsonNode.Parse(defaultValue),
         }))).ToString();
 
-        return TestHelper.VerifySourceCode(schema);
+        return VerifySourceCode(schema);
     }
 }

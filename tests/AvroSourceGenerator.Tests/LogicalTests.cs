@@ -1,10 +1,9 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
+﻿namespace AvroSourceGenerator.Tests;
 
-namespace AvroSourceGenerator.Tests;
 public class LogicalTests
 {
     [Fact]
-    public Task Verify_Decimal_Bytes() => TestHelper.VerifySourceCode("""
+    public Task Verify_Decimal_Bytes() => VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -24,7 +23,7 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Decimal_Fixed() => TestHelper.VerifySourceCode("""
+    public Task Verify_Decimal_Fixed() => VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -46,7 +45,7 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Uuid_String() => TestHelper.VerifySourceCode("""
+    public Task Verify_Uuid_String() => VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -64,7 +63,7 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Uuid_Fixed() => TestHelper.VerifySourceCode("""
+    public Task Verify_Uuid_Fixed() => VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -84,7 +83,7 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Date() => TestHelper.VerifySourceCode("""
+    public Task Verify_Date() => VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -102,7 +101,7 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Time_Milliseconds() => TestHelper.VerifySourceCode("""
+    public Task Verify_Time_Milliseconds() => VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -120,7 +119,7 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Time_Microseconds() => TestHelper.VerifySourceCode("""
+    public Task Verify_Time_Microseconds() => VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -138,7 +137,7 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Timestamp_Milliseconds() => TestHelper.VerifySourceCode("""
+    public Task Verify_Timestamp_Milliseconds() => VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -156,7 +155,7 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Timestamp_Microseconds() => TestHelper.VerifySourceCode("""
+    public Task Verify_Timestamp_Microseconds() => VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -174,7 +173,7 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Local_Timestamp_Milliseconds() => TestHelper.VerifySourceCode("""
+    public Task Verify_Local_Timestamp_Milliseconds() => VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -192,7 +191,7 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Local_Timestamp_Microseconds() => TestHelper.VerifySourceCode("""
+    public Task Verify_Local_Timestamp_Microseconds() => VerifySourceCode("""
     {
         "type": "record",
         "namespace": "SchemaNamespace",
@@ -210,7 +209,7 @@ public class LogicalTests
     """);
 
     [Fact]
-    public Task Verify_Duration() => TestHelper.VerifySourceCode("""
+    public Task Verify_Duration() => VerifySourceCode("""
     {
         "type": "fixed",
         "name": "Duration",

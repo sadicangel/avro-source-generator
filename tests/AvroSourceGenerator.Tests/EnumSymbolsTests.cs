@@ -1,7 +1,4 @@
-﻿using System.Text.Json.Nodes;
-using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public class EnumSymbolsTests
 {
@@ -11,7 +8,7 @@ public class EnumSymbolsTests
     {
         var schema = TestSchemas.Get("enum").With("symbols", symbols).ToString();
 
-        return TestHelper.VerifySourceCode(schema);
+        return VerifySourceCode(schema);
     }
 
     [Theory]
@@ -20,7 +17,7 @@ public class EnumSymbolsTests
     {
         var schema = TestSchemas.Get("enum").With("symbols", JsonNode.Parse(json)!).ToString();
 
-        return TestHelper.VerifyDiagnostic(schema);
+        return VerifyDiagnostic(schema);
     }
 
     public static TheoryData<string[]> ValidSymbols() => new(

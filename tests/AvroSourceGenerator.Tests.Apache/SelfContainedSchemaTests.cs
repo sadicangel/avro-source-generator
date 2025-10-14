@@ -1,11 +1,9 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests.Apache;
 
 public sealed class SelfContainedSchemaTests
 {
     [Fact]
-    public Task Verify() => TestHelper.VerifySourceCode("""
+    public Task Verify() => VerifySourceCode("""
     [
         {
             "type": "record",

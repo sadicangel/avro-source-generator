@@ -1,7 +1,4 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
-using AvroSourceGenerator.Tests.Setup;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class CsprojRecordDeclarationTests
 {
@@ -13,7 +10,7 @@ public sealed class CsprojRecordDeclarationTests
 
         var config = new ProjectConfig() with { RecordDeclaration = recordDeclaration };
 
-        return TestHelper.VerifySourceCode(schema, default, config);
+        return VerifySourceCode(schema, default, config);
     }
 
     public static MatrixTheoryData<string, string> RecordDeclarationSchemaPairs() => new(

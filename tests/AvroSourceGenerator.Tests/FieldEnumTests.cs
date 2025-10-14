@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public class FieldEnumTests
 {
@@ -29,6 +27,6 @@ public class FieldEnumTests
             ]
         }
         """;
-        return TestHelper.VerifySourceCode(schema);
+        return VerifySourceCode(schema);
     }
 }

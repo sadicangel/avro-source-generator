@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using AvroSourceGenerator.Tests.Helpers;
-using AvroSourceGenerator.Tests.Setup;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 

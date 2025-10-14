@@ -1,6 +1,4 @@
 ﻿using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Tests.Helpers;
-using AvroSourceGenerator.Tests.Setup;
 
 namespace AvroSourceGenerator.Tests;
 
@@ -14,7 +12,7 @@ public sealed class CsprojLanguageFeaturesTests
 
         var config = new ProjectConfig() with { LanguageFeatures = languageFeatures };
 
-        return TestHelper.VerifySourceCode(schema, default, config);
+        return VerifySourceCode(schema, default, config);
     }
 
     public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new(

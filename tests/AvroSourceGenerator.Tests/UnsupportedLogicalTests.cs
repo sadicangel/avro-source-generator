@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class UnsupportedLogicalTests
 {
@@ -9,6 +7,6 @@ public sealed class UnsupportedLogicalTests
     {
         var schema = TestSchemas.Get("fixed").With("logicalType", "someType").ToString();
 
-        return TestHelper.VerifySourceCode(schema);
+        return VerifySourceCode(schema);
     }
 }

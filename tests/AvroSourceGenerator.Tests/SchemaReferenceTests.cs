@@ -1,11 +1,9 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class SchemaReferenceTests
 {
     [Fact]
-    public Task Verify() => TestHelper.VerifySourceCode("""
+    public Task Verify() => VerifySourceCode("""
     {
         "type": "record",
         "name": "Wrapper",
@@ -44,7 +42,7 @@ public sealed class SchemaReferenceTests
     """);
 
     [Fact]
-    public Task Diagnostic() => TestHelper.VerifyDiagnostic($$"""
+    public Task Diagnostic() => VerifyDiagnostic($$"""
     {
         "type": "record",
         "name": "MissingReference",

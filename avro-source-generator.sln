@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Integra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.ConfluentKafka", "samples\AvroSourceGenerator.ConfluentKafka\AvroSourceGenerator.ConfluentKafka.csproj", "{EADD63E8-5F5C-470F-AC07-8A03A01E9094}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Tests.Apache", "tests\AvroSourceGenerator.Tests.Apache\AvroSourceGenerator.Tests.Apache.csproj", "{D820C6C4-6C98-4095-A897-FC0F2CD465C9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,10 @@ Global
 		{EADD63E8-5F5C-470F-AC07-8A03A01E9094}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EADD63E8-5F5C-470F-AC07-8A03A01E9094}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EADD63E8-5F5C-470F-AC07-8A03A01E9094}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D820C6C4-6C98-4095-A897-FC0F2CD465C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D820C6C4-6C98-4095-A897-FC0F2CD465C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D820C6C4-6C98-4095-A897-FC0F2CD465C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D820C6C4-6C98-4095-A897-FC0F2CD465C9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

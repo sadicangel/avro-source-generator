@@ -1,11 +1,9 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class FullNameTests
 {
     [Fact]
-    public Task Verify() => TestHelper.VerifySourceCode("""
+    public Task Verify() => VerifySourceCode("""
     {
       "type": "record",
       "name": "Example",
@@ -56,7 +54,7 @@ public sealed class FullNameTests
     [InlineData("Example.")]
     [InlineData(".Name")]
     [InlineData("Example..Name")]
-    public Task Diagnostic(string name) => TestHelper.VerifyDiagnostic($$"""
+    public Task Diagnostic(string name) => VerifyDiagnostic($$"""
     {
       "type": "record",
       "name": "{{name}}",

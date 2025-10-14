@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class UnionRootAbstractTests
 {
@@ -39,6 +37,6 @@ public sealed class UnionRootAbstractTests
         ]
         """;
 
-        return TestHelper.VerifySourceCode(schema);
+        return VerifySourceCode(schema);
     }
 }

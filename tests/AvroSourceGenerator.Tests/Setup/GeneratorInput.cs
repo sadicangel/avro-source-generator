@@ -8,32 +8,31 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
-namespace AvroSourceGenerator.Tests.Helpers;
+namespace AvroSourceGenerator.Tests.Setup;
 
-internal readonly record struct GeneratorSetup(CSharpParseOptions ParseOptions, AnalyzerConfigOptionsProvider OptionsProvider, Compilation Compilation, GeneratorDriver GeneratorDriver)
+public readonly record struct GeneratorInput(
+    CSharpParseOptions ParseOptions,
+    AnalyzerConfigOptionsProvider OptionsProvider,
+    Compilation Compilation,
+    GeneratorDriver GeneratorDriver)
 {
-    public static GeneratorSetup Create(
+    public static GeneratorInput Create(
         ImmutableArray<string> sourceTexts,
         ImmutableArray<string> additionalTexts,
-        ProjectConfig? projectConfig = null)
+        ImmutableArray<PortableExecutableReference> executableReferences,
+        ProjectConfig projectConfig)
     {
-        projectConfig ??= ProjectConfig.Default;
-        var parseOptions = CreateParseOptions(projectConfig);
-        var optionsProvider = CreateOptionsProvider(projectConfig);
+        var parseOptions = new CSharpParseOptions(projectConfig.LanguageVersion);
+        var optionsProvider = new AnalyzerConfigOptionsProviderImplementation(projectConfig.GlobalOptions);
         var generatorDriver = CreateGeneratorDriver(additionalTexts, parseOptions, optionsProvider);
-        var compilation = CreateCompilation(sourceTexts, parseOptions);
+        var compilation = CreateCompilation(sourceTexts, parseOptions, executableReferences);
         return new(parseOptions, optionsProvider, compilation, generatorDriver);
     }
 
-    public static CSharpParseOptions CreateParseOptions(ProjectConfig projectConfig) =>
-      new(projectConfig.LanguageVersion);
-
-    public static AnalyzerConfigOptionsProvider CreateOptionsProvider(ProjectConfig projectConfig) =>
-        new AnalyzerConfigOptionsProviderImplementation(projectConfig.GlobalOptions);
-
-    public static Compilation CreateCompilation(
+    private static CSharpCompilation CreateCompilation(
         ImmutableArray<string> sourceTexts,
-        CSharpParseOptions parseOptions)
+        CSharpParseOptions parseOptions,
+        ImmutableArray<PortableExecutableReference> executableReferences)
     {
         var syntaxTrees = sourceTexts.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions));
         var references = AppDomain.CurrentDomain.GetAssemblies()
@@ -43,6 +42,7 @@ internal readonly record struct GeneratorSetup(CSharpParseOptions ParseOptions, 
                 MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(GeneratedCodeAttribute).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(Avro.Schema).Assembly.Location),
+                .. executableReferences,
             ]);
 
         var compilation = CSharpCompilation.Create(
@@ -56,7 +56,7 @@ internal readonly record struct GeneratorSetup(CSharpParseOptions ParseOptions, 
         return compilation;
     }
 
-    public static CSharpGeneratorDriver CreateGeneratorDriver(
+    private static CSharpGeneratorDriver CreateGeneratorDriver(
         ImmutableArray<string> additionalTexts,
         CSharpParseOptions parseOptions,
         AnalyzerConfigOptionsProvider optionsProvider)

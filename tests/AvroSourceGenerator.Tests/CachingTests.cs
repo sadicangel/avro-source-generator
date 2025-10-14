@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using AvroSourceGenerator.Tests.Helpers;
+using AvroSourceGenerator.Tests.Setup;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -34,10 +35,10 @@ public sealed class CachingTests
         internal partial class User;
         """;
 
-        var projectConfig = ProjectConfig.Default with { LanguageVersion = LanguageVersion.CSharp10 };
+        var projectConfig = new ProjectConfig() with { LanguageVersion = LanguageVersion.CSharp10 };
 
         var (_, _, compilation, generatorDriver) =
-            GeneratorSetup.Create([source], [schema], projectConfig);
+            GeneratorInput.Create([source], [schema], [], projectConfig);
 
         generatorDriver = generatorDriver
             .RunGenerators(compilation, TestContext.Current.CancellationToken);
@@ -67,8 +68,8 @@ public sealed class CachingTests
 
     private static void AssertRunsAreEqual(GeneratorDriverRunResult result1, GeneratorDriverRunResult result2)
     {
-        var trackedSteps1 = TestHelper.GetTrackedSteps(result1);
-        var trackedSteps2 = TestHelper.GetTrackedSteps(result2);
+        var trackedSteps1 = StepTracking.GetTrackedSteps(result1);
+        var trackedSteps2 = StepTracking.GetTrackedSteps(result2);
 
         Assert.Equal(trackedSteps1.Count, trackedSteps2.Count);
         Assert.All(trackedSteps1.Keys, key => Assert.True(trackedSteps2.ContainsKey(key)));

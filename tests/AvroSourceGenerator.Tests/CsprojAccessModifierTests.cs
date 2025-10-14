@@ -1,6 +1,8 @@
 ﻿using AvroSourceGenerator.Tests.Helpers;
+using AvroSourceGenerator.Tests.Setup;
 
 namespace AvroSourceGenerator.Tests;
+
 public sealed class CsprojAccessModifierTests
 {
     [Theory]
@@ -9,13 +11,7 @@ public sealed class CsprojAccessModifierTests
     {
         var schema = TestSchemas.Get(schemaType).ToString();
 
-        var config = ProjectConfig.Default with
-        {
-            GlobalOptions = new Dictionary<string, string>
-            {
-                ["AvroSourceGeneratorAccessModifier"] = accessModifier
-            }
-        };
+        var config = new ProjectConfig() with { AccessModifier = accessModifier };
 
         return TestHelper.VerifySourceCode(schema, default, config);
     }

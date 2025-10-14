@@ -1,4 +1,5 @@
 ﻿using AvroSourceGenerator.Tests.Helpers;
+using AvroSourceGenerator.Tests.Setup;
 
 namespace AvroSourceGenerator.Tests;
 
@@ -10,13 +11,7 @@ public sealed class CsprojRecordDeclarationTests
     {
         var schema = TestSchemas.Get(schemaType).ToString();
 
-        var config = ProjectConfig.Default with
-        {
-            GlobalOptions = new Dictionary<string, string>
-            {
-                ["AvroSourceGeneratorRecordDeclaration"] = recordDeclaration
-            }
-        };
+        var config = new ProjectConfig() with { RecordDeclaration = recordDeclaration };
 
         return TestHelper.VerifySourceCode(schema, default, config);
     }

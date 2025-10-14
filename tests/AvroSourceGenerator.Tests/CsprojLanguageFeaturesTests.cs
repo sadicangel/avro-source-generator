@@ -1,5 +1,6 @@
 ﻿using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Tests.Helpers;
+using AvroSourceGenerator.Tests.Setup;
 
 namespace AvroSourceGenerator.Tests;
 
@@ -11,13 +12,7 @@ public sealed class CsprojLanguageFeaturesTests
     {
         var schema = TestSchemas.Get(schemaType).With("fields", [new { type = "string", name = "Field" }]).ToString();
 
-        var config = ProjectConfig.Default with
-        {
-            GlobalOptions = new Dictionary<string, string>
-            {
-                ["AvroSourceGeneratorLanguageFeatures"] = languageFeatures
-            }
-        };
+        var config = new ProjectConfig() with { LanguageFeatures = languageFeatures };
 
         return TestHelper.VerifySourceCode(schema, default, config);
     }

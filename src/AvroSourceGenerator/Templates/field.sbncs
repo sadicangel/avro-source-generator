@@ -12,9 +12,6 @@
 {{~ end ~}}
 /// </remarks>
 {{~ end ~}}
-{{~ if $.field.Aliases.size > 0 ~}}
-[global::AvroSourceGenerator.AvroAliases({{ $.field.Aliases | array.each @string.literal | array.join ', ' }})]
-{{~ end ~}}
 {{~ $required = UseRequiredProperties && !$.field.Type.IsNullable && !$.field.Default ? ' required ' : ' ' ~}}
 {{~ $set = UseInitOnlyProperties ? 'init' : 'set' ~}}
 public {{~ $required ~}} {{ $.field.Type }} {{ $.field.Name }} { get; {{ $set }}; } {{~ if $.field.Default; $" = {$.field.Default};"; end ~}}

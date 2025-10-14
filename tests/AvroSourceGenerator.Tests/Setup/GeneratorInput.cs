@@ -41,7 +41,6 @@ public readonly record struct GeneratorInput(
             .Concat([
                 MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(GeneratedCodeAttribute).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Avro.Schema).Assembly.Location),
                 .. executableReferences,
             ]);
 

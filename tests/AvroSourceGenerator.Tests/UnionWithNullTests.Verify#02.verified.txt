@@ -10,59 +10,6 @@ namespace com.example.user
         public string? lastLogin { get; init; }
     }
     
-    partial record ProfileMetadata : global::Avro.Specific.ISpecificRecord
-    {
-        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => ProfileMetadata.s_schema; }
-        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
-        """
-        {
-          "type": "record",
-          "name": "ProfileMetadata",
-          "namespace": "com.example.user",
-          "fields": [
-            {
-              "name": "createdAt",
-              "type": "string"
-            },
-            {
-              "name": "lastLogin",
-              "type": [
-                "null",
-                "string"
-              ],
-              "default": null
-            }
-          ]
-        }
-        """);
-    
-        object? global::Avro.Specific.ISpecificRecord.Get(int fieldPos)
-        {
-            switch (fieldPos)
-            {
-                case 0: return this.createdAt;
-                case 1: return this.lastLogin;
-                default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
-            }
-        }
-        
-        void global::Avro.Specific.ISpecificRecord.Put(int fieldPos, object? fieldValue)
-        {
-            switch (fieldPos)
-            {
-                case 0:
-                    Set_createdAt(this, (string)fieldValue!); break;
-                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_createdAt")]
-                    extern static void Set_createdAt(global::com.example.user.ProfileMetadata obj, string value);
-                case 1:
-                    Set_lastLogin(this, fieldValue! is null ? null : (string)fieldValue!); break;
-                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_lastLogin")]
-                    extern static void Set_lastLogin(global::com.example.user.ProfileMetadata obj, string? value);
-                default:
-                    throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
-            }
-        }
-    }
 }
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

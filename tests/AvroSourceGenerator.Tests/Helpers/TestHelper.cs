@@ -15,7 +15,7 @@ internal static class TestHelper
             sourceTexts: source is null ? [] : [source],
             additionalTexts: [schema],
             executableReferences: [],
-            projectConfig: config);
+            projectConfig: config with { AvroLibrary = "None" });
 
         var (diagnostics, documents) = GeneratorOutput.Create(input);
 
@@ -38,7 +38,7 @@ internal static class TestHelper
             sourceTexts: source is null ? [] : [source],
             additionalTexts: [schema],
             executableReferences: [],
-            projectConfig: config);
+            projectConfig: config with { AvroLibrary = "None" });
 
         var (diagnostics, _) = GeneratorOutput.Create(input);
 

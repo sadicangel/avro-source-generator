@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class UnionObjectNullableBaseTests
 {
@@ -52,6 +50,6 @@ public sealed class UnionObjectNullableBaseTests
             }
             """;
 
-        return TestHelper.VerifySourceCode(schema);
+        return VerifySourceCode(schema);
     }
 }

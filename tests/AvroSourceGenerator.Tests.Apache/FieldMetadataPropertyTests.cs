@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests.Apache;
 
 public class FieldMetadataPropertyTests
 {
@@ -25,6 +23,6 @@ public class FieldMetadataPropertyTests
             ]
         }
         """;
-        return TestHelper.VerifySourceCode(schema);
+        return VerifySourceCode(schema);
     }
 }

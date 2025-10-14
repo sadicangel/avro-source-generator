@@ -1,7 +1,4 @@
-﻿using System.Text.Json.Nodes;
-using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class ErrorFieldsTests
 {
@@ -11,7 +8,7 @@ public sealed class ErrorFieldsTests
     {
         var schema = TestSchemas.Get("error").With("fields", JsonNode.Parse(json)!).ToString();
 
-        return TestHelper.VerifyDiagnostic(schema);
+        return VerifyDiagnostic(schema);
     }
 
     public static TheoryData<string> InvalidFields() => new(

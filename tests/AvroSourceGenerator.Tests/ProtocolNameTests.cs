@@ -1,7 +1,4 @@
-﻿using System.Text.Json.Nodes;
-using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class ProtocolNameTests
 {
@@ -11,7 +8,7 @@ public sealed class ProtocolNameTests
     {
         var schema = TestSchemas.Get("protocol").With("protocol", name).ToString();
 
-        return TestHelper.VerifySourceCode(schema);
+        return VerifySourceCode(schema);
     }
 
     [Theory]
@@ -20,7 +17,7 @@ public sealed class ProtocolNameTests
     {
         var schema = TestSchemas.Get("protocol").With("protocol", JsonNode.Parse(json)!).ToString();
 
-        return TestHelper.VerifyDiagnostic(schema);
+        return VerifyDiagnostic(schema);
     }
 
     public static TheoryData<string> ValidNames() => new(["PascalCase", "snake_case", "object"]);

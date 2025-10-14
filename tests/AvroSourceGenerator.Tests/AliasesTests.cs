@@ -1,7 +1,4 @@
-﻿using System.Text.Json.Nodes;
-using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class AliasesTests
 {
@@ -11,7 +8,7 @@ public sealed class AliasesTests
     {
         var schema = TestSchemas.Get(schemaType).With("aliases", JsonNode.Parse(json)!).ToString();
 
-        return TestHelper.VerifyDiagnostic(schema);
+        return VerifyDiagnostic(schema);
     }
 
     public static MatrixTheoryData<string[], string> ValidAliasesSchemaPairs() => new(

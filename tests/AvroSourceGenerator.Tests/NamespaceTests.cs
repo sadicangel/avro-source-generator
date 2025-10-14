@@ -1,7 +1,4 @@
-﻿using System.Text.Json.Nodes;
-using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class NamespaceTests
 {
@@ -11,7 +8,7 @@ public sealed class NamespaceTests
     {
         var schema = TestSchemas.Get(schemaType).With("namespace", @namespace).ToString();
 
-        return TestHelper.VerifySourceCode(schema);
+        return VerifySourceCode(schema);
     }
 
     [Theory]
@@ -20,7 +17,7 @@ public sealed class NamespaceTests
     {
         var schema = TestSchemas.Get(schemaType).With("namespace", JsonNode.Parse(json)!).ToString();
 
-        return TestHelper.VerifyDiagnostic(schema);
+        return VerifyDiagnostic(schema);
     }
 
     public static MatrixTheoryData<string, string> ValidNamespaceSchemaPairs() => new(

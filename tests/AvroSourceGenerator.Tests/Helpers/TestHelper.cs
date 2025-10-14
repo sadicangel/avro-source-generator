@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using AvroSourceGenerator.Tests.Setup;
 using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.Tests.Helpers;

@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
-using System.Text.Json.Nodes;
 
-namespace AvroSourceGenerator.Tests.Helpers;
+namespace AvroSourceGenerator.Tests.Data;
 
 public static class TestSchemas
 {

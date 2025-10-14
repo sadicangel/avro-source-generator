@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class UnnamedRootSchemasTests
 {
@@ -10,7 +8,7 @@ public sealed class UnnamedRootSchemasTests
     {
         var schema = TestSchemas.Get(schemaType).ToString();
 
-        return TestHelper.VerifySourceCode(schema);
+        return VerifySourceCode(schema);
     }
 
     [Theory]
@@ -19,7 +17,7 @@ public sealed class UnnamedRootSchemasTests
     {
         var schema = TestSchemas.Get(schemaType).ToString();
 
-        return TestHelper.VerifyDiagnostic(schema);
+        return VerifyDiagnostic(schema);
     }
 
     public static TheoryData<string> ValidUnnamedRootSchemas() => new(

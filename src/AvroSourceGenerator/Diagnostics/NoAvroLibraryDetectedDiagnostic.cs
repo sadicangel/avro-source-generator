@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Parsing;
+﻿using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Parsing;
 using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.Diagnostics;

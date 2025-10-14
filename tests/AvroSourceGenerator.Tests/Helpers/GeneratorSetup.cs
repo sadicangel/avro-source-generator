@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using AvroSourceGenerator.Configuration;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -40,7 +41,6 @@ internal readonly record struct GeneratorSetup(CSharpParseOptions ParseOptions, 
             .Select(assembly => MetadataReference.CreateFromFile(assembly.Location))
             .Concat([
                 MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(LanguageFeatures).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(GeneratedCodeAttribute).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(Avro.Schema).Assembly.Location),
             ]);

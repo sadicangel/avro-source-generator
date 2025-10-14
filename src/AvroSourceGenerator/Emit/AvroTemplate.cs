@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Registry;
+﻿using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Registry;
 using Scriban;
 using Scriban.Syntax;
 

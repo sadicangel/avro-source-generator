@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
+using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Parsing;
 using AvroSourceGenerator.Registry;

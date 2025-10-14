@@ -1,4 +1,4 @@
-﻿namespace AvroSourceGenerator.Parsing;
+﻿namespace AvroSourceGenerator.Configuration;
 
 internal readonly record struct GeneratorSettings(
     AvroLibrary? AvroLibrary,

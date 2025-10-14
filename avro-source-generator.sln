@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.1.32319.34
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11109.219 d18.0-oob
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroSourceGenerator", "src\AvroSourceGenerator\AvroSourceGenerator.csproj", "{50DC767D-A79E-4911-B56E-5B7C8DC82803}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Attributes", "src\AvroSourceGenerator.Attributes\AvroSourceGenerator.Attributes.csproj", "{6B8EC3CB-F9FC-43D7-87F9-FD59DEB44A30}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroSourceGenerator.Tests", "tests\AvroSourceGenerator.Tests\AvroSourceGenerator.Tests.csproj", "{3FD7F50E-84A6-44AA-8935-693B20F65DFA}"
 EndProject
@@ -41,10 +39,6 @@ Global
 		{50DC767D-A79E-4911-B56E-5B7C8DC82803}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{50DC767D-A79E-4911-B56E-5B7C8DC82803}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{50DC767D-A79E-4911-B56E-5B7C8DC82803}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6B8EC3CB-F9FC-43D7-87F9-FD59DEB44A30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6B8EC3CB-F9FC-43D7-87F9-FD59DEB44A30}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6B8EC3CB-F9FC-43D7-87F9-FD59DEB44A30}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6B8EC3CB-F9FC-43D7-87F9-FD59DEB44A30}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3FD7F50E-84A6-44AA-8935-693B20F65DFA}.Release|Any CPU.ActiveCfg = Release|Any CPU

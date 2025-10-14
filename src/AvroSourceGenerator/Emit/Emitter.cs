@@ -12,9 +12,9 @@ namespace AvroSourceGenerator.Emit;
 
 internal static class Emitter
 {
-    public static void Emit(SourceProductionContext context, (AvroFile avroFile, GeneratorSettings generatorSettings, CompilationInfo compilationInfo, AvroOptions? avroOptions) source)
+    public static void Emit(SourceProductionContext context, (AvroFile avroFile, GeneratorSettings generatorSettings, CompilationInfo compilationInfo) source)
     {
-        var (avroFile, generatorSettings, compilationInfo, avroOptions) = source;
+        var (avroFile, generatorSettings, compilationInfo) = source;
 
         foreach (var diagnostic in avroFile.Diagnostics)
         {
@@ -28,26 +28,15 @@ internal static class Emitter
 
         try
         {
-            var avroLibrary = avroOptions?.AvroLibrary
-                ?? generatorSettings.AvroLibrary
-                ?? AvroLibrary.Auto;
-
+            var avroLibrary = generatorSettings.AvroLibrary ?? AvroLibrary.Auto;
             if (avroLibrary is AvroLibrary.Auto)
             {
                 avroLibrary = GetAvroLibrary(context, compilationInfo);
             }
 
-            var languageFeatures = avroOptions?.LanguageFeatures
-                ?? generatorSettings.LanguageFeatures
-                ?? MapVersionToFeatures(compilationInfo.LanguageVersion);
-
-            var accessModifier = avroOptions?.AccessModifier
-                ?? generatorSettings.AccessModifier
-                ?? "public";
-
-            var recordDeclaration = avroOptions?.RecordDeclaration
-                ?? generatorSettings.RecordDeclaration
-                ?? (languageFeatures.HasFlag(LanguageFeatures.Records) ? "record" : "class");
+            var languageFeatures = generatorSettings.LanguageFeatures ?? MapVersionToFeatures(compilationInfo.LanguageVersion);
+            var accessModifier = generatorSettings.AccessModifier ?? "public";
+            var recordDeclaration = generatorSettings.RecordDeclaration ?? (languageFeatures.HasFlag(LanguageFeatures.Records) ? "record" : "class");
 
             var schemaRegistry = SchemaRegistry.Register(
                 schema: avroFile.Json,

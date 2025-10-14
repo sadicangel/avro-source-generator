@@ -40,7 +40,7 @@ internal readonly record struct GeneratorSetup(CSharpParseOptions ParseOptions, 
             .Select(assembly => MetadataReference.CreateFromFile(assembly.Location))
             .Concat([
                 MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(AvroAttribute).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(LanguageFeatures).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(GeneratedCodeAttribute).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(Avro.Schema).Assembly.Location),
             ]);

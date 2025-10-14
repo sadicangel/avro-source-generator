@@ -1,4 +1,11 @@
-﻿namespace AvroSourceGenerator.Parsing;
+﻿namespace AvroSourceGenerator.Configuration;
+
+internal enum AvroLibrary
+{
+    None,
+    Apache,
+    Auto = 2147483647,
+}
 
 internal static class AvroLibraryExtensions
 {

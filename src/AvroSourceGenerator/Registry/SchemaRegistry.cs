@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Registry.Extensions;
 using AvroSourceGenerator.Schemas;
 using Microsoft.CodeAnalysis.CSharp;

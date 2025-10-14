@@ -1,7 +1,7 @@
-﻿namespace AvroSourceGenerator;
+﻿namespace AvroSourceGenerator.Configuration;
 
 [Flags]
-public enum LanguageFeatures
+internal enum LanguageFeatures
 {
     None = 0,
     NullableReferenceTypes = 1 << 0,

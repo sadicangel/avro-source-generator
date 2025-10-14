@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Schemas;
+﻿using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Schemas;
 using Scriban.Functions;
 using Scriban.Runtime;
 

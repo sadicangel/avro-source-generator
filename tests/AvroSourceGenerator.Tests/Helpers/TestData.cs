@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using AvroSourceGenerator.Configuration;
+using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.Tests.Helpers;
 

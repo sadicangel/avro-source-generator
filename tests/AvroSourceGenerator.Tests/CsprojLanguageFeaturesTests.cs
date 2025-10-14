@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Tests.Helpers;
+﻿using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Tests.Helpers;
 
 namespace AvroSourceGenerator.Tests;
 

@@ -4,32 +4,29 @@ namespace AvroSourceGenerator.Tests.Setup;
 
 public record struct ProjectConfig(LanguageVersion LanguageVersion)
 {
-    private readonly Dictionary<string, string> _globalOptions = [];
-    public readonly IReadOnlyDictionary<string, string> GlobalOptions => _globalOptions ?? [];
+    public Dictionary<string, string> GlobalOptions => field ??= [];
 
-    public ProjectConfig() : this(LanguageVersion.Default) { }
-
-    public readonly string AvroLibrary
+    public string AvroLibrary
     {
-        get => _globalOptions?.GetValueOrDefault("AvroSourceGeneratorAvroLibrary") ?? string.Empty;
-        set => _globalOptions?["AvroSourceGeneratorAvroLibrary"] = value;
+        get => GlobalOptions.GetValueOrDefault("AvroSourceGeneratorAvroLibrary") ?? string.Empty;
+        set => GlobalOptions["AvroSourceGeneratorAvroLibrary"] = value;
     }
 
-    public readonly string LanguageFeatures
+    public string LanguageFeatures
     {
-        get => _globalOptions?.GetValueOrDefault("AvroSourceGeneratorLanguageFeatures") ?? string.Empty;
-        set => _globalOptions?["AvroSourceGeneratorLanguageFeatures"] = value;
+        get => GlobalOptions.GetValueOrDefault("AvroSourceGeneratorLanguageFeatures") ?? string.Empty;
+        set => GlobalOptions["AvroSourceGeneratorLanguageFeatures"] = value;
     }
 
-    public readonly string AccessModifier
+    public string AccessModifier
     {
-        get => _globalOptions?.GetValueOrDefault("AvroSourceGeneratorAccessModifier") ?? string.Empty;
-        set => _globalOptions?["AvroSourceGeneratorAccessModifier"] = value;
+        get => GlobalOptions.GetValueOrDefault("AvroSourceGeneratorAccessModifier") ?? string.Empty;
+        set => GlobalOptions["AvroSourceGeneratorAccessModifier"] = value;
     }
 
-    public readonly string RecordDeclaration
+    public string RecordDeclaration
     {
-        get => _globalOptions?.GetValueOrDefault("AvroSourceGeneratorRecordDeclaration") ?? string.Empty;
-        set => _globalOptions?["AvroSourceGeneratorRecordDeclaration"] = value;
+        get => GlobalOptions.GetValueOrDefault("AvroSourceGeneratorRecordDeclaration") ?? string.Empty;
+        set => GlobalOptions["AvroSourceGeneratorRecordDeclaration"] = value;
     }
 }

@@ -8,53 +8,5 @@
         public required string phoneNumber { get; init; }
     }
     
-    partial record SmsContent : global::Avro.Specific.ISpecificRecord
-    {
-        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => SmsContent.s_schema; }
-        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
-        """
-        {
-          "type": "record",
-          "name": "SmsContent",
-          "fields": [
-            {
-              "name": "message",
-              "type": "string"
-            },
-            {
-              "name": "phoneNumber",
-              "type": "string"
-            }
-          ]
-        }
-        """);
-    
-        object? global::Avro.Specific.ISpecificRecord.Get(int fieldPos)
-        {
-            switch (fieldPos)
-            {
-                case 0: return this.message;
-                case 1: return this.phoneNumber;
-                default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
-            }
-        }
-        
-        void global::Avro.Specific.ISpecificRecord.Put(int fieldPos, object? fieldValue)
-        {
-            switch (fieldPos)
-            {
-                case 0:
-                    Set_message(this, (string)fieldValue!); break;
-                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_message")]
-                    extern static void Set_message(SmsContent obj, string value);
-                case 1:
-                    Set_phoneNumber(this, (string)fieldValue!); break;
-                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_phoneNumber")]
-                    extern static void Set_phoneNumber(SmsContent obj, string value);
-                default:
-                    throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
-            }
-        }
-    }
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

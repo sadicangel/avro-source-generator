@@ -12,56 +12,6 @@ namespace a.full
         public required global::a.full.Understanding inheritNamespace { get; init; }
     }
     
-    partial record Name : global::Avro.Specific.ISpecificRecord
-    {
-        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Name.s_schema; }
-        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
-        """
-        {
-          "type": "record",
-          "name": "Name",
-          "namespace": "a.full",
-          "doc": "A name attribute with a full name, so the namespace attribute is ignored. The full name is \u0027a.full.Name\u0027, and the namespace is \u0027a.full\u0027.",
-          "fields": [
-            {
-              "name": "inheritNamespace",
-              "type": {
-                "type": "enum",
-                "name": "Understanding",
-                "namespace": "a.full",
-                "doc": "A simple name (attribute) and no namespace attribute: inherit the namespace of the enclosing type \u0027a.full.Name\u0027. The full name is \u0027a.full.Understanding\u0027.",
-                "symbols": [
-                  "d",
-                  "e"
-                ]
-              }
-            }
-          ]
-        }
-        """);
-    
-        object? global::Avro.Specific.ISpecificRecord.Get(int fieldPos)
-        {
-            switch (fieldPos)
-            {
-                case 0: return this.inheritNamespace;
-                default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
-            }
-        }
-        
-        void global::Avro.Specific.ISpecificRecord.Put(int fieldPos, object? fieldValue)
-        {
-            switch (fieldPos)
-            {
-                case 0:
-                    Set_inheritNamespace(this, (global::a.full.Understanding)fieldValue!); break;
-                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_inheritNamespace")]
-                    extern static void Set_inheritNamespace(global::a.full.Name obj, global::a.full.Understanding value);
-                default:
-                    throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
-            }
-        }
-    }
 }
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

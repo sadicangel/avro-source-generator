@@ -7,32 +7,5 @@ namespace SchemaNamespace
     {
     }
     
-    partial class RpcProtocol : global::Avro.Specific.ISpecificProtocol
-    {
-        public global::Avro.Protocol Protocol { get => RpcProtocol.s_protocol; }
-        private static readonly global::Avro.Protocol s_protocol = global::Avro.Protocol.Parse(
-        """
-        {
-          "protocol": "RpcProtocol",
-          "namespace": "SchemaNamespace",
-          "messages": {},
-          "protocol": "RpcProtocol",
-          "types": []
-        }
-        """);
-    
-        public void Request(global::Avro.Specific.ICallbackRequestor requestor, string messageName, object[] args, object callback)
-        {
-            switch (messageName)
-            {
-                default:
-                    throw new global::Avro.AvroRuntimeException($"Unknown message: {messageName}");
-            }
-        }
-    }
-    
-    public abstract partial class RpcProtocolCallback : global::SchemaNamespace.RpcProtocol
-    {
-    }
 }
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

@@ -10,58 +10,6 @@ namespace SchemaNamespace
         public long? NullableField { get; init; }
     }
     
-    partial record Class : global::Avro.Specific.ISpecificRecord
-    {
-        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Class.s_schema; }
-        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
-        """
-        {
-          "type": "record",
-          "name": "Class",
-          "namespace": "SchemaNamespace",
-          "fields": [
-            {
-              "name": "Field",
-              "type": "long"
-            },
-            {
-              "name": "NullableField",
-              "type": [
-                "null",
-                "long"
-              ]
-            }
-          ]
-        }
-        """);
-    
-        object? global::Avro.Specific.ISpecificRecord.Get(int fieldPos)
-        {
-            switch (fieldPos)
-            {
-                case 0: return this.Field;
-                case 1: return this.NullableField;
-                default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
-            }
-        }
-        
-        void global::Avro.Specific.ISpecificRecord.Put(int fieldPos, object? fieldValue)
-        {
-            switch (fieldPos)
-            {
-                case 0:
-                    Set_Field(this, (long)fieldValue!); break;
-                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Field")]
-                    extern static void Set_Field(global::SchemaNamespace.Class obj, long value);
-                case 1:
-                    Set_NullableField(this, fieldValue! is null ? null : (long)fieldValue!); break;
-                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_NullableField")]
-                    extern static void Set_NullableField(global::SchemaNamespace.Class obj, long? value);
-                default:
-                    throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
-            }
-        }
-    }
 }
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

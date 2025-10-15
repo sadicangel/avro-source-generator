@@ -4,20 +4,7 @@
     public partial class RawContent
     {
         public int Size { get => 256; }
+        public byte[] Value { get; } = new byte[256];
     }
     
-    partial class RawContent : global::Avro.Specific.SpecificFixed
-    {
-        public RawContent() : base(256) { }
-    
-        public override global::Avro.Schema Schema { get => RawContent.s_schema; }
-        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
-        """
-        {
-          "type": "fixed",
-          "name": "RawContent",
-          "size": 256
-        }
-        """);
-    }
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

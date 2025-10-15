@@ -11,64 +11,6 @@ namespace com.example.user
         public required string postalCode { get; init; }
     }
     
-    partial record Address : global::Avro.Specific.ISpecificRecord
-    {
-        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Address.s_schema; }
-        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
-        """
-        {
-          "type": "record",
-          "name": "Address",
-          "namespace": "com.example.user",
-          "fields": [
-            {
-              "name": "street",
-              "type": "string"
-            },
-            {
-              "name": "city",
-              "type": "string"
-            },
-            {
-              "name": "postalCode",
-              "type": "string"
-            }
-          ]
-        }
-        """);
-    
-        object? global::Avro.Specific.ISpecificRecord.Get(int fieldPos)
-        {
-            switch (fieldPos)
-            {
-                case 0: return this.street;
-                case 1: return this.city;
-                case 2: return this.postalCode;
-                default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
-            }
-        }
-        
-        void global::Avro.Specific.ISpecificRecord.Put(int fieldPos, object? fieldValue)
-        {
-            switch (fieldPos)
-            {
-                case 0:
-                    Set_street(this, (string)fieldValue!); break;
-                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_street")]
-                    extern static void Set_street(global::com.example.user.Address obj, string value);
-                case 1:
-                    Set_city(this, (string)fieldValue!); break;
-                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_city")]
-                    extern static void Set_city(global::com.example.user.Address obj, string value);
-                case 2:
-                    Set_postalCode(this, (string)fieldValue!); break;
-                    [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_postalCode")]
-                    extern static void Set_postalCode(global::com.example.user.Address obj, string value);
-                default:
-                    throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
-            }
-        }
-    }
 }
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775

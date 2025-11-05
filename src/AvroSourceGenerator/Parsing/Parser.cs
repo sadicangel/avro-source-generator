@@ -14,9 +14,6 @@ namespace AvroSourceGenerator.Parsing;
 
 internal static class Parser
 {
-    private static readonly SymbolDisplayFormat s_partiallyQualifiedFormat =
-        SymbolDisplayFormat.FullyQualifiedFormat.WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted);
-
     public static bool IsAvroFile(AdditionalText text) =>
         text.Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase);
 
@@ -51,31 +48,41 @@ internal static class Parser
         return new AvroFile(path, text, default, default, diagnostics.ToImmutable());
     }
 
-    public static GeneratorSettings GetGeneratorSettings(AnalyzerConfigOptionsProvider provider, CancellationToken cancellationToken)
+    public static GeneratorSettings GetGeneratorSettings(
+        AnalyzerConfigOptionsProvider provider,
+        CancellationToken cancellationToken)
     {
         _ = cancellationToken;
 
         var avroLibrary = default(AvroLibrary?);
-        if (provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorAvroLibrary", out var avroLibraryString) &&
+        if (provider.GlobalOptions.TryGetValue(
+                "build_property.AvroSourceGeneratorAvroLibrary",
+                out var avroLibraryString) &&
             Enum.TryParse<AvroLibrary>(avroLibraryString, ignoreCase: true, out var parsedAvroLibrary))
         {
             avroLibrary = parsedAvroLibrary;
         }
 
         var languageFeatures = default(LanguageFeatures?);
-        if (provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorLanguageFeatures", out var languageFeaturesString) &&
+        if (provider.GlobalOptions.TryGetValue(
+                "build_property.AvroSourceGeneratorLanguageFeatures",
+                out var languageFeaturesString) &&
             Enum.TryParse<LanguageFeatures>(languageFeaturesString, ignoreCase: true, out var parsedLanguageFeatures))
         {
             languageFeatures = parsedLanguageFeatures;
         }
 
-        if (!provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorAccessModifier", out var accessModifier) ||
+        if (!provider.GlobalOptions.TryGetValue(
+                "build_property.AvroSourceGeneratorAccessModifier",
+                out var accessModifier) ||
             accessModifier is not ("public" or "internal"))
         {
             accessModifier = null;
         }
 
-        if (!provider.GlobalOptions.TryGetValue("build_property.AvroSourceGeneratorRecordDeclaration", out var recordDeclaration) ||
+        if (!provider.GlobalOptions.TryGetValue(
+                "build_property.AvroSourceGeneratorRecordDeclaration",
+                out var recordDeclaration) ||
             recordDeclaration is not ("record" or "class"))
         {
             recordDeclaration = null;

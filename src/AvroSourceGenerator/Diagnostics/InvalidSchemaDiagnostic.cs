@@ -11,10 +11,9 @@ internal static class InvalidSchemaDiagnostic
         category: "Compiler",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: """
-            The JSON parsed, but the Avro schema is not valid according to the Avro specification
-            (e.g., duplicate field names, invalid union members, unresolved references, etc.).
-            """);
+        description:
+        "The JSON parsed, but the Avro schema is not valid according to the Avro specification " +
+        "(e.g., duplicate field names, invalid union members, unresolved references, etc.).");
 
     public static Diagnostic Create(Location location, string message) =>
         Diagnostic.Create(s_descriptor, location, message);

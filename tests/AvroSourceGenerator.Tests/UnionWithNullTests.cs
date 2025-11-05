@@ -5,7 +5,8 @@ public sealed class UnionWithNullTests
     [Fact]
     public Task Verify()
     {
-        var schema = """
+        return VerifySourceCode(
+            """
             {
               "type": "record",
               "name": "UserProfile",
@@ -95,9 +96,7 @@ public sealed class UnionWithNullTests
                 }
               ]
             }
-            
-            """;
 
-        return VerifySourceCode(schema);
+            """);
     }
 }

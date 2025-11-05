@@ -13,7 +13,7 @@ internal sealed class TemplateLoader : ITemplateLoader
 
     static TemplateLoader()
     {
-        s_templatePaths = new()
+        s_templatePaths = new Dictionary<string, string>
         {
             ["abstract"] = "AvroSourceGenerator.Templates.abstract.sbncs",
             ["enum"] = "AvroSourceGenerator.Templates.enum.sbncs",
@@ -26,15 +26,20 @@ internal sealed class TemplateLoader : ITemplateLoader
             ["schema"] = "AvroSourceGenerator.Templates.schema.sbncs",
         };
 
-        s_templates = new(s_templatePaths.Count);
+        s_templates = new Dictionary<string, Template>(s_templatePaths.Count);
         foreach (var templatePath in s_templatePaths.Values)
         {
             s_templates[templatePath] = LoadTemplate(templatePath);
         }
 
+        return;
+
         static Template LoadTemplate(string templatePath)
         {
-            using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(templatePath));
+            var assembly = Assembly.GetExecutingAssembly().GetManifestResourceStream(templatePath)
+                ?? throw new InvalidOperationException();
+
+            using var reader = new StreamReader(assembly);
             return Template.Parse(reader.ReadToEnd(), templatePath);
         }
     }

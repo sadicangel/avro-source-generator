@@ -51,12 +51,12 @@ Console.WriteLine("Creating producer...");
 using var producer = fixture.CreateProducer<Order>(registry);
 Console.WriteLine("Producer created. Producing message...");
 var deliveryResult = await producer.ProduceAsync(
-           topicName,
-           new Message<string, Order>
-           {
-               Key = Guid.NewGuid().ToString(),
-               Value = producedOrder,
-           });
+    topicName,
+    new Message<string, Order>
+    {
+        Key = Guid.NewGuid().ToString(),
+        Value = producedOrder,
+    });
 if (deliveryResult.Status != PersistenceStatus.Persisted)
     throw new InvalidOperationException($"Failed to produce message: {deliveryResult.Status}");
 Console.WriteLine($"Message produced successfully to topic '{topicName}'.");

@@ -24,37 +24,53 @@ internal sealed record class LogicalSchema(
                 writer.WritePropertyName(entry.Key);
                 entry.Value.WriteTo(writer);
             }
+
             writer.WriteEndObject();
             return;
         }
 
         var jsonNode = ParseSchema(UnderlyingSchema, writtenSchemas, containingNamespace);
         var valueKind = jsonNode.Root.GetValueKind();
-        if (valueKind is JsonValueKind.String)
-        {
-            writer.WriteStartObject();
-            writer.WritePropertyName("type");
-            jsonNode.Root.WriteTo(writer);
-            writer.WriteString("logicalType", SchemaName.Name);
-            foreach (var entry in Properties)
-            {
-                writer.WritePropertyName(entry.Key);
-                entry.Value.WriteTo(writer);
-            }
-            writer.WriteEndObject();
-            return;
-        }
 
-        if (valueKind is JsonValueKind.Object)
+        switch (valueKind)
         {
-            var jsonObject = jsonNode.AsObject();
-            jsonObject["logicalType"] = SchemaName.Name;
-            foreach (var entry in Properties)
-            {
-                jsonObject[entry.Key] = JsonValue.Create(entry.Value);
-            }
-            jsonObject.WriteTo(writer);
-            return;
+            case JsonValueKind.String:
+                {
+                    writer.WriteStartObject();
+                    writer.WritePropertyName("type");
+                    jsonNode.Root.WriteTo(writer);
+                    writer.WriteString("logicalType", SchemaName.Name);
+                    foreach (var entry in Properties)
+                    {
+                        writer.WritePropertyName(entry.Key);
+                        entry.Value.WriteTo(writer);
+                    }
+
+                    writer.WriteEndObject();
+                }
+                return;
+
+            case JsonValueKind.Object:
+                {
+                    var jsonObject = jsonNode.AsObject();
+                    jsonObject["logicalType"] = SchemaName.Name;
+                    foreach (var entry in Properties)
+                    {
+                        jsonObject[entry.Key] = JsonValue.Create(entry.Value);
+                    }
+
+                    jsonObject.WriteTo(writer);
+                }
+                return;
+
+            case JsonValueKind.Undefined:
+            case JsonValueKind.Array:
+            case JsonValueKind.Number:
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+            case JsonValueKind.Null:
+            default:
+                throw new InvalidOperationException();
         }
 
         static JsonNode ParseSchema(AvroSchema schema, HashSet<SchemaName> writtenSchemas, string? containingNamespace)

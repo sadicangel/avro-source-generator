@@ -2,29 +2,32 @@
 using System.Collections.Generic;
 using com.example.finance;
 
-internal static class Program
+namespace AvroSourceGenerator.ApacheAvro
 {
-    private static void Main()
+    internal static class Program
     {
-        var transaction = new Transaction
+        private static void Main()
         {
-            id = Guid.NewGuid(),
-            amount = 123.45m,
-            currency = "USD",
-            timestamp = DateTime.UtcNow,
-            status = TransactionStatus.COMPLETED,
-            recipientId = "123456",
-            metadata = new Dictionary<string, string>
+            var transaction = new Transaction
             {
-                { "key1", "value1" },
-                { "key2", "value2" },
-            },
-            signature = new Signature(),
-            legacyId = "abc123",
-        };
+                id = Guid.NewGuid(),
+                amount = 123.45m,
+                currency = "USD",
+                timestamp = DateTime.UtcNow,
+                status = TransactionStatus.COMPLETED,
+                recipientId = "123456",
+                metadata = new Dictionary<string, string>
+                {
+                    { "key1", "value1" },
+                    { "key2", "value2" },
+                },
+                signature = new Signature(),
+                legacyId = "abc123",
+            };
 
-        new Random().NextBytes(transaction.signature.Value);
+            new Random().NextBytes(transaction.signature.Value);
 
-        Console.WriteLine(transaction);
+            Console.WriteLine(transaction);
+        }
     }
 }

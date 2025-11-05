@@ -11,22 +11,22 @@ public class FieldPrimitiveTests
     public Task Verify(string @class, string field)
     {
         var schema = $$"""
-        {
-            "type": "{{@class}}",
-            "name": "Class",
-            "namespace": "SchemaNamespace",
-            "fields": [
-                {
-                    "type": "{{field}}",
-                    "name": "Field"
-                },
-                {
-                    "type": ["null", "{{field}}"],
-                    "name": "NullableField"
-                }
-            ]
-        }
-        """;
+            {
+                "type": "{{@class}}",
+                "name": "Class",
+                "namespace": "SchemaNamespace",
+                "fields": [
+                    {
+                        "type": "{{field}}",
+                        "name": "Field"
+                    },
+                    {
+                        "type": ["null", "{{field}}"],
+                        "name": "NullableField"
+                    }
+                ]
+            }
+            """;
         return VerifySourceCode(schema);
     }
 }

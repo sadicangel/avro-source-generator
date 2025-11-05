@@ -20,9 +20,7 @@ public sealed class UnnamedRootSchemasTests
         return VerifyDiagnostic(schema);
     }
 
-    public static TheoryData<string> ValidUnnamedRootSchemas() => new(
-        ["array<record>", "map<record>", "[null, record]"]);
+    public static TheoryData<string> ValidUnnamedRootSchemas() => new(["array<record>", "map<record>", "[null, record]"]);
 
-    public static TheoryData<string> InvalidUnnamedRootSchemas() => new(
-        ["array<string>", "map<string>", "[null, string]"]);
+    public static TheoryData<string> InvalidUnnamedRootSchemas() => new(["array<string>", "map<string>", "[null, string]"]);
 }

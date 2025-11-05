@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace AvroSourceGenerator.Registry.Extensions;
+﻿namespace AvroSourceGenerator.Registry.Extensions;
 
 internal readonly ref struct SplitEnumerable(ReadOnlySpan<char> value, char separator)
 {
@@ -9,26 +7,18 @@ internal readonly ref struct SplitEnumerable(ReadOnlySpan<char> value, char sepa
 
     public SplitEnumerator GetEnumerator() => new(_value, _separator);
 
-    public ref struct SplitEnumerator
+    public ref struct SplitEnumerator(ReadOnlySpan<char> value, char separator)
     {
-        private readonly ReadOnlySpan<char> _value;
-        private readonly char _separator;
-        private int _start;
-        public SplitEnumerator(ReadOnlySpan<char> value, char separator)
-        {
-            _value = value;
-            _separator = separator;
-            _start = -1;
-            Current = default;
-        }
-        public ReadOnlySpan<char> Current { get; private set; }
+        private readonly ReadOnlySpan<char> _value = value;
+        private int _start = -1;
+        public ReadOnlySpan<char> Current { get; private set; } = default;
 
         public bool MoveNext()
         {
             if (_start >= _value.Length)
                 return false;
 
-            var end = _value[(_start + 1)..].IndexOf(_separator);
+            var end = _value[(_start + 1)..].IndexOf(separator);
             if (end == -1)
             {
                 Current = _value[(_start + 1)..];

@@ -32,6 +32,7 @@ internal sealed record class Field(
                 writer.WriteStringValue(alias);
             writer.WriteEndArray();
         }
+
         if (DefaultJson is not null)
         {
             writer.WritePropertyName("default");

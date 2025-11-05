@@ -10,7 +10,7 @@ public sealed class CsprojAccessModifierTests
 
         var config = new ProjectConfig() with { AccessModifier = accessModifier };
 
-        return VerifySourceCode(schema, default, config);
+        return VerifySourceCode(schema, null, config);
     }
 
     public static MatrixTheoryData<string, string> AccessModifierSchemaPairs() => new(

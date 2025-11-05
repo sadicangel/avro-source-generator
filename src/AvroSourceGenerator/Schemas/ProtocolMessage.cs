@@ -17,12 +17,14 @@ internal sealed record class ProtocolMessage(
         {
             writer.WriteString("doc", Documentation);
         }
+
         writer.WritePropertyName("request");
         writer.WriteStartArray();
         foreach (var parameter in RequestParameters)
         {
             parameter.WriteTo(writer, writtenSchemas, containingNamespace);
         }
+
         writer.WriteEndArray();
         writer.WritePropertyName("response");
         Response.WriteTo(writer, writtenSchemas, containingNamespace);
@@ -33,6 +35,7 @@ internal sealed record class ProtocolMessage(
             {
                 error.WriteTo(writer, writtenSchemas, containingNamespace);
             }
+
             writer.WriteEndArray();
         }
 

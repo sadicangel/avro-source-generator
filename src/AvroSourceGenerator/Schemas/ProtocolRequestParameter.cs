@@ -21,11 +21,13 @@ internal sealed record class ProtocolRequestParameter(
         {
             writer.WriteString("doc", Documentation);
         }
+
         if (DefaultJson is not null)
         {
             writer.WritePropertyName("default");
             DefaultJson.Value.WriteTo(writer);
         }
+
         writer.WriteEndObject();
     }
 }

@@ -7,21 +7,13 @@ public static class TestSchemas
     private static readonly Dictionary<string, string> s_schemas = new()
     {
         ["null"] = "\"null\"",
-
         ["boolean"] = "\"boolean\"",
-
         ["int"] = "\"int\"",
-
         ["long"] = "\"long\"",
-
         ["float"] = "\"float\"",
-
         ["double"] = "\"double\"",
-
         ["bytes"] = "\"bytes\"",
-
         ["string"] = "\"string\"",
-
         ["enum"] = """
         {
             "type": "enum",
@@ -30,7 +22,6 @@ public static class TestSchemas
             "symbols": []
         }
         """,
-
         ["enum<A,B,C>"] = """
         {
             "type": "enum",
@@ -39,7 +30,6 @@ public static class TestSchemas
             "symbols": ["A", "B", "C"]
         }
         """,
-
         ["error"] = """
         {
             "type": "error",
@@ -48,7 +38,6 @@ public static class TestSchemas
             "fields": []
         }
         """,
-
         ["fixed"] = """
         {
             "type": "fixed",
@@ -57,7 +46,6 @@ public static class TestSchemas
             "size": 16
         }
         """,
-
         ["record"] = """
         {
             "type": "record",
@@ -66,14 +54,12 @@ public static class TestSchemas
             "fields": []
         }
         """,
-
         ["array<string>"] = """
         {
             "type": "array",
             "items": "string"
         }
         """,
-
         ["array<record>"] = """
         {
             "type": "array",
@@ -85,14 +71,12 @@ public static class TestSchemas
             }
         }
         """,
-
         ["map<string>"] = """
         {
             "type": "map",
             "values": "string"
         }
         """,
-
         ["map<record>"] = """
         {
             "type": "map",
@@ -104,14 +88,12 @@ public static class TestSchemas
             }
         }
         """,
-
         ["[null, string]"] = """
         [
             "null",
             "string"
         ]
         """,
-
         ["[null, record]"] = """
         [
             "null",
@@ -123,7 +105,6 @@ public static class TestSchemas
             }
         ]
         """,
-
         ["protocol"] = """
         {
             "protocol": "RpcProtocol",
@@ -152,12 +133,13 @@ public static class TestSchemas
     public static JsonNode With(this JsonNode @this, string propertyName, JsonValue propertyValue) =>
         @this.With(propertyName, (JsonNode)propertyValue);
 
-    public static JsonNode With(this JsonNode @this, string propertyName, IEnumerable<object> propertyValue)
+    public static JsonNode With(this JsonNode @this, string propertyName, IEnumerable<object?>? propertyValue)
     {
         var clone = @this.DeepClone();
         clone[propertyName] = propertyValue is null ? null : new JsonArray([.. propertyValue.Select(Parse)]);
         return clone;
 
-        static JsonNode Parse(object x) => x is null ? JsonNode.Parse("null")! : JsonNode.Parse(JsonSerializer.Serialize(x, x.GetType()))!;
+        static JsonNode Parse(object? x) =>
+            x is null ? JsonNode.Parse("null")! : JsonNode.Parse(JsonSerializer.Serialize(x, x.GetType()))!;
     }
 }

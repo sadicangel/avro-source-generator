@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Avro.Specific;
+﻿using Avro.Specific;
 using AvroSourceGenerator.IntegrationTests.Schemas;
 
 namespace AvroSourceGenerator.IntegrationTests;
@@ -25,16 +24,14 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
             doubleField = 42.42,
             boolField = true,
             stringField = "Hello, Avro!",
-            bytesField = Encoding.UTF8.GetBytes("Hello, Avro!"),
-
+            bytesField = "Hello, Avro!"u8.ToArray(),
             nullableInt1 = 42,
             nullableLong1 = 42L,
             nullableFloat1 = 42.42f,
             nullableDouble1 = 42.42,
             nullableBool1 = true,
             nullableString1 = "Hello, Avro!",
-            nullableBytes1 = Encoding.UTF8.GetBytes("Hello, Avro!"),
-
+            nullableBytes1 = "Hello, Avro!"u8.ToArray(),
             nullableInt2 = null,
             nullableLong2 = null,
             nullableFloat2 = null,
@@ -55,7 +52,12 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
         var expected = new Collections
         {
             stringList = ["Hello", "Avro", "!"],
-            intMap = new Dictionary<string, int> { ["Hello"] = 1, ["Avro"] = 2, ["!"] = 3 },
+            intMap = new Dictionary<string, int>
+            {
+                ["Hello"] = 1,
+                ["Avro"] = 2,
+                ["!"] = 3
+            },
         };
 
         var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
@@ -131,17 +133,15 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
     [InlineData(null), InlineData(2), InlineData("cash"), MemberData(nameof(CreditCardPaymentVariant))]
     public async Task Union_types_mapped_to_object_remain_unchanged_after_roundtrip_to_kafka(object? variant)
     {
-        var expected = new PaymentRecord
-        {
-            paymentMethod = variant
-        };
+        var expected = new PaymentRecord { paymentMethod = variant };
 
         var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
 
         AssertEqual(expected, actual);
     }
 
-    public static TheoryData<CreditCardPayment> CreditCardPaymentVariant() => [
+    public static TheoryData<CreditCardPayment> CreditCardPaymentVariant() =>
+    [
         new CreditCardPayment
         {
             cardNumber = "4111111111111111",
@@ -152,7 +152,8 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
 
     [Theory]
     [MemberData(nameof(NotificationVariants))]
-    public async Task Union_types_mapped_to_abstract_remain_unchanged_after_roundtrip_to_kafka(NotificationContentVariant content)
+    public async Task Union_types_mapped_to_abstract_remain_unchanged_after_roundtrip_to_kafka(
+        NotificationContentVariant content)
     {
         var expected = new Notification { content = content };
 
@@ -161,7 +162,8 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
         AssertEqual(expected, actual);
     }
 
-    public static TheoryData<NotificationContentVariant> NotificationVariants() => [
+    public static TheoryData<NotificationContentVariant> NotificationVariants() =>
+    [
         new EmailContent
         {
             subject = "Welcome!",

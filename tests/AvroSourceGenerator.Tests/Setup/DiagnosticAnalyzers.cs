@@ -25,19 +25,21 @@ internal static class DiagnosticAnalyzers
 
     private static string GetAnalyzersFolder(string sdkHint)
     {
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
+        using var process = Process.Start(
+            new ProcessStartInfo
             {
                 FileName = "dotnet",
                 Arguments = "--list-sdks",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
-            }
-        };
+            });
 
-        process.Start();
+        if (process is null)
+        {
+            throw new InvalidOperationException("Failed to start 'dotnet --list-sdks' process.");
+        }
+
         var output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
 
@@ -45,7 +47,9 @@ internal static class DiagnosticAnalyzers
             .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(line =>
             {
-                var parts = line.Split(['[', ']'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var parts = line.Split(
+                    ['[', ']'],
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 return (Version: parts[0], Path: Path.Combine(parts[1], parts[0]));
             })
             .OrderBy(x => x.Version)

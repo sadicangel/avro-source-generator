@@ -21,4 +21,3 @@ internal enum LanguageFeatures
 
     Latest = 2147483647,
 }
-

@@ -2,7 +2,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using AvroSourceGenerator.Configuration;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -11,9 +10,8 @@ using Microsoft.CodeAnalysis.Text;
 namespace AvroSourceGenerator.Tests.Setup;
 
 public readonly record struct GeneratorInput(
-    CSharpParseOptions ParseOptions,
-    AnalyzerConfigOptionsProvider OptionsProvider,
     Compilation Compilation,
+    AnalyzerConfigOptionsProvider OptionsProvider,
     GeneratorDriver GeneratorDriver)
 {
     public static GeneratorInput Create(
@@ -26,7 +24,7 @@ public readonly record struct GeneratorInput(
         var optionsProvider = new AnalyzerConfigOptionsProviderImplementation(projectConfig.GlobalOptions);
         var generatorDriver = CreateGeneratorDriver(additionalTexts, parseOptions, optionsProvider);
         var compilation = CreateCompilation(sourceTexts, parseOptions, executableReferences);
-        return new(parseOptions, optionsProvider, compilation, generatorDriver);
+        return new GeneratorInput(compilation, optionsProvider, generatorDriver);
     }
 
     private static CSharpCompilation CreateCompilation(
@@ -38,7 +36,8 @@ public readonly record struct GeneratorInput(
         var references = AppDomain.CurrentDomain.GetAssemblies()
             .Where(assembly => !assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
             .Select(assembly => MetadataReference.CreateFromFile(assembly.Location))
-            .Concat([
+            .Concat(
+            [
                 MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(GeneratedCodeAttribute).Assembly.Location),
                 .. executableReferences,
@@ -76,14 +75,16 @@ public readonly record struct GeneratorInput(
     {
         public override string Path => $"schema.avsc";
 
-        public override SourceText? GetText(CancellationToken cancellationToken = default) =>
+        public override SourceText GetText(CancellationToken cancellationToken = default) =>
             SourceText.From(content, Encoding.UTF8);
     }
 
-    private sealed class AnalyzerConfigOptionsProviderImplementation(IEnumerable<KeyValuePair<string, string>> globalOptions)
+    private sealed class AnalyzerConfigOptionsProviderImplementation(
+        IEnumerable<KeyValuePair<string, string>> globalOptions)
         : AnalyzerConfigOptionsProvider
     {
-        public override AnalyzerConfigOptions GlobalOptions { get; } = new AnalyzerConfigOptionsImplementation(globalOptions);
+        public override AnalyzerConfigOptions GlobalOptions { get; } =
+            new AnalyzerConfigOptionsImplementation(globalOptions);
 
         public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => GlobalOptions;
         public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => GlobalOptions;
@@ -91,11 +92,10 @@ public readonly record struct GeneratorInput(
         private sealed class AnalyzerConfigOptionsImplementation(IEnumerable<KeyValuePair<string, string>> options)
             : AnalyzerConfigOptions
         {
-            private readonly Dictionary<string, string> _options = new([
+            private readonly Dictionary<string, string> _options = new(
+            [
                 .. options.Select(kvp => new KeyValuePair<string, string>($"build_property.{kvp.Key}", kvp.Value))
             ]);
-
-            public string this[string key] { get => _options[key]; init => _options[key] = value; }
 
             public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
                 => _options.TryGetValue(key, out value);

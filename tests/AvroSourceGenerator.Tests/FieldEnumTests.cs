@@ -7,26 +7,26 @@ public class FieldEnumTests
     public Task Verify(string @class)
     {
         var schema = $$"""
-        {
-            "type": "{{@class}}",
-            "name": "Class",
-            "namespace": "SchemaNamespace",
-            "fields": [
-                {
-                    "type": {
-                        "type": "enum",
-                        "name": "Enum",
-                        "symbols": ["A", "B", "C"]
+            {
+                "type": "{{@class}}",
+                "name": "Class",
+                "namespace": "SchemaNamespace",
+                "fields": [
+                    {
+                        "type": {
+                            "type": "enum",
+                            "name": "Enum",
+                            "symbols": ["A", "B", "C"]
+                        },
+                        "name": "Field"
                     },
-                    "name": "Field"
-                },
-                {
-                    "type": ["null", "Enum"],
-                    "name": "NullableField"
-                }
-            ]
-        }
-        """;
+                    {
+                        "type": ["null", "Enum"],
+                        "name": "NullableField"
+                    }
+                ]
+            }
+            """;
         return VerifySourceCode(schema);
     }
 }

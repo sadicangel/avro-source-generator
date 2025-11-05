@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using AvroSourceGenerator.Tests.Setup;
 using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.Tests.Apache.Helpers;
@@ -8,7 +7,8 @@ namespace AvroSourceGenerator.Tests.Apache.Helpers;
 internal static class TestHelper
 {
     public static SettingsTask VerifySourceCode(
-        [StringSyntax(StringSyntaxAttribute.Json)] string schema,
+        [StringSyntax(StringSyntaxAttribute.Json)]
+        string schema,
         string? source = null,
         ProjectConfig config = default)
     {
@@ -22,9 +22,10 @@ internal static class TestHelper
 
         if (diagnostics.Length > 0)
         {
-            Assert.Fail(string.Join(
-                Environment.NewLine,
-                diagnostics.Select(d => $"{d.Id}: {d.GetMessage(CultureInfo.InvariantCulture)}")));
+            Assert.Fail(
+                string.Join(
+                    Environment.NewLine,
+                    diagnostics.Select(d => $"{d.Id}: {d.GetMessage(CultureInfo.InvariantCulture)}")));
         }
 
         return Verify(documents.Select(document => new Target("txt", document.Content)));

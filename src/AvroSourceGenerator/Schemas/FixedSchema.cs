@@ -36,12 +36,14 @@ internal sealed record class FixedSchema(
                 writer.WriteStringValue(alias);
             writer.WriteEndArray();
         }
+
         writer.WriteNumber("size", Size);
         foreach (var entry in Properties)
         {
             writer.WritePropertyName(entry.Key);
             entry.Value.WriteTo(writer);
         }
+
         writer.WriteEndObject();
     }
 }

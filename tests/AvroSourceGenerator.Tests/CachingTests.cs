@@ -11,32 +11,32 @@ public sealed class CachingTests
     public void All_outputs_are_reused_when_input_is_unchanged()
     {
         var schema = """
-        {
-            "type": "record",
-            "namespace": "SchemaNamespace",
-            "name": "User",
-            "fields": [
-                {"name": "FirstName", "type": "string"},
-                {"name": "LastName", "type": "string"},
-                {"name": "Age", "type": "int"},
-                {"name": "IsActive", "type": "boolean"},
-                {"name": "CreatedAt", "type": "long", "logicalType": "timestamp-millis"},
-                {"name": "CreatedBy", "type": "string"},
-                {"name": "IsDeleted", "type": "boolean"}
-            ]
-        }
-        """;
+            {
+                "type": "record",
+                "namespace": "SchemaNamespace",
+                "name": "User",
+                "fields": [
+                    {"name": "FirstName", "type": "string"},
+                    {"name": "LastName", "type": "string"},
+                    {"name": "Age", "type": "int"},
+                    {"name": "IsActive", "type": "boolean"},
+                    {"name": "CreatedAt", "type": "long", "logicalType": "timestamp-millis"},
+                    {"name": "CreatedBy", "type": "string"},
+                    {"name": "IsDeleted", "type": "boolean"}
+                ]
+            }
+            """;
 
         var source = """
-        using AvroSourceGenerator;
+            using AvroSourceGenerator;
 
-        [Avro]
-        internal partial class User;
-        """;
+            [Avro]
+            internal partial class User;
+            """;
 
         var projectConfig = new ProjectConfig() with { LanguageVersion = LanguageVersion.CSharp10 };
 
-        var (_, _, compilation, generatorDriver) =
+        var (compilation, _, generatorDriver) =
             GeneratorInput.Create([source], [schema], [], projectConfig);
 
         generatorDriver = generatorDriver
@@ -77,7 +77,9 @@ public sealed class CachingTests
         Assert.All(trackedSteps1.Keys, key => AssertStepsAreEqual(trackedSteps1[key], trackedSteps2[key]));
     }
 
-    private static void AssertStepsAreEqual(ImmutableArray<IncrementalGeneratorRunStep> steps1, ImmutableArray<IncrementalGeneratorRunStep> steps2)
+    private static void AssertStepsAreEqual(
+        ImmutableArray<IncrementalGeneratorRunStep> steps1,
+        ImmutableArray<IncrementalGeneratorRunStep> steps2)
     {
         Assert.Equal(steps1.Length, steps2.Length);
         for (var i = 0; i < steps1.Length; i++)
@@ -86,7 +88,8 @@ public sealed class CachingTests
             Assert.Equal(steps1[i].Outputs.Select(x => x.Value), steps2[i].Outputs.Select(x => x.Value));
 
             // Second output reason must cached or unchanged.
-            Assert.All(steps2[i].Outputs.Select(x => x.Reason),
+            Assert.All(
+                steps2[i].Outputs.Select(x => x.Reason),
                 reason => Assert.True(reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged));
         }
     }

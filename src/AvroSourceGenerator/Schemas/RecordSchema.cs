@@ -38,6 +38,7 @@ internal sealed record class RecordSchema(
                 writer.WriteStringValue(alias);
             writer.WriteEndArray();
         }
+
         writer.WriteStartArray("fields");
         foreach (var field in Fields)
             field.WriteTo(writer, writtenSchemas, @namespace);
@@ -47,6 +48,7 @@ internal sealed record class RecordSchema(
             writer.WritePropertyName(entry.Key);
             entry.Value.WriteTo(writer);
         }
+
         writer.WriteEndObject();
     }
 }

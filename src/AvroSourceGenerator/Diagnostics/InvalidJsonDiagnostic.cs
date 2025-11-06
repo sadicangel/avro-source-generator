@@ -11,10 +11,9 @@ internal static class InvalidJsonDiagnostic
         category: "Compiler",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: """
-            The JSON supplied for an Avro schema could not be parsed.
-            Fix the JSON syntax (quotes, commas, braces, etc.). If the error reports a path, check that location first.
-            """);
+        description:
+        "The JSON supplied for an Avro schema could not be parsed. " +
+        "Fix the JSON syntax (quotes, commas, braces, etc.). If the error reports a path, check that location first.");
 
     public static Diagnostic Create(Location location, string message) =>
         Diagnostic.Create(s_descriptor, location, message);

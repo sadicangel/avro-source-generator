@@ -11,6 +11,5 @@ public sealed class RecordFieldsTests
         return VerifyDiagnostic(schema);
     }
 
-    public static TheoryData<string> InvalidFields() => new(
-        ["null", "{}"]);
+    public static TheoryData<string> InvalidFields() => new(["null", "{}"]);
 }

@@ -4,9 +4,9 @@ using Avro.Specific;
 
 namespace AvroSourceGenerator.IntegrationTests;
 
-internal sealed class JsonEqualityComparer<T> : IEqualityComparer<T>
+internal abstract class JsonEqualityComparer
 {
-    private static readonly JsonSerializerOptions s_options = new()
+    protected static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
         Converters =
@@ -14,23 +14,29 @@ internal sealed class JsonEqualityComparer<T> : IEqualityComparer<T>
             new FixedJsonConverterFactory(),
         }
     };
+}
 
+internal sealed class JsonEqualityComparer<T> : JsonEqualityComparer, IEqualityComparer<T>
+{
     public bool Equals(T? x, T? y)
     {
         if (x is null) return y is null;
         if (y is null) return false;
 
-        var xJson = JsonSerializer.Serialize(x, s_options);
-        var yJson = JsonSerializer.Serialize(y, s_options);
+        var xJson = JsonSerializer.Serialize(x, JsonOptions);
+        var yJson = JsonSerializer.Serialize(y, JsonOptions);
 
         return xJson == yJson;
     }
-    public int GetHashCode(T obj) => JsonSerializer.Serialize(obj, s_options).GetHashCode();
+
+    public int GetHashCode(T obj) =>
+        JsonSerializer.Serialize(obj, JsonOptions).GetHashCode();
 }
 
 file sealed class FixedJsonConverterFactory : JsonConverterFactory
 {
     public override bool CanConvert(Type typeToConvert) => typeToConvert.IsAssignableTo(typeof(SpecificFixed));
+
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var converterType = typeof(FixedJsonConverter<>).MakeGenericType(typeToConvert);
@@ -39,7 +45,7 @@ file sealed class FixedJsonConverterFactory : JsonConverterFactory
 
     private sealed class FixedJsonConverter<T> : JsonConverter<T> where T : SpecificFixed
     {
-        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.String)
                 throw new JsonException($"Expected string token, but got {reader.TokenType}.");

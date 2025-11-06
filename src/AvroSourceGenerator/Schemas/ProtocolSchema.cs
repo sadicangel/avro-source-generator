@@ -20,6 +20,7 @@ internal sealed record class ProtocolSchema(
         {
             writer.WriteString("namespace", SchemaName.Namespace);
         }
+
         if (Types.Length > 0)
         {
             writer.WriteStartArray("types");
@@ -27,8 +28,10 @@ internal sealed record class ProtocolSchema(
             {
                 type.WriteTo(writer, writtenSchemas, SchemaName.Namespace);
             }
+
             writer.WriteEndArray();
         }
+
         if (Messages.Length > 0)
         {
             writer.WriteStartObject("messages");
@@ -37,13 +40,16 @@ internal sealed record class ProtocolSchema(
                 writer.WritePropertyName(message.MethodName is ['@', ..] ? message.MethodName[1..] : message.MethodName);
                 message.WriteTo(writer, writtenSchemas, SchemaName.Namespace);
             }
+
             writer.WriteEndObject();
         }
+
         foreach (var entry in Properties)
         {
             writer.WritePropertyName(entry.Key);
             entry.Value.WriteTo(writer);
         }
+
         writer.WriteEndObject();
     }
 }

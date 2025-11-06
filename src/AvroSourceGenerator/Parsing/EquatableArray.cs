@@ -18,7 +18,15 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
     public override bool Equals(object? obj) => obj is EquatableArray<T> array && Equals(array);
 
     public override int GetHashCode() =>
-        _array.Aggregate(new HashCode(), (h, c) => { h.Add(c); return h; }, h => h.ToHashCode());
+        _array.Aggregate(
+            new HashCode(),
+            (h, c) =>
+            {
+                h.Add(c);
+                return h;
+            },
+            h => h.ToHashCode());
+
     public ImmutableArray<T>.Enumerator GetEnumerator() => _array.GetEnumerator();
 
     public static bool operator ==(EquatableArray<T> left, EquatableArray<T> right) => left.Equals(right);
@@ -29,5 +37,5 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
 internal static class EquatableArrayBuilder
 {
     public static EquatableArray<T> Create<T>(ReadOnlySpan<T> values) where T : IEquatable<T> =>
-        new(ImmutableArray.Create(values.ToArray()));
+        new([.. values.ToArray()]);
 }

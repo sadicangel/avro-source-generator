@@ -12,7 +12,6 @@ internal readonly record struct AvroFile(
     JsonElement Json,
     SchemaName SchemaName,
     ImmutableArray<Diagnostic> Diagnostics)
-    : IEquatable<AvroFile>
 {
     public bool IsValid => Json.ValueKind is not JsonValueKind.Undefined;
 

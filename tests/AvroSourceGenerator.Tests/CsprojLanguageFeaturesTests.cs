@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Configuration;
-
-namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests;
 
 public sealed class CsprojLanguageFeaturesTests
 {
@@ -8,7 +6,15 @@ public sealed class CsprojLanguageFeaturesTests
     [MemberData(nameof(LanguageFeaturesSchemaPairs))]
     public Task Verify(string languageFeatures, string schemaType)
     {
-        var schema = TestSchemas.Get(schemaType).With("fields", [new { type = "string", name = "Field" }]).ToString();
+        var schema = TestSchemas.Get(schemaType).With(
+            "fields",
+            [
+                new
+                {
+                    type = "string",
+                    name = "Field"
+                }
+            ]).ToString();
 
         var config = new ProjectConfig() with { LanguageFeatures = languageFeatures };
 
@@ -16,6 +22,12 @@ public sealed class CsprojLanguageFeaturesTests
     }
 
     public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new(
-        [.. Enum.GetNames(typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.LanguageFeatures", throwOnError: true)!).Where(n => n.StartsWith("CSharp")), "invalid"],
+        [
+            .. Enum.GetNames(
+                typeof(AvroSourceGenerator).Assembly.GetType(
+                    "AvroSourceGenerator.Configuration.LanguageFeatures",
+                    throwOnError: true)!).Where(n => n.StartsWith("CSharp")),
+            "invalid"
+        ],
         ["enum", "error", "fixed", "record", "protocol"]);
 }

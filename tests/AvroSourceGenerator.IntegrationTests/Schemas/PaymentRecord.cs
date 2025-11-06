@@ -3,22 +3,28 @@ using Xunit.Sdk;
 
 namespace AvroSourceGenerator.IntegrationTests.Schemas;
 
-partial record PaymentRecord { }
+partial record PaymentRecord
+{
+}
 
 partial record CreditCardPayment : IXunitSerializable
 {
     public void Deserialize(IXunitSerializationInfo info)
     {
-        Set_cardNumber(this, (string)(info.GetValue(nameof(cardNumber))!));
-        Set_cardHolder(this, (string)(info.GetValue(nameof(cardHolder))!));
-        Set_expirationDate(this, (string)(info.GetValue(nameof(expirationDate))!));
+        SetCardNumber(this, (string)info.GetValue(nameof(cardNumber))!);
+        SetCardHolder(this, (string)info.GetValue(nameof(cardHolder))!);
+        SetExpirationDate(this, (string)info.GetValue(nameof(expirationDate))!);
+
+        return;
 
         [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "set_cardHolder")]
-        extern static void Set_cardHolder(CreditCardPayment obj, string value);
+        static extern void SetCardHolder(CreditCardPayment obj, string value);
+
         [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "set_cardNumber")]
-        extern static void Set_cardNumber(CreditCardPayment obj, string value);
+        static extern void SetCardNumber(CreditCardPayment obj, string value);
+
         [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "set_expirationDate")]
-        extern static void Set_expirationDate(CreditCardPayment obj, string value);
+        static extern void SetExpirationDate(CreditCardPayment obj, string value);
     }
 
     public void Serialize(IXunitSerializationInfo info)

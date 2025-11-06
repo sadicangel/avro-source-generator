@@ -14,9 +14,9 @@ internal readonly partial struct SchemaRegistry
         var schemas = builder.ToImmutable();
 
         var isNullable = schemas.Any(static schema => schema.Type == SchemaType.Null);
-        var underlyingSchema = GetUnderlyingSchema(schemas, containingNamespace);
+        var underlyingSchema = GetUnderlyingSchema(schemas);
         while (underlyingSchema is UnionSchema { Schemas: var unionSchemas })
-            underlyingSchema = GetUnderlyingSchema(unionSchemas, containingNamespace);
+            underlyingSchema = GetUnderlyingSchema(unionSchemas);
         var hasQuestionMark = isNullable && (useNullableReferenceTypes || MapsToValueType(underlyingSchema.Type));
         var csharpName = new CSharpName(
             underlyingSchema.CSharpName.Name + (hasQuestionMark ? "?" : ""),
@@ -35,7 +35,7 @@ internal readonly partial struct SchemaRegistry
             _ => false,
         };
 
-        static AvroSchema GetUnderlyingSchema(ImmutableArray<AvroSchema> schemas, string? containingNamespace)
+        static AvroSchema GetUnderlyingSchema(ImmutableArray<AvroSchema> schemas)
         {
             return schemas switch
             {

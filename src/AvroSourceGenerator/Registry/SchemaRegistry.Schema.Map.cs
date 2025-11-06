@@ -7,7 +7,10 @@ namespace AvroSourceGenerator.Registry;
 
 internal readonly partial struct SchemaRegistry
 {
-    private MapSchema Map(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement>? properties = null)
+    private MapSchema Map(
+        JsonElement schema,
+        string? containingNamespace,
+        ImmutableSortedDictionary<string, JsonElement>? properties = null)
     {
         var valuesSchema = schema.GetRequiredProperty("values");
 

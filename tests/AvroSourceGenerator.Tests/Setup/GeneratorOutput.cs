@@ -4,11 +4,13 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace AvroSourceGenerator.Tests.Setup;
 
-public readonly record struct GeneratorOutput(ImmutableArray<Diagnostic> Diagnostics, ImmutableArray<Document> Documents)
+public readonly record struct GeneratorOutput(
+    ImmutableArray<Diagnostic> Diagnostics,
+    ImmutableArray<Document> Documents)
 {
     public static GeneratorOutput Create(GeneratorInput generatorInput)
     {
-        var (parseOptions, optionsProvider, compilation, generatorDriver) = generatorInput;
+        var (compilation, optionsProvider, generatorDriver) = generatorInput;
 
         generatorDriver.RunGeneratorsAndUpdateCompilation(compilation, out compilation, out var diagnostics);
 
@@ -24,6 +26,6 @@ public readonly record struct GeneratorOutput(ImmutableArray<Diagnostic> Diagnos
             .Select(st => new Document(st.FilePath.Replace('\\', '/'), st.ToString()))
             .ToImmutableArray();
 
-        return new(diagnostics, documents);
+        return new GeneratorOutput(diagnostics, documents);
     }
 }

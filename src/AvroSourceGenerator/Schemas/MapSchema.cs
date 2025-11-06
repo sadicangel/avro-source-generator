@@ -17,6 +17,7 @@ internal sealed record class MapSchema(AvroSchema ValueSchema, ImmutableSortedDi
             writer.WritePropertyName(entry.Key);
             entry.Value.WriteTo(writer);
         }
+
         writer.WriteEndObject();
     }
 }

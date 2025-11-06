@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Registry.Extensions;
@@ -8,17 +10,31 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace AvroSourceGenerator.Registry;
 
-internal readonly partial struct SchemaRegistry(AvroLibrary avroLibrary, LanguageVersion languageVersion, bool useNullableReferenceTypes) : IReadOnlyCollection<TopLevelSchema>
+[StructLayout(LayoutKind.Auto)]
+[SuppressMessage("ReSharper", "UsageOfDefaultStructEquality")]
+internal readonly partial struct SchemaRegistry(
+    AvroLibrary avroLibrary,
+    LanguageVersion languageVersion,
+    bool useNullableReferenceTypes) : IReadOnlyCollection<TopLevelSchema>
 {
     private readonly Dictionary<SchemaName, TopLevelSchema> _schemas = [];
-    private static readonly HashSet<string> s_reservedProperties = ["type", "name", "namespace", "fields", "items", "size", "symbols", "values", "aliases", "order", "doc", "default", "logicalType"];
+
+    private static readonly HashSet<string> s_reservedProperties =
+    [
+        "type", "name", "namespace", "fields", "items", "size", "symbols", "values", "aliases", "order", "doc",
+        "default", "logicalType"
+    ];
 
     public int Count => _schemas.Count;
 
     public IEnumerator<TopLevelSchema> GetEnumerator() => _schemas.Values.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public static SchemaRegistry Register(JsonElement schema, AvroLibrary avroLibrary, LanguageVersion languageVersion, bool useNullableReferenceTypes)
+    public static SchemaRegistry Register(
+        JsonElement schema,
+        AvroLibrary avroLibrary,
+        LanguageVersion languageVersion,
+        bool useNullableReferenceTypes)
     {
         var registry = new SchemaRegistry(avroLibrary, languageVersion, useNullableReferenceTypes);
 
@@ -45,7 +61,8 @@ internal readonly partial struct SchemaRegistry(AvroLibrary avroLibrary, Languag
 
     private AvroSchema WellKnown(JsonElement schema, string? containingNamespace)
     {
-        var type = schema.GetString() ?? throw new InvalidOperationException($"Unexpected json value '{schema}'. Expected 'string'");
+        var type = schema.GetString() ??
+            throw new InvalidOperationException($"Unexpected json value '{schema}'. Expected 'string'");
 
         return type switch
         {
@@ -89,14 +106,15 @@ internal readonly partial struct SchemaRegistry(AvroLibrary avroLibrary, Languag
         };
     }
 
-    private ImmutableSortedDictionary<string, JsonElement> GetProperties(JsonElement schema)
+    private static ImmutableSortedDictionary<string, JsonElement> GetProperties(JsonElement schema)
     {
         var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
-        foreach (var property in schema.EnumerateObject())
+        foreach (var property in schema.EnumerateObject()
+            .Where(property => !s_reservedProperties.Contains(property.Name)))
         {
-            if (!s_reservedProperties.Contains(property.Name))
-                properties.Add(property.Name, property.Value);
+            properties.Add(property.Name, property.Value);
         }
+
         return properties.ToImmutable();
     }
 
@@ -112,15 +130,13 @@ internal readonly partial struct SchemaRegistry(AvroLibrary avroLibrary, Languag
         // TODO: Actually validate the value so that we don't generate invalid code.
         return type.CSharpName.Name switch
         {
-            "object" => value.GetRawText(),
-            "bool" => value.GetRawText(),
-            "int" => value.GetRawText(),
-            "long" => value.GetRawText(),
+            "object" or "bool" or "int" or "long" => value.GetRawText(),
             "float" => $"{value.GetRawText()}f",
             "double" => value.GetRawText(),
             "byte[]" => $"[{string.Join(", ", value.GetBytesFromBase64().Select(bytes => $"0x{bytes:X2}"))}]",
             "string" => value.GetRawText(),
-            _ when _schemas.TryGetValue(type.SchemaName, out var namedSchema) && namedSchema.Type is SchemaType.Enum => $"{type}.{value.GetString()}",
+            _ when _schemas.TryGetValue(type.SchemaName, out var namedSchema) && namedSchema.Type is SchemaType.Enum =>
+                $"{type}.{value.GetString()}",
 
             // TODO: Do we need to handle complex types? Should they be supported?
             _ => null,

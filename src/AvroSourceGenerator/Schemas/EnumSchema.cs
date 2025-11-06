@@ -37,6 +37,7 @@ internal sealed record class EnumSchema(
                 writer.WriteStringValue(alias);
             writer.WriteEndArray();
         }
+
         writer.WriteStartArray("symbols");
         foreach (var symbol in Symbols)
             writer.WriteStringValue(symbol);
@@ -48,6 +49,7 @@ internal sealed record class EnumSchema(
             writer.WritePropertyName(entry.Key);
             entry.Value.WriteTo(writer);
         }
+
         writer.WriteEndObject();
     }
 }

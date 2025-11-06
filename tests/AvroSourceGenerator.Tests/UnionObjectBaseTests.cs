@@ -5,7 +5,8 @@ public sealed class UnionObjectBaseTests
     [Fact]
     public Task Verify()
     {
-        var schema = """
+        return VerifySourceCode(
+            """
             {
               "type": "record",
               "name": "Notification",
@@ -46,8 +47,6 @@ public sealed class UnionObjectBaseTests
                 }
               ]
             }
-            """;
-
-        return VerifySourceCode(schema);
+            """);
     }
 }

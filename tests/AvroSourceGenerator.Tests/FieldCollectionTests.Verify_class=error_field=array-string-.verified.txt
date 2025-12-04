@@ -6,8 +6,8 @@ namespace SchemaNamespace
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial class Class
     {
-        public required global::System.Collections.Generic.IList<string> Field { get; init; }
-        public global::System.Collections.Generic.IList<string>? NullableField { get; init; }
+        public required global::System.Collections.Generic.List<string> Field { get; init; }
+        public global::System.Collections.Generic.List<string>? NullableField { get; init; }
     }
     
 }

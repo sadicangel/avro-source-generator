@@ -8,9 +8,9 @@ public sealed class CsprojAccessModifierTests
     {
         var schema = TestSchemas.Get(schemaType).ToString();
 
-        var config = new ProjectConfig() with { AccessModifier = accessModifier };
+        var config = new ProjectConfig { AccessModifier = accessModifier };
 
-        return VerifySourceCode(schema, default, config);
+        return VerifySourceCode(schema, config);
     }
 
     public static MatrixTheoryData<string, string> AccessModifierSchemaPairs() => new(

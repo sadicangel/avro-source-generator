@@ -16,9 +16,9 @@ public sealed class CsprojLanguageFeaturesTests
                 }
             ]).ToString();
 
-        var config = new ProjectConfig() with { LanguageFeatures = languageFeatures };
+        var config = new ProjectConfig { LanguageFeatures = languageFeatures };
 
-        return VerifySourceCode(schema, default, config);
+        return VerifySourceCode(schema, config);
     }
 
     public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new(

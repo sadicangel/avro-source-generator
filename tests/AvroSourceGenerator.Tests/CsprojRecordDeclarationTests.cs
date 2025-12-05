@@ -8,9 +8,9 @@ public sealed class CsprojRecordDeclarationTests
     {
         var schema = TestSchemas.Get(schemaType).ToString();
 
-        var config = new ProjectConfig() with { RecordDeclaration = recordDeclaration };
+        var config = new ProjectConfig { RecordDeclaration = recordDeclaration };
 
-        return VerifySourceCode(schema, default, config);
+        return VerifySourceCode(schema, config);
     }
 
     public static MatrixTheoryData<string, string> RecordDeclarationSchemaPairs() => new(

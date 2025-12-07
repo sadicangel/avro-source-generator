@@ -42,7 +42,7 @@ public sealed class DockerFixture : IAsyncDisposable
                     ["KAFKA_CONTROLLER_LISTENER_NAMES"] = "CONTROLLER",
                     ["CLUSTER_ID"] = "MkU3OEVBNTcwNTJENDM2Qk"
                 })
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(29092))
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(29092))
             .Build();
 
         SchemaRegistry = new ContainerBuilder()
@@ -59,7 +59,7 @@ public sealed class DockerFixture : IAsyncDisposable
                     ["SCHEMA_REGISTRY_HOST_LISTENERS"] = "http://0.0.0.0:8081",
                     ["SCHEMA_REGISTRY_DEBUG"] = "true",
                 })
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(8081))
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(8081))
             .Build();
     }
 

@@ -3,9 +3,7 @@ using Xunit.Sdk;
 
 namespace AvroSourceGenerator.IntegrationTests.Schemas;
 
-partial record PaymentRecord
-{
-}
+partial record PaymentRecord;
 
 partial record CreditCardPayment : IXunitSerializable
 {

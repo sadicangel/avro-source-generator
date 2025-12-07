@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Conflue
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Tests.Apache", "tests\AvroSourceGenerator.Tests.Apache\AvroSourceGenerator.Tests.Apache.csproj", "{D820C6C4-6C98-4095-A897-FC0F2CD465C9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSourceGenerator.Tracing", "src\AvroSourceGenerator.Tracing\AvroSourceGenerator.Tracing.csproj", "{73054464-3F35-40FF-B457-C2DF6A4B5637}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,10 @@ Global
 		{D820C6C4-6C98-4095-A897-FC0F2CD465C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D820C6C4-6C98-4095-A897-FC0F2CD465C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D820C6C4-6C98-4095-A897-FC0F2CD465C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73054464-3F35-40FF-B457-C2DF6A4B5637}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73054464-3F35-40FF-B457-C2DF6A4B5637}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73054464-3F35-40FF-B457-C2DF6A4B5637}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73054464-3F35-40FF-B457-C2DF6A4B5637}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

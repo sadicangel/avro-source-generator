@@ -1,7 +1,10 @@
-﻿using System;
+﻿// ReSharper disable RedundantUsingDirective
+
+using System;
 using System.Collections.Generic;
 using com.example.finance;
 
+// ReSharper disable once ArrangeNamespaceBody
 namespace AvroSourceGenerator.ApacheAvro
 {
     internal static class Program

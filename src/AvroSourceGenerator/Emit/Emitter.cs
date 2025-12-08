@@ -6,52 +6,41 @@ using AvroSourceGenerator.Parsing;
 using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator.Emit;
 
 internal static class Emitter
 {
-    public static void Emit(SourceProductionContext context, (AvroFile avroFile, GeneratorSettings generatorSettings, CompilationInfo compilationInfo) source)
+    public static void Emit(SourceProductionContext context, (AvroFile avroFile, RenderSettings renderSettings) source)
     {
-        var (avroFile, generatorSettings, compilationInfo) = source;
+        var (avroFile, settings) = source;
 
         foreach (var diagnostic in avroFile.Diagnostics)
         {
             context.ReportDiagnostic(diagnostic);
         }
 
-        if (!avroFile.IsValid)
+        foreach (var diagnostic in settings.Diagnostics)
+        {
+            context.ReportDiagnostic(diagnostic);
+        }
+
+        if (!avroFile.IsValid || !settings.IsValid)
         {
             return;
         }
 
         try
         {
-            var avroLibrary = generatorSettings.AvroLibrary ?? AvroLibrary.Auto;
-            if (avroLibrary is AvroLibrary.Auto)
-            {
-                avroLibrary = GetAvroLibrary(context, compilationInfo);
-            }
-
-            var languageFeatures = generatorSettings.LanguageFeatures ?? MapVersionToFeatures(compilationInfo.LanguageVersion);
-            var accessModifier = generatorSettings.AccessModifier ?? "public";
-            var recordDeclaration = generatorSettings.RecordDeclaration ?? (languageFeatures.HasFlag(LanguageFeatures.Records) ? "record" : "class");
-
             var schemaRegistry = SchemaRegistry.Register(
                 schema: avroFile.Json,
-                avroLibrary: avroLibrary,
-                languageVersion: compilationInfo.LanguageVersion,
-                useNullableReferenceTypes: languageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes));
+                avroLibrary: settings.AvroLibrary,
+                languageVersion: settings.LanguageVersion,
+                useNullableReferenceTypes: settings.LanguageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes));
 
             // We should get no render errors, so we don't have to handle anything else.
-            var renderOutputs = AvroTemplate.Render(
-                schemaRegistry,
-                avroLibrary,
-                languageFeatures,
-                accessModifier,
-                recordDeclaration);
+            var renderOutputs = AvroTemplate.Render(schemaRegistry, settings);
 
             foreach (var renderOutput in renderOutputs)
             {
@@ -60,44 +49,12 @@ internal static class Emitter
         }
         catch (JsonException ex)
         {
-            context.ReportDiagnostic(InvalidJsonDiagnostic.Create(avroFile.GetLocation(ex), ex.Message));
+            context.ReportDiagnostic(InvalidJsonDiagnostic.Create(LocationInfo.FromException(avroFile.Path, avroFile.Text, ex), ex.Message));
         }
         catch (InvalidSchemaException ex)
         {
             // TODO: We can probably get a better location for the error.
-            context.ReportDiagnostic(InvalidSchemaDiagnostic.Create(avroFile.GetLocation(), ex.Message));
+            context.ReportDiagnostic(InvalidSchemaDiagnostic.Create(LocationInfo.FromSourceFile(avroFile.Path, avroFile.Text), ex.Message));
         }
-    }
-
-    private static AvroLibrary GetAvroLibrary(SourceProductionContext context, CompilationInfo compilationInfo)
-    {
-        switch (compilationInfo.AvroLibraries)
-        {
-            case []:
-                context.ReportDiagnostic(NoAvroLibraryDetectedDiagnostic.Create(Location.None));
-                return AvroLibrary.None;
-
-            case [var singleAvroLibrary]:
-                return singleAvroLibrary;
-
-            default:
-                context.ReportDiagnostic(MultipleAvroLibrariesDetectedDiagnostic.Create(Location.None, compilationInfo.AvroLibraries));
-                return AvroLibrary.None;
-        }
-    }
-
-    private static LanguageFeatures MapVersionToFeatures(LanguageVersion languageVersion)
-    {
-        return languageVersion switch
-        {
-            <= LanguageVersion.CSharp7_3 => LanguageFeatures.CSharp7_3,
-            LanguageVersion.CSharp8 => LanguageFeatures.CSharp8,
-            LanguageVersion.CSharp9 => LanguageFeatures.CSharp9,
-            LanguageVersion.CSharp10 => LanguageFeatures.CSharp10,
-            LanguageVersion.CSharp11 => LanguageFeatures.CSharp11,
-            LanguageVersion.CSharp12 => LanguageFeatures.CSharp12,
-            //LanguageVersion.CSharp13 => LanguageFeatures.CSharp13,
-            _ => LanguageFeatures.Latest,
-        };
     }
 }

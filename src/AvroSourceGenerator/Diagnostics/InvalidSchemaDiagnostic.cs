@@ -4,7 +4,7 @@ namespace AvroSourceGenerator.Diagnostics;
 
 internal static class InvalidSchemaDiagnostic
 {
-    private static readonly DiagnosticDescriptor s_descriptor = new(
+    public static readonly DiagnosticDescriptor Descriptor = new(
         id: "AVROSG0002",
         title: "Invalid Schema",
         messageFormat: "The schema defined in the JSON is invalid: {0}",
@@ -16,5 +16,5 @@ internal static class InvalidSchemaDiagnostic
         "(e.g., duplicate field names, invalid union members, unresolved references, etc.).");
 
     public static Diagnostic Create(Location location, string message) =>
-        Diagnostic.Create(s_descriptor, location, message);
+        Diagnostic.Create(Descriptor, location, message);
 }

@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Configuration;
+﻿using AvroSourceGenerator.Parsing;
 using AvroSourceGenerator.Registry;
 using Scriban;
 using Scriban.Syntax;
@@ -7,14 +7,9 @@ namespace AvroSourceGenerator.Emit;
 
 internal static class AvroTemplate
 {
-    public static IEnumerable<RenderOutput> Render(
-        SchemaRegistry schemaRegistry,
-        AvroLibrary avroLibrary,
-        LanguageFeatures languageFeatures,
-        string accessModifier,
-        string recordDeclaration)
+    public static IEnumerable<RenderOutput> Render(SchemaRegistry schemaRegistry, RenderSettings settings)
     {
-        var templateContext = new TemplateContext(new TemplateScriptObject(avroLibrary, languageFeatures, accessModifier, recordDeclaration))
+        var templateContext = new TemplateContext(new TemplateScriptObject(settings))
         {
             MemberRenamer = member => member.Name,
             TemplateLoader = new TemplateLoader(),

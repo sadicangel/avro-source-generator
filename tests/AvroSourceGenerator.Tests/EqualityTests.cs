@@ -1,7 +1,5 @@
-﻿using System.Collections.Immutable;
-using System.Reflection;
-using System.Text.Json;
-using Microsoft.CodeAnalysis;
+﻿using System.Text.Json;
+using Microsoft.CodeAnalysis.Text;
 using Soenneker.Utils.AutoBogus;
 using Soenneker.Utils.AutoBogus.Context;
 using Soenneker.Utils.AutoBogus.Override;
@@ -16,19 +14,22 @@ public class EqualityTests
     private static Type GeneratorSettingsType =>
         field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.GeneratorSettings", throwOnError: true)!;
 
-    private static Type SchemaNameType =>
-        field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Schemas.SchemaName", throwOnError: true)!;
+    private static Type RenderSettingsType =>
+        field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Parsing.RenderSettings", throwOnError: true)!;
 
-    private static ConstructorInfo AvroFileConstructor =>
-        field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Parsing.AvroFile", throwOnError: true)!
-            .GetConstructor([typeof(string), typeof(string), typeof(JsonElement), SchemaNameType, typeof(ImmutableArray<Diagnostic>)])!;
+    private static Type AvroFileType =>
+        field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Parsing.AvroFile", throwOnError: true)!;
 
     private readonly AutoFaker _faker;
     private readonly int _seed;
 
     public EqualityTests()
     {
-        _faker = new AutoFaker(opts => opts.WithOverride(new JsonElementOverride()));
+        _faker = new AutoFaker(opts => opts
+            .WithOverride(new JsonElementOverride())
+            .WithOverride(new TextSpanOverride())
+            .WithOverride(new LinePositionSpanOverride())
+            .WithOverride(new ObjectArrayOverride()));
         _seed = _faker.Generate<int>();
     }
 
@@ -57,17 +58,19 @@ public class EqualityTests
     }
 
     [Fact]
+    public void EnsureRenderSettingsHasValueSemantics()
+    {
+        var a = Generate(RenderSettingsType);
+        var b = Generate(RenderSettingsType);
+
+        Assert.Equal(a, b);
+    }
+
+    [Fact]
     public void EnsureAvroFileHasValueSemantics()
     {
-        var path = _faker.Faker.System.FilePath();
-        var text = TestSchemas.Get("record").ToJsonString();
-        using var doc = JsonDocument.Parse(text);
-        var json = doc.RootElement.Clone();
-        var schemaName = Generate(SchemaNameType);
-        var diagnostics = _faker.Generate<ImmutableArray<Diagnostic>>();
-
-        var a = AvroFileConstructor.Invoke([path, text, json, schemaName, diagnostics]);
-        var b = AvroFileConstructor.Invoke([path, text, json, schemaName, diagnostics]);
+        var a = Generate(AvroFileType);
+        var b = Generate(AvroFileType);
 
         Assert.Equal(a, b);
     }
@@ -75,18 +78,35 @@ public class EqualityTests
 
 file sealed class JsonElementOverride : AutoFakerOverride<JsonElement>
 {
+    public override bool Preinitialize => false;
+
     public override void Generate(AutoFakerOverrideContext context)
     {
-        using var jsonDocument = JsonDocument.Parse(
-            """
-            {
-                "type": "record",
-                "name": "Record",
-                "namespace": "RecordNamespace",
-                "fields": [],
-                "doc": "A empty record"
-            }
-            """);
-        context.Instance = jsonDocument.RootElement.Clone();
+        using var doc = JsonDocument.Parse(TestSchemas.Get("record").ToJsonString());
+        context.Instance = doc.RootElement.Clone();
     }
+}
+
+file sealed class TextSpanOverride : AutoFakerOverride<TextSpan>
+{
+    public override bool Preinitialize => false;
+
+    public override void Generate(AutoFakerOverrideContext context) =>
+        context.Instance = new TextSpan(0, 10);
+}
+
+file sealed class LinePositionSpanOverride : AutoFakerOverride<LinePositionSpan>
+{
+    public override bool Preinitialize => false;
+
+    public override void Generate(AutoFakerOverrideContext context) =>
+        context.Instance = new LinePositionSpan(LinePosition.Zero, LinePosition.Zero);
+}
+
+file sealed class ObjectArrayOverride : AutoFakerOverride<object?[]?>
+{
+    public override bool Preinitialize => false;
+
+    public override void Generate(AutoFakerOverrideContext context) =>
+        context.Instance = (object?[])[context.Faker.Hacker.Noun()];
 }

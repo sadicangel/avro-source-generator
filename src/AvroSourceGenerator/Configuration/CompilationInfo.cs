@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace AvroSourceGenerator.Configuration;
 
-internal readonly record struct CompilationInfo(ImmutableArray<AvroLibrary> AvroLibraries, LanguageVersion LanguageVersion)
+internal readonly record struct CompilationInfo(ImmutableArray<AvroLibraryReference> AvroLibraries, LanguageVersion LanguageVersion)
 {
     public bool Equals(CompilationInfo other) =>
         LanguageVersion == other.LanguageVersion && AvroLibraries.OrderBy(x => x).SequenceEqual(other.AvroLibraries.OrderBy(x => x));

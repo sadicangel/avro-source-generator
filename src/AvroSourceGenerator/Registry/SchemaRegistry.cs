@@ -42,7 +42,7 @@ internal readonly partial struct SchemaRegistry(
 
         if (registry.Count == 0)
         {
-            throw new InvalidSchemaException($"Atleast a named schema must be present in schema: {schema.GetRawText()}");
+            throw new InvalidSchemaException($"At least a named schema must be present in schema: {schema.GetRawText()}");
         }
 
         return registry;

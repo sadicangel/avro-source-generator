@@ -1,20 +1,17 @@
 ﻿using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Parsing;
 using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.Diagnostics;
 
 internal static class NoAvroLibraryDetectedDiagnostic
 {
-    private static readonly string s_listOfLibraries = string.Join(
-        ", ",
-        Enum.GetValues(typeof(AvroLibraryReference)).OfType<AvroLibraryReference>().Select(x => x.PackageName));
-
-    public static readonly DiagnosticDescriptor Descriptor = new(
+    private static readonly DiagnosticDescriptor s_descriptor = new(
         id: "AVROSG0003",
         title: "No Avro library detected (Auto)",
         messageFormat:
         "AvroLibrary is set to 'Auto', but no supported Avro library was found. " +
-        "Generation will fall back to 'None' (no library-specific code). " +
+        "AvroSourceGenerator will fall back to 'None' (no library-specific code). " +
         "To target a specific library, install one of: {0}. " +
         "To keep this behavior without warnings, set AvroSourceGeneratorAvroLibrary to 'None' in your .csproj.",
         category: "Configuration",
@@ -26,6 +23,5 @@ internal static class NoAvroLibraryDetectedDiagnostic
         "Install a supported library to enable generation, or set <AvroSourceGeneratorAvroLibrary>None</AvroSourceGeneratorAvroLibrary> " +
         "explicitly to silence this warning.");
 
-    public static Diagnostic Create(Location location) =>
-        Diagnostic.Create(Descriptor, location, s_listOfLibraries);
+    public static DiagnosticInfo Create(LocationInfo location) => new(s_descriptor, location, AvroLibraryReference.SupportedPackageList);
 }

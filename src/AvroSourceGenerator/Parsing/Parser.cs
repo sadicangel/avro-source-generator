@@ -22,7 +22,7 @@ internal static class Parser
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
         if (string.IsNullOrWhiteSpace(text))
         {
-            diagnostics.Add(new DiagnosticInfo(InvalidJsonDiagnostic.Descriptor, LocationInfo.FromSourceFile(path, text), "The file is empty."));
+            diagnostics.Add(InvalidJsonDiagnostic.Create(LocationInfo.FromSourceFile(path, text), "The file is empty."));
 
             return new AvroFile(path, text, default, default, diagnostics.ToImmutable());
         }
@@ -36,11 +36,11 @@ internal static class Parser
         }
         catch (JsonException ex)
         {
-            diagnostics.Add(new DiagnosticInfo(InvalidJsonDiagnostic.Descriptor, LocationInfo.FromException(path, text, ex), ex.Message));
+            diagnostics.Add(InvalidJsonDiagnostic.Create(LocationInfo.FromException(path, text, ex), ex.Message));
         }
         catch (InvalidSchemaException ex)
         {
-            diagnostics.Add(new DiagnosticInfo(InvalidSchemaDiagnostic.Descriptor, LocationInfo.FromSourceFile(path, text), ex.Message));
+            diagnostics.Add(InvalidSchemaDiagnostic.Create(LocationInfo.FromSourceFile(path, text), ex.Message));
         }
 
         return new AvroFile(path, text, default, default, diagnostics.ToImmutable());
@@ -130,11 +130,11 @@ internal static class Parser
                     return reference.ToAvroLibrary();
 
                 case []:
-                    diagnostics = [new DiagnosticInfo(NoAvroLibraryDetectedDiagnostic.Descriptor, LocationInfo.None)];
+                    diagnostics = [NoAvroLibraryDetectedDiagnostic.Create(LocationInfo.None)];
                     return AvroLibrary.None;
 
                 default:
-                    diagnostics = [new DiagnosticInfo(MultipleAvroLibrariesDetectedDiagnostic.Descriptor, LocationInfo.None, references)];
+                    diagnostics = [MultipleAvroLibrariesDetectedDiagnostic.Create(LocationInfo.None, references)];
                     return AvroLibrary.None;
             }
         }

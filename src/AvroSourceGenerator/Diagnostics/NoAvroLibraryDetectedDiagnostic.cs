@@ -7,10 +7,9 @@ internal static class NoAvroLibraryDetectedDiagnostic
 {
     private static readonly string s_listOfLibraries = string.Join(
         ", ",
-        ((AvroLibrary[])Enum.GetValues(typeof(AvroLibrary))).Except([AvroLibrary.None, AvroLibrary.Auto])
-        .Select(x => x.PackageName));
+        Enum.GetValues(typeof(AvroLibraryReference)).OfType<AvroLibraryReference>().Select(x => x.PackageName));
 
-    private static readonly DiagnosticDescriptor s_descriptor = new(
+    public static readonly DiagnosticDescriptor Descriptor = new(
         id: "AVROSG0003",
         title: "No Avro library detected (Auto)",
         messageFormat:
@@ -28,5 +27,5 @@ internal static class NoAvroLibraryDetectedDiagnostic
         "explicitly to silence this warning.");
 
     public static Diagnostic Create(Location location) =>
-        Diagnostic.Create(s_descriptor, location, s_listOfLibraries);
+        Diagnostic.Create(Descriptor, location, s_listOfLibraries);
 }

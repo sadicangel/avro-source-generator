@@ -5,7 +5,7 @@ namespace AvroSourceGenerator.Diagnostics;
 
 internal static class MultipleAvroLibrariesDetectedDiagnostic
 {
-    private static readonly DiagnosticDescriptor s_descriptor = new(
+    public static readonly DiagnosticDescriptor Descriptor = new(
         id: "AVROSG0004",
         title: "Multiple Avro libraries detected",
         messageFormat:
@@ -21,9 +21,9 @@ internal static class MultipleAvroLibrariesDetectedDiagnostic
         "To avoid ambiguous generation, it will disable library-specific code (AvroLibrary=None). " +
         "Choose one library via the <AvroLibrary> property or uninstall the extras.");
 
-    public static Diagnostic Create(Location location, IReadOnlyList<AvroLibrary> libraries) =>
+    public static Diagnostic Create(Location location, IReadOnlyList<AvroLibraryReference> libraries) =>
         Diagnostic.Create(
-            s_descriptor,
+            Descriptor,
             location,
             string.Join(", ", libraries.Select(x => x.PackageName)),
             string.Join(", ", libraries.Select(x => x.ToString())));

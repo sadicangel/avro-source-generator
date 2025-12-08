@@ -7,14 +7,25 @@ internal enum AvroLibrary
     Auto = 2147483647,
 }
 
+internal enum AvroLibraryReference
+{
+    Apache,
+}
+
 internal static class AvroLibraryExtensions
 {
-    extension(AvroLibrary library)
+    extension(AvroLibraryReference reference)
     {
-        public string PackageName => library switch
+        public AvroLibrary ToAvroLibrary() => reference switch
         {
-            AvroLibrary.Apache => "Apache.Avro",
-            _ => throw new InvalidOperationException($"Invalid {nameof(AvroLibrary)} '{library}'"),
+            AvroLibraryReference.Apache => AvroLibrary.Apache,
+            _ => throw new ArgumentOutOfRangeException(nameof(reference), reference, null)
+        };
+
+        public string PackageName => reference switch
+        {
+            AvroLibraryReference.Apache => "Apache.Avro",
+            _ => throw new InvalidOperationException($"Invalid {nameof(AvroLibraryReference)} '{reference}'"),
         };
     }
 }

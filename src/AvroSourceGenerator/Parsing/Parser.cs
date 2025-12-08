@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
@@ -7,7 +6,6 @@ using AvroSourceGenerator.Registry.Extensions;
 using AvroSourceGenerator.Schemas;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace AvroSourceGenerator.Parsing;
@@ -21,10 +19,10 @@ internal static class Parser
     {
         var path = additionalText.Path;
         var text = additionalText.GetText(cancellationToken)?.ToString();
-        var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+        var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
         if (string.IsNullOrWhiteSpace(text))
         {
-            diagnostics.Add(InvalidJsonDiagnostic.Create(path.GetLocation(text), "The file is empty."));
+            diagnostics.Add(new DiagnosticInfo(InvalidJsonDiagnostic.Descriptor, LocationInfo.FromSourceFile(path, text), "The file is empty."));
 
             return new AvroFile(path, text, default, default, diagnostics.ToImmutable());
         }
@@ -38,11 +36,11 @@ internal static class Parser
         }
         catch (JsonException ex)
         {
-            diagnostics.Add(InvalidJsonDiagnostic.Create(path.GetLocation(text, ex), ex.Message));
+            diagnostics.Add(new DiagnosticInfo(InvalidJsonDiagnostic.Descriptor, LocationInfo.FromException(path, text, ex), ex.Message));
         }
         catch (InvalidSchemaException ex)
         {
-            diagnostics.Add(InvalidSchemaDiagnostic.Create(path.GetLocation(text), ex.Message));
+            diagnostics.Add(new DiagnosticInfo(InvalidSchemaDiagnostic.Descriptor, LocationInfo.FromSourceFile(path, text), ex.Message));
         }
 
         return new AvroFile(path, text, default, default, diagnostics.ToImmutable());
@@ -97,25 +95,64 @@ internal static class Parser
 
         var csharpCompilation = (CSharpCompilation)compilation;
 
-        var avroLibraries = ImmutableArray.CreateBuilder<AvroLibrary>();
+        var avroLibraries = ImmutableArray.CreateBuilder<AvroLibraryReference>();
 
         if (csharpCompilation.GetTypeByMetadataName("Avro.Specific.ISpecificRecord") is not null)
-            avroLibraries.Add(AvroLibrary.Apache);
+            avroLibraries.Add(AvroLibraryReference.Apache);
 
         return new CompilationInfo(avroLibraries.ToImmutable(), csharpCompilation.LanguageVersion);
     }
 
-    public static bool IsCandidateDeclaration(SyntaxNode node, CancellationToken cancellationToken)
+    public static RenderSettings GetRenderSettings((GeneratorSettings generatorSettings, CompilationInfo compilationInfo) input, CancellationToken cancellationToken)
     {
-        _ = cancellationToken;
+        var (generatorSettings, compilationInfo) = input;
 
-        // The attribute can only be applied to a class or record declaration.
-        if (!node.IsKind(SyntaxKind.ClassDeclaration) && !node.IsKind(SyntaxKind.RecordDeclaration))
+        var diagnostics = ImmutableArray<DiagnosticInfo>.Empty;
+
+        var avroLibrary = generatorSettings.AvroLibrary ?? AvroLibrary.Auto;
+        if (avroLibrary is AvroLibrary.Auto)
         {
-            return false;
+            avroLibrary = GetAvroLibrary(compilationInfo.AvroLibraries, out diagnostics);
         }
 
-        // TODO: Should we allow non partial and then emit a diagnostic if it's not partial?
-        return Unsafe.As<TypeDeclarationSyntax>(node).Modifiers.Any(SyntaxKind.PartialKeyword);
+        var languageFeatures = generatorSettings.LanguageFeatures ?? MapVersionToFeatures(compilationInfo.LanguageVersion);
+        var accessModifier = generatorSettings.AccessModifier ?? "public";
+        var recordDeclaration = generatorSettings.RecordDeclaration ?? (languageFeatures.HasFlag(LanguageFeatures.Records) ? "record" : "class");
+
+        return new RenderSettings(avroLibrary, compilationInfo.LanguageVersion, languageFeatures, accessModifier, recordDeclaration, diagnostics);
+
+        static AvroLibrary GetAvroLibrary(ImmutableArray<AvroLibraryReference> references, out ImmutableArray<DiagnosticInfo> diagnostics)
+        {
+            switch (references)
+            {
+                case [var reference]:
+                    diagnostics = [];
+                    return reference.ToAvroLibrary();
+
+                case []:
+                    diagnostics = [new DiagnosticInfo(NoAvroLibraryDetectedDiagnostic.Descriptor, LocationInfo.None)];
+                    return AvroLibrary.None;
+
+                default:
+                    diagnostics = [new DiagnosticInfo(MultipleAvroLibrariesDetectedDiagnostic.Descriptor, LocationInfo.None, references)];
+                    return AvroLibrary.None;
+            }
+        }
+
+        static LanguageFeatures MapVersionToFeatures(LanguageVersion languageVersion)
+        {
+            return languageVersion switch
+            {
+                <= LanguageVersion.CSharp7_3 => LanguageFeatures.CSharp7_3,
+                LanguageVersion.CSharp8 => LanguageFeatures.CSharp8,
+                LanguageVersion.CSharp9 => LanguageFeatures.CSharp9,
+                LanguageVersion.CSharp10 => LanguageFeatures.CSharp10,
+                LanguageVersion.CSharp11 => LanguageFeatures.CSharp11,
+                LanguageVersion.CSharp12 => LanguageFeatures.CSharp12,
+                //LanguageVersion.CSharp13 => LanguageFeatures.CSharp13,
+                //LanguageVersion.CSharp14 => LanguageFeatures.CSharp14,
+                _ => LanguageFeatures.Latest,
+            };
+        }
     }
 }

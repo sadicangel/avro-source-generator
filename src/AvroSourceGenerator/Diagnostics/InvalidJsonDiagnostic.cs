@@ -4,7 +4,7 @@ namespace AvroSourceGenerator.Diagnostics;
 
 internal static class InvalidJsonDiagnostic
 {
-    private static readonly DiagnosticDescriptor s_descriptor = new(
+    public static readonly DiagnosticDescriptor Descriptor = new(
         id: "AVROSG0001",
         title: "Invalid JSON",
         messageFormat: "The provided JSON is invalid: {0}",
@@ -16,5 +16,5 @@ internal static class InvalidJsonDiagnostic
         "Fix the JSON syntax (quotes, commas, braces, etc.). If the error reports a path, check that location first.");
 
     public static Diagnostic Create(Location location, string message) =>
-        Diagnostic.Create(s_descriptor, location, message);
+        Diagnostic.Create(Descriptor, location, message);
 }

@@ -13,7 +13,7 @@ internal readonly record struct RenderSettings(
     string RecordDeclaration,
     ImmutableArray<DiagnosticInfo> Diagnostics)
 {
-    public bool IsValid => Diagnostics.IsDefaultOrEmpty;
+    public bool IsValid => !Diagnostics.Any(x => x.Descriptor.DefaultSeverity is Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
 
     public bool Equals(RenderSettings other) =>
         AvroLibrary == other.AvroLibrary &&

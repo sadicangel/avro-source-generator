@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Parsing;
+﻿using System.Collections.Immutable;
+using AvroSourceGenerator.Parsing;
 using AvroSourceGenerator.Registry;
 using Scriban;
 using Scriban.Syntax;
@@ -7,7 +8,7 @@ namespace AvroSourceGenerator.Emit;
 
 internal static class AvroTemplate
 {
-    public static IEnumerable<RenderOutput> Render(SchemaRegistry schemaRegistry, RenderSettings settings)
+    public static ImmutableArray<RenderedSchema> Render(SchemaRegistry schemaRegistry, RenderSettings settings)
     {
         var templateContext = new TemplateContext(new TemplateScriptObject(settings))
         {
@@ -21,12 +22,16 @@ internal static class AvroTemplate
         }
 
         var template = TemplateLoader.GetTemplate("schema");
-        foreach (var schema in schemaRegistry)
-        {
-            templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
-            var hintName = $"{schema.SchemaName.FullName}.Avro.g.cs";
-            var sourceText = template.Render(templateContext);
-            yield return new RenderOutput(hintName, sourceText);
-        }
+
+        return
+        [
+            .. schemaRegistry.Select(schema =>
+            {
+                templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
+                var hintName = $"{schema.SchemaName.FullName}.Avro.g.cs";
+                var sourceText = template.Render(templateContext);
+                return new RenderedSchema(hintName, sourceText);
+            })
+        ];
     }
 }

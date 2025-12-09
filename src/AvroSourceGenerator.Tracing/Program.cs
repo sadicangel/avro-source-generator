@@ -1,8 +1,14 @@
 ﻿using Microsoft.Diagnostics.Tracing.Session;
 
+Console.WriteLine("TraceEventSession started.");
+
 // https://www.meziantou.net/measuring-performance-of-roslyn-source-generators.htm
 using var session = new TraceEventSession("roslyn-sg");
-Console.CancelKeyPress += (_, _) => session.Dispose();
+Console.CancelKeyPress += (_, _) =>
+{
+    Console.WriteLine("TraceEventSession ended.");
+    session.Dispose();
+};
 
 session.Source.Dynamic.AddCallbackForProviderEvent(
     "Microsoft-CodeAnalysis-General",
@@ -11,8 +17,8 @@ session.Source.Dynamic.AddCallbackForProviderEvent(
     {
         var generatorName = (string)traceEvent.PayloadByName("generatorName");
         var ticks = (long)traceEvent.PayloadByName("elapsedTicks");
-        //var id = (string)data.PayloadByName("id");
-        //var assemblyPath = (string)data.PayloadByName("assemblyPath");
+        // var id = (string)traceEvent.PayloadByName("id");
+        // var assemblyPath = (string)traceEvent.PayloadByName("assemblyPath");
 
         if (generatorName == "AvroSourceGenerator.AvroSourceGenerator")
             Console.WriteLine($"{generatorName}: {TimeSpan.FromTicks(ticks).TotalMilliseconds:N0}ms");

@@ -22,13 +22,14 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             .Select(Parser.GetCompilationInfo)
             .WithTrackingName(TrackingNames.CompilationInfo);
 
-        var renderSettings = generatorSettingsProvider.Combine(compilationInfoProvider)
+        var renderSettingsProvider = generatorSettingsProvider.Combine(compilationInfoProvider)
             .Select(Parser.GetRenderSettings)
             .WithTrackingName(TrackingNames.RenderSettings);
 
-        var emitterInputProvider = avroFileProvider.Combine(renderSettings)
-            .WithTrackingName(TrackingNames.EmitterInput);
+        var renderResultProvider = avroFileProvider.Combine(renderSettingsProvider)
+            .Select(Renderer.Render)
+            .WithTrackingName(TrackingNames.RenderResult);
 
-        context.RegisterImplementationSourceOutput(emitterInputProvider, Emitter.Emit);
+        context.RegisterImplementationSourceOutput(renderResultProvider, Emitter.Emit);
     }
 }

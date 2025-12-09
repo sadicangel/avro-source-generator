@@ -15,6 +15,7 @@
     <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />
   </ItemGroup>
 
   <ItemGroup>

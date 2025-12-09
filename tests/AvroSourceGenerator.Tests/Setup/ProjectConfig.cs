@@ -29,4 +29,10 @@ public record struct ProjectConfig(LanguageVersion LanguageVersion)
         get => GlobalOptions.GetValueOrDefault("AvroSourceGeneratorRecordDeclaration") ?? string.Empty;
         set => GlobalOptions["AvroSourceGeneratorRecordDeclaration"] = value;
     }
+
+    public string DuplicateResolution
+    {
+        get => GlobalOptions.GetValueOrDefault("AvroSourceGeneratorDuplicateResolution") ?? string.Empty;
+        set => GlobalOptions["AvroSourceGeneratorDuplicateResolution"] = value;
+    }
 }

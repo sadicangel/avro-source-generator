@@ -1,4 +1,8 @@
-﻿using System.Text;
+﻿using System.Collections.Immutable;
+using System.Text;
+using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Diagnostics;
+using AvroSourceGenerator.Parsing;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
@@ -6,16 +10,30 @@ namespace AvroSourceGenerator.Emit;
 
 internal static class Emitter
 {
-    public static void Emit(SourceProductionContext context, RenderResult result)
+    public static void Emit(SourceProductionContext context, (ImmutableArray<RenderResult> results, RenderSettings settings) source)
     {
-        foreach (var diagnostic in result.Diagnostics)
-        {
-            context.ReportDiagnostic(diagnostic);
-        }
+        var (results, settings) = source;
 
-        foreach (var schema in result.Schemas)
+        var seenNames = new HashSet<string>();
+
+        foreach (var result in results)
         {
-            context.AddSource(schema.HintName, SourceText.From(schema.SourceText, Encoding.UTF8));
+            foreach (var diagnostic in result.Diagnostics)
+            {
+                context.ReportDiagnostic(diagnostic);
+            }
+
+            foreach (var schema in result.Schemas)
+            {
+                if (seenNames.Add(schema.HintName))
+                {
+                    context.AddSource(schema.HintName, SourceText.From(schema.SourceText, Encoding.UTF8));
+                }
+                else if (settings.DuplicateResolution is not DuplicateResolution.Ignore)
+                {
+                    context.ReportDiagnostic(DuplicateSchemaOutputDiagnostic.Create(LocationInfo.None, schema.HintName));
+                }
+            }
         }
     }
 }

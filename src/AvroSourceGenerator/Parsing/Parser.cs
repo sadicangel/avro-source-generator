@@ -86,7 +86,16 @@ internal static class Parser
             recordDeclaration = null;
         }
 
-        return new GeneratorSettings(avroLibrary, languageFeatures, accessModifier, recordDeclaration);
+        var duplicateResolution = default(DuplicateResolution?);
+        if (provider.GlobalOptions.TryGetValue(
+                "build_property.AvroSourceGeneratorDuplicateResolution",
+                out var DuplicateResolutionString) &&
+            Enum.TryParse<DuplicateResolution>(DuplicateResolutionString, ignoreCase: true, out var parsedDuplicateResolution))
+        {
+            duplicateResolution = parsedDuplicateResolution;
+        }
+
+        return new GeneratorSettings(avroLibrary, languageFeatures, accessModifier, recordDeclaration, duplicateResolution);
     }
 
     public static CompilationInfo GetCompilationInfo(Compilation compilation, CancellationToken cancellationToken)
@@ -118,8 +127,9 @@ internal static class Parser
         var languageFeatures = generatorSettings.LanguageFeatures ?? MapVersionToFeatures(compilationInfo.LanguageVersion);
         var accessModifier = generatorSettings.AccessModifier ?? "public";
         var recordDeclaration = generatorSettings.RecordDeclaration ?? (languageFeatures.HasFlag(LanguageFeatures.Records) ? "record" : "class");
+        var duplicateResolution = generatorSettings.DuplicateResolution ?? DuplicateResolution.Error;
 
-        return new RenderSettings(avroLibrary, compilationInfo.LanguageVersion, languageFeatures, accessModifier, recordDeclaration, diagnostics);
+        return new RenderSettings(avroLibrary, compilationInfo.LanguageVersion, languageFeatures, accessModifier, recordDeclaration, duplicateResolution, diagnostics);
 
         static AvroLibrary GetAvroLibrary(ImmutableArray<AvroLibraryReference> references, out ImmutableArray<DiagnosticInfo> diagnostics)
         {

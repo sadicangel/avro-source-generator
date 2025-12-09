@@ -11,6 +11,7 @@ internal readonly record struct RenderSettings(
     LanguageFeatures LanguageFeatures,
     string AccessModifier,
     string RecordDeclaration,
+    DuplicateResolution DuplicateResolution,
     ImmutableArray<DiagnosticInfo> Diagnostics)
 {
     public bool IsValid => !Diagnostics.Any(x => x.Descriptor.DefaultSeverity is Microsoft.CodeAnalysis.DiagnosticSeverity.Error);

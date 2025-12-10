@@ -1,0 +1,28 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/AvroSourceGenerator.ApacheAvro/AvroSourceGenerator.ApacheAvro.csproj" />
+    <Project Path="samples/AvroSourceGenerator.ConfluentKafka/AvroSourceGenerator.ConfluentKafka.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="AvroSourceGenerator.props" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="GenerateTag.ps1" />
+    <File Path="icon.png" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+    <File Path="SpellingExclusions.dic" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AvroSourceGenerator.IntegrationTests/AvroSourceGenerator.IntegrationTests.csproj" />
+    <Project Path="tests/AvroSourceGenerator.Tests.Apache/AvroSourceGenerator.Tests.Apache.csproj" />
+    <Project Path="tests/AvroSourceGenerator.Tests/AvroSourceGenerator.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/AvroSourceGenerator.Tracing/AvroSourceGenerator.Tracing.csproj" />
+  </Folder>
+  <Project Path="src/AvroSourceGenerator/AvroSourceGenerator.csproj" />
+</Solution>

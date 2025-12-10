@@ -238,6 +238,27 @@ Supported values:
 
 ---
 
+### Duplicate Resolution
+
+By default, the generator **fails on duplicate schema outputs**.  
+A duplicate occurs when **multiple `.avsc` files would generate the same fully qualified name**.
+
+This behavior can be configured using the following MSBuild property:
+
+```xml
+<PropertyGroup>
+  <AvroSourceGeneratorDuplicateResolution>Ignore</AvroSourceGeneratorDuplicateResolution>
+</PropertyGroup>
+```
+Supported values:
+- `Error` (default) — emits a diagnostic and stops generation
+- `Ignore` — Allows duplicates and selects **one schema arbitrarily**, ignoring the rest.
+
+
+> [!Warning]  
+> **Ignore** is nondeterministic and should only be used when duplicate outputs are intentional and safe.
+---
+
 ## Contributing
 
 Contributions are welcome!  

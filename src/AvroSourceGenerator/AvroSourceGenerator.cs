@@ -30,6 +30,10 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             .Select(Renderer.Render)
             .WithTrackingName(TrackingNames.RenderResult);
 
-        context.RegisterImplementationSourceOutput(renderResultProvider, Emitter.Emit);
+        var renderResultsProvider = renderResultProvider.Collect()
+            .Combine(renderSettingsProvider)
+            .WithTrackingName(TrackingNames.Emitter);
+
+        context.RegisterImplementationSourceOutput(renderResultsProvider, Emitter.Emit);
     }
 }

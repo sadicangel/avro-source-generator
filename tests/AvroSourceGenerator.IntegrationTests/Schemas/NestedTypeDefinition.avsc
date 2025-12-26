@@ -1,0 +1,14 @@
+{
+ "fields": [
+   {
+     "description": "The displayName of the customer",
+     "name": "displayName",
+     "type": {
+       "avro.java.string": "String",
+       "type": "string"
+     }
+   }
+ ],
+ "name": "SomeSchema",
+ "type": "record"
+}

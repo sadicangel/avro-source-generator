@@ -26,9 +26,9 @@ namespace SchemaNamespace
                 "name": "Decimal",
                 "namespace": "SchemaNamespace",
                 "size": 20,
-                "logicalType": "decimal",
                 "precision": 4,
-                "scale": 2
+                "scale": 2,
+                "logicalType": "decimal"
               }
             }
           ]

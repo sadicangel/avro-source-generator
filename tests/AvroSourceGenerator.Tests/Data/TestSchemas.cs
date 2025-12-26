@@ -124,13 +124,7 @@ public static class TestSchemas
         return clone;
     }
 
-    public static JsonNode With(this JsonNode @this, string propertyName, JsonObject propertyValue) =>
-        @this.With(propertyName, (JsonNode)propertyValue);
-
     public static JsonNode With(this JsonNode @this, string propertyName, JsonArray propertyValue) =>
-        @this.With(propertyName, (JsonNode)propertyValue);
-
-    public static JsonNode With(this JsonNode @this, string propertyName, JsonValue propertyValue) =>
         @this.With(propertyName, (JsonNode)propertyValue);
 
     public static JsonNode With(this JsonNode @this, string propertyName, IEnumerable<object?>? propertyValue)

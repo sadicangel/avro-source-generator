@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Registry.Extensions;
@@ -18,15 +17,6 @@ internal readonly partial struct SchemaRegistry
         var underlyingSchema = UnderlyingSchema(schema, containingNamespace);
 
         return LogicalAvroSchema(schema, properties, underlyingSchema);
-    }
-
-    private bool TryGetNamedSchema_(string? containingNamespace, string underlyingType, [NotNullWhen(true)]out NamedSchema? namedSchema)
-    {
-        var schemaName = new SchemaName(underlyingType.GetValidName(), containingNamespace);
-        namedSchema = _schemas.TryGetValue(schemaName, out var topLevelSchema)
-            ? topLevelSchema as NamedSchema
-            : null;
-        return namedSchema is not null;
     }
 
     private AvroSchema LogicalAvroSchema(JsonElement schema, ImmutableSortedDictionary<string, JsonElement>? properties,

@@ -15,31 +15,26 @@ internal readonly partial struct SchemaRegistry
         string? containingNamespace,
         ImmutableSortedDictionary<string, JsonElement>? properties = null)
     {
-        var logicalType = schema.GetRequiredString("logicalType");
+        var underlyingSchema = UnderlyingSchema(schema, containingNamespace);
 
-        var underlyingType = schema.GetRequiredString("type");
-        var underlyingSchema = underlyingType switch
-        {
-            "null" => AvroSchema.Object,
-            "boolean" => AvroSchema.Boolean,
-            "int" => AvroSchema.Int,
-            "long" => AvroSchema.Long,
-            "float" => AvroSchema.Float,
-            "double" => AvroSchema.Double,
-            "bytes" => AvroSchema.Bytes,
-            "string" => AvroSchema.String,
-            "array" => Array(schema, containingNamespace),
-            "map" => Map(schema, containingNamespace),
-            "enum" => Enum(schema, containingNamespace),
-            "record" => Record(schema, containingNamespace),
-            "error" => Error(schema, containingNamespace),
-            "fixed" => Fixed(schema, containingNamespace),
-            _ when TryGetNamedSchema(_schemas, underlyingType, containingNamespace, out var namedSchema) => namedSchema,
-            _ => throw new InvalidSchemaException($"Unknown schema type '{underlyingType}' in {schema.GetRawText()}")
-        };
+        return LogicalAvroSchema(schema, properties, underlyingSchema);
+    }
 
+    private bool TryGetNamedSchema_(string? containingNamespace, string underlyingType, [NotNullWhen(true)]out NamedSchema? namedSchema)
+    {
+        var schemaName = new SchemaName(underlyingType.GetValidName(), containingNamespace);
+        namedSchema = _schemas.TryGetValue(schemaName, out var topLevelSchema)
+            ? topLevelSchema as NamedSchema
+            : null;
+        return namedSchema is not null;
+    }
+
+    private AvroSchema LogicalAvroSchema(JsonElement schema, ImmutableSortedDictionary<string, JsonElement>? properties,
+        AvroSchema underlyingSchema)
+    {
         properties ??= ImmutableSortedDictionary<string, JsonElement>.Empty;
 
+        var logicalType = schema.GetRequiredString("logicalType");
         return avroLibrary switch
         {
             AvroLibrary.None when languageVersion >= LanguageVersion.CSharp10 =>
@@ -53,19 +48,6 @@ internal readonly partial struct SchemaRegistry
             _ =>
                 throw new NotSupportedException($"Invalid {nameof(AvroLibrary)} '{avroLibrary}'"),
         };
-
-        static bool TryGetNamedSchema(
-            Dictionary<SchemaName, TopLevelSchema> schemas,
-            string underlyingType,
-            string? containingNamespace,
-            [MaybeNullWhen(false)] out NamedSchema namedSchema)
-        {
-            var schemaName = new SchemaName(underlyingType.GetValidName(), containingNamespace);
-            namedSchema = schemas.TryGetValue(schemaName, out var topLevelSchema)
-                ? topLevelSchema as NamedSchema
-                : null;
-            return namedSchema is not null;
-        }
     }
 }
 

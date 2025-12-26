@@ -82,7 +82,7 @@ internal readonly partial struct SchemaRegistry(
 
     private AvroSchema Complex(JsonElement schema, string? containingNamespace)
     {
-        if (schema.TryGetProperty("logicalType", out var _))
+        if (schema.TryGetProperty("logicalType", out _))
         {
             return Logical(schema, containingNamespace, GetProperties(schema));
         }
@@ -92,30 +92,7 @@ internal readonly partial struct SchemaRegistry(
             return Protocol(schema, containingNamespace, GetProperties(schema));
         }
 
-        var type = schema.GetSchemaType();
-
-        return type switch
-        {
-            "array" => Array(schema, containingNamespace, GetProperties(schema)),
-            "map" => Map(schema, containingNamespace, GetProperties(schema)),
-            "enum" => Enum(schema, containingNamespace, GetProperties(schema)),
-            "record" => Record(schema, containingNamespace, GetProperties(schema)),
-            "error" => Error(schema, containingNamespace, GetProperties(schema)),
-            "fixed" => Fixed(schema, containingNamespace, GetProperties(schema)),
-            _ => throw new InvalidSchemaException($"Unknown schema type '{type}' in {schema.GetRawText()}")
-        };
-    }
-
-    private static ImmutableSortedDictionary<string, JsonElement> GetProperties(JsonElement schema)
-    {
-        var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
-        foreach (var property in schema.EnumerateObject()
-            .Where(property => !s_reservedProperties.Contains(property.Name)))
-        {
-            properties.Add(property.Name, property.Value);
-        }
-
-        return properties.ToImmutable();
+        return UnderlyingSchema(schema, containingNamespace);
     }
 
     private string? GetValue(AvroSchema type, JsonElement? json)
@@ -141,5 +118,44 @@ internal readonly partial struct SchemaRegistry(
             // TODO: Do we need to handle complex types? Should they be supported?
             _ => null,
         };
+    }
+
+    private AvroSchema UnderlyingSchema(JsonElement schema, string? containingNamespace)
+    {
+        var underlyingType = schema.GetRequiredString("type");
+
+        var underlyingSchema = underlyingType switch
+        {
+            "null" => AvroSchema.Object,
+            "boolean" => AvroSchema.Boolean,
+            "int" => AvroSchema.Int,
+            "long" => AvroSchema.Long,
+            "float" => AvroSchema.Float,
+            "double" => AvroSchema.Double,
+            "bytes" => AvroSchema.Bytes,
+            "string" => AvroSchema.String,
+            "array" => Array(schema, containingNamespace, GetProperties(schema)),
+            "map" => Map(schema, containingNamespace, GetProperties(schema)),
+            "enum" => Enum(schema, containingNamespace, GetProperties(schema)),
+            "record" => Record(schema, containingNamespace, GetProperties(schema)),
+            "error" => Error(schema, containingNamespace, GetProperties(schema)),
+            "fixed" => Fixed(schema, containingNamespace, GetProperties(schema)),
+            _ when TryGetNamedSchema_(containingNamespace, underlyingType, out var namedSchema) => namedSchema,
+            _ => throw new InvalidSchemaException($"Unknown schema type '{underlyingType}' in {schema.GetRawText()}")
+        };
+
+        return underlyingSchema;
+    }
+
+    private static ImmutableSortedDictionary<string, JsonElement> GetProperties(JsonElement schema)
+    {
+        var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
+        foreach (var property in schema.EnumerateObject()
+                     .Where(property => !s_reservedProperties.Contains(property.Name)))
+        {
+            properties.Add(property.Name, property.Value);
+        }
+
+        return properties.ToImmutable();
     }
 }

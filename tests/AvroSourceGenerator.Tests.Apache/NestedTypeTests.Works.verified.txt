@@ -13,19 +13,18 @@
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
+          "type": "record",
+          "name": "SomeSchema",
           "fields": [
             {
-              "description": "The displayName of the customer",
               "name": "displayName",
               "type": {
                 "avro.java.string": "String",
                 "type": "string"
-              }
+              },
               "description": "The displayName of the customer"
             }
-          ],
-          "name": "SomeSchema",
-          "type": "record"
+          ]
         }
         """);
     

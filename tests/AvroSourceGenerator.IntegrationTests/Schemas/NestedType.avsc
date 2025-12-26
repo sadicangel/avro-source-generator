@@ -9,6 +9,7 @@
      }
    }
  ],
- "name": "SomeSchema",
+ "name": "NestedType",
+ "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
  "type": "record"
 }

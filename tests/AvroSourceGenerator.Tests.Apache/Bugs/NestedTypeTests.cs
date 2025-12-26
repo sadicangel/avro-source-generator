@@ -1,6 +1,6 @@
 namespace AvroSourceGenerator.Tests.Bugs;
 
-public class NestedType
+public class NestedTypeTests
 {
     private const string _schema = """
                                    {

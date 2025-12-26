@@ -5,6 +5,7 @@ namespace AvroSourceGenerator.Schemas;
 
 internal abstract record class AvroSchema(SchemaType Type, CSharpName CSharpName, SchemaName SchemaName)
 {
+    // ReSharper disable once UnusedMember.Global
     public bool RequiresNullability => Type is SchemaType.Record or SchemaType.Error;
 
     public sealed override string ToString() => CSharpName.FullName;

@@ -19,8 +19,8 @@
             {
               "name": "displayName",
               "type": {
-                "avro.java.string": "String",
-                "type": "string"
+                "type": "string",
+                "avro.java.string": "String"
               },
               "description": "The displayName of the customer"
             }

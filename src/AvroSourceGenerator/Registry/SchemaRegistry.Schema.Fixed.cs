@@ -7,7 +7,7 @@ namespace AvroSourceGenerator.Registry;
 
 internal readonly partial struct SchemaRegistry
 {
-    private FixedSchema Fixed(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement>? properties = null)
+    private FixedSchema Fixed(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
     {
         var schemaName = schema.GetRequiredSchemaName(containingNamespace);
 
@@ -18,7 +18,7 @@ internal readonly partial struct SchemaRegistry
         var aliases = schema.GetAliases();
         var size = schema.GetFixedSize();
 
-        var fixedSchema = new FixedSchema(schema, schemaName, documentation, aliases, size, properties ?? ImmutableSortedDictionary<string, JsonElement>.Empty);
+        var fixedSchema = new FixedSchema(schema, schemaName, documentation, aliases, size, properties);
         _schemas[schemaName] = fixedSchema;
 
         return fixedSchema;

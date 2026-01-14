@@ -7,12 +7,12 @@ namespace AvroSourceGenerator.Registry;
 
 internal readonly partial struct SchemaRegistry
 {
-    private ArraySchema Array(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement>? properties = null)
+    private ArraySchema Array(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
     {
         var itemsSchema = schema.GetRequiredProperty("items");
 
         var items = Schema(itemsSchema, containingNamespace);
 
-        return new ArraySchema(items, properties ?? ImmutableSortedDictionary<string, JsonElement>.Empty);
+        return new ArraySchema(items, properties);
     }
 }

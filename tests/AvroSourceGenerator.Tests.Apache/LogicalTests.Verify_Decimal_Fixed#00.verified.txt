@@ -19,9 +19,7 @@ namespace SchemaNamespace
           "type": "fixed",
           "name": "Decimal",
           "namespace": "SchemaNamespace",
-          "size": 20,
-          "precision": 4,
-          "scale": 2
+          "size": 20
         }
         """);
     }

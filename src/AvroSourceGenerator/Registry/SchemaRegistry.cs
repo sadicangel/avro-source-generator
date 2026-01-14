@@ -125,9 +125,10 @@ internal readonly partial struct SchemaRegistry(
 
         if (wellKnown is PrimitiveSchema primitive)
         {
-            return primitive.WithProperties(properties);
+            return primitive with { Properties = properties };
         }
 
+        // TODO: Should we add/merge properties for other schema types?
         return wellKnown;
     }
 

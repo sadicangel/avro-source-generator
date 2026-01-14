@@ -1,4 +1,4 @@
-﻿namespace AvroSourceGenerator.Tests.Bugs;
+﻿namespace AvroSourceGenerator.Tests.Apache.Bugs;
 
 public class NestedTypeTests
 {

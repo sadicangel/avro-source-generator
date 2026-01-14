@@ -13,9 +13,7 @@ internal sealed record class AbstractRecordSchema(
         GetDefaultDocumentation(DerivedSchemas),
         ImmutableSortedDictionary<string, JsonElement>.Empty)
 {
-    public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
-    {
-    }
+    public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace) { }
 
     private static string GetDefaultDocumentation(ImmutableArray<AvroSchema> derivedSchemas)
     {

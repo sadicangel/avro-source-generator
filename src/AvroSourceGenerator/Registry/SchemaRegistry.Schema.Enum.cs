@@ -7,7 +7,7 @@ namespace AvroSourceGenerator.Registry;
 
 internal readonly partial struct SchemaRegistry
 {
-    private EnumSchema Enum(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement>? properties = null)
+    private EnumSchema Enum(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
     {
         var schemaName = schema.GetRequiredSchemaName(containingNamespace);
 
@@ -19,7 +19,7 @@ internal readonly partial struct SchemaRegistry
         var symbols = schema.GetSymbols();
         var @default = schema.GetNullableString("default");
 
-        var enumSchema = new EnumSchema(schema, schemaName, documentation, aliases, symbols, @default, properties ?? ImmutableSortedDictionary<string, JsonElement>.Empty);
+        var enumSchema = new EnumSchema(schema, schemaName, documentation, aliases, symbols, @default, properties);
         _schemas[schemaName] = enumSchema;
 
         return enumSchema;

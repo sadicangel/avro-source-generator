@@ -7,7 +7,7 @@ namespace AvroSourceGenerator.Registry;
 
 internal readonly partial struct SchemaRegistry
 {
-    private ErrorSchema Error(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement>? properties = null)
+    private ErrorSchema Error(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
     {
         var schemaName = schema.GetRequiredSchemaName(containingNamespace);
 
@@ -18,7 +18,7 @@ internal readonly partial struct SchemaRegistry
         var aliases = schema.GetAliases();
         var fields = Fields(schema, schemaName);
 
-        var errorSchema = new ErrorSchema(schema, schemaName, documentation, aliases, fields, properties ?? ImmutableSortedDictionary<string, JsonElement>.Empty);
+        var errorSchema = new ErrorSchema(schema, schemaName, documentation, aliases, fields, properties);
         _schemas[schemaName] = errorSchema;
 
         return errorSchema;

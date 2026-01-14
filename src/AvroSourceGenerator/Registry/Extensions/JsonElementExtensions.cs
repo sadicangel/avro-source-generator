@@ -132,7 +132,7 @@ internal static class JsonElementExtensions
         _ = SplitFullName(name, out name, out var @namespace);
 
         if (string.IsNullOrWhiteSpace(name) || @namespace is "")
-            throw new InvalidSchemaException($"Argument has an invalid name format: 'cannot start or end with a dot'");
+            throw new InvalidSchemaException("Argument has an invalid name format: 'cannot start or end with a dot'");
 
         return new SchemaName(name, @namespace ?? containingNamespace);
     }

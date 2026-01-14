@@ -11,18 +11,11 @@ internal readonly partial struct SchemaRegistry
 {
     private AvroSchema Logical(
         JsonElement schema,
-        string? containingNamespace,
+        AvroSchema underlyingSchema,
         ImmutableSortedDictionary<string, JsonElement> properties)
     {
-        var underlyingSchema = GetSchema(schema, containingNamespace);
-
-        return LogicalAvroSchema(schema, properties, underlyingSchema);
-    }
-
-    private AvroSchema LogicalAvroSchema(JsonElement schema, ImmutableSortedDictionary<string, JsonElement> properties,
-        AvroSchema underlyingSchema)
-    {
         var logicalType = schema.GetRequiredString("logicalType");
+
         return avroLibrary switch
         {
             AvroLibrary.None when languageVersion >= LanguageVersion.CSharp10 =>

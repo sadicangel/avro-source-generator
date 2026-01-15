@@ -80,7 +80,7 @@ internal sealed record class LogicalSchema(
             schema.WriteTo(writer, writtenSchemas, containingNamespace);
             writer.Flush();
             stream.Position = 0;
-            return JsonNode.Parse(stream) ?? throw new InvalidOperationException($"Schema can't be null");
+            return JsonNode.Parse(stream) ?? throw new InvalidOperationException("Schema can't be null");
         }
     }
 }

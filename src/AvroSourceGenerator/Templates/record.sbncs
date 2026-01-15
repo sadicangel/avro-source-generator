@@ -1,11 +1,11 @@
-{{ AccessModifier }} partial {{ RecordDeclaration }} {{ $.schema.CSharpName.Name }}{{ if $.schema.InheritsFrom }} : {{ $.schema.InheritsFrom.CSharpName }}{{ end }}
+{{ AccessModifier }} partial {{ Record }} {{ $.schema.CSharpName.Name }}{{ if $.schema.InheritsFrom }} : {{ $.schema.InheritsFrom.CSharpName }}{{ end }}
 {
     {{~ for field in $.schema.Fields ~}}
     {{ include 'field' field: field }}
     {{~ end ~}}
 }
 {{ if AvroLibrary == 'Apache' }}
-partial {{ RecordDeclaration }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificRecord
+partial {{ Record }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificRecord
 {
     global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => {{ $.schema.CSharpName.Name }}.s_schema; }
     private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(

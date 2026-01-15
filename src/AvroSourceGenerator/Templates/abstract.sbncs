@@ -1,1 +1,1 @@
-{{ AccessModifier }} abstract partial {{ RecordDeclaration }} {{ $.schema.CSharpName.Name }};
+{{ AccessModifier }} abstract partial {{ Record }} {{ $.schema.CSharpName.Name }};

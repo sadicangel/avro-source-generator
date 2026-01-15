@@ -89,8 +89,8 @@ internal static class Parser
         var duplicateResolution = default(DuplicateResolution?);
         if (provider.GlobalOptions.TryGetValue(
                 "build_property.AvroSourceGeneratorDuplicateResolution",
-                out var DuplicateResolutionString) &&
-            Enum.TryParse<DuplicateResolution>(DuplicateResolutionString, ignoreCase: true, out var parsedDuplicateResolution))
+                out var duplicateResolutionString) &&
+            Enum.TryParse<DuplicateResolution>(duplicateResolutionString, ignoreCase: true, out var parsedDuplicateResolution))
         {
             duplicateResolution = parsedDuplicateResolution;
         }
@@ -126,10 +126,10 @@ internal static class Parser
 
         var languageFeatures = generatorSettings.LanguageFeatures ?? MapVersionToFeatures(compilationInfo.LanguageVersion);
         var accessModifier = generatorSettings.AccessModifier ?? "public";
-        var recordDeclaration = generatorSettings.RecordDeclaration ?? (languageFeatures.HasFlag(LanguageFeatures.Records) ? "record" : "class");
+        var declaration = GetDeclaration(avroLibrary, generatorSettings.RecordDeclaration, languageFeatures);
         var duplicateResolution = generatorSettings.DuplicateResolution ?? DuplicateResolution.Error;
 
-        return new RenderSettings(avroLibrary, compilationInfo.LanguageVersion, languageFeatures, accessModifier, recordDeclaration, duplicateResolution, diagnostics);
+        return new RenderSettings(avroLibrary, compilationInfo.LanguageVersion, languageFeatures, accessModifier, declaration, duplicateResolution, diagnostics);
 
         static AvroLibrary GetAvroLibrary(ImmutableArray<AvroLibraryReference> references, out ImmutableArray<DiagnosticInfo> diagnostics)
         {
@@ -162,6 +162,24 @@ internal static class Parser
                 //LanguageVersion.CSharp13 => LanguageFeatures.CSharp13,
                 //LanguageVersion.CSharp14 => LanguageFeatures.CSharp14,
                 _ => LanguageFeatures.Latest,
+            };
+        }
+
+        static Declaration GetDeclaration(AvroLibrary library, string? recordDeclaration, LanguageFeatures languageFeatures)
+        {
+            var useRecords = recordDeclaration switch
+            {
+                "record" => true,
+                "class" => false,
+                _ => languageFeatures.HasFlag(LanguageFeatures.Records)
+            };
+
+            return (library, useRecords) switch
+            {
+                (AvroLibrary.Apache, true) => Declaration.ApacheRecords,
+                (AvroLibrary.Apache, false) => Declaration.ApacheClasses,
+                (_, true) => Declaration.Records,
+                (_, false) => Declaration.Classes,
             };
         }
     }

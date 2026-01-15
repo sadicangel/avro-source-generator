@@ -23,7 +23,9 @@ internal sealed class TemplateScriptObject : BuiltinFunctions
             readOnly: true);
         SetValue("AvroLibrary", settings.AvroLibrary, readOnly: true);
         SetValue("AccessModifier", settings.AccessModifier, readOnly: true);
-        SetValue("RecordDeclaration", settings.RecordDeclaration, readOnly: true);
+        SetValue("Record", settings.Declaration.Record, readOnly: true);
+        SetValue("Error", settings.Declaration.Error, readOnly: true);
+        SetValue("Fixed", settings.Declaration.Fixed, readOnly: true);
         SetValue(
             "UseNullableReferenceTypes",
             (settings.LanguageFeatures & LanguageFeatures.NullableReferenceTypes) != 0,

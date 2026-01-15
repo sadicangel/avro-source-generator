@@ -1,4 +1,4 @@
-{{ AccessModifier }} partial class {{ $.schema.CSharpName.Name }}
+{{ AccessModifier }} partial {{ Fixed }} {{ $.schema.CSharpName.Name }}
 {
     public int Size { get => {{ $.schema.Size }}; }
     {{~ if AvroLibrary == 'None' ~}}
@@ -6,7 +6,7 @@
     {{~ end ~}}
 }
 {{ if AvroLibrary == 'Apache' }}
-partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificFixed
+partial {{ Fixed }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificFixed
 {
     public {{ $.schema.CSharpName.Name }}() : base({{ $.schema.Size }}) { }
 

@@ -3,7 +3,7 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class @object
+    public partial record @object
     {
         public int Size { get => 16; }
         public byte[] Value { get; } = new byte[16];

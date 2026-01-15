@@ -6,7 +6,7 @@ namespace @explicit
     /// A simple name (attribute) and a namespace (attribute); the full name is 'explicit.Simple' (this is a different type than of the 'inheritNull' field).
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class Simple
+    public partial record Simple
     {
         public int Size { get => 12; }
         public byte[] Value { get; } = new byte[12];

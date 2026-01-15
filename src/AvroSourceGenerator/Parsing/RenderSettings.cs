@@ -7,7 +7,7 @@ namespace AvroSourceGenerator.Parsing;
 
 internal sealed record class Declaration(string Record, string Fixed, string Error)
 {
-    public static Declaration Records { get; } = new("record", "class", "class");
+    public static Declaration Records { get; } = new("record", "record", "record");
     public static Declaration Classes { get; } = new("class", "class", "class");
 
     public static Declaration ApacheRecords { get; } = new("record", "class", "class");

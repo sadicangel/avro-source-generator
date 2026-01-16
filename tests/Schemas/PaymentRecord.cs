@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using Xunit.Sdk;
 
+#pragma warning disable IDE0130
 namespace AvroSourceGenerator.IntegrationTests.Schemas;
 
 partial record PaymentRecord;

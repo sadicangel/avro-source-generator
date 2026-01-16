@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.IntegrationTests;
+﻿using AvroSourceGenerator.IntegrationTests.Apache;
 using Xunit.Sdk;
 
 [assembly: AssemblyFixture(typeof(DockerFixture))]

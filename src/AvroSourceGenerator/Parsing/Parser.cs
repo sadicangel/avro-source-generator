@@ -109,6 +109,9 @@ internal static class Parser
         if (csharpCompilation.GetTypeByMetadataName("Avro.Specific.ISpecificRecord") is not null)
             avroLibraries.Add(AvroLibraryReference.Apache);
 
+        if (csharpCompilation.GetTypeByMetadataName("Chr.Avro.Abstract.Schema") is not null)
+            avroLibraries.Add(AvroLibraryReference.Chr);
+
         return new CompilationInfo(avroLibraries.ToImmutable(), csharpCompilation.LanguageVersion);
     }
 

@@ -7,7 +7,7 @@ using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
 
-namespace AvroSourceGenerator.IntegrationTests;
+namespace AvroSourceGenerator.IntegrationTests.Apache;
 
 public sealed class DockerFixture : IAsyncLifetime
 {

@@ -2,7 +2,7 @@
 using System.Text.Json.Serialization;
 using Avro.Specific;
 
-namespace AvroSourceGenerator.IntegrationTests;
+namespace AvroSourceGenerator.IntegrationTests.Apache;
 
 internal abstract class JsonEqualityComparer
 {

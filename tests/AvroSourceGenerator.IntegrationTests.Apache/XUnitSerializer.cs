@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Xunit.Sdk;
 
-namespace AvroSourceGenerator.IntegrationTests;
+namespace AvroSourceGenerator.IntegrationTests.Apache;
 
 internal sealed class XUnitSerializer : IXunitSerializer
 {

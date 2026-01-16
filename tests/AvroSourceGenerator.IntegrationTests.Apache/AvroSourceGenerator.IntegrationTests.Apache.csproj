@@ -18,11 +18,8 @@
     <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />
-    <AdditionalFiles Include="Schemas\*.avsc" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Schemas\*.avsc" CopyToOutputDirectory="PreserveNewest" />
+    <AdditionalFiles Include="..\Schemas\*.avsc" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
+    <Compile Include="..\Schemas\*.cs" Link="Schemas\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

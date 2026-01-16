@@ -1,7 +1,7 @@
 ﻿using Avro.Specific;
 using AvroSourceGenerator.IntegrationTests.Schemas;
 
-namespace AvroSourceGenerator.IntegrationTests;
+namespace AvroSourceGenerator.IntegrationTests.Apache;
 
 public class KafkaRoundTripTests(DockerFixture dockerFixture)
 {

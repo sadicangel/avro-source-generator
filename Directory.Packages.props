@@ -6,6 +6,9 @@
     <PackageVersion Include="Apache.Avro" Version="1.12.1" />
     <PackageVersion Include="AutoFixture" Version="4.18.1" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
+    <PackageVersion Include="Chr.Avro" Version="10.12.0" />
+    <PackageVersion Include="Chr.Avro.Codegen" Version="10.12.0" />
+    <PackageVersion Include="Chr.Avro.Json" Version="10.12.0" />
     <PackageVersion Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.12.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="F0.CodeAnalysis.CSharp.IncrementalGenerator.Benchmarking" Version="0.3.0" />

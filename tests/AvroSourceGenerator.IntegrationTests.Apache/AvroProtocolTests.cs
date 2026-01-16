@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace AvroSourceGenerator.IntegrationTests;
+namespace AvroSourceGenerator.IntegrationTests.Apache;
 
 public sealed class AvroProtocolTests
 {

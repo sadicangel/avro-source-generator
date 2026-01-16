@@ -4,15 +4,17 @@ internal enum AvroLibrary
 {
     None,
     Apache,
+    Chr,
     Auto = 2147483647,
 }
 
 internal enum AvroLibraryReference
 {
     Apache,
+    Chr
 }
 
-internal static class AvroLibraryExtensions
+internal static class AvroLibraryReferenceExtensions
 {
     private static readonly string s_supportedPackageList =
         string.Join(", ", Enum.GetValues(typeof(AvroLibraryReference)).OfType<AvroLibraryReference>().Select(x => $"'{x.PackageName}'"));
@@ -22,12 +24,14 @@ internal static class AvroLibraryExtensions
         public AvroLibrary ToAvroLibrary() => reference switch
         {
             AvroLibraryReference.Apache => AvroLibrary.Apache,
+            AvroLibraryReference.Chr => AvroLibrary.Chr,
             _ => throw new ArgumentOutOfRangeException(nameof(reference), reference, null)
         };
 
         public string PackageName => reference switch
         {
             AvroLibraryReference.Apache => "Apache.Avro",
+            AvroLibraryReference.Chr => "Chr.Avro",
             _ => throw new InvalidOperationException($"Invalid {nameof(AvroLibraryReference)} '{reference}'"),
         };
 

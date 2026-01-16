@@ -6,7 +6,7 @@ namespace SchemaNamespace
     /// Single line comment
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class Fixed
+    public partial record Fixed
     {
         public int Size { get => 16; }
         public byte[] Value { get; } = new byte[16];

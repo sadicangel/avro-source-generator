@@ -3,7 +3,7 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class Decimal
+    public partial record Decimal
     {
         public int Size { get => 20; }
         public byte[] Value { get; } = new byte[20];

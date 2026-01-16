@@ -7,7 +7,7 @@ namespace SchemaNamespace
     /// Single line comment
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class Error
+    public partial record Error
     {
     }
     

@@ -4,7 +4,7 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class Class
+    public partial record Class
     {
         public required byte[] Field { get; init; }
         public byte[]? NullableField { get; init; }

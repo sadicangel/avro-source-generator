@@ -26,31 +26,13 @@ internal readonly partial struct SchemaRegistry
 
         if (type is UnionSchema union)
         {
-            // TODO: Can we extend this to Fixed and Error types in the future?
-            if (IsEligibleForAbstractRecord(union))
+            if (union.SupportsVariant())
             {
-                var underlyingSchema = new AbstractRecordSchema(
-                    SchemaName: new SchemaName(
-                        Name: MakeVariantName(containingSchemaName.Name, name),
-                        Namespace: containingSchemaName.Namespace),
-                    DerivedSchemas: union.Schemas);
+                var variant = new VariantSchema(name, containingSchemaName, union.Schemas);
+                _schemas.Add(variant.SchemaName, variant);
 
-                union = union with
-                {
-                    CSharpName = new CSharpName(
-                        underlyingSchema.CSharpName.Name + (union.IsNullable ? "?" : ""),
-                        underlyingSchema.CSharpName.Namespace),
-                    UnderlyingSchema = underlyingSchema
-                };
-
-                _schemas.Add(underlyingSchema.SchemaName, underlyingSchema);
-
-                remarks = underlyingSchema.Documentation;
-
-                foreach (var record in union.Schemas.OfType<RecordSchema>())
-                {
-                    record.InheritsFrom = underlyingSchema;
-                }
+                remarks = variant.Documentation;
+                union = union.WithVariant(variant);
             }
 
             type = union;
@@ -66,25 +48,5 @@ internal readonly partial struct SchemaRegistry
         var properties = GetProperties(field);
 
         return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order, properties, remarks);
-
-        static string MakeVariantName(string schemaName, string fieldName)
-        {
-            char[] name = ['I', .. schemaName.AsSpan(), .. fieldName.AsSpan(), 'V', 'a', 'r', 'i', 'a', 'n', 't'];
-            name[schemaName.Length + 1] = char.ToUpperInvariant(fieldName[0]);
-            return new string(name);
-        }
-
-        static bool IsEligibleForAbstractRecord(UnionSchema union)
-        {
-            if (union.Schemas is [] or [_] or [{ Type: SchemaType.Null }, _] or [_, { Type: SchemaType.Null }])
-            {
-                // Empty union, single type union, or union with nulls only are not eligible for generating abstract base records.
-                return false;
-            }
-
-            // Check if all schemas are either Record or Null, and at least one is not Null.
-            return union.Schemas.All(x => x.Type is SchemaType.Record or SchemaType.Null)
-                && union.Schemas.Any(x => x.Type is not SchemaType.Null);
-        }
     }
 }

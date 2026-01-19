@@ -27,8 +27,8 @@ namespace {{ Schema.CSharpName.Namespace }}
             include 'error' schema: Schema
         when 'Protocol'
             include 'protocol' schema: Schema
-        when 'Abstract'
-            include 'abstract' schema: Schema
+        when 'Variant'
+            include 'variant' schema: Schema
         end
     ~}}
 {{~ if !string.whitespace Schema.CSharpName.Namespace ~}}

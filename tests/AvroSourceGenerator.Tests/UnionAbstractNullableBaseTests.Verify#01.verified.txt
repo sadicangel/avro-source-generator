@@ -4,7 +4,7 @@
 namespace com.example.notifications
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial record SmsContent : global::com.example.notifications.NotificationContentVariant
+    public partial record SmsContent : global::com.example.notifications.INotificationContentVariant
     {
         public required string message { get; init; }
         public required string phoneNumber { get; init; }

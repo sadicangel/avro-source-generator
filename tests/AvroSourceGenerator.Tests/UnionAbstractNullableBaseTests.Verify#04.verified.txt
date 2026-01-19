@@ -18,7 +18,7 @@ namespace com.example.notifications
         /// <item><see cref="global::com.example.notifications.SmsContent"/></item>
         /// </list>
         /// </remarks>
-        public global::com.example.notifications.NotificationContentVariant? content { get; init; }
+        public global::com.example.notifications.INotificationContentVariant? content { get; init; }
     }
     
 }

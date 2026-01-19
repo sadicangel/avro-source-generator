@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Text;
 using System.Text.Json;
 using AvroSourceGenerator.Registry.Extensions;
 using AvroSourceGenerator.Schemas;
@@ -70,14 +69,9 @@ internal readonly partial struct SchemaRegistry
 
         static string MakeVariantName(string schemaName, string fieldName)
         {
-            var builder = new StringBuilder(schemaName.Length + fieldName.Length + 7)
-                .Append(schemaName)
-                .Append(fieldName)
-                .Append("Variant");
-
-            builder[schemaName.Length] = char.ToUpperInvariant(builder[schemaName.Length]);
-
-            return builder.ToString();
+            char[] name = ['I', .. schemaName.AsSpan(), .. fieldName.AsSpan(), 'V', 'a', 'r', 'i', 'a', 'n', 't'];
+            name[schemaName.Length + 1] = char.ToUpperInvariant(fieldName[0]);
+            return new string(name);
         }
 
         static bool IsEligibleForAbstractRecord(UnionSchema union)

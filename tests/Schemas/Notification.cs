@@ -11,16 +11,11 @@ partial record Notification { }
     "Extensibility",
     "xUnit3001:Classes that are marked as serializable (or created by the test framework at runtime) must have a public parameterless constructor",
     Justification = "<Pending>")]
-partial record NotificationContentVariant : IXunitSerializable
-{
-    public abstract void Deserialize(IXunitSerializationInfo info);
+partial interface INotificationContentVariant : IXunitSerializable;
 
-    public abstract void Serialize(IXunitSerializationInfo info);
-}
-
-partial record EmailContent : IXunitSerializable
+partial record EmailContent
 {
-    public override void Deserialize(IXunitSerializationInfo info)
+    public void Deserialize(IXunitSerializationInfo info)
     {
         SetSubject(this, (string)info.GetValue(nameof(subject))!);
         SetBody(this, (string)info.GetValue(nameof(body))!);
@@ -38,7 +33,7 @@ partial record EmailContent : IXunitSerializable
         static extern void SetRecipientEmail(EmailContent obj, string value);
     }
 
-    public override void Serialize(IXunitSerializationInfo info)
+    public void Serialize(IXunitSerializationInfo info)
     {
         info.AddValue(nameof(subject), subject);
         info.AddValue(nameof(body), body);
@@ -48,7 +43,7 @@ partial record EmailContent : IXunitSerializable
 
 partial record PushContent : IXunitSerializable
 {
-    public override void Deserialize(IXunitSerializationInfo info)
+    public void Deserialize(IXunitSerializationInfo info)
     {
         SetTitle(this, (string)info.GetValue(nameof(title))!);
         SetMessage(this, (string)info.GetValue(nameof(message))!);
@@ -66,7 +61,7 @@ partial record PushContent : IXunitSerializable
         static extern void SetDeviceToken(PushContent obj, string value);
     }
 
-    public override void Serialize(IXunitSerializationInfo info)
+    public void Serialize(IXunitSerializationInfo info)
     {
         info.AddValue(nameof(title), title);
         info.AddValue(nameof(message), message);
@@ -76,7 +71,7 @@ partial record PushContent : IXunitSerializable
 
 partial record SmsContent : IXunitSerializable
 {
-    public override void Deserialize(IXunitSerializationInfo info)
+    public void Deserialize(IXunitSerializationInfo info)
     {
         SetMessage(this, (string)info.GetValue(nameof(message))!);
         SetPhoneNumber(this, (string)info.GetValue(nameof(phoneNumber))!);
@@ -90,7 +85,7 @@ partial record SmsContent : IXunitSerializable
         static extern void SetPhoneNumber(SmsContent obj, string value);
     }
 
-    public override void Serialize(IXunitSerializationInfo info)
+    public void Serialize(IXunitSerializationInfo info)
     {
         info.AddValue(nameof(message), message);
         info.AddValue(nameof(phoneNumber), phoneNumber);

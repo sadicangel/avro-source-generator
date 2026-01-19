@@ -4,7 +4,7 @@
 namespace com.example.user
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial record PhoneContact : global::com.example.user.UserProfileContactVariant
+    public partial record PhoneContact : global::com.example.user.IUserProfileContactVariant
     {
         public required string phoneNumber { get; init; }
     }

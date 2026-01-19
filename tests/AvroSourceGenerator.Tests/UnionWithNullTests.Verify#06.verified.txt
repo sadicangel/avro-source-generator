@@ -36,7 +36,7 @@ namespace com.example.user
         /// <item><see cref="global::com.example.user.PhoneContact"/></item>
         /// </list>
         /// </remarks>
-        public global::com.example.user.UserProfileContactVariant? contact { get; init; }
+        public global::com.example.user.IUserProfileContactVariant? contact { get; init; }
     }
     
 }

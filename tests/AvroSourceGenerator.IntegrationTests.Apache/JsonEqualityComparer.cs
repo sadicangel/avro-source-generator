@@ -49,7 +49,7 @@ file sealed class FixedJsonConverterFactory : JsonConverterFactory
         {
             if (reader.TokenType != JsonTokenType.String)
                 throw new JsonException($"Expected string token, but got {reader.TokenType}.");
-            var @fixed = Activator.CreateInstance<T>()!;
+            var @fixed = Activator.CreateInstance<T>();
             @fixed.Value = Convert.FromBase64String(reader.GetString()!);
             return @fixed;
         }

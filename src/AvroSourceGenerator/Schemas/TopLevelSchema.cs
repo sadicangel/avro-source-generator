@@ -9,4 +9,7 @@ internal abstract record class TopLevelSchema(
     SchemaName SchemaName,
     string? Documentation,
     ImmutableSortedDictionary<string, JsonElement> Properties)
-    : AvroSchema(Type, CSharpName.FromSchemaName(SchemaName), SchemaName);
+    : AvroSchema(Type, CSharpName.FromSchemaName(SchemaName), SchemaName, Properties)
+{
+    public virtual bool ShouldEmitCode => true;
+}

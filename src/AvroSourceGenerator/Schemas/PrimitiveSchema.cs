@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace AvroSourceGenerator.Schemas;
 
 internal sealed record class PrimitiveSchema(SchemaType Type, CSharpName CSharpName, SchemaName SchemaName, ImmutableSortedDictionary<string, JsonElement> Properties)
-    : AvroSchema(Type, CSharpName, SchemaName)
+    : AvroSchema(Type, CSharpName, SchemaName, Properties)
 {
     public PrimitiveSchema(SchemaType type, CSharpName csharpName, SchemaName schemaName)
         : this(type, csharpName, schemaName, ImmutableSortedDictionary<string, JsonElement>.Empty) { }

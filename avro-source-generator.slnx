@@ -18,7 +18,8 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AvroSourceGenerator.IntegrationTests.Apache/AvroSourceGenerator.IntegrationTests.Apache.csproj" />
-    <Project Path="tests/AvroSourceGenerator.IntegrationTests.Chr/AvroSourceGenerator.IntegrationTests.Chr.csproj" Id="f95fdb72-e38a-47b4-95ec-f77fb430e8cb" />
+    <Project Path="tests/AvroSourceGenerator.IntegrationTests.Chr/AvroSourceGenerator.IntegrationTests.Chr.csproj" />
+    <Project Path="tests/AvroSourceGenerator.IntegrationTests/AvroSourceGenerator.IntegrationTests.csproj" />
     <Project Path="tests/AvroSourceGenerator.Tests.Apache/AvroSourceGenerator.Tests.Apache.csproj" />
     <Project Path="tests/AvroSourceGenerator.Tests/AvroSourceGenerator.Tests.csproj" />
   </Folder>

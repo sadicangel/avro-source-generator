@@ -8,7 +8,7 @@ internal sealed record class UnionSchema(
     ImmutableArray<AvroSchema> Schemas,
     AvroSchema UnderlyingSchema,
     bool IsNullable)
-    : AvroSchema(SchemaType.Union, CSharpName, new SchemaName(string.Empty))
+    : AvroSchema(SchemaType.Union, CSharpName, new SchemaName(string.Empty), ImmutableSortedDictionary<string, JsonElement>.Empty)
 {
     public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {

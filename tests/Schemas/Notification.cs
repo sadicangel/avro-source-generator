@@ -1,16 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Xunit.Sdk;
 
 #pragma warning disable IDE0130
 namespace AvroSourceGenerator.IntegrationTests.Schemas;
 
-partial record Notification { }
-
-[SuppressMessage(
-    "Extensibility",
-    "xUnit3001:Classes that are marked as serializable (or created by the test framework at runtime) must have a public parameterless constructor",
-    Justification = "<Pending>")]
 partial interface INotificationContentVariant : IXunitSerializable;
 
 partial record EmailContent
@@ -41,7 +34,7 @@ partial record EmailContent
     }
 }
 
-partial record PushContent : IXunitSerializable
+partial record PushContent
 {
     public void Deserialize(IXunitSerializationInfo info)
     {
@@ -69,7 +62,7 @@ partial record PushContent : IXunitSerializable
     }
 }
 
-partial record SmsContent : IXunitSerializable
+partial record SmsContent
 {
     public void Deserialize(IXunitSerializationInfo info)
     {

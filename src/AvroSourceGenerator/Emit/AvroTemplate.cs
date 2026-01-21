@@ -25,7 +25,7 @@ internal static class AvroTemplate
 
         return
         [
-            .. schemaRegistry.Select(schema =>
+            .. schemaRegistry.Where(schema => schema.ShouldEmitCode).Select(schema =>
             {
                 templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
                 var hintName = $"{schema.SchemaName.FullName}.Avro.g.cs";

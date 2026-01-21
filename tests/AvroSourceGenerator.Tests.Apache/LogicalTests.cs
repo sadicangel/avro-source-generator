@@ -27,22 +27,13 @@ public class LogicalTests
     public Task Verify_Decimal_Fixed() => VerifySourceCode(
         """
         {
-            "type": "record",
+            "type": "fixed",
             "namespace": "SchemaNamespace",
-            "name": "Container",
-            "fields": [
-                {
-                    "name": "DecimalField",
-                    "type": {
-                        "type": "fixed",
-                        "name": "Decimal",
-                        "size": 20,
-                        "logicalType": "decimal",
-                        "precision": 4,
-                        "scale": 2
-                    }
-                }
-            ]
+            "name": "Decimal",
+            "size": 20,
+            "logicalType": "decimal",
+            "precision": 4,
+            "scale": 2
         }
         """);
 
@@ -69,20 +60,11 @@ public class LogicalTests
     public Task Verify_Uuid_Fixed() => VerifySourceCode(
         """
         {
-            "type": "record",
+            "type": "fixed",
             "namespace": "SchemaNamespace",
-            "name": "Container",
-            "fields": [
-                {
-                    "name": "UuidField",
-                    "type": {
-                        "type": "fixed",
-                        "name": "Uuid",
-                        "size": 16,
-                        "logicalType": "uuid"
-                    }
-                }
-            ]
+            "name": "Uuid",
+            "size": 16,
+            "logicalType": "uuid"
         }
         """);
 
@@ -224,6 +206,7 @@ public class LogicalTests
         """
         {
             "type": "fixed",
+            "namespace": "SchemaNamespace",
             "name": "Duration",
             "size": 12,
             "logicalType": "duration"

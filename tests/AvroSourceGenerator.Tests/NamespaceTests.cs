@@ -22,9 +22,9 @@ public sealed class NamespaceTests
 
     public static MatrixTheoryData<string, string> ValidNamespaceSchemaPairs() => new(
         [null!, "", "PascalCase.snake_case.object"],
-        ["enum", "error", "fixed", "record", "protocol"]);
+        ["enum", "error", "record", "protocol"]);
 
     public static MatrixTheoryData<string, string> InvalidNamespaceSchemaPairs() => new(
         ["[]"],
-        ["enum", "error", "fixed", "record", "protocol"]);
+        ["enum", "error", "record", "protocol"]);
 }

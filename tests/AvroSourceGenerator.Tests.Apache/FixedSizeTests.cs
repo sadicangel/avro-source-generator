@@ -1,4 +1,4 @@
-﻿namespace AvroSourceGenerator.Tests;
+﻿namespace AvroSourceGenerator.Tests.Apache;
 
 public sealed class FixedSizeTests
 {

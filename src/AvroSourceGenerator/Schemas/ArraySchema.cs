@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace AvroSourceGenerator.Schemas;
 
 internal sealed record class ArraySchema(AvroSchema ItemSchema, ImmutableSortedDictionary<string, JsonElement> Properties)
-    : AvroSchema(SchemaType.Array, new CSharpName($"List<{ItemSchema}>", "System.Collections.Generic"), new SchemaName("array"))
+    : AvroSchema(SchemaType.Array, new CSharpName($"List<{ItemSchema}>", "System.Collections.Generic"), new SchemaName("array"), Properties)
 {
     public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {

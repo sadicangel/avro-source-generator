@@ -15,5 +15,5 @@ public sealed class CsprojAccessModifierTests
 
     public static MatrixTheoryData<string, string> AccessModifierSchemaPairs() => new(
         ["public", "internal", "invalid"],
-        ["enum", "error", "fixed", "record", "protocol"]);
+        ["enum", "error", "record", "protocol"]);
 }

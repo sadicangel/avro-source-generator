@@ -22,9 +22,9 @@ public sealed class DocumentationTests
 
     public static MatrixTheoryData<string, string> ValidDocumentationSchemaPairs() => new(
         [null!, "", "Single line comment", "Multi\nline\ncomment"],
-        ["enum", "error", "fixed", "record", "protocol"]);
+        ["enum", "error", "record", "protocol"]);
 
     public static MatrixTheoryData<string, string> InvalidDocumentationSchemaPairs() => new(
         ["[]"],
-        ["enum", "error", "fixed", "record", "protocol"]);
+        ["enum", "error", "record", "protocol"]);
 }

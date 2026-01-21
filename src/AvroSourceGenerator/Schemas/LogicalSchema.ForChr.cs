@@ -4,7 +4,7 @@ internal static partial class LogicalSchemaExtensions
 {
     extension(LogicalSchema)
     {
-        public static AvroSchema ForModern(string logicalType, AvroSchema underlyingSchema) => logicalType switch
+        public static AvroSchema ForChr(string logicalType, AvroSchema underlyingSchema) => logicalType switch
         {
             LogicalType.Date => new LogicalSchema(
                 underlyingSchema,
@@ -36,11 +36,11 @@ internal static partial class LogicalSchemaExtensions
                 new SchemaName(logicalType)),
             LogicalType.LocalTimestampMicros => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("DateTimeOffset", "System"),
+                underlyingSchema.CSharpName,
                 new SchemaName(logicalType)),
             LogicalType.LocalTimestampMillis => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("DateTimeOffset", "System"),
+                underlyingSchema.CSharpName,
                 new SchemaName(logicalType)),
             LogicalType.Uuid => new LogicalSchema(
                 underlyingSchema,

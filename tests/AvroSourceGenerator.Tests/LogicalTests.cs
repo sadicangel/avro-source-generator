@@ -224,6 +224,7 @@ public class LogicalTests
         """
         {
             "type": "fixed",
+            "namespace": "SchemaNamespace",
             "name": "Duration",
             "size": 12,
             "logicalType": "duration"

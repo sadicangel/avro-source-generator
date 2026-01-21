@@ -93,18 +93,9 @@ internal readonly partial struct SchemaRegistry(
             return Protocol(schema, containingNamespace, GetProperties(schema));
         }
 
-        if (schema.TryGetProperty("logicalType", out _))
-        {
-            return Logical(
-                schema,
-                UnderlyingSchema(
-                    schema,
-                    containingNamespace,
-                    ImmutableSortedDictionary<string, JsonElement>.Empty),
-                GetProperties(schema));
-        }
+        var underlyingSchema = UnderlyingSchema(schema, containingNamespace, GetProperties(schema));
 
-        return UnderlyingSchema(schema, containingNamespace, GetProperties(schema));
+        return schema.TryGetProperty("logicalType", out _) ? Logical(schema, underlyingSchema) : underlyingSchema;
     }
 
     private AvroSchema UnderlyingSchema(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)

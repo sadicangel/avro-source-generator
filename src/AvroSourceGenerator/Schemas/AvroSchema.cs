@@ -1,9 +1,14 @@
-﻿using System.Text;
+﻿using System.Collections.Immutable;
+using System.Text;
 using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
-internal abstract record class AvroSchema(SchemaType Type, CSharpName CSharpName, SchemaName SchemaName)
+internal abstract record class AvroSchema(
+    SchemaType Type,
+    CSharpName CSharpName,
+    SchemaName SchemaName,
+    ImmutableSortedDictionary<string, JsonElement> Properties)
 {
     // ReSharper disable once UnusedMember.Global
     public bool RequiresNullability => Type is SchemaType.Record or SchemaType.Error;

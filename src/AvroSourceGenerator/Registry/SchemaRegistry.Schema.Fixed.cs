@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Registry.Extensions;
 using AvroSourceGenerator.Schemas;
 
@@ -18,7 +19,13 @@ internal readonly partial struct SchemaRegistry
         var aliases = schema.GetAliases();
         var size = schema.GetFixedSize();
 
-        var fixedSchema = new FixedSchema(schema, schemaName, documentation, aliases, size, properties);
+        var fixedSchema = avroLibrary switch
+        {
+            // Only Apache.Avro needs a custom type for fixed, others use byte[].
+            AvroLibrary.Apache => new FixedSchema(schema, schemaName, documentation, aliases, size, properties),
+            _ => FixedSchema.CreateAsByteArray(schema, schemaName, documentation, aliases, size, properties),
+        };
+
         _schemas[schemaName] = fixedSchema;
 
         return fixedSchema;

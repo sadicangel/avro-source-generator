@@ -11,6 +11,8 @@ public sealed class AvroSchemaTests
     [MemberData(nameof(GetSchemaFileNames))]
     public void Generated_schemas_are_equal_to_schemas_parsed_by_apache_avro(FileInfo avsc)
     {
+        Assert.SkipWhen(avsc.Name is "LogicalTypes.avsc", "Avro.Schema.Parse throws for this schema");
+
         using var stream = avsc.OpenRead();
         using var reader = new StreamReader(stream);
 

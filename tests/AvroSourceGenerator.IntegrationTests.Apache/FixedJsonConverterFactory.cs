@@ -4,36 +4,7 @@ using Avro.Specific;
 
 namespace AvroSourceGenerator.IntegrationTests.Apache;
 
-internal abstract class JsonEqualityComparer
-{
-    protected static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        Converters =
-        {
-            new FixedJsonConverterFactory(),
-        }
-    };
-}
-
-internal sealed class JsonEqualityComparer<T> : JsonEqualityComparer, IEqualityComparer<T>
-{
-    public bool Equals(T? x, T? y)
-    {
-        if (x is null) return y is null;
-        if (y is null) return false;
-
-        var xJson = JsonSerializer.Serialize(x, JsonOptions);
-        var yJson = JsonSerializer.Serialize(y, JsonOptions);
-
-        return xJson == yJson;
-    }
-
-    public int GetHashCode(T obj) =>
-        JsonSerializer.Serialize(obj, JsonOptions).GetHashCode();
-}
-
-file sealed class FixedJsonConverterFactory : JsonConverterFactory
+internal sealed class FixedJsonConverterFactory : JsonConverterFactory
 {
     public override bool CanConvert(Type typeToConvert) => typeToConvert.IsAssignableTo(typeof(SpecificFixed));
 

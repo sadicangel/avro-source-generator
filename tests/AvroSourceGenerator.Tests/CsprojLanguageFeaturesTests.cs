@@ -29,5 +29,5 @@ public sealed class CsprojLanguageFeaturesTests
                     throwOnError: true)!).Where(n => n.StartsWith("CSharp")),
             "invalid"
         ],
-        ["enum", "error", "fixed", "record", "protocol"]);
+        ["enum", "error", "record", "protocol"]);
 }

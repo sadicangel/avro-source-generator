@@ -22,9 +22,9 @@ public sealed class NameTests
 
     public static MatrixTheoryData<string, string> ValidNameSchemaPairs() => new(
         ["PascalCase", "snake_case", "object"],
-        ["enum", "error", "fixed", "record"]);
+        ["enum", "error", "record"]);
 
     public static MatrixTheoryData<string, string> InvalidNameSchemaPairs() => new(
         ["null", "\"\"", "[]"],
-        ["enum", "error", "fixed", "record"]);
+        ["enum", "error", "record"]);
 }

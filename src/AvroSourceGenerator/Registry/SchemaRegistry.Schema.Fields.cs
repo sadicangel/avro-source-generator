@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Registry.Extensions;
 using AvroSourceGenerator.Schemas;
 
@@ -24,20 +25,30 @@ internal readonly partial struct SchemaRegistry
         var isNullable = false;
         string? remarks = null;
 
-        if (type is UnionSchema union)
+        switch (type)
         {
-            if (union.SupportsVariant())
-            {
-                var variant = new VariantSchema(name, containingSchemaName, union.Schemas);
-                _schemas.Add(variant.SchemaName, variant);
+            case UnionSchema union:
+                {
+                    if (union.SupportsVariant())
+                    {
+                        var variant = new VariantSchema(name, containingSchemaName, union.Schemas);
+                        _schemas.Add(variant.SchemaName, variant);
 
-                remarks = variant.Documentation;
-                union = union.WithVariant(variant);
-            }
+                        remarks = variant.Documentation;
+                        union = union.WithVariant(variant);
+                    }
 
-            type = union;
-            isNullable = union.IsNullable;
-            underlyingType = union.UnderlyingSchema;
+                    type = union;
+                    isNullable = union.IsNullable;
+                    underlyingType = union.UnderlyingSchema;
+                }
+                break;
+
+            case FixedSchema @fixed when avroLibrary is not AvroLibrary.Apache:
+                {
+                    remarks = @fixed.Documentation;
+                }
+                break;
         }
 
         var documentation = field.GetDocumentation();

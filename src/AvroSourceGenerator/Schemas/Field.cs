@@ -16,13 +16,13 @@ internal sealed record class Field(
     ImmutableSortedDictionary<string, JsonElement> Properties,
     string? Remarks)
 {
-    public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
+    public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();
         // TODO: Is it worth to store the schema name?
         writer.WriteString("name", Name is ['@', ..] ? Name[1..] : Name);
         writer.WritePropertyName("type");
-        Type.WriteTo(writer, writtenSchemas, containingNamespace);
+        Type.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         if (Documentation is not null)
             writer.WriteString("doc", Documentation);
         if (Aliases.Length > 0)

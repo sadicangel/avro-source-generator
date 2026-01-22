@@ -6,12 +6,12 @@ namespace AvroSourceGenerator.Schemas;
 internal sealed record class ArraySchema(AvroSchema ItemSchema, ImmutableSortedDictionary<string, JsonElement> Properties)
     : AvroSchema(SchemaType.Array, new CSharpName($"List<{ItemSchema}>", "System.Collections.Generic"), new SchemaName("array"), Properties)
 {
-    public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
+    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();
         writer.WriteString("type", "array");
         writer.WritePropertyName("items");
-        ItemSchema.WriteTo(writer, writtenSchemas, containingNamespace);
+        ItemSchema.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         foreach (var entry in Properties)
         {
             writer.WritePropertyName(entry.Key);

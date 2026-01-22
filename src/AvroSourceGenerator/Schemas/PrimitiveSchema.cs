@@ -9,7 +9,7 @@ internal sealed record class PrimitiveSchema(SchemaType Type, CSharpName CSharpN
     public PrimitiveSchema(SchemaType type, CSharpName csharpName, SchemaName schemaName)
         : this(type, csharpName, schemaName, ImmutableSortedDictionary<string, JsonElement>.Empty) { }
 
-    public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
+    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         if (Properties.IsEmpty)
         {

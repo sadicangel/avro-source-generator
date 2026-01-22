@@ -24,7 +24,7 @@ internal sealed record class VariantSchema(
         return new SchemaName(new string(name), containingSchemaName.Namespace);
     }
 
-    public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace) { }
+    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace) { }
 
     private static string GetDefaultDocumentation(ImmutableArray<AvroSchema> derivedSchemas)
     {

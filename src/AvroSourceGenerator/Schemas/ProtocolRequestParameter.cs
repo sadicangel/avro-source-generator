@@ -11,12 +11,12 @@ internal sealed record class ProtocolRequestParameter(
     JsonElement? DefaultJson,
     object? Default)
 {
-    public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
+    public void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();
         writer.WriteString("name", Name is ['@', ..] ? Name[1..] : Name);
         writer.WritePropertyName("type");
-        Type.WriteTo(writer, writtenSchemas, containingNamespace);
+        Type.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         if (Documentation is not null)
         {
             writer.WriteString("doc", Documentation);

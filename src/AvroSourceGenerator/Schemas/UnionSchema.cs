@@ -10,11 +10,11 @@ internal sealed record class UnionSchema(
     bool IsNullable)
     : AvroSchema(SchemaType.Union, CSharpName, new SchemaName(string.Empty), ImmutableSortedDictionary<string, JsonElement>.Empty)
 {
-    public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
+    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         writer.WriteStartArray();
         foreach (var schema in Schemas)
-            schema.WriteTo(writer, writtenSchemas, containingNamespace);
+            schema.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         writer.WriteEndArray();
     }
 

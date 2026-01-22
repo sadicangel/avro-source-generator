@@ -14,7 +14,7 @@ internal sealed record class RecordSchema(
 {
     public AvroSchema? InheritsFrom { get; set; }
 
-    public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
+    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         if (!writtenSchemas.Add(SchemaName))
         {
@@ -41,7 +41,7 @@ internal sealed record class RecordSchema(
 
         writer.WriteStartArray("fields");
         foreach (var field in Fields)
-            field.WriteTo(writer, writtenSchemas, @namespace);
+            field.WriteTo(writer, writtenSchemas, registeredSchemas, @namespace);
         writer.WriteEndArray();
         foreach (var entry in Properties)
         {

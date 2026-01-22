@@ -13,7 +13,7 @@ internal sealed record class EnumSchema(
     ImmutableSortedDictionary<string, JsonElement> Properties)
     : NamedSchema(SchemaType.Enum, Json, SchemaName, Documentation, Aliases, Properties)
 {
-    public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
+    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         if (!writtenSchemas.Add(SchemaName))
         {

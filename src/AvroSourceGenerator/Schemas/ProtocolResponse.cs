@@ -7,6 +7,6 @@ internal sealed record class ProtocolResponse(
     AvroSchema UnderlyingType,
     bool IsNullable)
 {
-    public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace) =>
-        Type.WriteTo(writer, writtenSchemas, containingNamespace);
+    public void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace) =>
+        Type.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
 }

@@ -15,16 +15,16 @@ internal abstract record class AvroSchema(
 
     public sealed override string ToString() => CSharpName.FullName;
 
-    public string ToJsonString(JsonWriterOptions options = default)
+    public string ToJsonString(IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, JsonWriterOptions options = default)
     {
         using var stream = new MemoryStream();
         using var writer = new Utf8JsonWriter(stream, options);
-        WriteTo(writer, [], SchemaName.Namespace);
+        WriteTo(writer, registeredSchemas, [], SchemaName.Namespace);
         writer.Flush();
         return Encoding.UTF8.GetString(stream.ToArray());
     }
 
-    public abstract void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace);
+    public abstract void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace);
 
     public static readonly PrimitiveSchema Object = new(SchemaType.Null, new CSharpName("object"), new SchemaName("null"));
     public static readonly PrimitiveSchema Boolean = new(SchemaType.Boolean, new CSharpName("bool"), new SchemaName("boolean"));

@@ -21,11 +21,11 @@ public sealed class FullNameTests
             }, {
               "name": "explicitNamespace",
               "type": {
-                "type": "fixed",
+                "type": "record",
                 "name": "Simple",
                 "namespace": "explicit",
                 "doc": "A simple name (attribute) and a namespace (attribute); the full name is 'explicit.Simple' (this is a different type than of the 'inheritNull' field).",
-                "size": 12
+                "fields": []
               }
             }, {
               "name": "fullName",

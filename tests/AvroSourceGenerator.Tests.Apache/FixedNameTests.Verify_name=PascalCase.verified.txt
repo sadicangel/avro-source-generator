@@ -3,23 +3,23 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class Duration
+    public partial class PascalCase
     {
-        public int Size { get => 12; }
+        public int Size { get => 16; }
     }
     
-    partial class Duration : global::Avro.Specific.SpecificFixed
+    partial class PascalCase : global::Avro.Specific.SpecificFixed
     {
-        public Duration() : base(12) { }
+        public PascalCase() : base(16) { }
     
-        public override global::Avro.Schema Schema { get => Duration.s_schema; }
+        public override global::Avro.Schema Schema { get => PascalCase.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
           "type": "fixed",
-          "name": "Duration",
+          "name": "PascalCase",
           "namespace": "SchemaNamespace",
-          "size": 12
+          "size": 16
         }
         """);
     }

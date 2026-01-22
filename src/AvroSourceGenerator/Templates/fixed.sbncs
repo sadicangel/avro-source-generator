@@ -1,11 +1,8 @@
 {{ AccessModifier }} partial {{ Fixed }} {{ $.schema.CSharpName.Name }}
 {
     public int Size { get => {{ $.schema.Size }}; }
-    {{~ if AvroLibrary == 'None' ~}}
-    public byte[] Value { get; } = new byte[{{ $.schema.Size }}];
-    {{~ end ~}}
 }
-{{ if AvroLibrary == 'Apache' }}
+
 partial {{ Fixed }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificFixed
 {
     public {{ $.schema.CSharpName.Name }}() : base({{ $.schema.Size }}) { }
@@ -14,4 +11,3 @@ partial {{ Fixed }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.Speci
     private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
     {{ $.schema | json }});
 }
-{{- end }}

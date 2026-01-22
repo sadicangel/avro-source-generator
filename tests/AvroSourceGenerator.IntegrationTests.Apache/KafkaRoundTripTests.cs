@@ -1,4 +1,5 @@
-﻿using Avro.Specific;
+﻿using System.Text.Json;
+using Avro.Specific;
 using AvroSourceGenerator.IntegrationTests.Schemas;
 
 namespace AvroSourceGenerator.IntegrationTests.Apache;
@@ -7,7 +8,7 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
 {
     // To avoid reference type comparison, use JSON.
     private static void AssertEqual<T>(T expected, T actual) where T : ISpecificRecord =>
-        Assert.Equal(expected, actual, new JsonEqualityComparer<T>());
+        Assert.Equal(expected, actual, new JsonEqualityComparer<T>(new JsonSerializerOptions { Converters = { new FixedJsonConverterFactory() } }));
 
     // Avoid precision loss when converting to underlying type.
     private static DateTime FixPrecisionLoss(DateTime dateTime) =>
@@ -113,7 +114,15 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
             birthDate = new DateOnly(1990, 1, 1).ToDateTime(default, DateTimeKind.Utc),
             price = new Avro.AvroDecimal(99.99m),
             //taxRate = new Avro.AvroDecimal(0.15m),
-            //subscriptionPeriod = new SubscriptionDuration { Months = 1, Days = 2, Milliseconds = 43200000 },
+            subscriptionPeriod = new SubscriptionDuration
+            {
+                Value =
+                [
+                    0x00, 0x00, 0x00, 0x00, // Months = 0
+                    0x02, 0x00, 0x00, 0x00, // Days = 2
+                    0x00, 0x2E, 0x93, 0x02, // Milliseconds = 43,200,000
+                ]
+            },
             checkInTime = TimeSpan.FromHours(9),
             preciseCheckInTime = TimeSpan.FromMicroseconds(10000),
             createdAt = FixPrecisionLoss(DateTime.UtcNow),

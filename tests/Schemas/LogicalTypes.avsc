@@ -22,6 +22,16 @@
       "doc": "Monetary value with two decimal places."
     },
     {
+      "name": "subscriptionPeriod",
+      "type": {
+        "type": "fixed",
+        "name": "SubscriptionDuration",
+        "size": 12,
+        "logicalType": "duration"
+      },
+      "doc": "Duration as months/days/milliseconds (12 bytes total)."
+    },
+    {
       "name": "checkInTime",
       "type": {
         "type": "int",

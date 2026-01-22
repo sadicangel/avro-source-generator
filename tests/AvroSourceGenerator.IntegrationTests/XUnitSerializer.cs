@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Xunit.Sdk;
 
-namespace AvroSourceGenerator.IntegrationTests.Apache;
+namespace AvroSourceGenerator.IntegrationTests;
 
-internal sealed class XUnitSerializer : IXunitSerializer
+public sealed class XUnitSerializer : IXunitSerializer
 {
     public bool IsSerializable(Type type, object? value, [NotNullWhen(false)] out string? failureReason)
     {

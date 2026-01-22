@@ -15,5 +15,5 @@ public sealed class CsprojRecordDeclarationTests
 
     public static MatrixTheoryData<string, string> RecordDeclarationSchemaPairs() => new(
         ["record", "class", "invalid"],
-        ["record", "error", "fixed"]);
+        ["record", "error"]);
 }

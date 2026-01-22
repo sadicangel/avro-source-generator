@@ -3,23 +3,25 @@
 namespace SchemaNamespace
 {
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
-    public partial class Duration
+    public partial class Decimal
     {
-        public int Size { get => 12; }
+        public int Size { get => 20; }
     }
     
-    partial class Duration : global::Avro.Specific.SpecificFixed
+    partial class Decimal : global::Avro.Specific.SpecificFixed
     {
-        public Duration() : base(12) { }
+        public Decimal() : base(20) { }
     
-        public override global::Avro.Schema Schema { get => Duration.s_schema; }
+        public override global::Avro.Schema Schema { get => Decimal.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
         """
         {
           "type": "fixed",
-          "name": "Duration",
+          "name": "Decimal",
           "namespace": "SchemaNamespace",
-          "size": 12
+          "size": 20,
+          "precision": 4,
+          "scale": 2
         }
         """);
     }

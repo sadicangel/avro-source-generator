@@ -6,7 +6,7 @@ namespace SchemaNamespace
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial record Container
     {
-        public required global::System.DateTime TimestampField { get; init; }
+        public required global::System.DateTimeOffset TimestampField { get; init; }
     }
     
 }

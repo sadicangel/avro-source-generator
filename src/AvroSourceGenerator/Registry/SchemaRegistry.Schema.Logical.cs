@@ -9,23 +9,20 @@ namespace AvroSourceGenerator.Registry;
 
 internal readonly partial struct SchemaRegistry
 {
-    private AvroSchema Logical(
-        JsonElement schema,
-        AvroSchema underlyingSchema,
-        ImmutableSortedDictionary<string, JsonElement> properties)
+    private AvroSchema Logical(JsonElement schema, AvroSchema underlyingSchema)
     {
         var logicalType = schema.GetRequiredString("logicalType");
 
         return avroLibrary switch
         {
             AvroLibrary.Apache =>
-                LogicalSchema.ForApache(logicalType, underlyingSchema, properties),
+                LogicalSchema.ForApache(logicalType, underlyingSchema),
 
             _ when languageVersion < LanguageVersion.CSharp10 =>
-                LogicalSchema.ForLegacy(logicalType, underlyingSchema, properties),
+                LogicalSchema.ForLegacy(logicalType, underlyingSchema),
 
             _ =>
-                LogicalSchema.ForModern(logicalType, underlyingSchema, properties),
+                LogicalSchema.ForModern(logicalType, underlyingSchema),
         };
     }
 }

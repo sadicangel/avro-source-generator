@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AvroSourceGenerator\AvroSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\AvroSourceGenerator.IntegrationTests\AvroSourceGenerator.IntegrationTests.csproj" />
   </ItemGroup>
 
 </Project>

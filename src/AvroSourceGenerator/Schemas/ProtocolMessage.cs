@@ -10,7 +10,7 @@ internal sealed record class ProtocolMessage(
     ProtocolResponse Response,
     ImmutableArray<AvroSchema> Errors)
 {
-    public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
+    public void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();
         if (Documentation is not null)
@@ -22,18 +22,18 @@ internal sealed record class ProtocolMessage(
         writer.WriteStartArray();
         foreach (var parameter in RequestParameters)
         {
-            parameter.WriteTo(writer, writtenSchemas, containingNamespace);
+            parameter.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         }
 
         writer.WriteEndArray();
         writer.WritePropertyName("response");
-        Response.WriteTo(writer, writtenSchemas, containingNamespace);
+        Response.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         if (Errors.Length > 0)
         {
             writer.WriteStartArray("errors");
             foreach (var error in Errors)
             {
-                error.WriteTo(writer, writtenSchemas, containingNamespace);
+                error.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
             }
 
             writer.WriteEndArray();

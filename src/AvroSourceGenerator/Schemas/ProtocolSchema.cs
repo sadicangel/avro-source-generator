@@ -12,7 +12,7 @@ internal sealed record class ProtocolSchema(
     ImmutableSortedDictionary<string, JsonElement> Properties)
     : TopLevelSchema(SchemaType.Protocol, Json, SchemaName, Documentation, Properties)
 {
-    public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
+    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();
         writer.WriteString("protocol", SchemaName.Name);
@@ -26,7 +26,7 @@ internal sealed record class ProtocolSchema(
             writer.WriteStartArray("types");
             foreach (var type in Types)
             {
-                type.WriteTo(writer, writtenSchemas, SchemaName.Namespace);
+                type.WriteTo(writer, registeredSchemas, writtenSchemas, SchemaName.Namespace);
             }
 
             writer.WriteEndArray();
@@ -38,7 +38,7 @@ internal sealed record class ProtocolSchema(
             foreach (var message in Messages)
             {
                 writer.WritePropertyName(message.MethodName is ['@', ..] ? message.MethodName[1..] : message.MethodName);
-                message.WriteTo(writer, writtenSchemas, SchemaName.Namespace);
+                message.WriteTo(writer, registeredSchemas, writtenSchemas, SchemaName.Namespace);
             }
 
             writer.WriteEndObject();

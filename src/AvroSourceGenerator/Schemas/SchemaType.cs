@@ -20,4 +20,5 @@ internal enum SchemaType
     Logical,
     Protocol,
     Variant,
+    Reference,
 }

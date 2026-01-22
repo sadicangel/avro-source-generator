@@ -29,6 +29,8 @@ internal readonly partial struct SchemaRegistry(
     public IEnumerator<TopLevelSchema> GetEnumerator() => _schemas.Values.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+    public IReadOnlyDictionary<SchemaName, TopLevelSchema> Schemas => _schemas;
+
     public static SchemaRegistry Register(
         JsonElement schema,
         AvroLibrary avroLibrary,
@@ -62,8 +64,8 @@ internal readonly partial struct SchemaRegistry(
         }
 
         var schemaName = name.GetRequiredSchemaName(containingNamespace);
-        if (_schemas.TryGetValue(schemaName, out var topLevelSchema) && topLevelSchema is NamedSchema namedSchema)
-            return namedSchema;
+        if (_schemas.TryGetValue(schemaName, out var topLevelSchema) && topLevelSchema is NamedSchema)
+            return new AvroSchemaReference(topLevelSchema.SchemaName);
 
         return null;
     }

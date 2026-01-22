@@ -8,9 +8,9 @@ internal sealed record class LogicalSchema(
     SchemaName SchemaName)
     : AvroSchema(SchemaType.Logical, CSharpName, SchemaName, UnderlyingSchema.Properties)
 {
-    public override void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
+    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         var underlyingSchema = UnderlyingSchema with { Properties = Properties.Add("logicalType", JsonElement.Parse($"\"{SchemaName.Name}\"")) };
-        underlyingSchema.WriteTo(writer, writtenSchemas, containingNamespace);
+        underlyingSchema.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
     }
 }

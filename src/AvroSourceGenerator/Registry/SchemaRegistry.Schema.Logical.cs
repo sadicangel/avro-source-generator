@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Text.Json;
+﻿using System.Text.Json;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Registry.Extensions;
 using AvroSourceGenerator.Schemas;
@@ -17,6 +16,9 @@ internal readonly partial struct SchemaRegistry
         {
             AvroLibrary.Apache =>
                 LogicalSchema.ForApache(logicalType, underlyingSchema),
+
+            AvroLibrary.Chr =>
+                LogicalSchema.ForChr(logicalType, underlyingSchema),
 
             _ when languageVersion < LanguageVersion.CSharp10 =>
                 LogicalSchema.ForLegacy(logicalType, underlyingSchema),

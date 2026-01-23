@@ -8,6 +8,7 @@
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Chr.Avro" Version="10.12.0" />
     <PackageVersion Include="Chr.Avro.Codegen" Version="10.12.0" />
+    <PackageVersion Include="Chr.Avro.Confluent" Version="10.12.0" />
     <PackageVersion Include="Chr.Avro.Json" Version="10.12.0" />
     <PackageVersion Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.13.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />

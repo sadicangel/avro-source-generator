@@ -44,8 +44,17 @@ internal static class AvroTemplate
 
     private static string GetSchemaJson(TopLevelSchema schema, ImmutableDictionary<SchemaName, TopLevelSchema> registeredSchemas, RenderSettings settings)
     {
+        if (settings.AvroLibrary is not AvroLibrary.Apache)
+        {
+            return string.Empty;
+        }
+
         return (settings.LanguageFeatures & LanguageFeatures.RawStringLiterals) != 0
-            ? string.Join("\n", "\"\"\"", schema.ToJsonString(registeredSchemas, new JsonWriterOptions { Indented = true }), "\"\"\"")
+            ? $""""
+            """
+            {schema.ToJsonString(registeredSchemas, new JsonWriterOptions { Indented = true })}
+            """
+            """"
             : StringFunctions.Literal(schema.ToJsonString(registeredSchemas));
     }
 }

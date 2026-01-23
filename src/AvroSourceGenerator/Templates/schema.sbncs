@@ -20,13 +20,13 @@ namespace {{ Schema.CSharpName.Namespace }}
         when 'Enum'
             include 'enum' schema: Schema
         when 'Fixed'
-            include 'fixed' schema: Schema schemaJson: SchemaJson
+            include 'fixed' schema: Schema
         when 'Record'
-            include 'record' schema: Schema schemaJson: SchemaJson
+            include 'record' schema: Schema
         when 'Error'
-            include 'error' schema: Schema schemaJson: SchemaJson
+            include 'error' schema: Schema
         when 'Protocol'
-            include 'protocol' schema: Schema schemaJson: SchemaJson
+            include 'protocol' schema: Schema
         when 'Variant'
             include 'variant' schema: Schema
         end

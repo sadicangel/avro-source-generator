@@ -42,6 +42,10 @@ internal static class Renderer
             // TODO: We can probably get a better location for the error.
             diagnostics = diagnostics.Add(InvalidSchemaDiagnostic.Create(LocationInfo.FromSourceFile(avroFile.Path, avroFile.Text), ex.Message));
         }
+        catch (Exception ex)
+        {
+            diagnostics = diagnostics.Add(UnknownErrorDiagnostic.Create(LocationInfo.FromSourceFile(avroFile.Path, avroFile.Text), ex.Message));
+        }
 
         return new RenderResult([], diagnostics);
     }

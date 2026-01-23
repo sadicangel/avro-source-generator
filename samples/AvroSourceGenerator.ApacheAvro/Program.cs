@@ -1,36 +1,22 @@
-﻿// ReSharper disable RedundantUsingDirective
+﻿using com.example.finance;
 
-using System;
-using System.Collections.Generic;
-using com.example.finance;
-
-// ReSharper disable once ArrangeNamespaceBody
-namespace AvroSourceGenerator.ApacheAvro
+var transaction = new Transaction
 {
-    internal static class Program
+    id = Guid.NewGuid(),
+    amount = 123.45m,
+    currency = "USD",
+    timestamp = DateTime.UtcNow,
+    status = TransactionStatus.COMPLETED,
+    recipientId = "123456",
+    metadata = new Dictionary<string, string>
     {
-        private static void Main()
-        {
-            var transaction = new Transaction
-            {
-                id = Guid.NewGuid(),
-                amount = 123.45m,
-                currency = "USD",
-                timestamp = DateTime.UtcNow,
-                status = TransactionStatus.COMPLETED,
-                recipientId = "123456",
-                metadata = new Dictionary<string, string>
-                {
-                    { "key1", "value1" },
-                    { "key2", "value2" },
-                },
-                signature = new Signature(),
-                legacyId = "abc123",
-            };
+        { "key1", "value1" },
+        { "key2", "value2" },
+    },
+    signature = new Signature(),
+    legacyId = "abc123",
+};
 
-            new Random().NextBytes(transaction.signature.Value);
+new Random().NextBytes(transaction.signature.Value);
 
-            Console.WriteLine(transaction);
-        }
-    }
-}
+Console.WriteLine(transaction);

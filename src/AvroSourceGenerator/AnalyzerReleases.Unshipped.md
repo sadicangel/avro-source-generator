@@ -10,3 +10,4 @@ AVROSG0002  | Compiler      | Error    | Invalid schema logic
 AVROSG0003  | Configuration | Warning  | No Avro library detected
 AVROSG0004  | Configuration | Warning  | Multiple Avro libraries detected
 AVROSG0005  | Compiler      | Error    | Duplicate Avro schema
+AVROSG9999  | Compiler      | Error    | Unknown generator error

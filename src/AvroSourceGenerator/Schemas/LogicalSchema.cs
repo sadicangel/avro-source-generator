@@ -10,7 +10,8 @@ internal sealed record class LogicalSchema(
 {
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
-        var underlyingSchema = UnderlyingSchema with { Properties = Properties.Add("logicalType", JsonElement.Parse($"\"{SchemaName.Name}\"")) };
+        var logicalType = JsonSerializer.SerializeToElement(SchemaName.Name);
+        var underlyingSchema = UnderlyingSchema with { Properties = Properties.Add("logicalType", logicalType) };
         underlyingSchema.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
     }
 }

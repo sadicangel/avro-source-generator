@@ -22,8 +22,7 @@ public sealed class DockerFixture : IAsyncLifetime
 
         var kafkaName = $"kraft-kafka-{Guid.NewGuid()}";
         var kafkaPort = GetFreeTcpPort();
-        Kafka = new ContainerBuilder()
-            .WithImage("confluentinc/cp-kafka:7.6.1")
+        Kafka = new ContainerBuilder("confluentinc/cp-kafka:7.6.1")
             .WithName(kafkaName)
             .WithPortBinding(kafkaPort, 9092)
             .WithNetworkAliases(kafkaName)
@@ -46,8 +45,7 @@ public sealed class DockerFixture : IAsyncLifetime
             .Build();
 
         var schemaRegistryName = $"schema-registry-{Guid.NewGuid()}";
-        SchemaRegistry = new ContainerBuilder()
-            .WithImage("confluentinc/cp-schema-registry:7.6.0")
+        SchemaRegistry = new ContainerBuilder("confluentinc/cp-schema-registry:7.6.0")
             .WithName(schemaRegistryName)
             .WithPortBinding(8081, assignRandomHostPort: true)
             .WithNetworkAliases(schemaRegistryName)

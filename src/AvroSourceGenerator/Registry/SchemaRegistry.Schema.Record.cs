@@ -17,14 +17,17 @@ internal readonly partial struct SchemaRegistry
         if (_schemas.ContainsKey(schemaName))
             throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
 
-        var documentation = schema.GetDocumentation();
-        var aliases = schema.GetAliases();
-        var fields = Fields(schema, schemaName);
+        using (Track(schemaName))
+        {
+            var documentation = schema.GetDocumentation();
+            var aliases = schema.GetAliases();
+            var fields = Fields(schema, schemaName);
 
-        var recordSchema = new RecordSchema(schema, schemaName, documentation, aliases, fields, properties);
+            var recordSchema = new RecordSchema(schema, schemaName, documentation, aliases, fields, properties);
 
-        _schemas[schemaName] = recordSchema;
+            _schemas[schemaName] = recordSchema;
 
-        return recordSchema;
+            return recordSchema;
+        }
     }
 }

@@ -12,7 +12,7 @@ public sealed class UnionRootObjectTests
                     "type": "record",
                     "name": "RawContent",
                     "fields": [
-                        { "name": "data", "type": { "type": "fixed", "name": "RawContent", "size": 256 } }
+                        { "name": "data", "type": { "type": "fixed", "name": "Data", "size": 256 } }
                     ]
                 },
                 {

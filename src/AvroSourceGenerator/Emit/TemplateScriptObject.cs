@@ -1,19 +1,13 @@
 ﻿using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Parsing;
 using Scriban.Functions;
-using Scriban.Runtime;
 
 namespace AvroSourceGenerator.Emit;
 
 internal sealed class TemplateScriptObject : BuiltinFunctions
 {
-    public TemplateScriptObject(RenderSettings settings, DynamicCustomFunction? renderJsonSchema)
+    public TemplateScriptObject(RenderSettings settings)
     {
-        if (renderJsonSchema is not null)
-        {
-            SetValue("json", renderJsonSchema, readOnly: true);
-        }
-
         SetValue("AvroLibrary", settings.AvroLibrary, readOnly: true);
         SetValue("AccessModifier", settings.AccessModifier, readOnly: true);
         SetValue("Record", settings.Declaration.Record, readOnly: true);

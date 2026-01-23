@@ -14,14 +14,17 @@ internal readonly partial struct SchemaRegistry
         if (_schemas.ContainsKey(schemaName))
             throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
 
-        var documentation = schema.GetDocumentation();
-        var aliases = schema.GetAliases();
-        var symbols = schema.GetSymbols();
-        var @default = schema.GetNullableString("default");
+        using (Track(schemaName))
+        {
+            var documentation = schema.GetDocumentation();
+            var aliases = schema.GetAliases();
+            var symbols = schema.GetSymbols();
+            var @default = schema.GetNullableString("default");
 
-        var enumSchema = new EnumSchema(schema, schemaName, documentation, aliases, symbols, @default, properties);
-        _schemas[schemaName] = enumSchema;
+            var enumSchema = new EnumSchema(schema, schemaName, documentation, aliases, symbols, @default, properties);
+            _schemas[schemaName] = enumSchema;
 
-        return enumSchema;
+            return enumSchema;
+        }
     }
 }

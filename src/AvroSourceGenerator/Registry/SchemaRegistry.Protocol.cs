@@ -14,13 +14,16 @@ internal readonly partial struct SchemaRegistry
         if (_schemas.ContainsKey(schemaName))
             throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
 
-        var documentation = schema.GetDocumentation();
-        var types = ProtocolTypes(schema.GetRequiredArray("types"), schemaName.Namespace);
-        var messages = ProtocolMessages(schema.GetRequiredObject("messages"), schemaName.Namespace);
+        using (Track(schemaName))
+        {
+            var documentation = schema.GetDocumentation();
+            var types = ProtocolTypes(schema.GetRequiredArray("types"), schemaName.Namespace);
+            var messages = ProtocolMessages(schema.GetRequiredObject("messages"), schemaName.Namespace);
 
-        var protocolSchema = new ProtocolSchema(schema, schemaName, documentation, types, messages, properties);
-        _schemas[schemaName] = protocolSchema;
+            var protocolSchema = new ProtocolSchema(schema, schemaName, documentation, types, messages, properties);
+            _schemas[schemaName] = protocolSchema;
 
-        return protocolSchema;
+            return protocolSchema;
+        }
     }
 }

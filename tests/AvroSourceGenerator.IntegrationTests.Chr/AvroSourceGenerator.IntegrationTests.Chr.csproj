@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <!-- Chr.Avro.Confluent references Apache.Avro so we need to specify which library we want to avoid AVROSG0004 -->
+    <AvroSourceGeneratorAvroLibrary>Chr</AvroSourceGeneratorAvroLibrary>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Chr.Avro.Codegen" />
+    <PackageReference Include="Chr.Avro.Confluent" />
     <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Testcontainers" />
@@ -35,6 +39,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AvroSourceGenerator\AvroSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\AvroSourceGenerator.IntegrationTests\AvroSourceGenerator.IntegrationTests.csproj" />
   </ItemGroup>
 
 </Project>

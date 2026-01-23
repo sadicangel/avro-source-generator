@@ -1,1 +1,46 @@
 {{ AccessModifier }} partial interface {{ $.schema.CSharpName.Name }};
+{{- if AvroLibrary == 'Chr' ~}}
+
+{{ $serializer = $.schema.CSharpName.Name | string.slice 1 | string.append "SerializerBuilderCase" }}
+public class {{ $serializer }}(global::Chr.Avro.Serialization.IBinarySerializerBuilder serializerBuilder) : global::Chr.Avro.Serialization.BinaryUnionSerializerBuilderCase(serializerBuilder)
+{
+    public override global::Chr.Avro.Serialization.BinarySerializerBuilderCaseResult BuildExpression(global::System.Linq.Expressions.Expression value, global::System.Type type, global::Chr.Avro.Abstract.Schema schema, global::Chr.Avro.Serialization.BinarySerializerBuilderContext context)
+    {
+        return type == typeof({{ $.schema }})
+            ? base.BuildExpression(value, type, schema, context)
+            : global::Chr.Avro.Serialization.BinarySerializerBuilderCaseResult.FromException(new global::Chr.Avro.UnsupportedTypeException(type, $"{{ $serializer }} can only be applied to type {typeof({{ $.schema }})}"));
+    }
+
+    protected override global::System.Type SelectType(global::System.Type type, global::Chr.Avro.Abstract.Schema schema)
+    {
+        return schema switch
+        {
+            {{~ for derived in $.schema.DerivedSchemas ~}}
+            global::Chr.Avro.Abstract.RecordSchema { Name: "{{ derived.SchemaName.Name }}" } => typeof({{ derived }}),
+            {{~ end ~}}
+            _ => throw new global::Chr.Avro.UnsupportedSchemaException(schema),
+        };
+    }
+}
+{{ $deserializer = $.schema.CSharpName.Name | string.slice 1 | string.append "DeserializerBuilderCase" }}
+public class {{ $deserializer }}(global::Chr.Avro.Serialization.IBinaryDeserializerBuilder deserializerBuilder) : global::Chr.Avro.Serialization.BinaryUnionDeserializerBuilderCase(deserializerBuilder)
+{
+    public override global::Chr.Avro.Serialization.BinaryDeserializerBuilderCaseResult BuildExpression(global::System.Type type, global::Chr.Avro.Abstract.Schema schema, global::Chr.Avro.Serialization.BinaryDeserializerBuilderContext context)
+    {
+        return type == typeof({{ $.schema }})
+            ? base.BuildExpression(type, schema, context)
+            : global::Chr.Avro.Serialization.BinaryDeserializerBuilderCaseResult.FromException(new global::Chr.Avro.UnsupportedTypeException(type, $"{{ $deserializer }} can only be applied to type {typeof({{ $.schema }})}"));
+    }
+
+    protected override global::System.Type SelectType(global::System.Type type, global::Chr.Avro.Abstract.Schema schema)
+    {
+        return schema switch
+        {
+            {{~ for derived in $.schema.DerivedSchemas ~}}
+            global::Chr.Avro.Abstract.RecordSchema { Name: "{{ derived.SchemaName.Name }}" } => typeof({{ derived }}),
+            {{~ end ~}}
+            _ => throw new global::Chr.Avro.UnsupportedSchemaException(schema),
+        };
+    }
+}
+{{- end }}

@@ -1,11 +1,11 @@
 ﻿using AvroSourceGenerator.IntegrationTests.Schemas;
 
-namespace AvroSourceGenerator.IntegrationTests.Chr;
+namespace AvroSourceGenerator.IntegrationTests.Chr.RoundtripTests;
 
-public class UnitTest1
+public class PrimitivesTests(DockerFixture dockerFixture)
 {
     [Fact]
-    public void Test1()
+    public async Task Primitives_remain_unchanged_after_roundtrip_to_kafka()
     {
         var expected = new Primitives
         {
@@ -32,6 +32,8 @@ public class UnitTest1
             nullableBytes2 = null,
         };
 
-        Assert.Skip("TODO");
+        var actual = await dockerFixture.RoundtripAsync(expected, Primitives.GetSchema(), TestContext.Current.CancellationToken);
+
+        Assert.EqualAsJson(expected, actual);
     }
 }

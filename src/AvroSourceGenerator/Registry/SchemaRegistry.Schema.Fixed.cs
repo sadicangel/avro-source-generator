@@ -15,19 +15,22 @@ internal readonly partial struct SchemaRegistry
         if (_schemas.ContainsKey(schemaName))
             throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
 
-        var documentation = schema.GetDocumentation();
-        var aliases = schema.GetAliases();
-        var size = schema.GetFixedSize();
-
-        var fixedSchema = avroLibrary switch
+        using (Track(schemaName))
         {
-            // Only Apache.Avro needs a custom type for fixed, others use byte[].
-            AvroLibrary.Apache => new FixedSchema(schema, schemaName, documentation, aliases, size, properties),
-            _ => FixedSchema.CreateAsByteArray(schema, schemaName, documentation, aliases, size, properties),
-        };
+            var documentation = schema.GetDocumentation();
+            var aliases = schema.GetAliases();
+            var size = schema.GetFixedSize();
 
-        _schemas[schemaName] = fixedSchema;
+            var fixedSchema = avroLibrary switch
+            {
+                // Only Apache.Avro needs a custom type for fixed, others use byte[].
+                AvroLibrary.Apache => new FixedSchema(schema, schemaName, documentation, aliases, size, properties),
+                _ => FixedSchema.CreateAsByteArray(schema, schemaName, documentation, aliases, size, properties),
+            };
 
-        return fixedSchema;
+            _schemas[schemaName] = fixedSchema;
+
+            return fixedSchema;
+        }
     }
 }

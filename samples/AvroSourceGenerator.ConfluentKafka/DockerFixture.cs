@@ -20,8 +20,7 @@ public sealed class DockerFixture : IAsyncDisposable
             .WithName(Guid.NewGuid().ToString())
             .Build();
 
-        Kafka = new ContainerBuilder()
-            .WithImage("confluentinc/cp-kafka:7.6.1")
+        Kafka = new ContainerBuilder("confluentinc/cp-kafka:7.6.1")
             .WithName("kraft-kafka")
             .WithPortBinding(9092)
             .WithNetworkAliases("kraft-kafka")
@@ -45,8 +44,7 @@ public sealed class DockerFixture : IAsyncDisposable
             .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(29092))
             .Build();
 
-        SchemaRegistry = new ContainerBuilder()
-            .WithImage("confluentinc/cp-schema-registry:7.6.0")
+        SchemaRegistry = new ContainerBuilder("confluentinc/cp-schema-registry:7.6.0")
             .WithName("schema-registry")
             .WithPortBinding(8081)
             .WithNetworkAliases("schema-registry")

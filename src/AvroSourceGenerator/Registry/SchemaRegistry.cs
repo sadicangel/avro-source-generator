@@ -18,6 +18,7 @@ internal readonly partial struct SchemaRegistry(
     bool useNullableReferenceTypes) : IReadOnlyCollection<TopLevelSchema>
 {
     private readonly Dictionary<SchemaName, TopLevelSchema> _schemas = [];
+    private readonly List<SchemaName> _recursionStack = [];
 
     private static readonly HashSet<string> s_reservedProperties =
     [
@@ -67,8 +68,14 @@ internal readonly partial struct SchemaRegistry(
         if (_schemas.TryGetValue(schemaName, out var topLevelSchema) && topLevelSchema is NamedSchema)
             return new AvroSchemaReference(topLevelSchema.SchemaName);
 
+        var index = _recursionStack.FindLastIndex(existing => schemaName == existing);
+        if (index >= 0)
+            return new AvroSchemaReference(_recursionStack[index]);
+
         return null;
     }
+
+    private RecursionScope Track(SchemaName schemaName) => new(_recursionStack, schemaName);
 
     private AvroSchema Schema(JsonElement schema, string? containingNamespace)
     {
@@ -160,5 +167,34 @@ internal readonly partial struct SchemaRegistry(
             // TODO: Do we need to handle complex types? Should they be supported?
             _ => null,
         };
+    }
+
+    private readonly ref struct RecursionScope : IDisposable
+    {
+        private readonly List<SchemaName> _recursionStack;
+        private readonly SchemaName _schemaName;
+
+        public RecursionScope(List<SchemaName> recursionStack, SchemaName schemaName)
+        {
+            _recursionStack = recursionStack;
+            _schemaName = schemaName;
+
+            if (_recursionStack.Contains(schemaName))
+            {
+                throw new InvalidSchemaException($"Recursive schema definition detected for schema '{schemaName}'.");
+            }
+
+            _recursionStack.Add(schemaName);
+        }
+
+        public void Dispose()
+        {
+            if (_recursionStack is not [.., var popped] || popped != _schemaName)
+            {
+                throw new InvalidOperationException("Recursion stack corrupted.");
+            }
+
+            _recursionStack.RemoveAt(_recursionStack.Count - 1);
+        }
     }
 }

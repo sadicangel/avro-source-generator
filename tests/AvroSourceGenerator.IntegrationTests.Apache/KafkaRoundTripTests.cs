@@ -221,4 +221,48 @@ public class KafkaRoundTripTests(DockerFixture dockerFixture)
 
         AssertEqual(expected, actual);
     }
+
+
+    [Fact]
+    public async Task Types_with_self_references_remain_unchanged_after_roundtrip_to_kafka()
+    {
+        Assert.Skip("TODO: Confluent is failing to serialize this");
+        var expected = Create();
+
+        var actual = await dockerFixture.RoundtripAsync(expected, TestContext.Current.CancellationToken);
+
+        AssertEqual(expected, actual);
+
+        static SelfReference Create()
+        {
+            var next1 = new SelfReference
+            {
+                items = [],
+                lookup = new Dictionary<string, SelfReference>(),
+                next = null
+            };
+
+            var root = new SelfReference
+            {
+                items =
+                [
+                    new SelfReference
+                    {
+                        items = [],
+                        lookup = new Dictionary<string, SelfReference>(),
+                        next = null
+                    }
+                ],
+                lookup = new Dictionary<string, SelfReference>
+                {
+                    ["next1"] = next1,
+                },
+                next = next1
+            };
+
+            root.lookup["self"] = root;
+
+            return root;
+        }
+    }
 }

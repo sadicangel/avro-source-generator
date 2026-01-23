@@ -9,7 +9,7 @@ partial {{ Error }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.Speci
 {
     public override global::Avro.Schema Schema { get => {{ $.schema.CSharpName.Name }}.s_schema; }
     private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
-    {{ $.schema | json }});
+    {{ SchemaJson }});
 
     {{ include 'getput' schema: $.schema override: true ~}}
 }

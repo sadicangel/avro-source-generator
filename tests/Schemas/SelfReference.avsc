@@ -1,0 +1,30 @@
+{
+  "type": "record",
+  "name": "SelfReference",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
+  "doc": "One schema file containing multiple recursion patterns for Avro.",
+  "fields": [
+    {
+      "name": "items",
+      "doc": "Self-recursion via array: SelfReference -> items[] -> SelfReference",
+      "type": {
+        "type": "array",
+        "items": "SelfReference"
+      }
+    },
+    {
+      "name": "lookup",
+      "doc": "Self-recursion via map: SelfReference -> lookup{string->SelfReference}",
+      "type": {
+        "type": "map",
+        "values": "SelfReference"
+      }
+    },
+    {
+      "name": "next",
+      "doc": "Nullable self-recursion (linked-list style): next is either null or SelfReference.",
+      "type": [ "null", "SelfReference" ],
+      "default": null
+    }
+  ]
+}

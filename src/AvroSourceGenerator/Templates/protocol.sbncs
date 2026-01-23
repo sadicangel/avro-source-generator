@@ -19,7 +19,7 @@ partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificPr
 {
     public global::Avro.Protocol Protocol { get => {{ $.schema.CSharpName.Name }}.s_protocol; }
     private static readonly global::Avro.Protocol s_protocol = global::Avro.Protocol.Parse(
-    {{ $.schema | json }});
+    {{ SchemaJson }});
 
     public void Request(global::Avro.Specific.ICallbackRequestor requestor, string messageName, object[] args, object callback)
     {

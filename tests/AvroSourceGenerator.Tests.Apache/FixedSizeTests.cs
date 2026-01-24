@@ -20,7 +20,7 @@ public sealed class FixedSizeTests
         return VerifyDiagnostic(schema);
     }
 
-    public static TheoryData<int> ValidSizes() => new([32]);
+    public static TheoryData<int> ValidSizes() => new(32);
 
-    public static TheoryData<string> InvalidSizes() => new(["null", "-1", "0", "1.1", "{}"]);
+    public static TheoryData<string> InvalidSizes() => new("null", "-1", "0", "1.1", "{}");
 }

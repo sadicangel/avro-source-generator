@@ -17,7 +17,7 @@ internal readonly partial struct SchemaRegistry
 
     private ProtocolMessage Message(JsonProperty property, string? containingNamespace)
     {
-        var methodName = property.Name.GetValidName();
+        var methodName = property.Name.ToValidName();
         var documentation = property.Value.GetDocumentation();
         var requestParameters = ProtocolRequestParameters(property.Value, containingNamespace);
         var response = ProtocolResponse(property.Value.GetRequiredProperty("response"), containingNamespace);

@@ -3,7 +3,6 @@
 public class FieldDefaultTests
 {
     public static TheoryData<string, string> Defaults => new(
-    [
         ("null", "null"),
         ("boolean", "true"),
         ("int", "42"),
@@ -12,8 +11,7 @@ public class FieldDefaultTests
         ("double", "42.0"),
         ("bytes", @"""NDI="""),
         ("string", @"""FortyTwo"""),
-        ("enum<A,B,C>", @"""B""")
-    ]);
+        ("enum<A,B,C>", @"""B"""));
 
     [Theory]
     [MemberData(nameof(Defaults))]

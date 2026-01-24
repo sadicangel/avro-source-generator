@@ -18,7 +18,7 @@ internal readonly partial struct SchemaRegistry
 
     private ProtocolRequestParameter ProtocolRequestParameter(JsonElement field, string? containingNamespace)
     {
-        var name = field.GetRequiredString("name").GetValidName();
+        var name = field.GetRequiredString("name").ToValidName();
         var type = Schema(field.GetRequiredProperty("type"), containingNamespace);
         var underlyingType = type;
         var isNullable = false;

@@ -1,6 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
 using System.Text.Json;
 using AvroSourceGenerator.Schemas;
 
@@ -8,151 +6,6 @@ namespace AvroSourceGenerator.Registry.Extensions;
 
 internal static class JsonElementExtensions
 {
-    public static bool IsReserved(ReadOnlySpan<char> name, [MaybeNullWhen(false)] out string replacement)
-    {
-        replacement = name switch
-        {
-            "bool" => "@bool",
-            "byte" => "@byte",
-            "sbyte" => "@sbyte",
-            "short" => "@short",
-            "ushort" => "@ushort",
-            "int" => "@int",
-            "uint" => "@uint",
-            "long" => "@long",
-            "ulong" => "@ulong",
-            "double" => "@double",
-            "float" => "@float",
-            "decimal" => "@decimal",
-            "string" => "@string",
-            "char" => "@char",
-            "void" => "@void",
-            "object" => "@object",
-            "typeof" => "@typeof",
-            "sizeof" => "@sizeof",
-            "null" => "@null",
-            "true" => "@true",
-            "false" => "@false",
-            "if" => "@if",
-            "else" => "@else",
-            "while" => "@while",
-            "for" => "@for",
-            "foreach" => "@foreach",
-            "do" => "@do",
-            "switch" => "@switch",
-            "case" => "@case",
-            "default" => "@default",
-            "try" => "@try",
-            "catch" => "@catch",
-            "finally" => "@finally",
-            "lock" => "@lock",
-            "goto" => "@goto",
-            "break" => "@break",
-            "continue" => "@continue",
-            "return" => "@return",
-            "throw" => "@throw",
-            "public" => "@public",
-            "private" => "@private",
-            "internal" => "@internal",
-            "protected" => "@protected",
-            "static" => "@static",
-            "readonly" => "@readonly",
-            "sealed" => "@sealed",
-            "const" => "@const",
-            "fixed" => "@fixed",
-            "stackalloc" => "@stackalloc",
-            "volatile" => "@volatile",
-            "new" => "@new",
-            "override" => "@override",
-            "abstract" => "@abstract",
-            "virtual" => "@virtual",
-            "event" => "@event",
-            "extern" => "@extern",
-            "ref" => "@ref",
-            "out" => "@out",
-            "in" => "@in",
-            "is" => "@is",
-            "as" => "@as",
-            "params" => "@params",
-            "__arglist" => "@__arglist",
-            "__makeref" => "@__makeref",
-            "__reftype" => "@__reftype",
-            "__refvalue" => "@__refvalue",
-            "this" => "@this",
-            "base" => "@base",
-            "namespace" => "@namespace",
-            "using" => "@using",
-            "class" => "@class",
-            "struct" => "@struct",
-            "interface" => "@interface",
-            "enum" => "@enum",
-            "delegate" => "@delegate",
-            "checked" => "@checked",
-            "unchecked" => "@unchecked",
-            "unsafe" => "@unsafe",
-            "operator" => "@operator",
-            "explicit" => "@explicit",
-            "implicit" => "@implicit",
-            _ => null
-        };
-
-        return replacement is not null;
-    }
-
-    public static string GetValidName(this string name) =>
-        IsReserved(name.AsSpan(), out var replacement) ? replacement : name;
-
-    public static ReadOnlySpan<char> GetValidName(ReadOnlySpan<char> name) =>
-        IsReserved(name, out var replacement) ? replacement.AsSpan() : name;
-
-    public static string GetValidNamespace(this string @namespace) =>
-        @namespace.Contains('.') ? GetValidNamespace(@namespace.AsSpan()) : GetValidName(@namespace);
-
-    public static string GetValidNamespace(ReadOnlySpan<char> @namespace)
-    {
-        // TODO: Might be a good idea to pool this builder.
-        var builder = new StringBuilder();
-
-        var first = true;
-        foreach (var part in new SplitEnumerable(@namespace, '.'))
-        {
-            var name = GetValidName(part);
-            if (first) first = false;
-            else builder.Append('.');
-            builder.EnsureCapacity(builder.Length + name.Length);
-            foreach (var @char in name)
-                builder.Append(@char);
-        }
-
-        return builder.ToString();
-    }
-
-    public static SchemaName GetRequiredSchemaName(this string name, string? containingNamespace = null)
-    {
-        _ = SplitFullName(name, out name, out var @namespace);
-
-        if (string.IsNullOrWhiteSpace(name) || @namespace is "")
-            throw new InvalidSchemaException("Argument has an invalid name format: 'cannot start or end with a dot'");
-
-        return new SchemaName(name, @namespace ?? containingNamespace);
-    }
-
-    private static bool SplitFullName(string fullName, out string name, out string? @namespace)
-    {
-        var indexOfLast = fullName.LastIndexOf('.');
-        if (indexOfLast < 0)
-        {
-            name = fullName;
-            @namespace = null;
-            return false;
-        }
-
-        name = fullName[(indexOfLast + 1)..];
-        @namespace = GetValidNamespace(fullName.AsSpan(0, indexOfLast));
-
-        return true;
-    }
-
     extension(JsonElement schema)
     {
         public JsonElement GetRequiredProperty(string propertyName)
@@ -172,13 +25,6 @@ internal static class JsonElementExtensions
         public string? GetNullableString()
         {
             return schema.ValueKind is JsonValueKind.String && schema.GetString() is { Length: > 0 } value
-                ? value
-                : null;
-        }
-
-        public int? GetOptionalInt32()
-        {
-            return schema.ValueKind is JsonValueKind.Number && schema.TryGetInt32(out var value)
                 ? value
                 : null;
         }
@@ -211,10 +57,6 @@ internal static class JsonElementExtensions
             var value = json.GetString();
             return string.IsNullOrWhiteSpace(value) ? null : value;
         }
-
-        public int GetRequiredInt32(string propertyName) =>
-            schema.GetRequiredProperty(propertyName).GetOptionalInt32()
-            ?? throw new InvalidSchemaException($"'{propertyName}' property must be an integer (found '{schema.GetRequiredProperty(propertyName)}') in schema: {schema.GetRawText()}");
 
         public int? GetNullableInt32(string propertyName)
         {
@@ -269,7 +111,7 @@ internal static class JsonElementExtensions
                 throw new InvalidSchemaException($"Property 'name' has an invalid format: 'consecutive dots are not allowed in names or namespaces' in schema: {schema.GetRawText()}");
 
             // Only use 'namespace' if 'name' isn't a full name.
-            if (!SplitFullName(name, out name, out var @namespace))
+            if (!name.TrySplitQualifiedName(out name, out var @namespace))
                 @namespace = schema.GetNullableString("namespace");
 
             if (string.IsNullOrWhiteSpace(name) || @namespace is "")
@@ -292,7 +134,7 @@ internal static class JsonElementExtensions
                 throw new InvalidSchemaException($"Property 'name' has an invalid format: 'consecutive dots are not allowed in names or namespaces' in schema: {schema.GetRawText()}");
 
             // Only use 'namespace' if 'name' isn't a full name.
-            if (!SplitFullName(name, out name, out var @namespace))
+            if (!name.TrySplitQualifiedName(out name, out var @namespace))
                 @namespace = schema.GetNullableString("namespace");
 
             if (string.IsNullOrWhiteSpace(name) || @namespace is "")
@@ -322,7 +164,7 @@ internal static class JsonElementExtensions
                 .. schema
                     .GetRequiredArray("symbols")
                     .Select(json =>
-                        json.GetNullableString()?.GetValidName() ?? throw new InvalidSchemaException($"'symbols' property must be an array of non-empty, non-whitespace strings in schema: {schema.GetRawText()}"))
+                        json.GetNullableString()?.ToValidName() ?? throw new InvalidSchemaException($"'symbols' property must be an array of non-empty, non-whitespace strings in schema: {schema.GetRawText()}"))
             ];
         }
 

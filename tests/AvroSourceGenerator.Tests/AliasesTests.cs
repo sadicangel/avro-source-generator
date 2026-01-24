@@ -11,6 +11,7 @@ public sealed class AliasesTests
         return VerifyDiagnostic(schema);
     }
 
+    // TODO: What to do with aliases?
     public static MatrixTheoryData<string[], string> ValidAliasesSchemaPairs() => new(
         [null!, [], ["Alias1", "Alias2"]],
         ["enum", "error", "fixed", "record"]);

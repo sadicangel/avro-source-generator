@@ -11,6 +11,7 @@ internal enum LanguageFeatures
     RawStringLiterals = 1 << 4,
     UnsafeAccessors = 1 << 5,
 
+    // ReSharper disable once InconsistentNaming
     CSharp7_3 = None,
     CSharp8 = NullableReferenceTypes,
     CSharp9 = NullableReferenceTypes | Records,

@@ -20,7 +20,7 @@ public sealed class ProtocolNameTests
         return VerifyDiagnostic(schema);
     }
 
-    public static TheoryData<string> ValidNames() => new(["PascalCase", "snake_case", "object"]);
+    public static TheoryData<string> ValidNames() => new("PascalCase", "snake_case", "object");
 
-    public static TheoryData<string> InvalidNames() => new(["null", "\"\"", "[]"]);
+    public static TheoryData<string> InvalidNames() => new("null", "\"\"", "[]");
 }

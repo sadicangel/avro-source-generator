@@ -44,7 +44,7 @@ public sealed class SchemaReferenceTests
 
     [Fact]
     public Task Diagnostic() => VerifyDiagnostic(
-        $$"""
+        """
         {
             "type": "record",
             "name": "MissingReference",

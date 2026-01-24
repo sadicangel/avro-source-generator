@@ -1,12 +1,13 @@
 ﻿using Microsoft.Diagnostics.Tracing.Session;
 
-Console.WriteLine("TraceEventSession started.");
-
 // https://www.meziantou.net/measuring-performance-of-roslyn-source-generators.htm
 using var session = new TraceEventSession("roslyn-sg");
-Console.CancelKeyPress += (_, _) =>
+Console.CancelKeyPress += (_, e) =>
 {
-    Console.WriteLine("TraceEventSession ended.");
+    e.Cancel = true;
+
+    // ReSharper disable once DisposeOnUsingVariable
+    // ReSharper disable once AccessToDisposedClosure
     session.Dispose();
 };
 
@@ -29,4 +30,8 @@ session.Source.Dynamic.AddCallbackForProviderEvent(
     });
 
 session.EnableProvider("Microsoft-CodeAnalysis-General");
+
+Console.WriteLine("TraceEventSession started.");
+Console.WriteLine("Press Ctrl+C to stop...");
 session.Source.Process();
+Console.WriteLine("TraceEventSession ended.");

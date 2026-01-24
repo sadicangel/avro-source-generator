@@ -38,7 +38,7 @@ public sealed class FixedDocumentationTests
         return VerifyDiagnostic(schema);
     }
 
-    public static TheoryData<string> ValidDocumentationSchemaPairs() => new([null!, "", "Single line comment", "Multi\nline\ncomment"]);
+    public static TheoryData<string> ValidDocumentationSchemaPairs() => new(null!, "", "Single line comment", "Multi\nline\ncomment");
 
-    public static TheoryData<string> InvalidDocumentationSchemaPairs() => new(["[]"]);
+    public static TheoryData<string> InvalidDocumentationSchemaPairs() => new("[]");
 }

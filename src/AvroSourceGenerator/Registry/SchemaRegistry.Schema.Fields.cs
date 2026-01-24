@@ -19,7 +19,7 @@ internal readonly partial struct SchemaRegistry
 
     private Field Field(JsonElement field, SchemaName containingSchemaName)
     {
-        var name = field.GetRequiredString("name").GetValidName();
+        var name = field.GetRequiredString("name").ToValidName();
         var type = Schema(field.GetRequiredProperty("type"), containingSchemaName.Namespace);
         var underlyingType = type;
         var isNullable = false;

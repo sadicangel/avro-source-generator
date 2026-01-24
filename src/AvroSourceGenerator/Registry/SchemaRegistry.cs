@@ -64,7 +64,7 @@ internal readonly partial struct SchemaRegistry(
             case "string": return AvroSchema.String;
         }
 
-        var schemaName = name.GetRequiredSchemaName(containingNamespace);
+        var schemaName = name.ToSchemaName(containingNamespace);
         if (_schemas.TryGetValue(schemaName, out var topLevelSchema) && topLevelSchema is NamedSchema)
             return new AvroSchemaReference(topLevelSchema.SchemaName);
 

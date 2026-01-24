@@ -117,23 +117,26 @@ public static class TestSchemas
 
     public static JsonNode Get(string schemaType) => JsonNode.Parse(s_schemas[schemaType])!;
 
-    public static JsonNode With(this JsonNode @this, string propertyName, JsonNode propertyValue)
+    extension(JsonNode node)
     {
-        var clone = @this.DeepClone();
-        clone[propertyName] = propertyValue;
-        return clone;
-    }
+        public JsonNode With(string propertyName, JsonNode propertyValue)
+        {
+            var clone = node.DeepClone();
+            clone[propertyName] = propertyValue;
+            return clone;
+        }
 
-    public static JsonNode With(this JsonNode @this, string propertyName, JsonArray propertyValue) =>
-        @this.With(propertyName, (JsonNode)propertyValue);
+        public JsonNode With(string propertyName, JsonArray propertyValue) =>
+            node.With(propertyName, (JsonNode)propertyValue);
 
-    public static JsonNode With(this JsonNode @this, string propertyName, IEnumerable<object?>? propertyValue)
-    {
-        var clone = @this.DeepClone();
-        clone[propertyName] = propertyValue is null ? null : new JsonArray([.. propertyValue.Select(Parse)]);
-        return clone;
+        public JsonNode With(string propertyName, IEnumerable<object?>? propertyValue)
+        {
+            var clone = node.DeepClone();
+            clone[propertyName] = propertyValue is null ? null : new JsonArray([.. propertyValue.Select(Parse)]);
+            return clone;
 
-        static JsonNode Parse(object? x) =>
-            x is null ? JsonNode.Parse("null")! : JsonNode.Parse(JsonSerializer.Serialize(x, x.GetType()))!;
+            static JsonNode Parse(object? x) =>
+                x is null ? JsonNode.Parse("null")! : JsonNode.Parse(JsonSerializer.Serialize(x, x.GetType()))!;
+        }
     }
 }

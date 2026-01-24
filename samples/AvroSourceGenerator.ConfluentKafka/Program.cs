@@ -75,4 +75,5 @@ if (producedOrder.OrderId != consumedOrder.OrderId)
 Console.WriteLine("Produced and consumed orders match.");
 
 Console.WriteLine($"Deleting topic '{topicName}'...");
+await fixture.DeleteTopicAsync(topicName);
 Console.WriteLine($"Topic '{topicName}' deleted successfully.");

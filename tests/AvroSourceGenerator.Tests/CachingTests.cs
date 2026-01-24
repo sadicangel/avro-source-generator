@@ -10,7 +10,7 @@ public sealed class CachingTests
     [Fact]
     public void All_outputs_are_reused_when_input_is_unchanged()
     {
-        var schema = """
+        const string Schema = """
             {
                 "type": "record",
                 "namespace": "SchemaNamespace",
@@ -27,17 +27,17 @@ public sealed class CachingTests
             }
             """;
 
-        var source = """
+        const string Source = """
             using AvroSourceGenerator;
 
             [Avro]
             internal partial class User;
             """;
 
-        var projectConfig = new ProjectConfig() with { LanguageVersion = LanguageVersion.CSharp10 };
+        var projectConfig = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
 
         var (compilation, _, generatorDriver) =
-            GeneratorInput.Create([source], [schema], [], projectConfig);
+            GeneratorInput.Create([Source], [Schema], [], projectConfig);
 
         generatorDriver = generatorDriver
             .RunGenerators(compilation, TestContext.Current.CancellationToken);
@@ -87,7 +87,7 @@ public sealed class CachingTests
             // Same output value for all runs.
             Assert.Equal(steps1[i].Outputs.Select(x => x.Value), steps2[i].Outputs.Select(x => x.Value));
 
-            // Second output reason must cached or unchanged.
+            // Second output reason must be cached or unchanged.
             Assert.All(
                 steps2[i].Outputs.Select(x => x.Reason),
                 reason => Assert.True(reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged));

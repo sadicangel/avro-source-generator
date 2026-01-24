@@ -73,7 +73,7 @@ public readonly record struct GeneratorInput(
 
     private sealed class AdditionalTextImplementation(string content) : AdditionalText
     {
-        public override string Path => $"schema.avsc";
+        public override string Path => "schema.avsc";
 
         public override SourceText GetText(CancellationToken cancellationToken = default) =>
             SourceText.From(content, Encoding.UTF8);

@@ -11,5 +11,5 @@ public readonly record struct CSharpName(string Name, string? Namespace)
     public override string ToString() => FullName;
 
     public static CSharpName FromSchemaName(SchemaName schemaName) =>
-        new(schemaName.Name.GetValidName(), schemaName.Namespace?.GetValidNamespace());
+        new(schemaName.Name.ToValidName(), schemaName.Namespace?.GetValidNamespace());
 }

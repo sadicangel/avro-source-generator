@@ -13,7 +13,5 @@ public sealed class CsprojRecordDeclarationTests
         return VerifySourceCode(schema, null, config);
     }
 
-    public static MatrixTheoryData<string, string> RecordDeclarationSchemaPairs() => new(
-        ["record", "class", "invalid"],
-        ["record", "error", "fixed"]);
+    public static MatrixTheoryData<string, string> RecordDeclarationSchemaPairs() => new MatrixTheoryData<string, string>(["record", "class", "invalid"], ["record", "error", "fixed"]);
 }

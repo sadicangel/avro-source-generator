@@ -21,6 +21,7 @@
     <Project Path="tests/AvroSourceGenerator.IntegrationTests.Chr/AvroSourceGenerator.IntegrationTests.Chr.csproj" />
     <Project Path="tests/AvroSourceGenerator.IntegrationTests/AvroSourceGenerator.IntegrationTests.csproj" />
     <Project Path="tests/AvroSourceGenerator.Tests.Apache/AvroSourceGenerator.Tests.Apache.csproj" />
+    <Project Path="tests/AvroSourceGenerator.Tests.Chr/AvroSourceGenerator.Tests.Chr.csproj" Id="460c2e67-236f-443b-83f7-0a8634407824" />
     <Project Path="tests/AvroSourceGenerator.Tests/AvroSourceGenerator.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">

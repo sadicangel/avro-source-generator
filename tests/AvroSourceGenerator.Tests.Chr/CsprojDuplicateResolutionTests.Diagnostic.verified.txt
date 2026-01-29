@@ -1,0 +1,13 @@
+﻿{
+  Message: Multiple Avro schema files would generate the same output file 'RecordNamespace.Record.Avro.g.cs'. By default this is treated as an error to avoid ambiguous code generation. You can allow one schema to be chosen arbitrarily by setting <AvroSourceGeneratorDuplicateResolution>Ignore</AvroSourceGeneratorDuplicateResolution> in the project file.,
+  Severity: Error,
+  Descriptor: {
+    Id: AVROSG0005,
+    Title: Duplicate Avro schema output detected,
+    Description: Two or more Avro schema input files map to the same generated output file or type. This creates an ambiguous generation result. By default, AvroSourceGenerator fails fast with an error. If you intentionally want to allow duplicates and accept a nondeterministic selection of the generated output, set the MSBuild property <AvroSourceGeneratorDuplicateResolution>Ignore</AvroSourceGeneratorDuplicateResolution>.,
+    MessageFormat: Multiple Avro schema files would generate the same output file '{0}'. By default this is treated as an error to avoid ambiguous code generation. You can allow one schema to be chosen arbitrarily by setting <AvroSourceGeneratorDuplicateResolution>Ignore</AvroSourceGeneratorDuplicateResolution> in the project file.,
+    Category: Compiler,
+    DefaultSeverity: Error,
+    IsEnabledByDefault: true
+  }
+}

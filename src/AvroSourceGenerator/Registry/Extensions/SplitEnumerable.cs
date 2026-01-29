@@ -4,7 +4,7 @@ internal readonly ref struct SplitEnumerable(ReadOnlySpan<char> value, char sepa
 {
     private readonly ReadOnlySpan<char> _value = value;
 
-    public SplitEnumerator GetEnumerator() => new(_value, separator);
+    public SplitEnumerator GetEnumerator() => new SplitEnumerator(_value, separator);
 
     public ref struct SplitEnumerator(ReadOnlySpan<char> value, char separator)
     {

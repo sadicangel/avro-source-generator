@@ -5,16 +5,7 @@ namespace AvroSourceGenerator.Diagnostics;
 
 internal static class InvalidJsonDiagnostic
 {
-    private static readonly DiagnosticDescriptor s_descriptor = new(
-        id: "AVROSG0001",
-        title: "Invalid JSON",
-        messageFormat: "The provided JSON is invalid: {0}",
-        category: "Compiler",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true,
-        description:
-        "The JSON supplied for an Avro schema could not be parsed. " +
-        "Fix the JSON syntax (quotes, commas, braces, etc.). If the error reports a path, check that location first.");
+    private static readonly DiagnosticDescriptor s_descriptor = new DiagnosticDescriptor(id: "AVROSG0001", title: "Invalid JSON", messageFormat: "The provided JSON is invalid: {0}", category: "Compiler", defaultSeverity: DiagnosticSeverity.Error, isEnabledByDefault: true, description: "The JSON supplied for an Avro schema could not be parsed. " + "Fix the JSON syntax (quotes, commas, braces, etc.). If the error reports a path, check that location first.");
 
-    public static DiagnosticInfo Create(LocationInfo location, string message) => new(s_descriptor, location, message);
+    public static DiagnosticInfo Create(LocationInfo location, string message) => new DiagnosticInfo(s_descriptor, location, message);
 }

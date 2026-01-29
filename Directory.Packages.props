@@ -5,8 +5,10 @@
   <ItemGroup>
     <PackageVersion Include="Apache.Avro" Version="1.12.1" />
     <PackageVersion Include="AutoFixture" Version="4.18.1" />
+    <PackageVersion Include="Basic.Reference.Assemblies" Version="1.8.4" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Chr.Avro" Version="10.12.0" />
+    <PackageVersion Include="Chr.Avro.Binary" Version="10.12.0" />
     <PackageVersion Include="Chr.Avro.Codegen" Version="10.12.0" />
     <PackageVersion Include="Chr.Avro.Confluent" Version="10.12.0" />
     <PackageVersion Include="Chr.Avro.Json" Version="10.12.0" />
@@ -39,7 +41,7 @@
     <PackageVersion Include="Testcontainers" Version="4.10.0" />
     <PackageVersion Include="Verify.DiffPlex" Version="3.1.2" />
     <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0" />
-    <PackageVersion Include="Verify.XunitV3" Version="31.9.4" />
+    <PackageVersion Include="Verify.XunitV3" Version="31.10.0" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>

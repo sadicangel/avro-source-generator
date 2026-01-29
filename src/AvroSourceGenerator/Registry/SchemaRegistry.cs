@@ -75,7 +75,7 @@ internal readonly partial struct SchemaRegistry(
         return null;
     }
 
-    private RecursionScope Track(SchemaName schemaName) => new(_recursionStack, schemaName);
+    private RecursionScope Track(SchemaName schemaName) => new RecursionScope(_recursionStack, schemaName);
 
     private AvroSchema Schema(JsonElement schema, string? containingNamespace)
     {

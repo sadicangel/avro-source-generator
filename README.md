@@ -19,6 +19,7 @@ Generated code takes advantage of modern C# language features, including **nulla
 - **.NET SDK 8.0 or later**
 - One of the following Avro libraries:
   - [Apache.Avro](https://www.nuget.org/packages/Apache.Avro) — official Avro implementation for C#
+  - [Chr.Avro](https://www.nuget.org/packages/Chr.Avro) — designed to serve as a flexible alternative to the Apache implementation
 
 > [!NOTE]  
 > You can use the generator without an Avro library, but library-specific features (e.g., `ISpecificRecord`) won’t be emitted.
@@ -209,7 +210,8 @@ Supported values are `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, 
 
 ### Avro Library Selection
 
-The generator tries to detect the Avro library automatically. If none or multiple are found, a warning is emitted.
+The generator tries to detect the Avro library automatically from referenced packages.
+You can override this behavior by specifying the target library explicitly.
 
 #### No Supported Package Detected
 
@@ -235,6 +237,7 @@ Supported values:
 - `Auto` (default) — detect automatically
 - `None` — no library-specific code
 - `Apache` — target `Apache.Avro`
+- `Chr` — target `Chr.Avro`
 
 ---
 

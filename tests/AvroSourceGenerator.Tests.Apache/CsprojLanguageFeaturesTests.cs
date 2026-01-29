@@ -21,13 +21,5 @@ public sealed class CsprojLanguageFeaturesTests
         return VerifySourceCode(schema, null, config);
     }
 
-    public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new(
-        [
-            .. Enum.GetNames(
-                typeof(AvroSourceGenerator).Assembly.GetType(
-                    "AvroSourceGenerator.Configuration.LanguageFeatures",
-                    throwOnError: true)!).Where(n => n.StartsWith("CSharp")),
-            "invalid"
-        ],
-        ["enum", "error", "fixed", "record", "protocol"]);
+    public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new MatrixTheoryData<string, string>([.. Enum.GetNames(typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.LanguageFeatures", throwOnError: true)!).Where(n => n.StartsWith("CSharp")), "invalid"], ["enum", "error", "fixed", "record", "protocol"]);
 }

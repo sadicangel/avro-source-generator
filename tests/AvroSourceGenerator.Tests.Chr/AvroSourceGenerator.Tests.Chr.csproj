@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Chr.Avro" />
+    <PackageReference Include="Chr.Avro.Binary" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AvroSourceGenerator.Tests\AvroSourceGenerator.Tests.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,10 +1,10 @@
-﻿using System.CodeDom.Compiler;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator.Tests.Setup;
@@ -27,21 +27,28 @@ public readonly record struct GeneratorInput(
         return new GeneratorInput(compilation, optionsProvider, generatorDriver);
     }
 
+    private static ImmutableArray<MetadataReference> CompilerReferenceAssemblies
+    {
+        get
+        {
+            if (field.IsDefaultOrEmpty)
+            {
+                field = ReferenceAssemblies.Net.Net100
+                    .ResolveAsync("C#", CancellationToken.None).GetAwaiter().GetResult()
+                    .AddRange(MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location));
+            }
+
+            return field;
+        }
+    }
+
     private static CSharpCompilation CreateCompilation(
         ImmutableArray<string> sourceTexts,
         CSharpParseOptions parseOptions,
         ImmutableArray<PortableExecutableReference> executableReferences)
     {
         var syntaxTrees = sourceTexts.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions));
-        var references = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(assembly => !assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
-            .Select(assembly => MetadataReference.CreateFromFile(assembly.Location))
-            .Concat(
-            [
-                MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(GeneratedCodeAttribute).Assembly.Location),
-                .. executableReferences,
-            ]);
+        var references = CompilerReferenceAssemblies.AddRange(executableReferences);
 
         var compilation = CSharpCompilation.Create(
             "GeneratorAssemblyName",

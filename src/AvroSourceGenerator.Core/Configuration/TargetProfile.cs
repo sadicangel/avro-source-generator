@@ -1,9 +1,9 @@
 ﻿namespace AvroSourceGenerator.Configuration;
 
-internal enum AvroLibrary
+public enum TargetProfile
 {
-    None,
+    Modern,
+    Legacy,
     Apache,
     Chr,
-    Auto = 2147483647,
 }

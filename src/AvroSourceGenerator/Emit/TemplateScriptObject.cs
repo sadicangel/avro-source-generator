@@ -10,6 +10,7 @@ internal sealed class TemplateScriptObject : BuiltinFunctions
     {
         SetValue("AvroLibrary", settings.AvroLibrary, readOnly: true);
         SetValue("AccessModifier", settings.AccessModifier, readOnly: true);
+        SetValue("TargetProfile", settings.TargetProfile, readOnly: true);
         SetValue("Record", settings.Declaration.Record, readOnly: true);
         SetValue("Error", settings.Declaration.Error, readOnly: true);
         SetValue("Fixed", settings.Declaration.Fixed, readOnly: true);

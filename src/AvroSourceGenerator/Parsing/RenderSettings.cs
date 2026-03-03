@@ -7,11 +7,11 @@ namespace AvroSourceGenerator.Parsing;
 
 internal sealed record class Declaration(string Record, string Fixed, string Error)
 {
-    public static Declaration Records { get; } = new Declaration("record", "record", "record");
-    public static Declaration Classes { get; } = new Declaration("class", "class", "class");
+    public static Declaration Records { get; } = new("record", "record", "record");
+    public static Declaration Classes { get; } = new("class", "class", "class");
 
-    public static Declaration ApacheRecords { get; } = new Declaration("record", "class", "class");
-    public static Declaration ApacheClasses { get; } = new Declaration("class", "class", "class");
+    public static Declaration ApacheRecords { get; } = new("record", "class", "class");
+    public static Declaration ApacheClasses { get; } = new("class", "class", "class");
 }
 
 internal readonly record struct RenderSettings(
@@ -24,6 +24,14 @@ internal readonly record struct RenderSettings(
     ImmutableArray<DiagnosticInfo> Diagnostics)
 {
     public bool IsValid => !Diagnostics.Any(x => x.Descriptor.DefaultSeverity is Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+
+    public TargetProfile TargetProfile => AvroLibrary switch
+    {
+        AvroLibrary.Apache => TargetProfile.Apache,
+        AvroLibrary.Chr => TargetProfile.Chr,
+        _ when LanguageVersion < LanguageVersion.CSharp10 => TargetProfile.Legacy,
+        _ => TargetProfile.Modern,
+    };
 
     public bool Equals(RenderSettings other) =>
         AvroLibrary == other.AvroLibrary &&

@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Registry.Extensions;
+﻿using AvroSourceGenerator.Extensions;
 
 namespace AvroSourceGenerator.Schemas;
 

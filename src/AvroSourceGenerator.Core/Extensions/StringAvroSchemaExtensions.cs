@@ -1,8 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Registry.Extensions;
+namespace AvroSourceGenerator.Extensions;
 
 internal static class StringAvroSchemaExtensions
 {

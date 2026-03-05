@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Registry.Extensions;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Registry;
@@ -67,7 +67,7 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
         return null;
     }
 
-    private RecursionScope Track(SchemaName schemaName) => new RecursionScope(_recursionStack, schemaName);
+    private RecursionScope Track(SchemaName schemaName) => new(_recursionStack, schemaName);
 
     private AvroSchema Schema(JsonElement schema, string? containingNamespace)
     {

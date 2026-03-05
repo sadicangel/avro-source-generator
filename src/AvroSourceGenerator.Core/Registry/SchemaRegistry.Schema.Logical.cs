@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Registry.Extensions;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Registry;

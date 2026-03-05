@@ -1,6 +1,6 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Text.Json;
-using AvroSourceGenerator.Registry.Extensions;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Registry;
@@ -9,7 +9,7 @@ public readonly partial struct SchemaRegistry
 {
     private ProtocolSchema Protocol(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
     {
-        var schemaName = schema.GetRequiredSchemaName(containingNamespace, propertyName: "protocol");
+        var schemaName = schema.GetRequiredProtocolName(containingNamespace);
 
         if (_schemas.ContainsKey(schemaName))
             throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");

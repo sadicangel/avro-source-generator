@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -16,22 +16,6 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
     private readonly Dictionary<SchemaName, TopLevelSchema> _schemas = [];
     private readonly List<SchemaName> _recursionStack = [];
 
-    private static readonly HashSet<string> s_reservedProperties =
-    [
-        AvroJsonKeys.Type,
-        AvroJsonKeys.Name,
-        AvroJsonKeys.Namespace,
-        AvroJsonKeys.Fields,
-        AvroJsonKeys.Items,
-        AvroJsonKeys.Size,
-        AvroJsonKeys.Symbols,
-        AvroJsonKeys.Values,
-        AvroJsonKeys.Aliases,
-        AvroJsonKeys.Order,
-        AvroJsonKeys.Doc,
-        AvroJsonKeys.Default,
-        AvroJsonKeys.LogicalType,
-    ];
 
     public int Count => _schemas.Count;
 
@@ -140,7 +124,7 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
     {
         var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
         foreach (var property in schema.EnumerateObject()
-            .Where(property => !s_reservedProperties.Contains(property.Name)))
+            .Where(property => !ReservedProperties.IsReserved(property.Name)))
         {
             properties.Add(property.Name, property.Value);
         }

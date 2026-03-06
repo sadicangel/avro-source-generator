@@ -124,7 +124,7 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
     {
         var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
         foreach (var property in schema.EnumerateObject()
-            .Where(property => !SchemaRegistryReservedProperties.IsReserved(property.Name)))
+            .Where(property => !ReservedProperties.IsReserved(property.Name)))
         {
             properties.Add(property.Name, property.Value);
         }

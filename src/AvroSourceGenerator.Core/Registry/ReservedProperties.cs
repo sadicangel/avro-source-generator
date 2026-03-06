@@ -2,7 +2,7 @@ using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Registry;
 
-internal static class SchemaRegistryReservedProperties
+internal static class ReservedProperties
 {
     private static readonly HashSet<string> s_reservedProperties =
     [

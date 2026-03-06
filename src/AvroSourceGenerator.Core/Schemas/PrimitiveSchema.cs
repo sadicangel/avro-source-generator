@@ -18,7 +18,7 @@ public sealed record class PrimitiveSchema(SchemaType Type, CSharpName CSharpNam
         else
         {
             writer.WriteStartObject();
-            writer.WritePropertyName("type");
+            writer.WritePropertyName(AvroJsonKeys.Type);
             writer.WriteStringValue(SchemaName.Name);
             foreach (var entry in Properties)
             {

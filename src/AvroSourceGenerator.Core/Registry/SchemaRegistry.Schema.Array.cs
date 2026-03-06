@@ -9,7 +9,7 @@ public readonly partial struct SchemaRegistry
 {
     private ArraySchema Array(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
     {
-        var itemsSchema = schema.GetRequiredProperty("items");
+        var itemsSchema = schema.GetRequiredProperty(AvroJsonKeys.Items);
 
         var items = Schema(itemsSchema, containingNamespace);
 

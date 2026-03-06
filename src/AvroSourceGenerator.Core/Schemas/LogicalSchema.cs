@@ -11,7 +11,7 @@ public sealed record class LogicalSchema(
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         var logicalType = JsonSerializer.SerializeToElement(SchemaName.Name);
-        var underlyingSchema = UnderlyingSchema with { Properties = Properties.Add("logicalType", logicalType) };
+        var underlyingSchema = UnderlyingSchema with { Properties = Properties.Add(AvroJsonKeys.LogicalType, logicalType) };
         underlyingSchema.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
     }
 }

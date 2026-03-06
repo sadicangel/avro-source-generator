@@ -10,7 +10,7 @@ public readonly partial struct SchemaRegistry
     private ImmutableArray<ProtocolRequestParameter> ProtocolRequestParameters(JsonElement schema, string? containingNamespace)
     {
         var fields = ImmutableArray.CreateBuilder<ProtocolRequestParameter>();
-        foreach (var parameter in schema.GetRequiredArray("request"))
+        foreach (var parameter in schema.GetRequiredArray(AvroJsonKeys.Request))
             fields.Add(ProtocolRequestParameter(parameter, containingNamespace));
 
         return fields.ToImmutable();
@@ -18,8 +18,8 @@ public readonly partial struct SchemaRegistry
 
     private ProtocolRequestParameter ProtocolRequestParameter(JsonElement field, string? containingNamespace)
     {
-        var name = field.GetRequiredString("name").ToValidName();
-        var type = Schema(field.GetRequiredProperty("type"), containingNamespace);
+        var name = field.GetRequiredString(AvroJsonKeys.Name).ToValidName();
+        var type = Schema(field.GetRequiredProperty(AvroJsonKeys.Type), containingNamespace);
         var underlyingType = type;
         var isNullable = false;
         if (type is UnionSchema union)
@@ -29,7 +29,7 @@ public readonly partial struct SchemaRegistry
         }
 
         var documentation = field.GetDocumentation();
-        var defaultJson = field.GetNullableProperty("default");
+        var defaultJson = field.GetNullableProperty(AvroJsonKeys.Default);
         var @default = GetValue(type, defaultJson);
         return new ProtocolRequestParameter(name, type, underlyingType, isNullable, documentation, defaultJson, @default);
     }

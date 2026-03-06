@@ -15,15 +15,15 @@ public sealed record class ProtocolSchema(
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();
-        writer.WriteString("protocol", SchemaName.Name);
+        writer.WriteString(AvroJsonKeys.Protocol, SchemaName.Name);
         if (SchemaName.Namespace is not null)
         {
-            writer.WriteString("namespace", SchemaName.Namespace);
+            writer.WriteString(AvroJsonKeys.Namespace, SchemaName.Namespace);
         }
 
         if (Types.Length > 0)
         {
-            writer.WriteStartArray("types");
+            writer.WriteStartArray(AvroJsonKeys.Types);
             foreach (var type in Types)
             {
                 type.WriteTo(writer, registeredSchemas, writtenSchemas, SchemaName.Namespace);
@@ -34,7 +34,7 @@ public sealed record class ProtocolSchema(
 
         if (Messages.Length > 0)
         {
-            writer.WriteStartObject("messages");
+            writer.WriteStartObject(AvroJsonKeys.Messages);
             foreach (var message in Messages)
             {
                 writer.WritePropertyName(message.MethodName is ['@', ..] ? message.MethodName[1..] : message.MethodName);

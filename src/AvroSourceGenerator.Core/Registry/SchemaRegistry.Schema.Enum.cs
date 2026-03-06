@@ -19,7 +19,7 @@ public readonly partial struct SchemaRegistry
             var documentation = schema.GetDocumentation();
             var aliases = schema.GetAliases();
             var symbols = schema.GetSymbols();
-            var @default = schema.GetNullableString("default");
+            var @default = schema.GetNullableString(AvroJsonKeys.Default);
 
             var enumSchema = new EnumSchema(schema, schemaName, documentation, aliases, symbols, @default, properties);
             _schemas[schemaName] = enumSchema;

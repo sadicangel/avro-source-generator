@@ -15,10 +15,10 @@ public sealed record class ProtocolMessage(
         writer.WriteStartObject();
         if (Documentation is not null)
         {
-            writer.WriteString("doc", Documentation);
+            writer.WriteString(AvroJsonKeys.Doc, Documentation);
         }
 
-        writer.WritePropertyName("request");
+        writer.WritePropertyName(AvroJsonKeys.Request);
         writer.WriteStartArray();
         foreach (var parameter in RequestParameters)
         {
@@ -26,11 +26,11 @@ public sealed record class ProtocolMessage(
         }
 
         writer.WriteEndArray();
-        writer.WritePropertyName("response");
+        writer.WritePropertyName(AvroJsonKeys.Response);
         Response.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         if (Errors.Length > 0)
         {
-            writer.WriteStartArray("errors");
+            writer.WriteStartArray(AvroJsonKeys.Errors);
             foreach (var error in Errors)
             {
                 error.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);

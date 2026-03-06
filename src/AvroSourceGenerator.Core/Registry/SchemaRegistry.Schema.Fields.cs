@@ -11,7 +11,7 @@ public readonly partial struct SchemaRegistry
     private ImmutableArray<Field> Fields(JsonElement schema, SchemaName containingSchemaName)
     {
         var fields = ImmutableArray.CreateBuilder<Field>();
-        foreach (var field in schema.GetRequiredArray("fields"))
+        foreach (var field in schema.GetRequiredArray(AvroJsonKeys.Fields))
             fields.Add(Field(field, containingSchemaName));
 
         return fields.ToImmutable();
@@ -19,8 +19,8 @@ public readonly partial struct SchemaRegistry
 
     private Field Field(JsonElement field, SchemaName containingSchemaName)
     {
-        var name = field.GetRequiredString("name").ToValidName();
-        var type = Schema(field.GetRequiredProperty("type"), containingSchemaName.Namespace);
+        var name = field.GetRequiredString(AvroJsonKeys.Name).ToValidName();
+        var type = Schema(field.GetRequiredProperty(AvroJsonKeys.Type), containingSchemaName.Namespace);
         var underlyingType = type;
         var isNullable = false;
         string? remarks = null;
@@ -53,9 +53,9 @@ public readonly partial struct SchemaRegistry
 
         var documentation = field.GetDocumentation();
         var aliases = field.GetAliases();
-        var defaultJson = field.GetNullableProperty("default");
+        var defaultJson = field.GetNullableProperty(AvroJsonKeys.Default);
         var @default = GetValue(type, defaultJson);
-        var order = field.GetNullableInt32("order");
+        var order = field.GetNullableInt32(AvroJsonKeys.Order);
         var properties = GetProperties(field);
 
         return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order, properties, remarks);

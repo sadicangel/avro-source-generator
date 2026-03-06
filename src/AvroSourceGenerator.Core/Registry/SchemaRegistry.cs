@@ -18,7 +18,19 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
 
     private static readonly HashSet<string> s_reservedProperties =
     [
-        "type", "name", "namespace", "fields", "items", "size", "symbols", "values", "aliases", "order", "doc", "default", "logicalType"
+        AvroJsonKeys.Type,
+        AvroJsonKeys.Name,
+        AvroJsonKeys.Namespace,
+        AvroJsonKeys.Fields,
+        AvroJsonKeys.Items,
+        AvroJsonKeys.Size,
+        AvroJsonKeys.Symbols,
+        AvroJsonKeys.Values,
+        AvroJsonKeys.Aliases,
+        AvroJsonKeys.Order,
+        AvroJsonKeys.Doc,
+        AvroJsonKeys.Default,
+        AvroJsonKeys.LogicalType,
     ];
 
     public int Count => _schemas.Count;
@@ -46,14 +58,14 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
     {
         switch (name)
         {
-            case "null": return AvroSchema.Object;
-            case "boolean": return AvroSchema.Boolean;
-            case "int": return AvroSchema.Int;
-            case "long": return AvroSchema.Long;
-            case "float": return AvroSchema.Float;
-            case "double": return AvroSchema.Double;
-            case "bytes": return AvroSchema.Bytes;
-            case "string": return AvroSchema.String;
+            case AvroTypeNames.Null: return AvroSchema.Object;
+            case AvroTypeNames.Boolean: return AvroSchema.Boolean;
+            case AvroTypeNames.Int: return AvroSchema.Int;
+            case AvroTypeNames.Long: return AvroSchema.Long;
+            case AvroTypeNames.Float: return AvroSchema.Float;
+            case AvroTypeNames.Double: return AvroSchema.Double;
+            case AvroTypeNames.Bytes: return AvroSchema.Bytes;
+            case AvroTypeNames.String: return AvroSchema.String;
         }
 
         var schemaName = name.ToSchemaName(containingNamespace);
@@ -89,14 +101,14 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
 
     private AvroSchema Complex(JsonElement schema, string? containingNamespace)
     {
-        if (schema.TryGetProperty("protocol", out _))
+        if (schema.TryGetProperty(AvroJsonKeys.Protocol, out _))
         {
             return Protocol(schema, containingNamespace, GetProperties(schema));
         }
 
         var underlyingSchema = UnderlyingSchema(schema, containingNamespace, GetProperties(schema));
 
-        return schema.TryGetProperty("logicalType", out _) ? Logical(schema, underlyingSchema) : underlyingSchema;
+        return schema.TryGetProperty(AvroJsonKeys.LogicalType, out _) ? Logical(schema, underlyingSchema) : underlyingSchema;
     }
 
     private AvroSchema UnderlyingSchema(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
@@ -104,12 +116,12 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
         var type = schema.GetSchemaType();
         switch (type)
         {
-            case "array": return Array(schema, containingNamespace, properties);
-            case "map": return Map(schema, containingNamespace, properties);
-            case "enum": return Enum(schema, containingNamespace, properties);
-            case "record": return Record(schema, containingNamespace, properties);
-            case "error": return Error(schema, containingNamespace, properties);
-            case "fixed": return Fixed(schema, containingNamespace, properties);
+            case AvroTypeNames.Array: return Array(schema, containingNamespace, properties);
+            case AvroTypeNames.Map: return Map(schema, containingNamespace, properties);
+            case AvroTypeNames.Enum: return Enum(schema, containingNamespace, properties);
+            case AvroTypeNames.Record: return Record(schema, containingNamespace, properties);
+            case AvroTypeNames.Error: return Error(schema, containingNamespace, properties);
+            case AvroTypeNames.Fixed: return Fixed(schema, containingNamespace, properties);
         }
 
         var wellKnown = FindByName(type, containingNamespace)

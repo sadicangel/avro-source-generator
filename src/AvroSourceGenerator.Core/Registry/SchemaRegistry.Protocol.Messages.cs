@@ -20,8 +20,8 @@ public readonly partial struct SchemaRegistry
         var methodName = property.Name.ToValidName();
         var documentation = property.Value.GetDocumentation();
         var requestParameters = ProtocolRequestParameters(property.Value, containingNamespace);
-        var response = ProtocolResponse(property.Value.GetRequiredProperty("response"), containingNamespace);
-        var errors = ProtocolErrors(property.Value.GetNullableArray("errors"), containingNamespace);
+        var response = ProtocolResponse(property.Value.GetRequiredProperty(AvroJsonKeys.Response), containingNamespace);
+        var errors = ProtocolErrors(property.Value.GetNullableArray(AvroJsonKeys.Errors), containingNamespace);
         return new ProtocolMessage(methodName, documentation, requestParameters, response, errors);
     }
 }

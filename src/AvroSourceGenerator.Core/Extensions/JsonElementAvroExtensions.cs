@@ -9,10 +9,16 @@ public static class JsonElementAvroExtensions
     extension(JsonElement schema)
     {
         public SchemaName GetRequiredSchemaName(string? containingNamespace) =>
-            schema.GetRequiredAvroName(schema.GetRequiredString("name"), "name", containingNamespace);
+            schema.GetRequiredAvroName(
+                schema.GetRequiredString(AvroJsonKeys.Name),
+                AvroJsonKeys.Name,
+                containingNamespace);
 
         public SchemaName GetRequiredProtocolName(string? containingNamespace) =>
-            schema.GetRequiredAvroName(schema.GetRequiredString("protocol"), "protocol", containingNamespace);
+            schema.GetRequiredAvroName(
+                schema.GetRequiredString(AvroJsonKeys.Protocol),
+                AvroJsonKeys.Protocol,
+                containingNamespace);
 
         private SchemaName GetRequiredAvroName(string property, string propertyName, string? containingNamespace = null)
         {
@@ -24,7 +30,7 @@ public static class JsonElementAvroExtensions
 
             var name = property;
             if (!name.TrySplitQualifiedName(out name, out var @namespace))
-                @namespace = schema.GetNullableString("namespace");
+                @namespace = schema.GetNullableString(AvroJsonKeys.Namespace);
 
             if (string.IsNullOrWhiteSpace(name) || @namespace is "")
                 throw new InvalidSchemaException($"Property '{propertyName}' has an invalid format: 'cannot start or end with a dot' in schema: {schema.GetRawText()}");
@@ -34,7 +40,7 @@ public static class JsonElementAvroExtensions
 
         public SchemaName GetOptionalAvroName()
         {
-            ReadOnlySpan<string> propertyNames = ["name", "protocol"];
+            ReadOnlySpan<string> propertyNames = [AvroJsonKeys.Name, AvroJsonKeys.Protocol];
             foreach (var propertyName in propertyNames)
             {
                 var property = schema.GetOptionalString(propertyName);
@@ -50,16 +56,16 @@ public static class JsonElementAvroExtensions
         }
 
         public string GetSchemaType() =>
-            schema.GetRequiredString("type");
+            schema.GetRequiredString(AvroJsonKeys.Type);
 
         public string? GetDocumentation() =>
-            schema.GetNullableString("doc");
+            schema.GetNullableString(AvroJsonKeys.Doc);
 
         public ImmutableArray<string> GetAliases()
         {
             return schema
-                .GetNullableArray("aliases")?
-                .Select(json => json.ToOptionalString() ?? throw new InvalidSchemaException($"'aliases' property must be an array of non-empty, non-whitespace strings in schema: {schema.GetRawText()}"))
+                .GetNullableArray(AvroJsonKeys.Aliases)?
+                .Select(json => json.ToOptionalString() ?? throw new InvalidSchemaException($"'{AvroJsonKeys.Aliases}' property must be an array of non-empty, non-whitespace strings in schema: {schema.GetRawText()}"))
                 .ToImmutableArray() ?? [];
         }
 
@@ -68,19 +74,19 @@ public static class JsonElementAvroExtensions
             return
             [
                 .. schema
-                    .GetRequiredArray("symbols")
+                    .GetRequiredArray(AvroJsonKeys.Symbols)
                     .Select(json =>
-                        json.ToOptionalString()?.ToValidName() ?? throw new InvalidSchemaException($"'symbols' property must be an array of non-empty, non-whitespace strings in schema: {schema.GetRawText()}"))
+                        json.ToOptionalString()?.ToValidName() ?? throw new InvalidSchemaException($"'{AvroJsonKeys.Symbols}' property must be an array of non-empty, non-whitespace strings in schema: {schema.GetRawText()}"))
             ];
         }
 
         public int GetFixedSize()
         {
-            var json = schema.GetRequiredProperty("size");
+            var json = schema.GetRequiredProperty(AvroJsonKeys.Size);
 
             return json.ValueKind is JsonValueKind.Number && json.TryGetInt32(out var size) && size > 0
                 ? size
-                : throw new InvalidSchemaException($"'size' property must be a positive integer (found '{json}') in schema: {schema.GetRawText()}");
+                : throw new InvalidSchemaException($"'{AvroJsonKeys.Size}' property must be a positive integer (found '{json}') in schema: {schema.GetRawText()}");
         }
     }
 }

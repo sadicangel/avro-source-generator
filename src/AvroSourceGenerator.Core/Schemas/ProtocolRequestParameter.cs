@@ -14,17 +14,17 @@ public sealed record class ProtocolRequestParameter(
     public void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();
-        writer.WriteString("name", Name is ['@', ..] ? Name[1..] : Name);
-        writer.WritePropertyName("type");
+        writer.WriteString(AvroJsonKeys.Name, Name is ['@', ..] ? Name[1..] : Name);
+        writer.WritePropertyName(AvroJsonKeys.Type);
         Type.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         if (Documentation is not null)
         {
-            writer.WriteString("doc", Documentation);
+            writer.WriteString(AvroJsonKeys.Doc, Documentation);
         }
 
         if (DefaultJson is not null)
         {
-            writer.WritePropertyName("default");
+            writer.WritePropertyName(AvroJsonKeys.Default);
             DefaultJson.Value.WriteTo(writer);
         }
 

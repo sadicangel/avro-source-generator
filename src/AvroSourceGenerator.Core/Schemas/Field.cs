@@ -20,14 +20,14 @@ public sealed record class Field(
     {
         writer.WriteStartObject();
         // TODO: Is it worth to store the schema name?
-        writer.WriteString("name", Name is ['@', ..] ? Name[1..] : Name);
-        writer.WritePropertyName("type");
+        writer.WriteString(AvroJsonKeys.Name, Name is ['@', ..] ? Name[1..] : Name);
+        writer.WritePropertyName(AvroJsonKeys.Type);
         Type.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         if (Documentation is not null)
-            writer.WriteString("doc", Documentation);
+            writer.WriteString(AvroJsonKeys.Doc, Documentation);
         if (Aliases.Length > 0)
         {
-            writer.WriteStartArray("aliases");
+            writer.WriteStartArray(AvroJsonKeys.Aliases);
             foreach (var alias in Aliases)
                 writer.WriteStringValue(alias);
             writer.WriteEndArray();
@@ -35,7 +35,7 @@ public sealed record class Field(
 
         if (DefaultJson is not null)
         {
-            writer.WritePropertyName("default");
+            writer.WritePropertyName(AvroJsonKeys.Default);
             DefaultJson.Value.WriteTo(writer);
         }
 

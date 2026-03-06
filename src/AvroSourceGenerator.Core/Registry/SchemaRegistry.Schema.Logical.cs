@@ -9,7 +9,7 @@ public readonly partial struct SchemaRegistry
 {
     private AvroSchema Logical(JsonElement schema, AvroSchema underlyingSchema)
     {
-        var logicalType = schema.GetRequiredString("logicalType");
+        var logicalType = schema.GetRequiredString(AvroJsonKeys.LogicalType);
 
         return targetProfile switch
         {

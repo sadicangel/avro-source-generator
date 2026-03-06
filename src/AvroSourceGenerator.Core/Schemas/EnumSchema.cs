@@ -23,27 +23,27 @@ public sealed record class EnumSchema(
         }
 
         writer.WriteStartObject();
-        writer.WriteString("type", "enum");
-        writer.WriteString("name", SchemaName.Name);
+        writer.WriteString(AvroJsonKeys.Type, AvroTypeNames.Enum);
+        writer.WriteString(AvroJsonKeys.Name, SchemaName.Name);
         var @namespace = SchemaName.Namespace ?? containingNamespace;
         if (@namespace is not null)
-            writer.WriteString("namespace", @namespace);
+            writer.WriteString(AvroJsonKeys.Namespace, @namespace);
         if (Documentation is not null)
-            writer.WriteString("doc", Documentation);
+            writer.WriteString(AvroJsonKeys.Doc, Documentation);
         if (Aliases.Length > 0)
         {
-            writer.WriteStartArray("aliases");
+            writer.WriteStartArray(AvroJsonKeys.Aliases);
             foreach (var alias in Aliases)
                 writer.WriteStringValue(alias);
             writer.WriteEndArray();
         }
 
-        writer.WriteStartArray("symbols");
+        writer.WriteStartArray(AvroJsonKeys.Symbols);
         foreach (var symbol in Symbols)
             writer.WriteStringValue(symbol);
         writer.WriteEndArray();
         if (Default is not null)
-            writer.WriteString("default", Default);
+            writer.WriteString(AvroJsonKeys.Default, Default);
         foreach (var entry in Properties)
         {
             writer.WritePropertyName(entry.Key);

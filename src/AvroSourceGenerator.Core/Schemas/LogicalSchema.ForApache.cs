@@ -1,4 +1,4 @@
-﻿namespace AvroSourceGenerator.Schemas;
+namespace AvroSourceGenerator.Schemas;
 
 internal static partial class LogicalSchemaExtensions
 {
@@ -6,39 +6,39 @@ internal static partial class LogicalSchemaExtensions
     {
         public static AvroSchema ForApache(string logicalType, AvroSchema underlyingSchema) => logicalType switch
         {
-            LogicalType.Date => new LogicalSchema(
+            LogicalTypeNames.Date => new LogicalSchema(
                 underlyingSchema,
                 new CSharpName("DateTime", "System"),
                 new SchemaName(logicalType)),
-            LogicalType.Decimal when underlyingSchema.Type is SchemaType.Bytes => new LogicalSchema(
+            LogicalTypeNames.Decimal when underlyingSchema.Type is SchemaType.Bytes => new LogicalSchema(
                 underlyingSchema,
                 new CSharpName("AvroDecimal", "Avro"),
                 new SchemaName(logicalType)),
-            LogicalType.TimeMicros => new LogicalSchema(
+            LogicalTypeNames.TimeMicros => new LogicalSchema(
                 underlyingSchema,
                 new CSharpName("TimeSpan", "System"),
                 new SchemaName(logicalType)),
-            LogicalType.TimeMillis => new LogicalSchema(
+            LogicalTypeNames.TimeMillis => new LogicalSchema(
                 underlyingSchema,
                 new CSharpName("TimeSpan", "System"),
                 new SchemaName(logicalType)),
-            LogicalType.TimestampMicros => new LogicalSchema(
+            LogicalTypeNames.TimestampMicros => new LogicalSchema(
                 underlyingSchema,
                 new CSharpName("DateTime", "System"),
                 new SchemaName(logicalType)),
-            LogicalType.TimestampMillis => new LogicalSchema(
+            LogicalTypeNames.TimestampMillis => new LogicalSchema(
                 underlyingSchema,
                 new CSharpName("DateTime", "System"),
                 new SchemaName(logicalType)),
-            LogicalType.LocalTimestampMicros => new LogicalSchema(
+            LogicalTypeNames.LocalTimestampMicros => new LogicalSchema(
                 underlyingSchema,
                 new CSharpName("DateTime", "System"),
                 new SchemaName(logicalType)),
-            LogicalType.LocalTimestampMillis => new LogicalSchema(
+            LogicalTypeNames.LocalTimestampMillis => new LogicalSchema(
                 underlyingSchema,
                 new CSharpName("DateTime", "System"),
                 new SchemaName(logicalType)),
-            LogicalType.Uuid when underlyingSchema.Type is SchemaType.String => new LogicalSchema(
+            LogicalTypeNames.Uuid when underlyingSchema.Type is SchemaType.String => new LogicalSchema(
                 underlyingSchema,
                 new CSharpName("Guid", "System"),
                 new SchemaName(logicalType)),

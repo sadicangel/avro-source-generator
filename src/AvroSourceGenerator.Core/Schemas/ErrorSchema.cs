@@ -22,22 +22,22 @@ public sealed record class ErrorSchema(
         }
 
         writer.WriteStartObject();
-        writer.WriteString("type", "error");
-        writer.WriteString("name", SchemaName.Name);
+        writer.WriteString(AvroJsonKeys.Type, AvroTypeNames.Error);
+        writer.WriteString(AvroJsonKeys.Name, SchemaName.Name);
         var @namespace = SchemaName.Namespace ?? containingNamespace;
         if (@namespace is not null)
-            writer.WriteString("namespace", @namespace);
+            writer.WriteString(AvroJsonKeys.Namespace, @namespace);
         if (Documentation is not null)
-            writer.WriteString("doc", Documentation);
+            writer.WriteString(AvroJsonKeys.Doc, Documentation);
         if (Aliases.Length > 0)
         {
-            writer.WriteStartArray("aliases");
+            writer.WriteStartArray(AvroJsonKeys.Aliases);
             foreach (var alias in Aliases)
                 writer.WriteStringValue(alias);
             writer.WriteEndArray();
         }
 
-        writer.WriteStartArray("fields");
+        writer.WriteStartArray(AvroJsonKeys.Fields);
         foreach (var field in Fields)
             field.WriteTo(writer, writtenSchemas, registeredSchemas, @namespace);
         writer.WriteEndArray();

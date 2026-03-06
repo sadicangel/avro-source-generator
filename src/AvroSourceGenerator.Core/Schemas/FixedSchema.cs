@@ -38,22 +38,22 @@ public sealed record class FixedSchema(
         }
 
         writer.WriteStartObject();
-        writer.WriteString("type", "fixed");
-        writer.WriteString("name", SchemaName.Name);
+        writer.WriteString(AvroJsonKeys.Type, AvroTypeNames.Fixed);
+        writer.WriteString(AvroJsonKeys.Name, SchemaName.Name);
         var @namespace = SchemaName.Namespace ?? containingNamespace;
         if (@namespace is not null)
-            writer.WriteString("namespace", @namespace);
+            writer.WriteString(AvroJsonKeys.Namespace, @namespace);
         if (Documentation is not null)
-            writer.WriteString("doc", Documentation);
+            writer.WriteString(AvroJsonKeys.Doc, Documentation);
         if (Aliases.Length > 0)
         {
-            writer.WriteStartArray("aliases");
+            writer.WriteStartArray(AvroJsonKeys.Aliases);
             foreach (var alias in Aliases)
                 writer.WriteStringValue(alias);
             writer.WriteEndArray();
         }
 
-        writer.WriteNumber("size", Size);
+        writer.WriteNumber(AvroJsonKeys.Size, Size);
         foreach (var entry in Properties)
         {
             writer.WritePropertyName(entry.Key);

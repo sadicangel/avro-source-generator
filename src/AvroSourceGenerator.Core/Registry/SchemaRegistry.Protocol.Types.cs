@@ -22,10 +22,10 @@ public readonly partial struct SchemaRegistry
 
         return type switch
         {
-            "enum" => Enum(schema, containingNamespace, GetProperties(schema)),
-            "record" => Record(schema, containingNamespace, GetProperties(schema)),
-            "error" => Error(schema, containingNamespace, GetProperties(schema)),
-            "fixed" => Fixed(schema, containingNamespace, GetProperties(schema)),
+            AvroTypeNames.Enum => Enum(schema, containingNamespace, GetProperties(schema)),
+            AvroTypeNames.Record => Record(schema, containingNamespace, GetProperties(schema)),
+            AvroTypeNames.Error => Error(schema, containingNamespace, GetProperties(schema)),
+            AvroTypeNames.Fixed => Fixed(schema, containingNamespace, GetProperties(schema)),
             _ => throw new InvalidSchemaException($"Unknown schema type '{type}' in {schema.GetRawText()}")
         };
     }

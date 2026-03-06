@@ -17,8 +17,8 @@ public readonly partial struct SchemaRegistry
         using (Track(schemaName))
         {
             var documentation = schema.GetDocumentation();
-            var types = ProtocolTypes(schema.GetRequiredArray("types"), schemaName.Namespace);
-            var messages = ProtocolMessages(schema.GetRequiredObject("messages"), schemaName.Namespace);
+            var types = ProtocolTypes(schema.GetRequiredArray(AvroJsonKeys.Types), schemaName.Namespace);
+            var messages = ProtocolMessages(schema.GetRequiredObject(AvroJsonKeys.Messages), schemaName.Namespace);
 
             var protocolSchema = new ProtocolSchema(schema, schemaName, documentation, types, messages, properties);
             _schemas[schemaName] = protocolSchema;

@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Schemas;
 
-internal static class LogicalType
+internal static class LogicalTypeNames
 {
     public const string Date = "date";
     public const string Decimal = "decimal";

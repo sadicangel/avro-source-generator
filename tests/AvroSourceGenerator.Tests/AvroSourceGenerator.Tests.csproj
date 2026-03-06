@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AvroSourceGenerator\AvroSourceGenerator.csproj" />
+    <ProjectReference Include="..\..\src\AvroSourceGenerator.Core\AvroSourceGenerator.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

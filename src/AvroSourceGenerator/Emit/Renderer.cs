@@ -24,8 +24,7 @@ internal static class Renderer
         {
             var schemaRegistry = SchemaRegistry.Register(
                 schema: avroFile.Json,
-                avroLibrary: settings.AvroLibrary,
-                languageVersion: settings.LanguageVersion,
+                targetProfile: settings.TargetProfile,
                 useNullableReferenceTypes: settings.LanguageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes));
 
             // We should get no render errors, so we don't have to handle anything else.

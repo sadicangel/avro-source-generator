@@ -27,5 +27,8 @@
   <Folder Name="/tools/">
     <Project Path="tools/AvroSourceGenerator.Tracing/AvroSourceGenerator.Tracing.csproj" />
   </Folder>
-  <Project Path="src/AvroSourceGenerator/AvroSourceGenerator.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/AvroSourceGenerator.Core/AvroSourceGenerator.Core.csproj" />
+    <Project Path="src/AvroSourceGenerator/AvroSourceGenerator.csproj" />
+  </Folder>
 </Solution>

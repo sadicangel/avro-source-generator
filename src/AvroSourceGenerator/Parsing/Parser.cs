@@ -2,7 +2,7 @@
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
-using AvroSourceGenerator.Registry.Extensions;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -31,7 +31,7 @@ internal static class Parser
         {
             using var jsonDocument = JsonDocument.Parse(text!);
             var json = jsonDocument.RootElement.Clone();
-            var name = json.GetOptionalSchemaName();
+            var name = json.GetOptionalAvroName();
             return new AvroFile(path, text, json, name, diagnostics.ToImmutable());
         }
         catch (JsonException ex)

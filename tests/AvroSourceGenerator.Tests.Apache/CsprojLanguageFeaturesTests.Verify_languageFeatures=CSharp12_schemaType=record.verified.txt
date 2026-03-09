@@ -23,6 +23,43 @@ namespace SchemaNamespace
               "name": "Field",
               "type": "string"
             }
+          ],
+          "messages": {
+            "hello": {
+              "doc": "Say hello.",
+              "request": [
+                {
+                  "type": "Greeting",
+                  "name": "greeting"
+                }
+              ],
+              "response": "Greeting",
+              "errors": [
+                "Curse"
+              ]
+            }
+          },
+          "types": [
+            {
+              "name": "Greeting",
+              "type": "record",
+              "fields": [
+                {
+                  "type": "string",
+                  "name": "message"
+                }
+              ]
+            },
+            {
+              "name": "Curse",
+              "type": "error",
+              "fields": [
+                {
+                  "type": "string",
+                  "name": "message"
+                }
+              ]
+            }
           ]
         }
         """);

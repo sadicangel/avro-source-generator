@@ -21,6 +21,11 @@ public sealed record class ProtocolSchema(
             writer.WriteString(AvroJsonKeys.Namespace, SchemaName.Namespace);
         }
 
+        if (Documentation is not null)
+        {
+            writer.WriteString(AvroJsonKeys.Doc, Documentation);
+        }
+
         if (Types.Length > 0)
         {
             writer.WriteStartArray(AvroJsonKeys.Types);

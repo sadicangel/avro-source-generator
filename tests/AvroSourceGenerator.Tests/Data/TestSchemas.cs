@@ -117,6 +117,9 @@ public static class TestSchemas
 
     public static JsonNode Get(string schemaType) => JsonNode.Parse(s_schemas[schemaType])!;
 
+    private static JsonNode Parse(object? x) =>
+        x is null ? JsonNode.Parse("null")! : JsonNode.Parse(JsonSerializer.Serialize(x, x.GetType()))!;
+
     extension(JsonNode node)
     {
         public JsonNode With(string propertyName, JsonNode propertyValue)
@@ -129,14 +132,18 @@ public static class TestSchemas
         public JsonNode With(string propertyName, JsonArray propertyValue) =>
             node.With(propertyName, (JsonNode)propertyValue);
 
+        public JsonNode With(string propertyName, object? propertyValue)
+        {
+            var clone = node.DeepClone();
+            clone[propertyName] = Parse(propertyValue);
+            return clone;
+        }
+
         public JsonNode With(string propertyName, IEnumerable<object?>? propertyValue)
         {
             var clone = node.DeepClone();
             clone[propertyName] = propertyValue is null ? null : new JsonArray([.. propertyValue.Select(Parse)]);
             return clone;
-
-            static JsonNode Parse(object? x) =>
-                x is null ? JsonNode.Parse("null")! : JsonNode.Parse(JsonSerializer.Serialize(x, x.GetType()))!;
         }
     }
 }

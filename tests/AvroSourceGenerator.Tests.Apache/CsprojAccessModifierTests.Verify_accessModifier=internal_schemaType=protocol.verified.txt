@@ -14,10 +14,7 @@ namespace SchemaNamespace
         """
         {
           "protocol": "RpcProtocol",
-          "namespace": "SchemaNamespace",
-          "messages": {},
-          "protocol": "RpcProtocol",
-          "types": []
+          "namespace": "SchemaNamespace"
         }
         """);
     

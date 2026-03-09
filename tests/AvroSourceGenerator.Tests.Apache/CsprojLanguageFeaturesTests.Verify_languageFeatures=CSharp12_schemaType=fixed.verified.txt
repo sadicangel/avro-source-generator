@@ -19,7 +19,44 @@ namespace SchemaNamespace
           "type": "fixed",
           "name": "Fixed",
           "namespace": "SchemaNamespace",
-          "size": 16
+          "size": 16,
+          "messages": {
+            "hello": {
+              "doc": "Say hello.",
+              "request": [
+                {
+                  "type": "Greeting",
+                  "name": "greeting"
+                }
+              ],
+              "response": "Greeting",
+              "errors": [
+                "Curse"
+              ]
+            }
+          },
+          "types": [
+            {
+              "name": "Greeting",
+              "type": "record",
+              "fields": [
+                {
+                  "type": "string",
+                  "name": "message"
+                }
+              ]
+            },
+            {
+              "name": "Curse",
+              "type": "error",
+              "fields": [
+                {
+                  "type": "string",
+                  "name": "message"
+                }
+              ]
+            }
+          ]
         }
         """);
     }

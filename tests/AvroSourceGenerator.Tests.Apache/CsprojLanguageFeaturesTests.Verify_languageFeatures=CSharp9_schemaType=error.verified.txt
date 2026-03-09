@@ -13,7 +13,7 @@ namespace SchemaNamespace
     {
         public override global::Avro.Schema Schema { get => Error.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
-        "{\"type\":\"error\",\"name\":\"Error\",\"namespace\":\"SchemaNamespace\",\"fields\":[{\"name\":\"Field\",\"type\":\"string\"}]}");
+        "{\"type\":\"error\",\"name\":\"Error\",\"namespace\":\"SchemaNamespace\",\"fields\":[{\"name\":\"Field\",\"type\":\"string\"}],\"messages\":{\"hello\":{\"doc\":\"Say hello.\",\"request\":[{\"type\":\"Greeting\",\"name\":\"greeting\"}],\"response\":\"Greeting\",\"errors\":[\"Curse\"]}},\"types\":[{\"name\":\"Greeting\",\"type\":\"record\",\"fields\":[{\"type\":\"string\",\"name\":\"message\"}]},{\"name\":\"Curse\",\"type\":\"error\",\"fields\":[{\"type\":\"string\",\"name\":\"message\"}]}]}");
     
         public override object? Get(int fieldPos)
         {

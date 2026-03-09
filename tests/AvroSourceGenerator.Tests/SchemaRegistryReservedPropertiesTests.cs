@@ -44,8 +44,6 @@ public sealed class SchemaRegistryReservedPropertiesTests
     [Fact]
     public void Register_Protocol_ExcludeReservedProtocolPropertiesFromCustomProperties()
     {
-        Assert.Skip("Protocol schemas do not currently ignore reserved properties, but they should.");
-
         var schema = Parse(
             """
             {

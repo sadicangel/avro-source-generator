@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Registry;

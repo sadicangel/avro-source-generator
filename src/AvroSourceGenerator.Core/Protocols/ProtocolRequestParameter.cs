@@ -1,6 +1,7 @@
-﻿using System.Text.Json;
+using System.Text.Json;
+using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Schemas;
+namespace AvroSourceGenerator.Protocols;
 
 public sealed record class ProtocolRequestParameter(
     string Name,

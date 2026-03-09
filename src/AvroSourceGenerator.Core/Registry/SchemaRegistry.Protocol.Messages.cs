@@ -1,6 +1,7 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Extensions;
+using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Registry;

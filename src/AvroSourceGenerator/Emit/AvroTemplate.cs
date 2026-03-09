@@ -31,7 +31,7 @@ internal static class AvroTemplate
 
         return
         [
-            .. schemaRegistry.Where(schema => schema.ShouldEmitCode).Select(schema =>
+            .. schemaRegistry.Where(ShouldEmitCode).Select(schema =>
             {
                 templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
                 templateContext.SetValue(new ScriptVariableGlobal("SchemaJson"), GetSchemaJson(schema, registeredSchemas, settings));
@@ -40,6 +40,11 @@ internal static class AvroTemplate
                 return new RenderedSchema(hintName, sourceText);
             })
         ];
+    }
+
+    private static bool ShouldEmitCode(TopLevelSchema schema)
+    {
+        return schema is not FixedSchema fixedSchema || fixedSchema.CSharpName != AvroSchema.Bytes.CSharpName;
     }
 
     private static string GetSchemaJson(TopLevelSchema schema, ImmutableDictionary<SchemaName, TopLevelSchema> registeredSchemas, RenderSettings settings)

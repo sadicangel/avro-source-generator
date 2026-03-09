@@ -26,8 +26,6 @@ public sealed record class FixedSchema(
         };
     }
 
-    public override bool ShouldEmitCode => CSharpName != Bytes.CSharpName;
-
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         if (!writtenSchemas.Add(SchemaName))

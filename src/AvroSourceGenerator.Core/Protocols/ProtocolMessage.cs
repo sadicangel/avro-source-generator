@@ -1,7 +1,8 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Schemas;
+namespace AvroSourceGenerator.Protocols;
 
 public sealed record class ProtocolMessage(
     string MethodName,
@@ -42,3 +43,4 @@ public sealed record class ProtocolMessage(
         writer.WriteEndObject();
     }
 }
+

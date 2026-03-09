@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Registry;
@@ -19,3 +20,4 @@ public readonly partial struct SchemaRegistry
         return new ProtocolResponse(type, underlyingType, isNullable);
     }
 }
+

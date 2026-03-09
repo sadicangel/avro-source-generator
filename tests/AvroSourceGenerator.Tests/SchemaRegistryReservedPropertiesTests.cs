@@ -1,6 +1,7 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Registry;
+using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Tests;
@@ -72,3 +73,4 @@ public sealed class SchemaRegistryReservedPropertiesTests
         return document.RootElement.Clone();
     }
 }
+

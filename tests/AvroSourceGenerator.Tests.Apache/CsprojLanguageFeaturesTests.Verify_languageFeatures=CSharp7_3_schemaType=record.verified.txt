@@ -12,7 +12,7 @@ namespace SchemaNamespace
     {
         global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Record.s_schema; }
         private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
-        "{\"type\":\"record\",\"name\":\"Record\",\"namespace\":\"SchemaNamespace\",\"fields\":[{\"name\":\"Field\",\"type\":\"string\"}]}");
+        "{\"type\":\"record\",\"name\":\"Record\",\"namespace\":\"SchemaNamespace\",\"fields\":[{\"name\":\"Field\",\"type\":\"string\"}],\"messages\":{\"hello\":{\"doc\":\"Say hello.\",\"request\":[{\"type\":\"Greeting\",\"name\":\"greeting\"}],\"response\":\"Greeting\",\"errors\":[\"Curse\"]}},\"types\":[{\"name\":\"Greeting\",\"type\":\"record\",\"fields\":[{\"type\":\"string\",\"name\":\"message\"}]},{\"name\":\"Curse\",\"type\":\"error\",\"fields\":[{\"type\":\"string\",\"name\":\"message\"}]}]}");
     
         object global::Avro.Specific.ISpecificRecord.Get(int fieldPos)
         {

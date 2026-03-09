@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -87,10 +87,10 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
     {
         if (schema.TryGetProperty(AvroJsonKeys.Protocol, out _))
         {
-            return Protocol(schema, containingNamespace, GetProperties(schema));
+            return Protocol(schema, containingNamespace, GetProtocolProperties(schema));
         }
 
-        var underlyingSchema = UnderlyingSchema(schema, containingNamespace, GetProperties(schema));
+        var underlyingSchema = UnderlyingSchema(schema, containingNamespace, GetSchemaProperties(schema));
 
         return schema.TryGetProperty(AvroJsonKeys.LogicalType, out _) ? Logical(schema, underlyingSchema) : underlyingSchema;
     }
@@ -120,11 +120,23 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
         return wellKnown;
     }
 
-    private static ImmutableSortedDictionary<string, JsonElement> GetProperties(JsonElement schema)
+    private static ImmutableSortedDictionary<string, JsonElement> GetSchemaProperties(JsonElement schema)
     {
         var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
         foreach (var property in schema.EnumerateObject()
-            .Where(property => !ReservedProperties.IsReserved(property.Name)))
+            .Where(property => !ReservedSchemaProperties.IsReserved(property.Name)))
+        {
+            properties.Add(property.Name, property.Value);
+        }
+
+        return properties.ToImmutable();
+    }
+
+    private static ImmutableSortedDictionary<string, JsonElement> GetProtocolProperties(JsonElement schema)
+    {
+        var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
+        foreach (var property in schema.EnumerateObject()
+            .Where(property => !ReservedProtocolProperties.IsReserved(property.Name)))
         {
             properties.Add(property.Name, property.Value);
         }

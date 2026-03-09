@@ -56,7 +56,7 @@ public readonly partial struct SchemaRegistry
         var defaultJson = field.GetNullableProperty(AvroJsonKeys.Default);
         var @default = GetValue(type, defaultJson);
         var order = field.GetNullableInt32(AvroJsonKeys.Order);
-        var properties = GetProperties(field);
+        var properties = GetSchemaProperties(field);
 
         return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order, properties, remarks);
     }

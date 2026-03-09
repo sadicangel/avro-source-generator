@@ -59,4 +59,3 @@ public sealed record class ProtocolSchema(
         writer.WriteEndObject();
     }
 }
-

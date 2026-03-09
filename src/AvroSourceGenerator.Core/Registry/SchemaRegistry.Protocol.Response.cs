@@ -20,4 +20,3 @@ public readonly partial struct SchemaRegistry
         return new ProtocolResponse(type, underlyingType, isNullable);
     }
 }
-

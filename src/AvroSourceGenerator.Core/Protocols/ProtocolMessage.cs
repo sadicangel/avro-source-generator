@@ -43,4 +43,3 @@ public sealed record class ProtocolMessage(
         writer.WriteEndObject();
     }
 }
-

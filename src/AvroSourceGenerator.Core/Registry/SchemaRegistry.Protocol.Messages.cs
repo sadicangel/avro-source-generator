@@ -26,4 +26,3 @@ public readonly partial struct SchemaRegistry
         return new ProtocolMessage(methodName, documentation, requestParameters, response, errors);
     }
 }
-

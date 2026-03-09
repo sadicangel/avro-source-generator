@@ -32,4 +32,3 @@ public sealed record class ProtocolRequestParameter(
         writer.WriteEndObject();
     }
 }
-

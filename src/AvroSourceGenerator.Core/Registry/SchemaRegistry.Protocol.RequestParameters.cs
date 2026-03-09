@@ -35,4 +35,3 @@ public readonly partial struct SchemaRegistry
         return new ProtocolRequestParameter(name, type, underlyingType, isNullable, documentation, defaultJson, @default);
     }
 }
-

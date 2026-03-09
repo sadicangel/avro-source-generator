@@ -28,4 +28,3 @@ public readonly partial struct SchemaRegistry
         }
     }
 }
-

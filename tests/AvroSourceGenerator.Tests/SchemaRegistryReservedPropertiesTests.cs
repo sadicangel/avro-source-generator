@@ -73,4 +73,3 @@ public sealed class SchemaRegistryReservedPropertiesTests
         return document.RootElement.Clone();
     }
 }
-

@@ -1,4 +1,3 @@
-﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
@@ -7,19 +6,20 @@ namespace AvroSourceGenerator.Registry;
 
 public readonly partial struct SchemaRegistry
 {
-    private EnumSchema Enum(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
+    private EnumSchema Enum(JsonElement schema, string? containingNamespace)
     {
         var schemaName = schema.GetRequiredSchemaName(containingNamespace);
 
         if (_schemas.ContainsKey(schemaName))
             throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
 
-        using (Track(schemaName))
+        using (EnterRecursionScope(schemaName))
         {
             var documentation = schema.GetDocumentation();
             var aliases = schema.GetAliases();
             var symbols = schema.GetSymbols();
             var @default = schema.GetNullableString(AvroJsonKeys.Default);
+            var properties = schema.GetSchemaProperties();
 
             var enumSchema = new EnumSchema(schema, schemaName, documentation, aliases, symbols, @default, properties);
             _schemas[schemaName] = enumSchema;

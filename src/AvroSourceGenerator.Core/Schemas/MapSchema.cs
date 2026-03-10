@@ -3,8 +3,8 @@ using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
-public sealed record class MapSchema(AvroSchema ValueSchema, ImmutableSortedDictionary<string, JsonElement> Properties)
-    : AvroSchema(SchemaType.Map, new CSharpName($"Dictionary<string, {ValueSchema}>", "System.Collections.Generic"), new SchemaName(AvroTypeNames.Map), Properties)
+public sealed record class MapSchema(AvroSchema ValueSchema, string? Documentation, ImmutableSortedDictionary<string, JsonElement> Properties)
+    : AvroSchema(SchemaType.Map, GetCSharpName(ValueSchema), new SchemaName(AvroTypeNames.Map), Documentation, Properties)
 {
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
@@ -20,4 +20,6 @@ public sealed record class MapSchema(AvroSchema ValueSchema, ImmutableSortedDict
 
         writer.WriteEndObject();
     }
+
+    private static CSharpName GetCSharpName(AvroSchema valueSchema) => new($"Dictionary<string, {valueSchema}>", "System.Collections.Generic");
 }

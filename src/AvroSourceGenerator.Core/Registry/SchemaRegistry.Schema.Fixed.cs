@@ -1,4 +1,3 @@
-﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Extensions;
@@ -8,18 +7,19 @@ namespace AvroSourceGenerator.Registry;
 
 public readonly partial struct SchemaRegistry
 {
-    private FixedSchema Fixed(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
+    private FixedSchema Fixed(JsonElement schema, string? containingNamespace)
     {
         var schemaName = schema.GetRequiredSchemaName(containingNamespace);
 
         if (_schemas.ContainsKey(schemaName))
             throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
 
-        using (Track(schemaName))
+        using (EnterRecursionScope(schemaName))
         {
             var documentation = schema.GetDocumentation();
             var aliases = schema.GetAliases();
             var size = schema.GetFixedSize();
+            var properties = schema.GetSchemaProperties();
 
             var fixedSchema = targetProfile switch
             {

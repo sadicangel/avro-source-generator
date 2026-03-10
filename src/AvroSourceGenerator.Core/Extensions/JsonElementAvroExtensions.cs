@@ -88,5 +88,30 @@ public static class JsonElementAvroExtensions
                 ? size
                 : throw new InvalidSchemaException($"'{AvroJsonKeys.Size}' property must be a positive integer (found '{json}') in schema: {schema.GetRawText()}");
         }
+
+
+        public ImmutableSortedDictionary<string, JsonElement> GetSchemaProperties()
+        {
+            var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
+            foreach (var property in schema.EnumerateObject()
+                .Where(property => !ReservedSchemaProperties.IsReserved(property.Name)))
+            {
+                properties.Add(property.Name, property.Value);
+            }
+
+            return properties.ToImmutable();
+        }
+
+        public ImmutableSortedDictionary<string, JsonElement> GetProtocolProperties()
+        {
+            var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
+            foreach (var property in schema.EnumerateObject()
+                .Where(property => !ReservedProtocolProperties.IsReserved(property.Name)))
+            {
+                properties.Add(property.Name, property.Value);
+            }
+
+            return properties.ToImmutable();
+        }
     }
 }

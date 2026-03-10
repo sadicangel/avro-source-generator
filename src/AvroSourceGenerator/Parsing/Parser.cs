@@ -2,8 +2,8 @@
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
+using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Extensions;
-using AvroSourceGenerator.Schemas;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;

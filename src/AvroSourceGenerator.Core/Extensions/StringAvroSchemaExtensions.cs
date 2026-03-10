@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Extensions;

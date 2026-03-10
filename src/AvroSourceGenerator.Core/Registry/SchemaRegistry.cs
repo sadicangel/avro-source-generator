@@ -1,20 +1,25 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Registry;
 
+public readonly record struct SchemaRegistryOptions(TargetProfile TargetProfile, DuplicateResolution DuplicateResolution, bool UseNullableReferenceTypes)
+{
+    public static readonly SchemaRegistryOptions Default = new(TargetProfile.Modern, DuplicateResolution.Error, true);
+}
+
 [StructLayout(LayoutKind.Auto)]
 [SuppressMessage("ReSharper", "UsageOfDefaultStructEquality")]
-public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool useNullableReferenceTypes) : IReadOnlyCollection<TopLevelSchema>
+public readonly partial struct SchemaRegistry(SchemaRegistryOptions options) : IReadOnlyCollection<TopLevelSchema>
 {
     private readonly Dictionary<SchemaName, TopLevelSchema> _schemas = [];
     private readonly List<SchemaName> _recursionStack = [];
-
 
     public int Count => _schemas.Count;
 
@@ -23,22 +28,45 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
 
     public IReadOnlyDictionary<SchemaName, TopLevelSchema> Schemas => _schemas;
 
-    public static SchemaRegistry Register(JsonElement schema, TargetProfile targetProfile, bool useNullableReferenceTypes)
+    public void Register(JsonElement schema)
     {
-        var registry = new SchemaRegistry(targetProfile, useNullableReferenceTypes);
+        _ = Schema(schema, containingNamespace: null);
 
-        _ = registry.Schema(schema, containingNamespace: null);
-
-        if (registry.Count == 0)
+        // TODO: We need to check that the returned schema contains at least a named schema.
+        if (Count == 0)
         {
             throw new InvalidSchemaException($"At least a named schema must be present in schema: {schema.GetRawText()}");
         }
+    }
 
-        return registry;
+    private void Register(TopLevelSchema schema)
+    {
+        if (TryRegister(schema))
+        {
+            return;
+        }
+
+        if (options.DuplicateResolution == DuplicateResolution.Ignore)
+        {
+            return;
+        }
+
+        // TODO: Needs to be its own exception type so we can report a proper diagnostic.
+        throw new DuplicateSchemaException(schema);
+
+        // TODO: We should probably add 'Replace' resolution as well.
+    }
+
+    private bool TryRegister(TopLevelSchema schema)
+    {
+        if (_schemas.ContainsKey(schema.SchemaName)) return false;
+        _schemas[schema.SchemaName] = schema;
+        return true;
     }
 
     private AvroSchema? FindByName(string name, string? containingNamespace)
     {
+        // TODO: Isn't this an issue for types that have names that collide with primitive types? Do we need to support that?
         switch (name)
         {
             case AvroTypeNames.Null: return AvroSchema.Object;
@@ -123,6 +151,7 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
         return wellKnown;
     }
 
+    // TODO: This should probably be in AvroSchema hierarchy instead of being here.
     private string? GetValue(AvroSchema type, JsonElement? json)
     {
         if (json is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined })
@@ -140,8 +169,7 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
             "double" => value.GetRawText(),
             "byte[]" => $"[{string.Join(", ", value.GetBytesFromBase64().Select(bytes => $"0x{bytes:X2}"))}]",
             "string" => value.GetRawText(),
-            _ when _schemas.TryGetValue(type.SchemaName, out var namedSchema) && namedSchema.Type is SchemaType.Enum =>
-                $"{type}.{value.GetString()}",
+            _ when type.Type is SchemaType.Enum => $"{type}.{value.GetString()}",
 
             // TODO: Do we need to handle complex types? Should they be supported?
             _ => null,

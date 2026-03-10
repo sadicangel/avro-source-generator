@@ -28,13 +28,4 @@
     <ProjectReference Include="..\..\src\AvroSourceGenerator.Core\AvroSourceGenerator.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="FieldCollectionTests.Verify_class=record_field=array-string-.verified.txt">
-      <DependentUpon>FieldCollectionTests.cs</DependentUpon>
-    </None>
-    <None Update="FieldCollectionTests.Verify_class=record_field=array-string-.received.txt">
-      <DependentUpon>FieldCollectionTests.cs</DependentUpon>
-    </None>
-  </ItemGroup>
-
 </Project>

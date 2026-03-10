@@ -9,9 +9,10 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var avroFileProvider = context.AdditionalTextsProvider
+        var avroFilesProvider = context.AdditionalTextsProvider
             .Where(Parser.IsAvroFile)
             .Select(Parser.GetAvroFile)
+            .Collect()
             .WithTrackingName(TrackingNames.AvroFiles);
 
         var generatorSettingsProvider = context.AnalyzerConfigOptionsProvider
@@ -26,12 +27,13 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             .Select(Parser.GetRenderSettings)
             .WithTrackingName(TrackingNames.RenderSettings);
 
-        var renderResultProvider = avroFileProvider.Combine(renderSettingsProvider)
+        var renderResultProvider = avroFilesProvider
+            .Combine(renderSettingsProvider)
             .Select(Renderer.Render)
             .WithTrackingName(TrackingNames.RenderResult);
 
-        var renderResultsProvider = renderResultProvider.Collect()
-            .Combine(renderSettingsProvider)
+        // TODO: We probably don't need this tracking name/step anymore.
+        var renderResultsProvider = renderResultProvider
             .WithTrackingName(TrackingNames.Emitter);
 
         context.RegisterImplementationSourceOutput(renderResultsProvider, Emitter.Emit);

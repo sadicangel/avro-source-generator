@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 
@@ -9,10 +9,6 @@ public readonly partial struct SchemaRegistry
     private EnumSchema Enum(JsonElement schema, string? containingNamespace)
     {
         var schemaName = schema.GetRequiredSchemaName(containingNamespace);
-
-        if (_schemas.ContainsKey(schemaName))
-            throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
-
         using (EnterRecursionScope(schemaName))
         {
             var documentation = schema.GetDocumentation();
@@ -22,7 +18,8 @@ public readonly partial struct SchemaRegistry
             var properties = schema.GetSchemaProperties();
 
             var enumSchema = new EnumSchema(schema, schemaName, documentation, aliases, symbols, @default, properties);
-            _schemas[schemaName] = enumSchema;
+
+            Register(enumSchema);
 
             return enumSchema;
         }

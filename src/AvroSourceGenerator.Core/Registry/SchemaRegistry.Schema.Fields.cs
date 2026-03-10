@@ -32,7 +32,9 @@ public readonly partial struct SchemaRegistry
                     if (union.SupportsVariant())
                     {
                         var variant = new VariantSchema(name, containingSchemaName, union.Schemas);
-                        _schemas.Add(variant.SchemaName, variant);
+                        // It is OK to ignore the result of TryRegister here. If a variant with the same name already exists
+                        // it means that it has the same set of types in the union, so we can just reuse it.
+                        _ = TryRegister(variant);
 
                         remarks = variant.Documentation;
                         union = union.WithVariant(variant);
@@ -44,7 +46,7 @@ public readonly partial struct SchemaRegistry
                 }
                 break;
 
-            case FixedSchema @fixed when targetProfile is not TargetProfile.Apache:
+            case FixedSchema @fixed when options.TargetProfile is not TargetProfile.Apache:
                 {
                     remarks = @fixed.Documentation;
                 }

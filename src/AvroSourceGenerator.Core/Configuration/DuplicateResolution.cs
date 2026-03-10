@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Configuration;
 
-internal enum DuplicateResolution
+public enum DuplicateResolution
 {
     Error,
     Ignore,

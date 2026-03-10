@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Exceptions;
 
 namespace AvroSourceGenerator.Extensions;
 

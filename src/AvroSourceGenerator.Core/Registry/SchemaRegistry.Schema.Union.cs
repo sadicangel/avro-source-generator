@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Schemas;
 
@@ -17,7 +17,7 @@ public readonly partial struct SchemaRegistry
         var underlyingSchema = GetUnderlyingSchema(schemas);
         while (underlyingSchema is UnionSchema { Schemas: var unionSchemas })
             underlyingSchema = GetUnderlyingSchema(unionSchemas);
-        var hasQuestionMark = isNullable && (useNullableReferenceTypes || MapsToValueType(underlyingSchema.Type));
+        var hasQuestionMark = isNullable && (options.UseNullableReferenceTypes || MapsToValueType(underlyingSchema.Type));
         var csharpName = new CSharpName(
             underlyingSchema.CSharpName.Name + (hasQuestionMark ? "?" : ""),
             underlyingSchema.CSharpName.Namespace);

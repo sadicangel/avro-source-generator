@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Extensions;

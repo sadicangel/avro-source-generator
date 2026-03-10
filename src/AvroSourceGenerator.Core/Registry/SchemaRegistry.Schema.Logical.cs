@@ -11,7 +11,7 @@ public readonly partial struct SchemaRegistry
     {
         var logicalType = schema.GetRequiredString(AvroJsonKeys.LogicalType);
 
-        return targetProfile switch
+        return options.TargetProfile switch
         {
             TargetProfile.Apache =>
                 LogicalSchema.ForApache(logicalType, underlyingSchema),
@@ -25,7 +25,7 @@ public readonly partial struct SchemaRegistry
             TargetProfile.Modern =>
                 LogicalSchema.ForModern(logicalType, underlyingSchema),
 
-            _ => throw new InvalidOperationException($"Unsupported {nameof(TargetProfile)} '{targetProfile}'"),
+            _ => throw new InvalidOperationException($"Unsupported {nameof(TargetProfile)} '{options.TargetProfile}'"),
         };
     }
 }

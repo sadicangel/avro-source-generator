@@ -1,7 +1,6 @@
-using System.Text.Json;
-using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Registry;
+﻿using System.Text.Json;
 using AvroSourceGenerator.Protocols;
+using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Tests;
@@ -34,7 +33,8 @@ public sealed class SchemaRegistryReservedPropertiesTests
             }
             """);
 
-        var registry = SchemaRegistry.Register(schema, TargetProfile.Modern, useNullableReferenceTypes: true);
+        var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
+        registry.Register(schema);
         var record = Assert.IsType<RecordSchema>(Assert.Single(registry.Schemas.Values));
         var field = Assert.Single(record.Fields);
 
@@ -61,7 +61,8 @@ public sealed class SchemaRegistryReservedPropertiesTests
             }
             """);
 
-        var registry = SchemaRegistry.Register(schema, TargetProfile.Modern, useNullableReferenceTypes: true);
+        var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
+        registry.Register(schema);
         var protocol = Assert.IsType<ProtocolSchema>(Assert.Single(registry.Schemas.Values));
 
         Assert.Equal(["x-protocol"], protocol.Properties.Keys);

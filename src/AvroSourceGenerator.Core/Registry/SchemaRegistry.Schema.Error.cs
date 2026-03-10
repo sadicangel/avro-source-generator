@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 
@@ -9,10 +9,6 @@ public readonly partial struct SchemaRegistry
     private ErrorSchema Error(JsonElement schema, string? containingNamespace)
     {
         var schemaName = schema.GetRequiredSchemaName(containingNamespace);
-
-        if (_schemas.ContainsKey(schemaName))
-            throw new InvalidSchemaException($"Redeclaration of schema '{schemaName}'");
-
         using (EnterRecursionScope(schemaName))
         {
             var documentation = schema.GetDocumentation();
@@ -21,7 +17,8 @@ public readonly partial struct SchemaRegistry
             var properties = schema.GetSchemaProperties();
 
             var errorSchema = new ErrorSchema(schema, schemaName, documentation, aliases, fields, properties);
-            _schemas[schemaName] = errorSchema;
+
+            Register(errorSchema);
 
             return errorSchema;
         }

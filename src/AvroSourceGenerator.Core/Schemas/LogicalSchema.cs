@@ -6,7 +6,7 @@ public sealed record class LogicalSchema(
     AvroSchema UnderlyingSchema,
     CSharpName CSharpName,
     SchemaName SchemaName)
-    : AvroSchema(SchemaType.Logical, CSharpName, SchemaName, UnderlyingSchema.Properties)
+    : AvroSchema(SchemaType.Logical, CSharpName, SchemaName, UnderlyingSchema.Documentation, UnderlyingSchema.Properties)
 {
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {

@@ -3,11 +3,11 @@ using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
-public sealed record class PrimitiveSchema(SchemaType Type, CSharpName CSharpName, SchemaName SchemaName, ImmutableSortedDictionary<string, JsonElement> Properties)
-    : AvroSchema(Type, CSharpName, SchemaName, Properties)
+public sealed record class PrimitiveSchema(SchemaType Type, CSharpName CSharpName, SchemaName SchemaName, string? Documentation, ImmutableSortedDictionary<string, JsonElement> Properties)
+    : AvroSchema(Type, CSharpName, SchemaName, Documentation, Properties)
 {
     public PrimitiveSchema(SchemaType type, CSharpName csharpName, SchemaName schemaName)
-        : this(type, csharpName, schemaName, ImmutableSortedDictionary<string, JsonElement>.Empty) { }
+        : this(type, csharpName, schemaName, Documentation: null, ImmutableSortedDictionary<string, JsonElement>.Empty) { }
 
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {

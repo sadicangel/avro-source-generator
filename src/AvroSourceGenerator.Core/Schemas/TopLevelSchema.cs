@@ -9,4 +9,4 @@ public abstract record class TopLevelSchema(
     SchemaName SchemaName,
     string? Documentation,
     ImmutableSortedDictionary<string, JsonElement> Properties)
-    : AvroSchema(Type, CSharpName.FromSchemaName(SchemaName), SchemaName, Properties);
+    : AvroSchema(Type, CSharpName.FromSchemaName(SchemaName), SchemaName, Documentation, Properties);

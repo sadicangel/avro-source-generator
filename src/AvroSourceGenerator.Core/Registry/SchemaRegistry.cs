@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Immutable;
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -63,7 +62,7 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
         return null;
     }
 
-    private RecursionScope Track(SchemaName schemaName) => new(_recursionStack, schemaName);
+    private RecursionScope EnterRecursionScope(SchemaName schemaName) => new(_recursionStack, schemaName);
 
     private AvroSchema Schema(JsonElement schema, string? containingNamespace)
     {
@@ -87,25 +86,25 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
     {
         if (schema.TryGetProperty(AvroJsonKeys.Protocol, out _))
         {
-            return Protocol(schema, containingNamespace, GetProtocolProperties(schema));
+            return Protocol(schema, containingNamespace);
         }
 
-        var underlyingSchema = UnderlyingSchema(schema, containingNamespace, GetSchemaProperties(schema));
+        var underlyingSchema = UnderlyingSchema(schema, containingNamespace);
 
         return schema.TryGetProperty(AvroJsonKeys.LogicalType, out _) ? Logical(schema, underlyingSchema) : underlyingSchema;
     }
 
-    private AvroSchema UnderlyingSchema(JsonElement schema, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
+    private AvroSchema UnderlyingSchema(JsonElement schema, string? containingNamespace)
     {
         var type = schema.GetSchemaType();
         switch (type)
         {
-            case AvroTypeNames.Array: return Array(schema, containingNamespace, properties);
-            case AvroTypeNames.Map: return Map(schema, containingNamespace, properties);
-            case AvroTypeNames.Enum: return Enum(schema, containingNamespace, properties);
-            case AvroTypeNames.Record: return Record(schema, containingNamespace, properties);
-            case AvroTypeNames.Error: return Error(schema, containingNamespace, properties);
-            case AvroTypeNames.Fixed: return Fixed(schema, containingNamespace, properties);
+            case AvroTypeNames.Array: return Array(schema, containingNamespace);
+            case AvroTypeNames.Map: return Map(schema, containingNamespace);
+            case AvroTypeNames.Enum: return Enum(schema, containingNamespace);
+            case AvroTypeNames.Record: return Record(schema, containingNamespace);
+            case AvroTypeNames.Error: return Error(schema, containingNamespace);
+            case AvroTypeNames.Fixed: return Fixed(schema, containingNamespace);
         }
 
         var wellKnown = FindByName(type, containingNamespace)
@@ -113,35 +112,15 @@ public readonly partial struct SchemaRegistry(TargetProfile targetProfile, bool 
 
         if (wellKnown is PrimitiveSchema primitive)
         {
-            return primitive with { Properties = properties };
+            return primitive with
+            {
+                Documentation = schema.GetDocumentation(),
+                Properties = schema.GetSchemaProperties(),
+            };
         }
 
         // TODO: Should we add/merge properties for other schema types?
         return wellKnown;
-    }
-
-    private static ImmutableSortedDictionary<string, JsonElement> GetSchemaProperties(JsonElement schema)
-    {
-        var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
-        foreach (var property in schema.EnumerateObject()
-            .Where(property => !ReservedSchemaProperties.IsReserved(property.Name)))
-        {
-            properties.Add(property.Name, property.Value);
-        }
-
-        return properties.ToImmutable();
-    }
-
-    private static ImmutableSortedDictionary<string, JsonElement> GetProtocolProperties(JsonElement schema)
-    {
-        var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
-        foreach (var property in schema.EnumerateObject()
-            .Where(property => !ReservedProtocolProperties.IsReserved(property.Name)))
-        {
-            properties.Add(property.Name, property.Value);
-        }
-
-        return properties.ToImmutable();
     }
 
     private string? GetValue(AvroSchema type, JsonElement? json)

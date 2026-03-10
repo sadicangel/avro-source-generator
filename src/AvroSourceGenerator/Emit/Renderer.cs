@@ -40,7 +40,7 @@ internal static class Renderer
             }
             catch (DuplicateSchemaException ex)
             {
-                diagnostics = diagnostics.Add(DuplicateSchemaOutputDiagnostic.Create(LocationInfo.None, $"{ex.Schema.SchemaName}.Avro.g.cs"));
+                diagnostics = diagnostics.Add(DuplicateSchemaDiagnostic.Create(LocationInfo.None, ex.Schema.CSharpName.ToString(includeGlobalPrefix: false)));
             }
             catch (InvalidSchemaException ex)
             {

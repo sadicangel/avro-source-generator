@@ -17,6 +17,9 @@ internal static class JsonElementJsonExtensions
         public JsonElement? GetOptionalProperty(string propertyName) =>
             schema.ValueKind is JsonValueKind.Object && schema.TryGetProperty(propertyName, out var json) ? json : null;
 
+        public string ToRequiredString() =>
+            schema is { ValueKind: JsonValueKind.String } && schema.GetString() is { Length: > 0 } value ? value : throw new InvalidSchemaException($"Expected a non-empty, non-whitespace string (found '{schema}') in schema: {schema.GetRawText()}");
+
         public string? ToOptionalString() =>
             schema is { ValueKind: JsonValueKind.String } && schema.GetString() is { Length: > 0 } value ? value : null;
 

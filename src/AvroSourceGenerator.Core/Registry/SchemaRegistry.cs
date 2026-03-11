@@ -1,63 +1,31 @@
-using System.Collections;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
-using System.Text.Json;
+﻿using System.Collections;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Exceptions;
-using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Registry;
 
-public readonly record struct SchemaRegistryOptions(TargetProfile TargetProfile, DuplicateResolution DuplicateResolution, bool UseNullableReferenceTypes)
+public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IReadOnlyCollection<TopLevelSchema>
 {
-    public static readonly SchemaRegistryOptions Default = new SchemaRegistryOptions(TargetProfile.Modern, DuplicateResolution.Error, true);
-}
-
-[StructLayout(LayoutKind.Auto)]
-[SuppressMessage("ReSharper", "UsageOfDefaultStructEquality")]
-public readonly partial struct SchemaRegistry(SchemaRegistryOptions options) : IReadOnlyCollection<TopLevelSchema>
-{
-    private readonly Dictionary<SchemaName, TopLevelSchema> _schemas = [];
+    private readonly Dictionary<SchemaName, TopLevelSchema> _storedSchemas = [];
+    private readonly Dictionary<SchemaName, TopLevelSchema> _stagedSchemas = [];
     private readonly List<SchemaName> _recursionStack = [];
 
-    public int Count => _schemas.Count;
+    public int Count => _storedSchemas.Count;
 
-    public IEnumerator<TopLevelSchema> GetEnumerator() => _schemas.Values.GetEnumerator();
+    public IEnumerator<TopLevelSchema> GetEnumerator() => _storedSchemas.Values.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public IReadOnlyDictionary<SchemaName, TopLevelSchema> Schemas => _schemas;
+    public IReadOnlyDictionary<SchemaName, TopLevelSchema> Schemas => _storedSchemas;
 
-    public void Register(JsonElement schema)
-    {
-        var registeredSchema = Schema(schema, containingNamespace: null);
-        if (!ContainsTopLevelSchema(registeredSchema))
-        {
-            throw new InvalidSchemaException($"At least a named schema must be present in schema: {schema.GetRawText()}");
-        }
-    }
-
-    private static bool ContainsTopLevelSchema(AvroSchema schema)
-    {
-        return schema switch
-        {
-            TopLevelSchema => true,
-            ArraySchema array => ContainsTopLevelSchema(array.ItemSchema),
-            MapSchema map => ContainsTopLevelSchema(map.ValueSchema),
-            UnionSchema union => union.Schemas.Any(ContainsTopLevelSchema),
-            LogicalSchema logical => ContainsTopLevelSchema(logical.UnderlyingSchema),
-            _ => false
-        };
-    }
-
-    private void Register(TopLevelSchema schema)
+    public void Register(TopLevelSchema schema)
     {
         if (TryRegister(schema))
         {
             return;
         }
 
-        if (options.DuplicateResolution == DuplicateResolution.Ignore)
+        if (Options.DuplicateResolution == DuplicateResolution.Ignore)
         {
             return;
         }
@@ -67,17 +35,18 @@ public readonly partial struct SchemaRegistry(SchemaRegistryOptions options) : I
         // TODO: We should probably add 'Replace' resolution as well.
     }
 
-    private bool TryRegister(TopLevelSchema schema)
+    public bool TryRegister(TopLevelSchema schema)
     {
-        if (_schemas.ContainsKey(schema.SchemaName)) return false;
-        _schemas[schema.SchemaName] = schema;
+        if (_storedSchemas.ContainsKey(schema.SchemaName)) return false;
+        if (_stagedSchemas.ContainsKey(schema.SchemaName)) return false;
+        _stagedSchemas[schema.SchemaName] = schema;
         return true;
     }
 
-    private AvroSchema? FindByName(string name, string? containingNamespace)
+    public AvroSchema? Find(SchemaName schemaName)
     {
         // TODO: Isn't this an issue for types that have names that collide with primitive types? Do we need to support that?
-        switch (name)
+        switch (schemaName.Name)
         {
             case AvroTypeNames.Null: return AvroSchema.Object;
             case AvroTypeNames.Boolean: return AvroSchema.Boolean;
@@ -89,9 +58,9 @@ public readonly partial struct SchemaRegistry(SchemaRegistryOptions options) : I
             case AvroTypeNames.String: return AvroSchema.String;
         }
 
-        var schemaName = name.ToSchemaName(containingNamespace);
-        if (_schemas.TryGetValue(schemaName, out var topLevelSchema) && topLevelSchema is NamedSchema)
-            return new AvroSchemaReference(topLevelSchema.SchemaName);
+
+        if (_stagedSchemas.TryGetValue(schemaName, out var stagedSchemas) && stagedSchemas is NamedSchema)
+            return new AvroSchemaReference(stagedSchemas.SchemaName);
 
         var index = _recursionStack.FindLastIndex(existing => schemaName == existing);
         if (index >= 0)
@@ -100,98 +69,48 @@ public readonly partial struct SchemaRegistry(SchemaRegistryOptions options) : I
         return null;
     }
 
-    private RecursionScope EnterRecursionScope(SchemaName schemaName) => new RecursionScope(_recursionStack, schemaName);
-
-    private AvroSchema Schema(JsonElement schema, string? containingNamespace)
+    public RegisterScope EnterRegisterScope()
     {
-        return schema.ValueKind switch
+        if (_stagedSchemas.Count > 0)
         {
-            JsonValueKind.String => WellKnown(schema, containingNamespace),
-            JsonValueKind.Object => Complex(schema, containingNamespace),
-            JsonValueKind.Array => Union(schema, containingNamespace),
-            _ => throw new InvalidSchemaException($"Invalid schema: {schema.GetRawText()}")
-        };
-    }
-
-    private AvroSchema WellKnown(JsonElement schema, string? containingNamespace)
-    {
-        var type = schema.GetString() ?? throw new InvalidOperationException($"Unexpected json value '{schema}'. Expected 'string'");
-
-        return FindByName(type, containingNamespace) ?? throw new InvalidSchemaException($"Unknown schema '{type}'");
-    }
-
-    private AvroSchema Complex(JsonElement schema, string? containingNamespace)
-    {
-        if (schema.TryGetProperty(AvroJsonKeys.Protocol, out _))
-        {
-            return Protocol(schema, containingNamespace);
+            throw new InvalidOperationException("Cannot enter a new register scope while another is active.");
         }
 
-        var underlyingSchema = UnderlyingSchema(schema, containingNamespace);
-
-        return schema.TryGetProperty(AvroJsonKeys.LogicalType, out _) ? Logical(schema, underlyingSchema) : underlyingSchema;
+        return new RegisterScope(_storedSchemas, _stagedSchemas);
     }
 
-    private AvroSchema UnderlyingSchema(JsonElement schema, string? containingNamespace)
+    public RecursionScope EnterRecursionScope(SchemaName schemaName) => new(_recursionStack, schemaName);
+
+    public readonly struct RegisterScope : IDisposable
     {
-        var type = schema.GetSchemaType();
-        switch (type)
+        private readonly Dictionary<SchemaName, TopLevelSchema> _storedSchemas;
+        private readonly Dictionary<SchemaName, TopLevelSchema> _stagedSchemas;
+
+        internal RegisterScope(
+            Dictionary<SchemaName, TopLevelSchema> storedSchemas,
+            Dictionary<SchemaName, TopLevelSchema> stagedSchemas)
         {
-            case AvroTypeNames.Array: return Array(schema, containingNamespace);
-            case AvroTypeNames.Map: return Map(schema, containingNamespace);
-            case AvroTypeNames.Enum: return Enum(schema, containingNamespace);
-            case AvroTypeNames.Record: return Record(schema, containingNamespace);
-            case AvroTypeNames.Error: return Error(schema, containingNamespace);
-            case AvroTypeNames.Fixed: return Fixed(schema, containingNamespace);
+            _storedSchemas = storedSchemas;
+            _stagedSchemas = stagedSchemas;
         }
 
-        var wellKnown = FindByName(type, containingNamespace)
-            ?? throw new InvalidSchemaException($"Unknown schema type '{type}' in {schema.GetRawText()}");
-
-        if (wellKnown is PrimitiveSchema primitive)
+        public void Dispose()
         {
-            return primitive with
+            foreach (var entry in _stagedSchemas)
             {
-                Documentation = schema.GetDocumentation(),
-                Properties = schema.GetSchemaProperties(),
-            };
-        }
+                _storedSchemas[entry.Key] = entry.Value;
+            }
 
-        // TODO: Should we add/merge properties for other schema types?
-        return wellKnown;
+            _stagedSchemas.Clear();
+        }
     }
 
-    // TODO: This should probably be in AvroSchema hierarchy instead of being here.
-    private string? GetValue(AvroSchema type, JsonElement? json)
-    {
-        if (json is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined })
-        {
-            return null;
-        }
-
-        var value = json.Value;
-
-        // TODO: Actually validate the value so that we don't generate invalid code.
-        return type.CSharpName.Name switch
-        {
-            "object" or "bool" or "int" or "long" => value.GetRawText(),
-            "float" => $"{value.GetRawText()}f",
-            "double" => value.GetRawText(),
-            "byte[]" => $"[{string.Join(", ", value.GetBytesFromBase64().Select(bytes => $"0x{bytes:X2}"))}]",
-            "string" => value.GetRawText(),
-            _ when type.Type is SchemaType.Enum => $"{type}.{value.GetString()}",
-
-            // TODO: Do we need to handle complex types? Should they be supported?
-            _ => null,
-        };
-    }
-
-    private readonly ref struct RecursionScope : IDisposable
+    public readonly ref struct RecursionScope : IDisposable
     {
         private readonly List<SchemaName> _recursionStack;
         private readonly SchemaName _schemaName;
 
-        public RecursionScope(List<SchemaName> recursionStack, SchemaName schemaName)
+        internal RecursionScope(List<SchemaName> recursionStack, SchemaName schemaName)
         {
             _recursionStack = recursionStack;
             _schemaName = schemaName;

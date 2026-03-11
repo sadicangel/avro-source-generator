@@ -59,6 +59,9 @@ public static class JsonElementAvroExtensions
         public string GetSchemaType() =>
             schema.GetRequiredString(AvroJsonKeys.Type);
 
+        public string? GetLogicalType() =>
+            schema.GetOptionalProperty(AvroJsonKeys.LogicalType)?.ToRequiredString();
+
         public string? GetDocumentation() =>
             schema.GetNullableString(AvroJsonKeys.Doc);
 

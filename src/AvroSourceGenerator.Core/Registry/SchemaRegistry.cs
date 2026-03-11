@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -11,7 +11,7 @@ namespace AvroSourceGenerator.Registry;
 
 public readonly record struct SchemaRegistryOptions(TargetProfile TargetProfile, DuplicateResolution DuplicateResolution, bool UseNullableReferenceTypes)
 {
-    public static readonly SchemaRegistryOptions Default = new(TargetProfile.Modern, DuplicateResolution.Error, true);
+    public static readonly SchemaRegistryOptions Default = new SchemaRegistryOptions(TargetProfile.Modern, DuplicateResolution.Error, true);
 }
 
 [StructLayout(LayoutKind.Auto)]
@@ -30,13 +30,24 @@ public readonly partial struct SchemaRegistry(SchemaRegistryOptions options) : I
 
     public void Register(JsonElement schema)
     {
-        _ = Schema(schema, containingNamespace: null);
-
-        // TODO: We need to check that the returned schema contains at least a named schema.
-        if (Count == 0)
+        var registeredSchema = Schema(schema, containingNamespace: null);
+        if (!ContainsTopLevelSchema(registeredSchema))
         {
             throw new InvalidSchemaException($"At least a named schema must be present in schema: {schema.GetRawText()}");
         }
+    }
+
+    private static bool ContainsTopLevelSchema(AvroSchema schema)
+    {
+        return schema switch
+        {
+            TopLevelSchema => true,
+            ArraySchema array => ContainsTopLevelSchema(array.ItemSchema),
+            MapSchema map => ContainsTopLevelSchema(map.ValueSchema),
+            UnionSchema union => union.Schemas.Any(ContainsTopLevelSchema),
+            LogicalSchema logical => ContainsTopLevelSchema(logical.UnderlyingSchema),
+            _ => false
+        };
     }
 
     private void Register(TopLevelSchema schema)
@@ -51,7 +62,6 @@ public readonly partial struct SchemaRegistry(SchemaRegistryOptions options) : I
             return;
         }
 
-        // TODO: Needs to be its own exception type so we can report a proper diagnostic.
         throw new DuplicateSchemaException(schema);
 
         // TODO: We should probably add 'Replace' resolution as well.
@@ -90,7 +100,7 @@ public readonly partial struct SchemaRegistry(SchemaRegistryOptions options) : I
         return null;
     }
 
-    private RecursionScope EnterRecursionScope(SchemaName schemaName) => new(_recursionStack, schemaName);
+    private RecursionScope EnterRecursionScope(SchemaName schemaName) => new RecursionScope(_recursionStack, schemaName);
 
     private AvroSchema Schema(JsonElement schema, string? containingNamespace)
     {

@@ -16,8 +16,7 @@ internal static class Renderer
 
         var diagnostics = settings.Diagnostics.AddRange(avroFiles.SelectMany(avroFile => avroFile.Diagnostics));
 
-        // TODO: We can probably skip invalid files and just render the valid ones, but for now we'll just return an empty result if there are any errors.
-        if (!settings.IsValid || avroFiles.Any(avroFile => !avroFile.IsValid))
+        if (!settings.IsValid)
         {
             return new RenderResult([], diagnostics);
         }
@@ -28,7 +27,7 @@ internal static class Renderer
                 UseNullableReferenceTypes: settings.LanguageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes),
                 DuplicateResolution: settings.DuplicateResolution));
 
-        foreach (var avroFile in avroFiles)
+        foreach (var avroFile in avroFiles.Where(file => file.IsValid))
         {
             try
             {
@@ -40,7 +39,7 @@ internal static class Renderer
             }
             catch (DuplicateSchemaException ex)
             {
-                diagnostics = diagnostics.Add(DuplicateSchemaOutputDiagnostic.Create(LocationInfo.None, $"{ex.Schema.SchemaName}.Avro.g.cs"));
+                diagnostics = diagnostics.Add(DuplicateSchemaDiagnostic.Create(LocationInfo.None, ex.Schema.CSharpName.ToString(includeGlobalPrefix: false)));
             }
             catch (InvalidSchemaException ex)
             {

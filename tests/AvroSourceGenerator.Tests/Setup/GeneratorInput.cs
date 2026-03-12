@@ -9,6 +9,11 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator.Tests.Setup;
 
+public readonly record struct AdditionalFile(string Content, string Extension)
+{
+    public static AdditionalFile Schema(string content) => new(content, "avsc");
+}
+
 public readonly record struct GeneratorInput(
     Compilation Compilation,
     AnalyzerConfigOptionsProvider OptionsProvider,
@@ -16,13 +21,13 @@ public readonly record struct GeneratorInput(
 {
     public static GeneratorInput Create(
         ImmutableArray<string> sourceTexts,
-        ImmutableArray<string> additionalTexts,
+        ImmutableArray<AdditionalFile> additionalFiles,
         ImmutableArray<PortableExecutableReference> executableReferences,
         ProjectConfig projectConfig)
     {
         var parseOptions = new CSharpParseOptions(projectConfig.LanguageVersion);
         var optionsProvider = new AnalyzerConfigOptionsProviderImplementation(projectConfig.GlobalOptions);
-        var generatorDriver = CreateGeneratorDriver(additionalTexts, parseOptions, optionsProvider);
+        var generatorDriver = CreateGeneratorDriver(additionalFiles, parseOptions, optionsProvider);
         var compilation = CreateCompilation(sourceTexts, parseOptions, executableReferences);
         return new GeneratorInput(compilation, optionsProvider, generatorDriver);
     }
@@ -62,7 +67,7 @@ public readonly record struct GeneratorInput(
     }
 
     private static CSharpGeneratorDriver CreateGeneratorDriver(
-        ImmutableArray<string> additionalTexts,
+        ImmutableArray<AdditionalFile> additionalTexts,
         CSharpParseOptions parseOptions,
         AnalyzerConfigOptionsProvider optionsProvider)
     {
@@ -78,12 +83,11 @@ public readonly record struct GeneratorInput(
         return generatorDriver;
     }
 
-    private sealed class AdditionalTextImplementation(string content) : AdditionalText
+    private sealed class AdditionalTextImplementation(AdditionalFile additionalFile) : AdditionalText
     {
-        public override string Path => "schema.avsc";
+        public override string Path => System.IO.Path.ChangeExtension("schema", additionalFile.Extension);
 
-        public override SourceText GetText(CancellationToken cancellationToken = default) =>
-            SourceText.From(content, Encoding.UTF8);
+        public override SourceText GetText(CancellationToken cancellationToken = default) => SourceText.From(additionalFile.Content, Encoding.UTF8);
     }
 
     private sealed class AnalyzerConfigOptionsProviderImplementation(

@@ -8,7 +8,9 @@ namespace AvroSourceGenerator.Registry;
 public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IReadOnlyCollection<TopLevelSchema>
 {
     private readonly Dictionary<SchemaName, TopLevelSchema> _storedSchemas = [];
+    private readonly HashSet<SchemaName> _missingReferences = [];
     private readonly Dictionary<SchemaName, TopLevelSchema> _stagedSchemas = [];
+    private readonly HashSet<SchemaName> _stagedReferences = [];
     private readonly List<SchemaName> _recursionStack = [];
 
     public int Count => _storedSchemas.Count;
@@ -20,28 +22,29 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
 
     public void Register(TopLevelSchema schema)
     {
-        if (TryRegister(schema))
+        if (_stagedSchemas.ContainsKey(schema.SchemaName))
         {
-            return;
+            // Duplicate definition in the same file. Always an error.
+            throw new DuplicateSchemaException(schema);
         }
 
-        if (Options.DuplicateResolution == DuplicateResolution.Ignore)
+        if (_storedSchemas.TryGetValue(schema.SchemaName, out var storedSchema))
         {
-            return;
+            if (Options.DuplicateResolution != DuplicateResolution.Ignore)
+            {
+                throw new DuplicateSchemaException(schema);
+            }
+
+            // TODO: We should probably add 'Replace' resolution as well.
+
+            // Keep the previously registered schema visible inside the current file so later references can still resolve it.
+            schema = storedSchema;
         }
 
-        throw new DuplicateSchemaException(schema);
-
-        // TODO: We should probably add 'Replace' resolution as well.
-    }
-
-    public bool TryRegister(TopLevelSchema schema)
-    {
-        if (_storedSchemas.ContainsKey(schema.SchemaName)) return false;
-        if (_stagedSchemas.ContainsKey(schema.SchemaName)) return false;
         _stagedSchemas[schema.SchemaName] = schema;
-        return true;
     }
+
+    public void AddReference(SchemaName schemaName) => _stagedReferences.Add(schemaName);
 
     public AvroSchema? Find(SchemaName schemaName)
     {
@@ -58,26 +61,20 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
             case AvroTypeNames.String: return AvroSchema.String;
         }
 
-
-        if (_stagedSchemas.TryGetValue(schemaName, out var stagedSchemas) && stagedSchemas is NamedSchema)
-            return new AvroSchemaReference(stagedSchemas.SchemaName);
-
         var index = _recursionStack.FindLastIndex(existing => schemaName == existing);
         if (index >= 0)
             return new AvroSchemaReference(_recursionStack[index]);
 
+        if (_stagedSchemas.TryGetValue(schemaName, out var stagedSchema) && stagedSchema is NamedSchema)
+            return new AvroSchemaReference(stagedSchema.SchemaName);
+
+        if (_stagedReferences.Contains(schemaName))
+            return new AvroSchemaReference(schemaName);
+
         return null;
     }
 
-    public RegisterScope EnterRegisterScope()
-    {
-        if (_stagedSchemas.Count > 0)
-        {
-            throw new InvalidOperationException("Cannot enter a new register scope while another is active.");
-        }
-
-        return new RegisterScope(_storedSchemas, _stagedSchemas);
-    }
+    public RegisterScope EnterRegisterScope() => new(_stagedSchemas, _stagedReferences, _storedSchemas, _missingReferences);
 
     public RecursionScope EnterRecursionScope(SchemaName schemaName) => new(_recursionStack, schemaName);
 
@@ -85,13 +82,24 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
     {
         private readonly Dictionary<SchemaName, TopLevelSchema> _storedSchemas;
         private readonly Dictionary<SchemaName, TopLevelSchema> _stagedSchemas;
+        private readonly HashSet<SchemaName> _missingReferences;
+        private readonly HashSet<SchemaName> _stagedReferences;
 
         internal RegisterScope(
+            Dictionary<SchemaName, TopLevelSchema> stagedSchemas,
+            HashSet<SchemaName> stagedReferences,
             Dictionary<SchemaName, TopLevelSchema> storedSchemas,
-            Dictionary<SchemaName, TopLevelSchema> stagedSchemas)
+            HashSet<SchemaName> missingReferences)
         {
+            if (stagedSchemas.Count + stagedReferences.Count > 0)
+            {
+                throw new InvalidOperationException("Cannot enter a new register scope while another is active.");
+            }
+
             _storedSchemas = storedSchemas;
             _stagedSchemas = stagedSchemas;
+            _missingReferences = missingReferences;
+            _stagedReferences = stagedReferences;
         }
 
         public void Dispose()
@@ -99,9 +107,18 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
             foreach (var entry in _stagedSchemas)
             {
                 _storedSchemas[entry.Key] = entry.Value;
+                _missingReferences.Remove(entry.Key);
             }
 
             _stagedSchemas.Clear();
+
+            foreach (var reference in _stagedReferences)
+            {
+                if (!_storedSchemas.ContainsKey(reference))
+                    _missingReferences.Add(reference);
+            }
+
+            _stagedReferences.Clear();
         }
     }
 

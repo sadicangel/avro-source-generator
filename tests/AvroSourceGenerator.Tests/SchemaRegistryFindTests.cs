@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
@@ -50,7 +50,7 @@ public sealed class SchemaRegistryFindTests
     {
         var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
         using var _ = registry.EnterRegisterScope();
-        Assert.True(registry.TryRegister(CreateRecord("OrderCreated", "Demo")));
+        registry.Register(CreateRecord("OrderCreated", "Demo"));
 
         var result = registry.Find(new SchemaName("OrderCreated", "Demo"));
 
@@ -101,4 +101,3 @@ public sealed class SchemaRegistryFindTests
             Fields: [],
             Properties: ImmutableSortedDictionary<string, JsonElement>.Empty);
 }
-

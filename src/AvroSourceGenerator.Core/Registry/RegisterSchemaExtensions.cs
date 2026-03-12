@@ -9,7 +9,7 @@ namespace AvroSourceGenerator.Registry;
 
 internal static class RegisterSchemaExtensions
 {
-    extension(ref SchemaRegistry schemaRegistry)
+    extension(in SchemaRegistry schemaRegistry)
     {
         public AvroSchema Schema(JsonElement schema, string? containingNamespace)
         {
@@ -173,9 +173,9 @@ internal static class RegisterSchemaExtensions
                         if (union.SupportsVariant())
                         {
                             var variant = new VariantSchema(name, containingSchemaName, union.Schemas);
-                            // It is OK to ignore the result of TryRegister here. If a variant with the same name already exists
-                            // it means that it has the same set of types in the union, so we can just reuse it.
-                            _ = schemaRegistry.TryRegister(variant);
+                            // If a variant with the same name already exists, it has the same set of types, so we can just reuse it.
+                            if (!schemaRegistry.Schemas.ContainsKey(variant.SchemaName))
+                                schemaRegistry.Register(variant);
 
                             remarks = variant.Documentation;
                             union = union.WithVariant(variant);
@@ -202,6 +202,46 @@ internal static class RegisterSchemaExtensions
             var properties = field.GetSchemaProperties();
 
             return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order, properties, remarks);
+        }
+
+        public UnionSchema Union(JsonElement schema, string? containingNamespace)
+        {
+            var builder = ImmutableArray.CreateBuilder<AvroSchema>();
+            foreach (var innerSchema in schema.EnumerateArray())
+                builder.Add(schemaRegistry.Schema(innerSchema, containingNamespace));
+            var schemas = builder.ToImmutable();
+
+            var underlyingSchema = GetUnderlyingSchema(schemas);
+            var isNullable = schemas.Any(static schema => schema.Type == SchemaType.Null)
+                && (schemaRegistry.Options.UseNullableReferenceTypes || MapsToValueType(underlyingSchema.Type));
+            var csharpName = new CSharpName(
+                isNullable ? $"{underlyingSchema.CSharpName.Name}?" : underlyingSchema.CSharpName.Name,
+                underlyingSchema.CSharpName.Namespace);
+
+            return new UnionSchema(csharpName, schemas, underlyingSchema, isNullable);
+
+            static bool MapsToValueType(SchemaType type) =>
+                type is SchemaType.Boolean or SchemaType.Int or SchemaType.Long or SchemaType.Float or SchemaType.Double or SchemaType.Enum;
+
+            static AvroSchema GetUnderlyingSchema(ImmutableArray<AvroSchema> schemas)
+            {
+                var underlyingSchema = schemas switch
+                {
+                    // T1
+                    [var t1] => t1,
+                    // T1 | "null"
+                    [{ Type: not SchemaType.Null } t1, { Type: SchemaType.Null }] => t1,
+                    // "null" | T2
+                    [{ Type: SchemaType.Null }, { Type: not SchemaType.Null } t2] => t2,
+                    // T1 | T2 | ... | Tn
+                    _ => AvroSchema.Object,
+                };
+
+                while (underlyingSchema is UnionSchema { Schemas: var unionSchemas })
+                    underlyingSchema = GetUnderlyingSchema(unionSchemas);
+
+                return underlyingSchema;
+            }
         }
     }
 }

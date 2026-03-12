@@ -9,7 +9,7 @@ namespace AvroSourceGenerator.Registry;
 
 internal static class RegisterProtocolExtensions
 {
-    extension(ref SchemaRegistry schemaRegistry)
+    extension(in SchemaRegistry schemaRegistry)
     {
         public ProtocolSchema Protocol(JsonElement schema, string? containingNamespace)
         {

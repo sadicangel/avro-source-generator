@@ -1,5 +1,5 @@
 ﻿{
-  Location: schema.avsc: (0,0)-(5,1),
+  Location: u7XLaNhSjxMorQZUFKzyYxoR2f4.avsc: (0,0)-(5,1),
   Message:
 The schema defined in the JSON is invalid: 'namespace' property must be a string (found '[]') in schema: {
   "protocol": "RpcProtocol",

@@ -1,5 +1,7 @@
-﻿using System.Collections.Immutable;
+﻿using System.Buffers.Text;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -85,7 +87,7 @@ public readonly record struct GeneratorInput(
 
     private sealed class AdditionalTextImplementation(AdditionalFile additionalFile) : AdditionalText
     {
-        public override string Path => System.IO.Path.ChangeExtension("schema", additionalFile.Extension);
+        public override string Path => System.IO.Path.ChangeExtension(Base64Url.EncodeToString(SHA1.HashData(Encoding.UTF8.GetBytes(additionalFile.Content))), additionalFile.Extension);
 
         public override SourceText GetText(CancellationToken cancellationToken = default) => SourceText.From(additionalFile.Content, Encoding.UTF8);
     }

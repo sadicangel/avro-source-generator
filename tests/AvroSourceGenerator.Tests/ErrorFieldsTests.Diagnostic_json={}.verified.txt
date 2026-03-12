@@ -1,5 +1,5 @@
 ﻿{
-  Location: schema.avsc: (0,0)-(5,1),
+  Location: 7pD5xBXzArxB07QurH1pPckySsk.avsc: (0,0)-(5,1),
   Message:
 The schema defined in the JSON is invalid: 'fields' property must be an array (found '{}') in schema: {
   "type": "error",

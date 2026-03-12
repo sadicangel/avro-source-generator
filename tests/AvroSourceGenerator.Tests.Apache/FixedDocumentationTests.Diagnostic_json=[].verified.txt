@@ -1,5 +1,5 @@
 ﻿{
-  Location: schema.avsc: (0,0)-(6,1),
+  Location: K9_-kx5sqDgBLnkI7eGsHhyAj_A.avsc: (0,0)-(6,1),
   Message:
 The schema defined in the JSON is invalid: 'doc' property must be a string (found '[]') in schema: {
   "type": "fixed",

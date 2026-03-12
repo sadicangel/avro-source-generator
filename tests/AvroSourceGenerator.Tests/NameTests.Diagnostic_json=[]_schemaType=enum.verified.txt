@@ -1,5 +1,5 @@
 ﻿{
-  Location: schema.avsc: (0,0)-(5,1),
+  Location: mGkzOEhf52449uY1T5vYHCitWiM.avsc: (0,0)-(5,1),
   Message:
 The schema defined in the JSON is invalid: 'name' property must be a non-empty, non-whitespace string (found '[]') in schema: {
   "type": "enum",

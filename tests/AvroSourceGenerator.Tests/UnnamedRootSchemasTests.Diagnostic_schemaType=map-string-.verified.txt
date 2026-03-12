@@ -1,5 +1,5 @@
 ﻿{
-  Location: schema.avsc: (0,0)-(3,1),
+  Location: uzR4p0aKG1RCamaqRb8IonNDrdQ.avsc: (0,0)-(3,1),
   Message:
 The schema defined in the JSON is invalid: At least a named schema must be present in schema: {
   "type": "map",

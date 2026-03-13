@@ -87,7 +87,7 @@ public readonly record struct GeneratorInput(
 
     private sealed class AdditionalTextImplementation(AdditionalFile additionalFile) : AdditionalText
     {
-        public override string Path => System.IO.Path.ChangeExtension(Base64Url.EncodeToString(SHA1.HashData(Encoding.UTF8.GetBytes(additionalFile.Content))), additionalFile.Extension);
+        public override string Path => System.IO.Path.ChangeExtension(Base64Url.EncodeToString(SHA1.HashData(Encoding.UTF8.GetBytes(additionalFile.Content.ReplaceLineEndings("\n")))), additionalFile.Extension);
 
         public override SourceText GetText(CancellationToken cancellationToken = default) => SourceText.From(additionalFile.Content, Encoding.UTF8);
     }

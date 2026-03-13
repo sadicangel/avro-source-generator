@@ -1,5 +1,5 @@
 ﻿{
-  Location: rkaBsOCYA38aPbdvk5EP4rkSPMw.avsc: (0,0)-(5,1),
+  Location: HoHWs5AhaklcYglqp1bQSaflP78.avsc: (0,0)-(5,1),
   Message:
 The schema defined in the JSON is invalid: 'symbols' property must be an array (found '') in schema: {
   "type": "enum",

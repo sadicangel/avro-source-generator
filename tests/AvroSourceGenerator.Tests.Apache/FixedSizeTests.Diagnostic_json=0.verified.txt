@@ -1,5 +1,5 @@
 ﻿{
-  Location: _0RuoPG0EDs-D37-UwnMMPvQX18.avsc: (0,0)-(5,1),
+  Location: ouA0qw3GciiaET79ooXrHNB3LsI.avsc: (0,0)-(5,1),
   Message:
 The schema defined in the JSON is invalid: 'size' property must be a positive integer (found '0') in schema: {
   "type": "fixed",

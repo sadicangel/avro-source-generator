@@ -1,0 +1,17 @@
+﻿namespace AvroSourceGenerator.Tests.Apache.Snapshots;
+
+public sealed class CsprojRecordDeclarationTests
+{
+    [Theory]
+    [MemberData(nameof(RecordDeclarationSchemaPairs))]
+    public Task Verify(string recordDeclaration, string schemaType)
+    {
+        var schema = TestSchemas.Get(schemaType).ToString();
+
+        var config = new ProjectConfig { RecordDeclaration = recordDeclaration };
+
+        return VerifySourceCode(schema, null, config);
+    }
+
+    public static MatrixTheoryData<string, string> RecordDeclarationSchemaPairs() => new MatrixTheoryData<string, string>(["record", "class", "invalid"], ["record", "error", "fixed"]);
+}

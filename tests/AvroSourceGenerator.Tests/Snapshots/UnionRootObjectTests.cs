@@ -1,0 +1,47 @@
+﻿namespace AvroSourceGenerator.Tests.Snapshots;
+
+public sealed class UnionRootObjectTests
+{
+    [Fact]
+    public Task Verify()
+    {
+        return VerifySourceCode(
+            """
+            [
+                {
+                    "type": "record",
+                    "name": "RawContent",
+                    "fields": [
+                        { "name": "data", "type": { "type": "fixed", "name": "Data", "size": 256 } }
+                    ]
+                },
+                {
+                    "type": "record",
+                    "name": "EmailContent",
+                    "fields": [
+                        { "name": "subject", "type": "string" },
+                        { "name": "body", "type": "string" },
+                        { "name": "recipientEmail", "type": "string" }
+                    ]
+                },
+                {
+                    "type": "record",
+                    "name": "SmsContent",
+                    "fields": [
+                        { "name": "message", "type": "string" },
+                        { "name": "phoneNumber", "type": "string" }
+                    ]
+                },
+                {
+                    "type": "record",
+                    "name": "PushContent",
+                    "fields": [
+                        { "name": "title", "type": "string" },
+                        { "name": "message", "type": "string" },
+                        { "name": "deviceToken", "type": "string" }
+                    ]
+                }
+            ]
+            """);
+    }
+}

@@ -1,0 +1,14 @@
+﻿{
+  Location: r11mbMxk38LLcw6NaqQZHEqTW1U.avsc: (0,0)-(0,8),
+  Message: The schema defined in the JSON is invalid: At least a named schema must be present in schema: "string",
+  Severity: Error,
+  Descriptor: {
+    Id: AVROSG0002,
+    Title: Invalid Schema,
+    Description: The JSON parsed, but the Avro schema is not valid according to the Avro specification (e.g., duplicate field names, invalid union members, unresolved references, etc.).,
+    MessageFormat: The schema defined in the JSON is invalid: {0},
+    Category: Compiler,
+    DefaultSeverity: Error,
+    IsEnabledByDefault: true
+  }
+}

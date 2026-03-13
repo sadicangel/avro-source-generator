@@ -67,6 +67,7 @@ public sealed class SchemaRegistryReservedPropertiesTests
 
         Assert.Equal(["x-protocol"], protocol.Properties.Keys);
     }
+
     private static JsonElement Parse(string json)
     {
         using var document = JsonDocument.Parse(json);

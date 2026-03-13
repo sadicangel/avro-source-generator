@@ -1,5 +1,5 @@
 ﻿{
-  Location: schema.avsc: (0,0)-(5,1),
+  Location: nmWp9JOVs-zxKv3jna0_RQNddbU.avsc: (0,0)-(5,1),
   Message:
 The schema defined in the JSON is invalid: 'protocol' property must be a non-empty, non-whitespace string (found '') in schema: {
   "protocol": null,

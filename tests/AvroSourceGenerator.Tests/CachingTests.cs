@@ -37,7 +37,7 @@ public sealed class CachingTests
         var projectConfig = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
 
         var (compilation, _, generatorDriver) =
-            GeneratorInput.Create([Source], [Schema], [], projectConfig);
+            GeneratorInput.Create([Source], [AdditionalFile.Schema(Schema)], [], projectConfig);
 
         generatorDriver = generatorDriver
             .RunGenerators(compilation, TestContext.Current.CancellationToken);

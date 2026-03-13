@@ -1,5 +1,5 @@
 ﻿{
-  Location: schema.avsc: (0,0)-(10,1),
+  Location: 8VnhhC-Ga7k5S-tg43sP1q9Z5dk.avsc: (0,0)-(10,1),
   Message: The schema defined in the JSON is invalid: Unknown schema 'This.Type.Was.Not.Defined.In.The.Schema',
   Severity: Error,
   Descriptor: {

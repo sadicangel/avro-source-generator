@@ -11,13 +11,13 @@ internal static class TestHelper
         [StringSyntax(StringSyntaxAttribute.Json)]
         string schema,
         ProjectConfig config = default,
-        [CallerFilePath] string sourceFile = "") => VerifySourceCode([schema], config, sourceFile);
+        [CallerFilePath] string sourceFile = "") => VerifySourceCode([AdditionalFile.Schema(schema)], config, sourceFile);
 
-    public static SettingsTask VerifySourceCode(ImmutableArray<string> schemas, ProjectConfig config = default, [CallerFilePath] string sourceFile = "")
+    public static SettingsTask VerifySourceCode(ImmutableArray<AdditionalFile> additionalFiles, ProjectConfig config = default, [CallerFilePath] string sourceFile = "")
     {
         var input = GeneratorInput.Create(
             sourceTexts: [],
-            additionalTexts: schemas,
+            additionalFiles: additionalFiles,
             executableReferences: [],
             projectConfig: config with { AvroLibrary = "None" });
 
@@ -38,16 +38,16 @@ internal static class TestHelper
         [StringSyntax(StringSyntaxAttribute.Json)]
         string schema,
         ProjectConfig config = default,
-        [CallerFilePath] string sourceFile = "") => VerifyDiagnostic([schema], config, sourceFile);
+        [CallerFilePath] string sourceFile = "") => VerifyDiagnostic([AdditionalFile.Schema(schema)], config, sourceFile);
 
     public static SettingsTask VerifyDiagnostic(
-        ImmutableArray<string> schemas,
+        ImmutableArray<AdditionalFile> additionalFiles,
         ProjectConfig config = default,
         [CallerFilePath] string sourceFile = "")
     {
         var input = GeneratorInput.Create(
             sourceTexts: [],
-            additionalTexts: schemas,
+            additionalFiles: additionalFiles,
             executableReferences: [],
             projectConfig: config with { AvroLibrary = "None" });
 

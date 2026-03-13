@@ -16,7 +16,7 @@ internal static class TestHelper
     {
         var input = GeneratorInput.Create(
             sourceTexts: source is null ? [] : [source],
-            additionalTexts: [schema],
+            additionalFiles: [AdditionalFile.Schema(schema)],
             executableReferences: [MetadataReference.CreateFromFile(typeof(Avro.Schema).Assembly.Location)],
             projectConfig: config);
 
@@ -41,7 +41,7 @@ internal static class TestHelper
     {
         var input = GeneratorInput.Create(
             sourceTexts: source is null ? [] : [source],
-            additionalTexts: [schema],
+            additionalFiles: [AdditionalFile.Schema(schema)],
             executableReferences: [MetadataReference.CreateFromFile(typeof(Avro.Schema).Assembly.Location)],
             projectConfig: config);
 

@@ -10,7 +10,7 @@ namespace AvroSourceGenerator.Emit;
 
 internal static class Renderer
 {
-    public static RenderResult Render((ImmutableArray<AvroFile> avroFiles, RenderSettings renderSettings) source, CancellationToken cancellationToken)
+    public static RenderResult Render((ImmutableArray<IAvroFile> avroFiles, RenderSettings renderSettings) source, CancellationToken cancellationToken)
     {
         var (avroFiles, settings) = source;
 
@@ -27,11 +27,24 @@ internal static class Renderer
                 UseNullableReferenceTypes: settings.LanguageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes),
                 DuplicateResolution: settings.DuplicateResolution));
 
-        foreach (var avroFile in avroFiles.Where(file => file.IsValid))
+        foreach (var avroFile in avroFiles)
         {
             try
             {
-                schemaRegistry.Register(schema: avroFile.Json);
+                switch (avroFile)
+                {
+                    case AvroSchemaFile schemaFile:
+                        schemaRegistry.Register(schema: schemaFile.Json);
+                        break;
+
+                    case AvroInvalidFile:
+                        break;
+
+                    default:
+                        // If we get here, it means we've forgotten to handle a new IAvroFile type. This
+                        // should never happen, but if it does, we want to know about it so we can fix the code.
+                        throw new InvalidOperationException($"Unhandled IAvroFile type: {avroFile.GetType()}");
+                }
             }
             catch (JsonException ex)
             {

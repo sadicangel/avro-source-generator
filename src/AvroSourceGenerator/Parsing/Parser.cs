@@ -1,9 +1,6 @@
 ﻿using System.Collections.Immutable;
-using System.Text.Json;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
-using AvroSourceGenerator.Exceptions;
-using AvroSourceGenerator.Extensions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -12,40 +9,6 @@ namespace AvroSourceGenerator.Parsing;
 
 internal static class Parser
 {
-    public static bool IsAvroFile(AdditionalText text) =>
-        text.Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase);
-
-    public static AvroFile GetAvroFile(AdditionalText additionalText, CancellationToken cancellationToken)
-    {
-        var path = additionalText.Path;
-        var text = additionalText.GetText(cancellationToken)?.ToString();
-        var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            diagnostics.Add(InvalidJsonDiagnostic.Create(LocationInfo.FromSourceFile(path, text), "The file is empty."));
-
-            return new AvroFile(path, text, default, default, diagnostics.ToImmutable());
-        }
-
-        try
-        {
-            using var jsonDocument = JsonDocument.Parse(text!);
-            var json = jsonDocument.RootElement.Clone();
-            var name = json.GetOptionalAvroName();
-            return new AvroFile(path, text, json, name, diagnostics.ToImmutable());
-        }
-        catch (JsonException ex)
-        {
-            diagnostics.Add(InvalidJsonDiagnostic.Create(LocationInfo.FromException(path, text, ex), ex.Message));
-        }
-        catch (InvalidSchemaException ex)
-        {
-            diagnostics.Add(InvalidSchemaDiagnostic.Create(LocationInfo.FromSourceFile(path, text), ex.Message));
-        }
-
-        return new AvroFile(path, text, default, default, diagnostics.ToImmutable());
-    }
-
     public static GeneratorSettings GetGeneratorSettings(
         AnalyzerConfigOptionsProvider provider,
         CancellationToken cancellationToken)

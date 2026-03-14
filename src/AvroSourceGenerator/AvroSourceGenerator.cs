@@ -10,8 +10,8 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var avroFilesProvider = context.AdditionalTextsProvider
-            .Where(Parser.IsAvroFile)
-            .Select(Parser.GetAvroFile)
+            .Where(AvroFile.IsAvroFile)
+            .Select(AvroFile.FromAdditionalText)
             .Collect()
             .WithTrackingName(TrackingNames.AvroFiles);
 

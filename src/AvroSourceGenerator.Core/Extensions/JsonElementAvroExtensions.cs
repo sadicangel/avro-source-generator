@@ -5,7 +5,7 @@ using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Extensions;
 
-public static class JsonElementAvroExtensions
+internal static class JsonElementAvroExtensions
 {
     extension(JsonElement schema)
     {
@@ -37,23 +37,6 @@ public static class JsonElementAvroExtensions
                 throw new InvalidSchemaException($"Property '{propertyName}' has an invalid format: 'cannot start or end with a dot' in schema: {schema.GetRawText()}");
 
             return new SchemaName(name, @namespace ?? containingNamespace);
-        }
-
-        public SchemaName GetOptionalAvroName()
-        {
-            ReadOnlySpan<string> propertyNames = [AvroJsonKeys.Name, AvroJsonKeys.Protocol];
-            foreach (var propertyName in propertyNames)
-            {
-                var property = schema.GetOptionalString(propertyName);
-                if (property is null)
-                {
-                    continue;
-                }
-
-                return schema.GetRequiredAvroName(property, propertyName);
-            }
-
-            return default;
         }
 
         public string GetSchemaType() =>

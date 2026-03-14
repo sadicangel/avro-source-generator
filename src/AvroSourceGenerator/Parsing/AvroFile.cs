@@ -1,20 +1,57 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
-using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Exceptions;
+using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.Parsing;
 
-internal readonly record struct AvroFile(
-    string Path,
-    string? Text,
-    JsonElement Json,
-    SchemaName SchemaName,
-    ImmutableArray<DiagnosticInfo> Diagnostics)
+internal interface IAvroFile
 {
-    public bool IsValid => Json.ValueKind is not JsonValueKind.Undefined;
+    string Path { get; }
+    string? Text { get; }
+    ImmutableArray<DiagnosticInfo> Diagnostics { get; }
+}
 
-    public bool Equals(AvroFile other) => Path == other.Path && Text == other.Text;
+internal static class AvroFile
+{
+    public static bool IsAvroFile(AdditionalText text) =>
+        text.Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase) /* ||
+        text.Path.EndsWith(".avdl", StringComparison.OrdinalIgnoreCase) ||
+        text.Path.EndsWith(".subject.json", StringComparison.OrdinalIgnoreCase)*/;
 
-    public override int GetHashCode() => HashCode.Combine(Path, Text);
+    public static IAvroFile FromAdditionalText(AdditionalText additionalText, CancellationToken cancellationToken)
+    {
+        var path = additionalText.Path;
+        var text = additionalText.GetText(cancellationToken)?.ToString();
+
+        return path switch
+        {
+            _ when path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase) => Schema(path, text),
+            //_ when path.EndsWith(".avdl", StringComparison.OrdinalIgnoreCase)  => Syntax(path, text),
+            //_ when path.EndsWith(".subject.json", StringComparison.OrdinalIgnoreCase)  => Subject(path, text),
+            _ => throw new InvalidOperationException("Unreachable: Unsupported Avro file type."),
+        };
+    }
+
+    private static IAvroFile Schema(string path, string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return AvroInvalidFile.Empty(path);
+        }
+
+        try
+        {
+            return new AvroSchemaFile(path, text!);
+        }
+        catch (JsonException ex)
+        {
+            return AvroInvalidFile.Invalid(path, text, ex);
+        }
+        catch (InvalidSchemaException ex)
+        {
+            return AvroInvalidFile.Invalid(path, text, ex);
+        }
+    }
 }

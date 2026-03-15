@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Immutable;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Schemas;
@@ -46,10 +47,12 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
 
     public void AddReference(SchemaName schemaName) => _stagedReferences.Add(schemaName);
 
-    public AvroSchema? Find(SchemaName schemaName)
+    public ImmutableArray<SchemaName> GetMissingReferences() => [.. _missingReferences];
+
+    public AvroSchema? Find(SchemaName schemaName, string? containingNamespace)
     {
         // TODO: Isn't this an issue for types that have names that collide with primitive types? Do we need to support that?
-        switch (schemaName.Name)
+        switch (schemaName.FullName)
         {
             case AvroTypeNames.Null: return AvroSchema.Object;
             case AvroTypeNames.Boolean: return AvroSchema.Boolean;
@@ -61,6 +64,10 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
             case AvroTypeNames.String: return AvroSchema.String;
         }
 
+        if (_stagedReferences.Contains(schemaName))
+            return new AvroSchemaReference(schemaName);
+
+        schemaName = schemaName.ResolveIn(containingNamespace);
         var index = _recursionStack.FindLastIndex(existing => schemaName == existing);
         if (index >= 0)
             return new AvroSchemaReference(_recursionStack[index]);
@@ -74,9 +81,9 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
         return null;
     }
 
-    public RegisterScope EnterRegisterScope() => new(_stagedSchemas, _stagedReferences, _storedSchemas, _missingReferences);
+    public RegisterScope EnterRegisterScope() => new RegisterScope(_stagedSchemas, _stagedReferences, _storedSchemas, _missingReferences);
 
-    public RecursionScope EnterRecursionScope(SchemaName schemaName) => new(_recursionStack, schemaName);
+    public RecursionScope EnterRecursionScope(SchemaName schemaName) => new RecursionScope(_recursionStack, schemaName);
 
     public readonly struct RegisterScope : IDisposable
     {

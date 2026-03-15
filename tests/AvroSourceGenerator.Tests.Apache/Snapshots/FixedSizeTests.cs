@@ -8,7 +8,7 @@ public sealed class FixedSizeTests
     {
         var schema = TestSchemas.Get("fixed").With("size", size).ToString();
 
-        return VerifySourceCode(schema);
+        return Snapshot.Schema(schema);
     }
 
     [Theory]
@@ -17,7 +17,7 @@ public sealed class FixedSizeTests
     {
         var schema = TestSchemas.Get("fixed").With("size", JsonNode.Parse(json)!).ToString();
 
-        return VerifyDiagnostic(schema);
+        return Snapshot.Diagnostic(schema);
     }
 
     public static TheoryData<int> ValidSizes() => new TheoryData<int>(32);

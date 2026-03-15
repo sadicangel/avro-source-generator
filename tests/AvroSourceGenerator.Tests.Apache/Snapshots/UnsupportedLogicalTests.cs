@@ -7,6 +7,6 @@ public sealed class UnsupportedLogicalTests
     {
         var schema = TestSchemas.Get("fixed").With("logicalType", "someType").ToString();
 
-        return VerifySourceCode(schema);
+        return Snapshot.Schema(schema);
     }
 }

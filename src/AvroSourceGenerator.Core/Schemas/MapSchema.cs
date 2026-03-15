@@ -21,5 +21,5 @@ public sealed record class MapSchema(AvroSchema ValueSchema, string? Documentati
         writer.WriteEndObject();
     }
 
-    private static CSharpName GetCSharpName(AvroSchema valueSchema) => new($"Dictionary<string, {valueSchema}>", "System.Collections.Generic");
+    private static CSharpName GetCSharpName(AvroSchema valueSchema) => new CSharpName($"Dictionary<string, {valueSchema}>", "System.Collections.Generic");
 }

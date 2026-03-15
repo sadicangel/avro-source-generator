@@ -20,7 +20,7 @@ public sealed class SchemaRegistryFindTests
     {
         var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
 
-        var result = registry.Find(new SchemaName(typeName));
+        var result = registry.Find(new SchemaName(typeName), null);
 
         Assert.NotNull(result);
     }
@@ -29,7 +29,7 @@ public sealed class SchemaRegistryFindTests
     public void Find_TypeRegisteredInPreviousRegisterScope_ReturnsNull()
     {
         var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
-        registry.Register(
+        registry.RegisterSchema(
             Parse(
                 """
                 {
@@ -40,7 +40,7 @@ public sealed class SchemaRegistryFindTests
                 }
                 """));
 
-        var result = registry.Find(new SchemaName("OrderCreated", "Demo"));
+        var result = registry.Find(new SchemaName("OrderCreated", "Demo"), null);
 
         Assert.Null(result);
     }
@@ -52,7 +52,7 @@ public sealed class SchemaRegistryFindTests
         using var _ = registry.EnterRegisterScope();
         registry.Register(CreateRecord("OrderCreated", "Demo"));
 
-        var result = registry.Find(new SchemaName("OrderCreated", "Demo"));
+        var result = registry.Find(new SchemaName("OrderCreated", "Demo"), null);
 
         Assert.NotNull(result);
     }
@@ -63,7 +63,7 @@ public sealed class SchemaRegistryFindTests
         var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
         using var _ = registry.EnterRecursionScope(new SchemaName("OrderCreated", "Demo"));
 
-        var result = registry.Find(new SchemaName("OrderCreated", "Demo"));
+        var result = registry.Find(new SchemaName("OrderCreated", "Demo"), null);
 
         Assert.NotNull(result);
     }
@@ -73,7 +73,7 @@ public sealed class SchemaRegistryFindTests
     {
         var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
 
-        var result = registry.Find(new SchemaName("DefinitelyMissingType", "Demo"));
+        var result = registry.Find(new SchemaName("DefinitelyMissingType", "Demo"), null);
 
         Assert.Null(result);
     }

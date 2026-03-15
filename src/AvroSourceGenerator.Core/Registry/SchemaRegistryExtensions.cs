@@ -1,14 +1,15 @@
 ﻿using System.Text.Json;
 using AvroSourceGenerator.Exceptions;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Registry;
 
 public static class SchemaRegistryExtensions
 {
-    extension(ref SchemaRegistry schemaRegistry)
+    extension(in SchemaRegistry schemaRegistry)
     {
-        public void Register(JsonElement schema)
+        public void RegisterSchema(JsonElement schema)
         {
             using (schemaRegistry.EnterRegisterScope())
             {
@@ -16,6 +17,25 @@ public static class SchemaRegistryExtensions
                 if (!ContainsTopLevelSchema(registeredSchema))
                 {
                     throw new InvalidSchemaException($"At least a named schema must be present in schema: {schema.GetRawText()}");
+                }
+            }
+        }
+
+        public void RegisterSubject(JsonElement subject)
+        {
+            var schemaJson = subject.GetRequiredString("schema");
+            using (schemaRegistry.EnterRegisterScope())
+            {
+                foreach (var reference in subject.GetNullableArray("references") ?? [])
+                {
+                    schemaRegistry.AddReference(reference.GetRequiredString("name").ToSchemaName());
+                }
+
+                using var schemaDocument = JsonDocument.Parse(schemaJson);
+                var registeredSchema = schemaRegistry.Schema(schemaDocument.RootElement, containingNamespace: null);
+                if (!ContainsTopLevelSchema(registeredSchema))
+                {
+                    throw new InvalidSchemaException($"At least a named schema must be present in schema: {schemaDocument.RootElement.GetRawText()}");
                 }
             }
         }

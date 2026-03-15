@@ -399,3 +399,6 @@ FodyWeavers.xsd
 
 *.received.*
 *.received/
+
+# .dotnet tools
+.dotnet

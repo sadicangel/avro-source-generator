@@ -1,0 +1,14 @@
+{
+  Location: BTuJjPsplODPK11f4w6Yn6V9Fe8.subject.json: (0,0)-(0,194),
+  Message: The schema defined in the JSON is invalid: 'references' property must be an array (found '{}') in schema: {"schema":"{\u0022type\u0022:\u0022record\u0022,\u0022namespace\u0022:\u0022SchemaNamespace\u0022,\u0022name\u0022:\u0022Record\u0022,\u0022fields\u0022:[]}","schemaType":"AVRO","references":{}},
+  Severity: Error,
+  Descriptor: {
+    Id: AVROSG0002,
+    Title: Invalid Schema,
+    Description: The JSON parsed, but the Avro schema is not valid according to the Avro specification (e.g., duplicate field names, invalid union members, unresolved references, etc.).,
+    MessageFormat: The schema defined in the JSON is invalid: {0},
+    Category: Compiler,
+    DefaultSeverity: Error,
+    IsEnabledByDefault: true
+  }
+}

@@ -3,7 +3,7 @@
 public class NestedTypeTests
 {
     [Fact]
-    public Task Verify() => VerifySourceCode(
+    public Task Verify() => Snapshot.Schema(
         """
         {
           "fields": [

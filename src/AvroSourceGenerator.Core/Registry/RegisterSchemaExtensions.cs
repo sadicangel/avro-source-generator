@@ -15,7 +15,7 @@ internal static class RegisterSchemaExtensions
         {
             return schema.ValueKind switch
             {
-                JsonValueKind.String => schemaRegistry.Find(schema.ToRequiredString().ToSchemaName(containingNamespace)) ?? throw new InvalidSchemaException($"Unknown schema '{schema.ToRequiredString()}'"),
+                JsonValueKind.String => schemaRegistry.Find(schema.ToRequiredString().ToSchemaName(), containingNamespace) ?? throw new MissingReferenceException(schema.ToRequiredString().ToSchemaName().ResolveIn(containingNamespace)),
                 JsonValueKind.Object => schemaRegistry.Complex(schema, containingNamespace),
                 JsonValueKind.Array => schemaRegistry.Union(schema, containingNamespace),
                 _ => throw new InvalidSchemaException($"Invalid schema: {schema.GetRawText()}")
@@ -39,7 +39,7 @@ internal static class RegisterSchemaExtensions
                 AvroTypeNames.Record => schemaRegistry.Record(schema, containingNamespace),
                 AvroTypeNames.Error => schemaRegistry.Error(schema, containingNamespace),
                 AvroTypeNames.Fixed => schemaRegistry.Fixed(schema, containingNamespace),
-                _ => schemaRegistry.Find(type.ToSchemaName(containingNamespace)) ?? throw new InvalidSchemaException($"Unknown schema type '{type}' in {schema.GetRawText()}")
+                _ => schemaRegistry.Find(type.ToSchemaName(), containingNamespace) ?? throw new MissingReferenceException(type.ToSchemaName().ResolveIn(containingNamespace))
             };
 
             if (underlyingSchema is PrimitiveSchema primitive)

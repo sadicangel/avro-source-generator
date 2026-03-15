@@ -34,7 +34,11 @@ internal static class Renderer
                 switch (avroFile)
                 {
                     case AvroSchemaFile schemaFile:
-                        schemaRegistry.Register(schema: schemaFile.Json);
+                        schemaRegistry.RegisterSchema(schema: schemaFile.Json);
+                        break;
+
+                    case AvroSubjectFile subjectFile:
+                        schemaRegistry.RegisterSubject(subject: subjectFile.Json);
                         break;
 
                     case AvroInvalidFile:
@@ -54,6 +58,10 @@ internal static class Renderer
             {
                 diagnostics = diagnostics.Add(DuplicateSchemaDiagnostic.Create(LocationInfo.None, ex.Schema.CSharpName.ToString(includeGlobalPrefix: false)));
             }
+            catch (MissingReferenceException ex)
+            {
+                diagnostics = diagnostics.Add(MissingReferenceDiagnostic.Create(LocationInfo.FromSourceFile(avroFile.Path, avroFile.Text), ex.MissingReferences));
+            }
             catch (InvalidSchemaException ex)
             {
                 // TODO: We can probably get a better location for the error.
@@ -63,6 +71,13 @@ internal static class Renderer
             {
                 diagnostics = diagnostics.Add(UnknownErrorDiagnostic.Create(LocationInfo.FromSourceFile(avroFile.Path, avroFile.Text), ex.Message));
             }
+        }
+
+        var missingReferences = schemaRegistry.GetMissingReferences();
+        if (missingReferences.Length > 0)
+        {
+            diagnostics = diagnostics.Add(MissingReferenceDiagnostic.Create(LocationInfo.None, missingReferences));
+            return new RenderResult([], diagnostics);
         }
 
         var renderedSchemas = AvroTemplate.Render(schemaRegistry, settings);

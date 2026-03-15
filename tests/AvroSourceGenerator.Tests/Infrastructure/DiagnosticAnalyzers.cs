@@ -4,7 +4,7 @@ using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace AvroSourceGenerator.Tests.Setup;
+namespace AvroSourceGenerator.Tests.Infrastructure;
 
 internal static class DiagnosticAnalyzers
 {

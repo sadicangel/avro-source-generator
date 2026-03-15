@@ -5,7 +5,7 @@ public sealed class UnionAbstractNullableBaseTests
     [Fact]
     public Task Verify()
     {
-        return VerifySourceCode(
+        return Snapshot.Schema(
             """
             {
               "type": "record",

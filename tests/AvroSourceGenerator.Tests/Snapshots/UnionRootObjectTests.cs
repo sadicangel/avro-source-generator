@@ -5,7 +5,7 @@ public sealed class UnionRootObjectTests
     [Fact]
     public Task Verify()
     {
-        return VerifySourceCode(
+        return Snapshot.Schema(
             """
             [
                 {

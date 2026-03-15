@@ -5,10 +5,10 @@ namespace AvroSourceGenerator.Tests.Snapshots;
 public sealed class CsprojDuplicateResolutionTests
 {
     [Fact]
-    public Task Verify() => VerifySourceCode([AdditionalFile.Schema(Schema1), AdditionalFile.Schema(Schema2)], new ProjectConfig { DuplicateResolution = "Ignore" });
+    public Task Verify() => Snapshot.Files([ProjectFile.Schema(Schema1), ProjectFile.Schema(Schema2)], config => config with { DuplicateResolution = "Ignore" });
 
     [Fact]
-    public Task Diagnostic() => VerifyDiagnostic([AdditionalFile.Schema(Schema1), AdditionalFile.Schema(Schema2)]);
+    public Task Diagnostic() => Snapshot.Diagnostic([ProjectFile.Schema(Schema1), ProjectFile.Schema(Schema2)]);
 
     [StringSyntax(StringSyntaxAttribute.Json)]
     private const string Schema1 = """

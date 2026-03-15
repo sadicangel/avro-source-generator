@@ -8,7 +8,7 @@ public sealed class FixedNameTests
     {
         var schema = TestSchemas.Get("fixed").With("name", name).ToString();
 
-        return VerifySourceCode(schema);
+        return Snapshot.Schema(schema);
     }
 
     [Theory]
@@ -17,7 +17,7 @@ public sealed class FixedNameTests
     {
         var schema = TestSchemas.Get("fixed").With("name", JsonNode.Parse(json)!).ToString();
 
-        return VerifyDiagnostic(schema);
+        return Snapshot.Diagnostic(schema);
     }
 
     public static TheoryData<string> ValidNameSchemaPairs() => new TheoryData<string>("PascalCase", "snake_case", "object");

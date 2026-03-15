@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis.CSharp;
 
-namespace AvroSourceGenerator.Tests.Setup;
+namespace AvroSourceGenerator.Tests.Infrastructure;
 
 public record struct ProjectConfig(LanguageVersion LanguageVersion)
 {

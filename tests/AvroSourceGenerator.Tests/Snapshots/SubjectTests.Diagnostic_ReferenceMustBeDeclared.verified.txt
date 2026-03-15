@@ -1,0 +1,14 @@
+{
+  Location: ZTBbzgU3_-ZTHRsCei9DufRp0b4.subject.json: (0,0)-(0,296),
+  Message: The following schema references could not be resolved: external.namespace.Record,
+  Severity: Error,
+  Descriptor: {
+    Id: AVROSG0006,
+    Title: Missing schema reference,
+    Description: One or more Avro schema references could not be resolved from the available schema inputs or declared subject references.,
+    MessageFormat: The following schema references could not be resolved: {0},
+    Category: Compiler,
+    DefaultSeverity: Error,
+    IsEnabledByDefault: true
+  }
+}

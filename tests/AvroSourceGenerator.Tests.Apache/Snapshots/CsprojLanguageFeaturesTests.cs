@@ -67,9 +67,7 @@ public sealed class CsprojLanguageFeaturesTests
                 })
             .ToString();
 
-        var config = new ProjectConfig { LanguageFeatures = languageFeatures };
-
-        return VerifySourceCode(schema, null, config);
+        return Snapshot.Schema(schema, config => config with { LanguageFeatures = languageFeatures });
     }
 
     public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new([.. Enum.GetNames(typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.LanguageFeatures", throwOnError: true)!).Where(n => n.StartsWith("CSharp")), "invalid"], ["enum", "error", "fixed", "record", "protocol"]);

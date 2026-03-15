@@ -1,4 +1,4 @@
 ﻿global using System.Text.Json.Nodes;
+global using AvroSourceGenerator.Tests.Apache.Helpers;
 global using AvroSourceGenerator.Tests.Data;
-global using AvroSourceGenerator.Tests.Setup;
-global using static AvroSourceGenerator.Tests.Apache.Helpers.TestHelper;
+global using AvroSourceGenerator.Tests.Infrastructure;

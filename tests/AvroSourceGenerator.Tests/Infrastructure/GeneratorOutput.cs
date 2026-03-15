@@ -2,7 +2,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace AvroSourceGenerator.Tests.Setup;
+namespace AvroSourceGenerator.Tests.Infrastructure;
 
 public readonly record struct GeneratorOutput(
     ImmutableArray<Diagnostic> Diagnostics,

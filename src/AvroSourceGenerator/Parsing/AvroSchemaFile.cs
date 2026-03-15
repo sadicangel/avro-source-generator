@@ -12,7 +12,7 @@ internal sealed record class AvroSchemaFile(string Path, string Text) : IAvroFil
 
     private static JsonElement ParseJson(string text)
     {
-        using var jsonDocument = JsonDocument.Parse(text!);
+        using var jsonDocument = JsonDocument.Parse(text);
         return jsonDocument.RootElement.Clone();
     }
 

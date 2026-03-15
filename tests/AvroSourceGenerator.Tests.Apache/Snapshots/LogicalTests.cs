@@ -3,7 +3,7 @@
 public class LogicalTests
 {
     [Fact]
-    public Task Verify_Decimal_Bytes() => VerifySourceCode(
+    public Task Verify_Decimal_Bytes() => Snapshot.Schema(
         """
         {
             "type": "record",
@@ -24,7 +24,7 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Decimal_Fixed() => VerifySourceCode(
+    public Task Verify_Decimal_Fixed() => Snapshot.Schema(
         """
         {
             "type": "fixed",
@@ -38,7 +38,7 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Uuid_String() => VerifySourceCode(
+    public Task Verify_Uuid_String() => Snapshot.Schema(
         """
         {
             "type": "record",
@@ -57,7 +57,7 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Uuid_Fixed() => VerifySourceCode(
+    public Task Verify_Uuid_Fixed() => Snapshot.Schema(
         """
         {
             "type": "fixed",
@@ -69,7 +69,7 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Date() => VerifySourceCode(
+    public Task Verify_Date() => Snapshot.Schema(
         """
         {
             "type": "record",
@@ -88,7 +88,7 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Time_Milliseconds() => VerifySourceCode(
+    public Task Verify_Time_Milliseconds() => Snapshot.Schema(
         """
         {
             "type": "record",
@@ -107,7 +107,7 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Time_Microseconds() => VerifySourceCode(
+    public Task Verify_Time_Microseconds() => Snapshot.Schema(
         """
         {
             "type": "record",
@@ -126,7 +126,7 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Timestamp_Milliseconds() => VerifySourceCode(
+    public Task Verify_Timestamp_Milliseconds() => Snapshot.Schema(
         """
         {
             "type": "record",
@@ -145,7 +145,7 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Timestamp_Microseconds() => VerifySourceCode(
+    public Task Verify_Timestamp_Microseconds() => Snapshot.Schema(
         """
         {
             "type": "record",
@@ -164,7 +164,7 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Local_Timestamp_Milliseconds() => VerifySourceCode(
+    public Task Verify_Local_Timestamp_Milliseconds() => Snapshot.Schema(
         """
         {
             "type": "record",
@@ -183,7 +183,7 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Local_Timestamp_Microseconds() => VerifySourceCode(
+    public Task Verify_Local_Timestamp_Microseconds() => Snapshot.Schema(
         """
         {
             "type": "record",
@@ -202,7 +202,7 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Duration() => VerifySourceCode(
+    public Task Verify_Duration() => Snapshot.Schema(
         """
         {
             "type": "fixed",

@@ -17,7 +17,7 @@ public sealed class FixedDocumentationTests
                     }
                 ]).ToString();
 
-        return VerifySourceCode(schema);
+        return Snapshot.Schema(schema);
     }
 
     [Theory]
@@ -35,10 +35,10 @@ public sealed class FixedDocumentationTests
                     }
                 ]).ToString();
 
-        return VerifyDiagnostic(schema);
+        return Snapshot.Diagnostic(schema);
     }
 
-    public static TheoryData<string> ValidDocumentationSchemaPairs() => new(null!, "", "Single line comment", "Multi\nline\ncomment");
+    public static TheoryData<string> ValidDocumentationSchemaPairs() => new TheoryData<string>(null!, "", "Single line comment", "Multi\nline\ncomment");
 
-    public static TheoryData<string> InvalidDocumentationSchemaPairs() => new("[]");
+    public static TheoryData<string> InvalidDocumentationSchemaPairs() => new TheoryData<string>("[]");
 }

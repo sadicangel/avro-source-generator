@@ -8,7 +8,7 @@ public class EnumSymbolsTests
     {
         var schema = TestSchemas.Get("enum").With("symbols", symbols).ToString();
 
-        return VerifySourceCode(schema);
+        return Snapshot.Schema(schema);
     }
 
     [Theory]
@@ -17,10 +17,10 @@ public class EnumSymbolsTests
     {
         var schema = TestSchemas.Get("enum").With("symbols", JsonNode.Parse(json)!).ToString();
 
-        return VerifyDiagnostic(schema);
+        return Snapshot.Diagnostic(schema);
     }
 
-    public static TheoryData<string[]> ValidSymbols() => new([], ["A", "B"]);
+    public static TheoryData<string[]> ValidSymbols() => new TheoryData<string[]>([], ["A", "B"]);
 
-    public static TheoryData<string> InvalidSymbols() => new("null", "{}");
+    public static TheoryData<string> InvalidSymbols() => new TheoryData<string>("null", "{}");
 }

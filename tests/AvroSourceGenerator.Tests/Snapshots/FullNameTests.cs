@@ -3,7 +3,7 @@
 public sealed class FullNameTests
 {
     [Fact]
-    public Task Verify() => VerifySourceCode(
+    public Task Verify() => Snapshot.Schema(
         """
         {
           "type": "record",
@@ -55,7 +55,7 @@ public sealed class FullNameTests
     [InlineData("Example.")]
     [InlineData(".Name")]
     [InlineData("Example..Name")]
-    public Task Diagnostic(string name) => VerifyDiagnostic(
+    public Task Diagnostic(string name) => Snapshot.Diagnostic(
         $$"""
         {
           "type": "record",

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
@@ -34,7 +34,7 @@ public sealed class SchemaRegistryReservedPropertiesTests
             """);
 
         var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
-        registry.Register(schema);
+        registry.RegisterSchema(schema);
         var record = Assert.IsType<RecordSchema>(Assert.Single(registry.Schemas.Values));
         var field = Assert.Single(record.Fields);
 
@@ -62,7 +62,7 @@ public sealed class SchemaRegistryReservedPropertiesTests
             """);
 
         var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
-        registry.Register(schema);
+        registry.RegisterSchema(schema);
         var protocol = Assert.IsType<ProtocolSchema>(Assert.Single(registry.Schemas.Values));
 
         Assert.Equal(["x-protocol"], protocol.Properties.Keys);

@@ -8,7 +8,7 @@ public sealed class NameTests
     {
         var schema = TestSchemas.Get(schemaType).With("name", name).ToString();
 
-        return VerifySourceCode(schema);
+        return Snapshot.Schema(schema);
     }
 
     [Theory]
@@ -17,14 +17,10 @@ public sealed class NameTests
     {
         var schema = TestSchemas.Get(schemaType).With("name", JsonNode.Parse(json)!).ToString();
 
-        return VerifyDiagnostic(schema);
+        return Snapshot.Diagnostic(schema);
     }
 
-    public static MatrixTheoryData<string, string> ValidNameSchemaPairs() => new(
-        ["PascalCase", "snake_case", "object"],
-        ["enum", "error", "record"]);
+    public static MatrixTheoryData<string, string> ValidNameSchemaPairs() => new MatrixTheoryData<string, string>(["PascalCase", "snake_case", "object"], ["enum", "error", "record"]);
 
-    public static MatrixTheoryData<string, string> InvalidNameSchemaPairs() => new(
-        ["null", "\"\"", "[]"],
-        ["enum", "error", "record"]);
+    public static MatrixTheoryData<string, string> InvalidNameSchemaPairs() => new MatrixTheoryData<string, string>(["null", "\"\"", "[]"], ["enum", "error", "record"]);
 }

@@ -5,7 +5,7 @@ public class RecursionTests
     [Fact]
     public Task Verify_Record()
     {
-        return VerifySourceCode(
+        return Snapshot.Schema(
             """
             {
               "type": "record",
@@ -33,7 +33,7 @@ public class RecursionTests
     [Fact]
     public Task Verify_Array()
     {
-        return VerifySourceCode(
+        return Snapshot.Schema(
             """
             {
               "type": "record",
@@ -55,7 +55,7 @@ public class RecursionTests
     [Fact]
     public Task Verify_Map()
     {
-        return VerifySourceCode(
+        return Snapshot.Schema(
             """
             {
               "type": "record",
@@ -77,7 +77,7 @@ public class RecursionTests
     [Fact]
     public Task Verify_Union()
     {
-        return VerifySourceCode(
+        return Snapshot.Schema(
             """
             {
               "type": "record",

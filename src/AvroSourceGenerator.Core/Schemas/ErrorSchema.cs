@@ -16,8 +16,7 @@ public sealed record class ErrorSchema(
     {
         if (!writtenSchemas.Add(SchemaName))
         {
-            var name = SchemaName.Namespace is null || SchemaName.Namespace == containingNamespace ? SchemaName.Name : $"{SchemaName.Namespace}.{SchemaName.Name}";
-            writer.WriteStringValue(name);
+            writer.WriteStringValue(SchemaName.RelativeTo(containingNamespace));
             return;
         }
 

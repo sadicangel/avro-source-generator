@@ -3,7 +3,7 @@
 public sealed class JavaExtensionsTests
 {
     [Fact]
-    public Task Verify() => VerifySourceCode(
+    public Task Verify() => Snapshot.Schema(
         """
         {
           "name": "StringBehaviorTest",

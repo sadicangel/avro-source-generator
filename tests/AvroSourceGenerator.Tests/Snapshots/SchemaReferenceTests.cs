@@ -3,7 +3,7 @@
 public sealed class SchemaReferenceTests
 {
     [Fact]
-    public Task Verify() => VerifySourceCode(
+    public Task Verify() => Snapshot.Schema(
         """
         {
             "type": "record",
@@ -43,7 +43,7 @@ public sealed class SchemaReferenceTests
         """);
 
     [Fact]
-    public Task Diagnostic() => VerifyDiagnostic(
+    public Task Diagnostic() => Snapshot.Diagnostic(
         """
         {
             "type": "record",

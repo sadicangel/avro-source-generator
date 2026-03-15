@@ -10,7 +10,7 @@ public sealed record class AvroSchemaReference(SchemaName SchemaName)
     {
         if (writtenSchemas.Contains(SchemaName))
         {
-            writer.WriteStringValue(SchemaName.Namespace == containingNamespace ? SchemaName.Name : SchemaName.FullName);
+            writer.WriteStringValue(SchemaName.RelativeTo(containingNamespace));
             return;
         }
 

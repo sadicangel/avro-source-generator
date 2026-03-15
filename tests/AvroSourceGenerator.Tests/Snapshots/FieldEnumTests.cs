@@ -27,6 +27,6 @@ public class FieldEnumTests
                 ]
             }
             """;
-        return VerifySourceCode(schema);
+        return Snapshot.Schema(schema);
     }
 }

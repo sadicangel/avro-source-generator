@@ -1,0 +1,13 @@
+﻿{
+  Message: The following schema references could not be resolved: external.namespace.Record, external.namespace.Enum,
+  Severity: Error,
+  Descriptor: {
+    Id: AVROSG0006,
+    Title: Missing schema reference,
+    Description: One or more Avro schema references could not be resolved from the available schema inputs or declared subject references.,
+    MessageFormat: The following schema references could not be resolved: {0},
+    Category: Compiler,
+    DefaultSeverity: Error,
+    IsEnabledByDefault: true
+  }
+}

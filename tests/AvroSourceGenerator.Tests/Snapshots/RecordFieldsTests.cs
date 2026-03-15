@@ -8,8 +8,8 @@ public sealed class RecordFieldsTests
     {
         var schema = TestSchemas.Get("record").With("fields", JsonNode.Parse(json)!).ToString();
 
-        return VerifyDiagnostic(schema);
+        return Snapshot.Diagnostic(schema);
     }
 
-    public static TheoryData<string> InvalidFields() => new("null", "{}");
+    public static TheoryData<string> InvalidFields() => new TheoryData<string>("null", "{}");
 }

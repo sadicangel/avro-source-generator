@@ -8,7 +8,7 @@ public sealed class UnnamedRootSchemasTests
     {
         var schema = TestSchemas.Get(schemaType).ToString();
 
-        return VerifySourceCode(schema);
+        return Snapshot.Schema(schema);
     }
 
     [Theory]
@@ -17,10 +17,10 @@ public sealed class UnnamedRootSchemasTests
     {
         var schema = TestSchemas.Get(schemaType).ToString();
 
-        return VerifyDiagnostic(schema);
+        return Snapshot.Diagnostic(schema);
     }
 
-    public static TheoryData<string> ValidUnnamedRootSchemas() => new("array<record>", "map<record>", "[null, record]");
+    public static TheoryData<string> ValidUnnamedRootSchemas() => new TheoryData<string>("array<record>", "map<record>", "[null, record]");
 
-    public static TheoryData<string> InvalidUnnamedRootSchemas() => new("array<string>", "map<string>", "[null, string]");
+    public static TheoryData<string> InvalidUnnamedRootSchemas() => new TheoryData<string>("array<string>", "map<string>", "[null, string]");
 }

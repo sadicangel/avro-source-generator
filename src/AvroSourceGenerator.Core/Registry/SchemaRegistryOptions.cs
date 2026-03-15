@@ -7,5 +7,5 @@ public readonly record struct SchemaRegistryOptions(
     DuplicateResolution DuplicateResolution,
     bool UseNullableReferenceTypes)
 {
-    public static readonly SchemaRegistryOptions Default = new(TargetProfile.Modern, DuplicateResolution.Error, true);
+    public static readonly SchemaRegistryOptions Default = new SchemaRegistryOptions(TargetProfile.Modern, DuplicateResolution.Error, true);
 }

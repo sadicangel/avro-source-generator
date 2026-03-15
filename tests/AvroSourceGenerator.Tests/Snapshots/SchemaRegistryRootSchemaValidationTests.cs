@@ -5,16 +5,16 @@ public sealed class SchemaRegistryRootSchemaValidationTests
     [Theory]
     [MemberData(nameof(InvalidRootSchemas))]
     public Task Diagnostic(string schemaType) =>
-        VerifyDiagnostic(GetInvalidRootSchema(schemaType));
+        Snapshot.Diagnostic(GetInvalidRootSchema(schemaType));
 
     [Theory]
     [MemberData(nameof(ValidRootSchemas))]
     public Task Verify(string schemaType) =>
-        VerifySourceCode(GetValidRootSchema(schemaType));
+        Snapshot.Schema(GetValidRootSchema(schemaType));
 
-    public static TheoryData<string> InvalidRootSchemas() => new("string", "array<string>", "map<string>");
+    public static TheoryData<string> InvalidRootSchemas() => new TheoryData<string>("string", "array<string>", "map<string>");
 
-    public static TheoryData<string> ValidRootSchemas() => new("array<record>", "map<record>", "[null, record]");
+    public static TheoryData<string> ValidRootSchemas() => new TheoryData<string>("array<record>", "map<record>", "[null, record]");
 
     private static string GetInvalidRootSchema(string schemaType) => schemaType switch
     {

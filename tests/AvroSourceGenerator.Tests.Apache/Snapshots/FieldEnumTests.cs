@@ -6,7 +6,7 @@ public class FieldEnumTests
     [InlineData("record"), InlineData("error")]
     public Task Verify(string @class)
     {
-        return VerifySourceCode(
+        return Snapshot.Schema(
             $$"""
             {
                 "type": "{{@class}}",

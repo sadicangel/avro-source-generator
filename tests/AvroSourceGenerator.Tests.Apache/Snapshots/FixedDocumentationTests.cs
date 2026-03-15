@@ -8,7 +8,7 @@ public sealed class FixedDocumentationTests
     {
         var schema = TestSchemas.Get("fixed").With("doc", doc).ToString();
 
-        return VerifySourceCode(schema);
+        return Snapshot.Schema(schema);
     }
 
     [Theory]
@@ -17,7 +17,7 @@ public sealed class FixedDocumentationTests
     {
         var schema = TestSchemas.Get("fixed").With("doc", JsonNode.Parse(json)!).ToString();
 
-        return VerifyDiagnostic(schema);
+        return Snapshot.Diagnostic(schema);
     }
 
     public static TheoryData<string> ValidDocumentationSchemaPairs() => new TheoryData<string>(null!, "", "Single line comment", "Multi\nline\ncomment");

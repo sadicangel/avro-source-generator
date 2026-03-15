@@ -8,12 +8,8 @@ public sealed class CsprojAccessModifierTests
     {
         var schema = TestSchemas.Get(schemaType).ToString();
 
-        var config = new ProjectConfig { AccessModifier = accessModifier };
-
-        return VerifySourceCode(schema, config);
+        return Snapshot.Schema(schema, config => config with { AccessModifier = accessModifier });
     }
 
-    public static MatrixTheoryData<string, string> AccessModifierSchemaPairs() => new(
-        ["public", "internal", "invalid"],
-        ["enum", "error", "record", "protocol"]);
+    public static MatrixTheoryData<string, string> AccessModifierSchemaPairs() => new MatrixTheoryData<string, string>(["public", "internal", "invalid"], ["enum", "error", "record", "protocol"]);
 }

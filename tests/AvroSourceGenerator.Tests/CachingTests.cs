@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using AvroSourceGenerator.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -37,7 +36,7 @@ public sealed class CachingTests
         var projectConfig = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
 
         var (compilation, _, generatorDriver) =
-            GeneratorInput.Create([Source], [AdditionalFile.Schema(Schema)], [], projectConfig);
+            GeneratorInput.Create([ProjectFile.CSharp(Source), ProjectFile.Schema(Schema)], [], projectConfig);
 
         generatorDriver = generatorDriver
             .RunGenerators(compilation, TestContext.Current.CancellationToken);

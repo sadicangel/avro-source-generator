@@ -1,0 +1,14 @@
+{
+  Location: 8m7Ad-VG1kDXZFpsiFg29zSAAHs.avsc: (0,0)-(10,1),
+  Message: The following schema references could not be resolved: SchemaNamespace.MissingResponse,
+  Severity: Error,
+  Descriptor: {
+    Id: AVROSG0006,
+    Title: Missing schema reference,
+    Description: One or more Avro schema references could not be resolved from the available schema inputs or declared subject references.,
+    MessageFormat: The following schema references could not be resolved: {0},
+    Category: Compiler,
+    DefaultSeverity: Error,
+    IsEnabledByDefault: true
+  }
+}

@@ -8,15 +8,11 @@ public sealed class AliasesTests
     {
         var schema = TestSchemas.Get(schemaType).With("aliases", JsonNode.Parse(json)!).ToString();
 
-        return VerifyDiagnostic(schema);
+        return Snapshot.Diagnostic(schema);
     }
 
     // TODO: What to do with aliases?
-    public static MatrixTheoryData<string[], string> ValidAliasesSchemaPairs() => new(
-        [null!, [], ["Alias1", "Alias2"]],
-        ["enum", "error", "fixed", "record"]);
+    public static MatrixTheoryData<string[], string> ValidAliasesSchemaPairs() => new MatrixTheoryData<string[], string>([null!, [], ["Alias1", "Alias2"]], ["enum", "error", "fixed", "record"]);
 
-    public static MatrixTheoryData<string, string> InvalidAliasesSchemaPairs() => new(
-        ["{}"],
-        ["enum", "error", "fixed", "record"]);
+    public static MatrixTheoryData<string, string> InvalidAliasesSchemaPairs() => new MatrixTheoryData<string, string>(["{}"], ["enum", "error", "fixed", "record"]);
 }

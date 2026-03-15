@@ -16,6 +16,6 @@ public sealed class UnsupportedLogicalTests
                     }
                 ]).ToString();
 
-        return VerifySourceCode(schema);
+        return Snapshot.Schema(schema);
     }
 }

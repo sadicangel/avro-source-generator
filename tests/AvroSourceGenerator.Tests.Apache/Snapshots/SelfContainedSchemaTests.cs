@@ -3,7 +3,7 @@
 public sealed class SelfContainedSchemaTests
 {
     [Fact]
-    public Task Verify() => VerifySourceCode(
+    public Task Verify() => Snapshot.Schema(
         """
         [
             {

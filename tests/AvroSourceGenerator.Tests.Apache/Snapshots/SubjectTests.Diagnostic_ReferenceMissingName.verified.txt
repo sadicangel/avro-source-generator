@@ -1,0 +1,14 @@
+{
+  Location: 4wemONQiaoxazOfYRE6q-Q9jdhI.subject.json: (0,0)-(0,236),
+  Message: The schema defined in the JSON is invalid: 'name' property is required in schema: {"subject":"namespace-Record","version":1},
+  Severity: Error,
+  Descriptor: {
+    Id: AVROSG0002,
+    Title: Invalid Schema,
+    Description: The JSON parsed, but the Avro schema is not valid according to the Avro specification (e.g., duplicate field names, invalid union members, unresolved references, etc.).,
+    MessageFormat: The schema defined in the JSON is invalid: {0},
+    Category: Compiler,
+    DefaultSeverity: Error,
+    IsEnabledByDefault: true
+  }
+}

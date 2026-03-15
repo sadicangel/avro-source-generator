@@ -12,5 +12,5 @@ public readonly record struct CSharpName(string Name, string? Namespace)
 
     public string ToString(bool includeGlobalPrefix) => includeGlobalPrefix || !FullName.StartsWith("global::") ? FullName : FullName[8..];
 
-    public static CSharpName FromSchemaName(SchemaName schemaName) => new CSharpName(schemaName.Name.ToValidName(), schemaName.Namespace?.GetValidNamespace());
+    public static CSharpName FromSchemaName(SchemaName schemaName) => new CSharpName(schemaName.Name.ToValidName(), schemaName.Namespace?.ToValidNamespace());
 }

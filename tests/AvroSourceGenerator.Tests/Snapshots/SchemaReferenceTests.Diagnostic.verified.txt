@@ -1,12 +1,12 @@
-﻿{
+{
   Location: 8VnhhC-Ga7k5S-tg43sP1q9Z5dk.avsc: (0,0)-(10,1),
-  Message: The schema defined in the JSON is invalid: Unknown schema 'This.Type.Was.Not.Defined.In.The.Schema',
+  Message: The following schema references could not be resolved: This.Type.Was.Not.Defined.In.The.Schema,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG0002,
-    Title: Invalid Schema,
-    Description: The JSON parsed, but the Avro schema is not valid according to the Avro specification (e.g., duplicate field names, invalid union members, unresolved references, etc.).,
-    MessageFormat: The schema defined in the JSON is invalid: {0},
+    Id: AVROSG0006,
+    Title: Missing schema reference,
+    Description: One or more Avro schema references could not be resolved from the available schema inputs or declared subject references.,
+    MessageFormat: The following schema references could not be resolved: {0},
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

@@ -8,10 +8,8 @@ public sealed class CsprojRecordDeclarationTests
     {
         var schema = TestSchemas.Get(schemaType).ToString();
 
-        var config = new ProjectConfig { RecordDeclaration = recordDeclaration };
-
-        return VerifySourceCode(schema, null, config);
+        return Snapshot.Schema(schema, config => config with { RecordDeclaration = recordDeclaration });
     }
 
-    public static MatrixTheoryData<string, string> RecordDeclarationSchemaPairs() => new MatrixTheoryData<string, string>(["record", "class", "invalid"], ["record", "error", "fixed"]);
+    public static MatrixTheoryData<string, string> RecordDeclarationSchemaPairs() => new(["record", "class", "invalid"], ["record", "error", "fixed"]);
 }

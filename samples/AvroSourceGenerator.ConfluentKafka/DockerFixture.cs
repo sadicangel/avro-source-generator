@@ -87,7 +87,8 @@ public sealed class DockerFixture : IAsyncDisposable
 
     public IProducer<string, T> CreateProducer<T>(
         ISchemaRegistryClient schemaRegistryClient,
-        Action<ProducerConfig>? configure = null)
+        Action<ProducerConfig>? configure = null,
+        Action<AvroSerializerConfig>? configureSerializer = null)
     {
         var config = new ProducerConfig
         {
@@ -95,8 +96,12 @@ public sealed class DockerFixture : IAsyncDisposable
             MessageTimeoutMs = 10000
         };
         configure?.Invoke(config);
+
+        var serializerConfig = new AvroSerializerConfig();
+        configureSerializer?.Invoke(serializerConfig);
+
         return new ProducerBuilder<string, T>(config)
-            .SetValueSerializer(new AvroSerializer<T>(schemaRegistryClient).AsSyncOverAsync())
+            .SetValueSerializer(new AvroSerializer<T>(schemaRegistryClient, serializerConfig).AsSyncOverAsync())
             .Build();
     }
 

@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="*.avsc" />
+    <AdditionalFiles Include="*.avsc;*.subject.json" />
   </ItemGroup>
 
   <ItemGroup>

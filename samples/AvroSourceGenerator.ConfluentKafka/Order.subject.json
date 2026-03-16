@@ -1,0 +1,21 @@
+{
+  "schemaType": "AVRO",
+  "schema": "{\"type\":\"record\",\"name\":\"Order\",\"namespace\":\"AvroSourceGenerator.ConfluentKafka\",\"fields\":[{\"name\":\"OrderId\",\"type\":\"string\"},{\"name\":\"Customer\",\"type\":\"AvroSourceGenerator.ConfluentKafka.Customer\"},{\"name\":\"Items\",\"type\":{\"type\":\"array\",\"items\":\"AvroSourceGenerator.ConfluentKafka.OrderItem\"}},{\"name\":\"Status\",\"type\":\"AvroSourceGenerator.ConfluentKafka.OrderStatus\"},{\"name\":\"OrderDate\",\"type\":{\"type\":\"int\",\"logicalType\":\"date\"}},{\"name\":\"LastUpdated\",\"type\":{\"type\":\"long\",\"logicalType\":\"timestamp-millis\"}},{\"name\":\"Notes\",\"type\":[\"null\",\"string\"],\"default\":null}]}",
+  "references": [
+    {
+      "name": "AvroSourceGenerator.ConfluentKafka.Customer",
+      "subject": "AvroSourceGenerator.ConfluentKafka.Customer",
+      "version": 1
+    },
+    {
+      "name": "AvroSourceGenerator.ConfluentKafka.OrderItem",
+      "subject": "AvroSourceGenerator.ConfluentKafka.OrderItem",
+      "version": 1
+    },
+    {
+      "name": "AvroSourceGenerator.ConfluentKafka.OrderStatus",
+      "subject": "AvroSourceGenerator.ConfluentKafka.OrderStatus",
+      "version": 1
+    }
+  ]
+}

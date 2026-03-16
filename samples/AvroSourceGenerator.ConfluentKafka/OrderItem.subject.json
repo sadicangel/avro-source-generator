@@ -1,0 +1,5 @@
+{
+  "schemaType": "AVRO",
+  "schema": "{\"type\":\"record\",\"name\":\"OrderItem\",\"namespace\":\"AvroSourceGenerator.ConfluentKafka\",\"fields\":[{\"name\":\"ProductId\",\"type\":\"string\"},{\"name\":\"Quantity\",\"type\":\"int\"},{\"name\":\"Price\",\"type\":\"double\"}]}",
+  "references": []
+}

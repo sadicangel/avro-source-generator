@@ -15,6 +15,14 @@ Console.WriteLine("Creating schema registry client...");
 using var registry = fixture.CreateSchemaRegistryClient();
 Console.WriteLine("Schema registry client created.");
 
+Console.WriteLine("Seeding schema registry with referenced schemas...");
+var orderSchemaId = await SchemaRegistrySeeder.SeedAsync(registry, topicName);
+Console.WriteLine($"Root order schema registered with id {orderSchemaId}.");
+
+Console.WriteLine("Verifying schema registry setup...");
+await SchemaRegistrySeeder.VerifyAsync(registry, topicName);
+Console.WriteLine("Schema registry setup verified.");
+
 Console.WriteLine("Creating order to produce...");
 var producedOrder = new Order
 {
@@ -48,7 +56,13 @@ var producedOrder = new Order
 Console.WriteLine($"Order created: {producedOrder.OrderId}");
 
 Console.WriteLine("Creating producer...");
-using var producer = fixture.CreateProducer<Order>(registry);
+using var producer = fixture.CreateProducer<Order>(
+    registry,
+    configureSerializer: serializer =>
+    {
+        serializer.AutoRegisterSchemas = false;
+        serializer.UseSchemaId = orderSchemaId;
+    });
 Console.WriteLine("Producer created. Producing message...");
 var deliveryResult = await producer.ProduceAsync(
     topicName,

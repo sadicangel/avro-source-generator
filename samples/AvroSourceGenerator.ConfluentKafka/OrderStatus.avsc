@@ -1,0 +1,6 @@
+{
+  "type": "enum",
+  "name": "OrderStatus",
+  "namespace": "AvroSourceGenerator.ConfluentKafka",
+  "symbols": [ "Pending", "Processing", "Shipped", "Delivered", "Cancelled" ]
+}

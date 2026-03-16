@@ -143,6 +143,20 @@ partial record User : global::Avro.Specific.ISpecificRecord
 
 ---
 
+## Samples
+
+- [samples/AvroSourceGenerator.ApacheAvro/AvroSourceGenerator.ApacheAvro.csproj](samples/AvroSourceGenerator.ApacheAvro/AvroSourceGenerator.ApacheAvro.csproj) shows a minimal `Apache.Avro` model generation flow.
+- [samples/AvroSourceGenerator.ConfluentKafka/AvroSourceGenerator.ConfluentKafka.csproj](samples/AvroSourceGenerator.ConfluentKafka/AvroSourceGenerator.ConfluentKafka.csproj) shows Kafka and Schema Registry integration using Confluent's Avro serializer.
+- [samples/AvroSourceGenerator.ChrAvroKafka/AvroSourceGenerator.ChrAvroKafka.csproj](samples/AvroSourceGenerator.ChrAvroKafka/AvroSourceGenerator.ChrAvroKafka.csproj) shows the same Kafka and Schema Registry container workflow using `Chr.Avro.Confluent`.
+
+You can run any sample with:
+
+```bash
+dotnet run --project samples/AvroSourceGenerator.ChrAvroKafka/AvroSourceGenerator.ChrAvroKafka.csproj
+```
+
+---
+
 ## Extending Generated Types
 
 All generated types are declared as `partial`, allowing you to add members or behavior:

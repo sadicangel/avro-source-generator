@@ -1,0 +1,71 @@
+{
+  "type": "record",
+  "name": "TransactionEvent",
+  "namespace": "AvroSourceGenerator.ChrAvroKafka",
+  "doc": "Represents a financial transaction that is published to Kafka.",
+  "fields": [
+    {
+      "name": "Id",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+    {
+      "name": "Amount",
+      "type": {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 10,
+        "scale": 2
+      }
+    },
+    {
+      "name": "Currency",
+      "type": "string",
+      "default": "EUR"
+    },
+    {
+      "name": "Timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    },
+    {
+      "name": "Status",
+      "type": {
+        "type": "enum",
+        "name": "TransactionStatus",
+        "symbols": [ "PENDING", "COMPLETED", "FAILED" ]
+      },
+      "default": "PENDING"
+    },
+    {
+      "name": "RecipientId",
+      "type": [ "null", "string" ],
+      "default": null
+    },
+    {
+      "name": "Metadata",
+      "type": {
+        "type": "map",
+        "values": "string"
+      },
+      "default": {}
+    },
+    {
+      "name": "Signature",
+      "type": {
+        "type": "fixed",
+        "size": 64,
+        "name": "Signature"
+      }
+    },
+    {
+      "name": "LegacyId",
+      "type": [ "null", "string" ],
+      "default": null
+    }
+  ]
+}

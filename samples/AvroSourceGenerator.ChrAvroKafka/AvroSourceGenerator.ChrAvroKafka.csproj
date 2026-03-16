@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AvroSourceGeneratorAvroLibrary>Chr</AvroSourceGeneratorAvroLibrary>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Chr.Avro.Confluent" />
+    <PackageReference Include="Testcontainers" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <CompilerVisibleProperty Include="AvroSourceGeneratorAvroLibrary" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="*.avsc" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AvroSourceGenerator\AvroSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>

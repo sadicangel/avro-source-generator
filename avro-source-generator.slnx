@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/samples/">
     <Project Path="samples/AvroSourceGenerator.ApacheAvro/AvroSourceGenerator.ApacheAvro.csproj" />
+    <Project Path="samples/AvroSourceGenerator.ChrAvroKafka/AvroSourceGenerator.ChrAvroKafka.csproj" />
     <Project Path="samples/AvroSourceGenerator.ConfluentKafka/AvroSourceGenerator.ConfluentKafka.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">

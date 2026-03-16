@@ -32,10 +32,11 @@ public static class SchemaRegistryExtensions
                 }
 
                 using var schemaDocument = JsonDocument.Parse(schemaJson);
-                var registeredSchema = schemaRegistry.Schema(schemaDocument.RootElement, containingNamespace: null);
+                var schemaRoot = schemaDocument.RootElement.Clone();
+                var registeredSchema = schemaRegistry.Schema(schemaRoot, containingNamespace: null);
                 if (!ContainsTopLevelSchema(registeredSchema))
                 {
-                    throw new InvalidSchemaException($"At least a named schema must be present in schema: {schemaDocument.RootElement.GetRawText()}");
+                    throw new InvalidSchemaException($"At least a named schema must be present in schema: {schemaRoot.GetRawText()}");
                 }
             }
         }

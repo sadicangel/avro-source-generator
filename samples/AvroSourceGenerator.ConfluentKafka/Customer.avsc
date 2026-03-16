@@ -1,0 +1,20 @@
+{
+  "type": "record",
+  "name": "Customer",
+  "namespace": "AvroSourceGenerator.ConfluentKafka",
+  "fields": [
+    {
+      "name": "CustomerId",
+      "type": "string"
+    },
+    {
+      "name": "Name",
+      "type": "string"
+    },
+    {
+      "name": "Email",
+      "type": [ "null", "string" ],
+      "default": null
+    }
+  ]
+}

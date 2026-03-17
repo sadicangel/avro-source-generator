@@ -2,15 +2,15 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
-namespace AvroSourceGenerator.Parsing;
+namespace AvroSourceGenerator.Diagnostics;
 
 internal readonly record struct LocationInfo(string FilePath, TextSpan TextSpan, LinePositionSpan LineSpan)
 {
     public static readonly LocationInfo None = default;
 
-    public static LocationInfo FromSourceFile(string filePath, string? text)
+    public static LocationInfo FromSourceFile(string path, string? text)
     {
-        return new LocationInfo(filePath, new TextSpan(0, text?.Length ?? 0), new LinePositionSpan(LinePosition.Zero, GetLastLinePosition(text.AsSpan())));
+        return new LocationInfo(path, new TextSpan(0, text?.Length ?? 0), new LinePositionSpan(LinePosition.Zero, GetLastLinePosition(text.AsSpan())));
 
         static LinePosition GetLastLinePosition(ReadOnlySpan<char> text)
         {
@@ -43,11 +43,11 @@ internal readonly record struct LocationInfo(string FilePath, TextSpan TextSpan,
         }
     }
 
-    public static LocationInfo FromException(string filePath, string? text, JsonException exception)
+    public static LocationInfo FromException(string path, string? text, JsonException exception)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            return FromSourceFile(filePath, text);
+            return FromSourceFile(path, text);
         }
 
         var sourceText = SourceText.From(text!);
@@ -60,7 +60,7 @@ internal readonly record struct LocationInfo(string FilePath, TextSpan TextSpan,
         var span = new TextSpan(line.Start + charIndex, line.End);
         var lineSpan = sourceText.Lines.GetLinePositionSpan(span);
 
-        return new LocationInfo(filePath, span, lineSpan);
+        return new LocationInfo(path, span, lineSpan);
     }
 
     private Location ToLocation() => string.IsNullOrWhiteSpace(FilePath) ? Location.None : Location.Create(FilePath, TextSpan, LineSpan);

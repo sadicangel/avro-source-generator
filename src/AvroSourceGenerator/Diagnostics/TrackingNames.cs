@@ -1,11 +1,10 @@
-﻿namespace AvroSourceGenerator.Parsing;
+﻿namespace AvroSourceGenerator.Diagnostics;
 
 internal static class TrackingNames
 {
     public const string AvroFiles = nameof(AvroFiles);
-    public const string GeneratorSettings = nameof(GeneratorSettings);
+    public const string ProjectSettings = nameof(ProjectSettings);
     public const string CompilationInfo = nameof(CompilationInfo);
     public const string RenderSettings = nameof(RenderSettings);
-    public const string RenderResult = nameof(RenderResult);
-    public const string Emitter = nameof(Emitter);
+    public const string GeneratorOutput = nameof(GeneratorOutput);
 }

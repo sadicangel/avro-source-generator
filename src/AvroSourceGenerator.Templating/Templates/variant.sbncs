@@ -1,5 +1,5 @@
 {{ AccessModifier }} partial interface {{ $.schema.CSharpName.Name }};
-{{- if AvroLibrary == 'Chr' ~}}
+{{- if TargetProfile == 'Chr' ~}}
 
 {{ $serializer = $.schema.CSharpName.Name | string.slice 1 | string.append "SerializerBuilderCase" }}
 public class {{ $serializer }}(global::Chr.Avro.Serialization.IBinarySerializerBuilder serializerBuilder) : global::Chr.Avro.Serialization.BinaryUnionSerializerBuilderCase(serializerBuilder)

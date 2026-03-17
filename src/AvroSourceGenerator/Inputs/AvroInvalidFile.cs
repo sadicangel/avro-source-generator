@@ -3,7 +3,7 @@ using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Exceptions;
 
-namespace AvroSourceGenerator.Parsing;
+namespace AvroSourceGenerator.Inputs;
 
 internal sealed record class AvroInvalidFile(string Path, string? Text, ImmutableArray<DiagnosticInfo> Diagnostics) : IAvroFile
 {

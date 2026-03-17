@@ -1,4 +1,6 @@
-﻿namespace AvroSourceGenerator.Tests.Snapshots;
+﻿using AvroSourceGenerator.Templating;
+
+namespace AvroSourceGenerator.Tests.Snapshots;
 
 public sealed class CsprojLanguageFeaturesTests
 {
@@ -69,5 +71,5 @@ public sealed class CsprojLanguageFeaturesTests
         return Snapshot.Schema(schema, config => config with { LanguageFeatures = languageFeatures });
     }
 
-    public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new MatrixTheoryData<string, string>([.. Enum.GetNames(typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.LanguageFeatures", throwOnError: true)!).Where(n => n.StartsWith("CSharp")), "invalid"], ["enum", "error", "record", "protocol"]);
+    public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new([.. Enum.GetNames<LanguageFeatures>().Where(n => n.StartsWith("CSharp")), "invalid"], ["enum", "error", "record", "protocol"]);
 }

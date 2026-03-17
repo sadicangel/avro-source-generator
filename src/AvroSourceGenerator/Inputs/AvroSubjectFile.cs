@@ -2,7 +2,7 @@
 using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
 
-namespace AvroSourceGenerator.Parsing;
+namespace AvroSourceGenerator.Inputs;
 
 internal sealed record class AvroSubjectFile(string Path, string Text) : IAvroFile
 {
@@ -16,7 +16,7 @@ internal sealed record class AvroSubjectFile(string Path, string Text) : IAvroFi
         return jsonDocument.RootElement.Clone();
     }
 
-    public bool Equals(AvroSchemaFile? other) => other is not null && Path == other.Path && Text == other.Text;
+    public bool Equals(AvroSubjectFile? other) => other is not null && Path == other.Path && Text == other.Text;
 
     public override int GetHashCode() => HashCode.Combine(Path, Text);
 }

@@ -1,6 +1,10 @@
-﻿using AvroSourceGenerator.Emit;
-using AvroSourceGenerator.Parsing;
+using System.Text;
+using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Diagnostics;
+using AvroSourceGenerator.Inputs;
+using AvroSourceGenerator.Output;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator;
 
@@ -15,27 +19,37 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             .Collect()
             .WithTrackingName(TrackingNames.AvroFiles);
 
-        var generatorSettingsProvider = context.AnalyzerConfigOptionsProvider
-            .Select(Parser.GetGeneratorSettings)
-            .WithTrackingName(TrackingNames.GeneratorSettings);
+        var projectSettingsProvider = context.AnalyzerConfigOptionsProvider
+            .Select(ProjectSettings.FromOptions)
+            .WithTrackingName(TrackingNames.ProjectSettings);
 
         var compilationInfoProvider = context.CompilationProvider
-            .Select(Parser.GetCompilationInfo)
+            .Select(CompilationInfo.FromCompilation)
             .WithTrackingName(TrackingNames.CompilationInfo);
 
-        var renderSettingsProvider = generatorSettingsProvider.Combine(compilationInfoProvider)
-            .Select(Parser.GetRenderSettings)
+        var generatorConfigProvider = projectSettingsProvider.Combine(compilationInfoProvider)
+            .Select(GeneratorConfig.FromEnvironment)
             .WithTrackingName(TrackingNames.RenderSettings);
 
-        var renderResultProvider = avroFilesProvider
-            .Combine(renderSettingsProvider)
-            .Select(Renderer.Render)
-            .WithTrackingName(TrackingNames.RenderResult);
+        var generatorOutputProvider = avroFilesProvider.Combine(generatorConfigProvider)
+            .Select(GeneratorOutput.FromInput)
+            .WithTrackingName(TrackingNames.GeneratorOutput);
 
-        // TODO: We probably don't need this tracking name/step anymore.
-        var renderResultsProvider = renderResultProvider
-            .WithTrackingName(TrackingNames.Emitter);
+        context.RegisterImplementationSourceOutput(generatorOutputProvider, Emit);
+    }
 
-        context.RegisterImplementationSourceOutput(renderResultsProvider, Emitter.Emit);
+    private static void Emit(SourceProductionContext context, GeneratorOutput output)
+    {
+        var (schemas, diagnostics) = output;
+
+        foreach (var diagnostic in diagnostics)
+        {
+            context.ReportDiagnostic(diagnostic);
+        }
+
+        foreach (var schema in schemas)
+        {
+            context.AddSource(schema.HintName, SourceText.From(schema.SourceText, Encoding.UTF8));
+        }
     }
 }

@@ -3,7 +3,7 @@ using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
 using Microsoft.CodeAnalysis;
 
-namespace AvroSourceGenerator.Parsing;
+namespace AvroSourceGenerator.Inputs;
 
 internal interface IAvroFile
 {
@@ -24,6 +24,11 @@ internal static class AvroFile
         var path = additionalText.Path;
         var text = additionalText.GetText(cancellationToken)?.ToString();
 
+        return FromFileText(path, text);
+    }
+
+    public static IAvroFile FromFileText(string path, string? text)
+    {
         if (string.IsNullOrWhiteSpace(text))
         {
             return AvroInvalidFile.Empty(path);

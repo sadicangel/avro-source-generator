@@ -2,7 +2,7 @@
 using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
 
-namespace AvroSourceGenerator.Parsing;
+namespace AvroSourceGenerator.Inputs;
 
 internal sealed record class AvroSchemaFile(string Path, string Text) : IAvroFile
 {

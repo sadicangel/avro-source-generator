@@ -4,7 +4,7 @@
     {{ include 'field' field: field }}
     {{~ end ~}}
 }
-{{ if AvroLibrary == 'Apache' }}
+{{ if TargetProfile == 'Apache' }}
 partial {{ Error }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificException
 {
     public override global::Avro.Schema Schema { get => {{ $.schema.CSharpName.Name }}.s_schema; }

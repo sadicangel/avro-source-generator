@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageScribanIncludeSource>true</PackageScribanIncludeSource>
+    <DefineConstants>SCRIBAN_NO_ASYNC</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\enum.sbncs" />
+    <EmbeddedResource Include="Templates\error.sbncs" />
+    <EmbeddedResource Include="Templates\field.sbncs" />
+    <EmbeddedResource Include="Templates\fixed.sbncs" />
+    <EmbeddedResource Include="Templates\getput.sbncs" />
+    <EmbeddedResource Include="Templates\protocol.sbncs" />
+    <EmbeddedResource Include="Templates\record.sbncs" />
+    <EmbeddedResource Include="Templates\schema.sbncs" />
+    <EmbeddedResource Include="Templates\variant.sbncs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Collections.Immutable" PrivateAssets="all" />
+    <PackageReference Include="System.Text.Json" PrivateAssets="all" />
+    <PackageReference Include="PolySharp" PrivateAssets="all" />
+    <PackageReference Include="Scriban" PrivateAssets="all" IncludeAssets="build" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AvroSourceGenerator.Core\AvroSourceGenerator.Core.csproj" />
+  </ItemGroup>
+
+</Project>

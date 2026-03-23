@@ -1,18 +1,17 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Parsing;
 using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
 using Scriban;
 using Scriban.Functions;
 using Scriban.Syntax;
 
-namespace AvroSourceGenerator.Emit;
+namespace AvroSourceGenerator.Templating;
 
-internal static class AvroTemplate
+public static class AvroTemplate
 {
-    public static ImmutableArray<RenderedSchema> Render(SchemaRegistry schemaRegistry, RenderSettings settings)
+    public static ImmutableArray<RenderedSchema> Render(in SchemaRegistry schemaRegistry, TemplateSettings settings)
     {
         var templateContext = new TemplateContext(new TemplateScriptObject(settings))
         {
@@ -42,24 +41,25 @@ internal static class AvroTemplate
         ];
     }
 
-    private static bool ShouldEmitCode(TopLevelSchema schema)
-    {
-        return schema is not FixedSchema fixedSchema || fixedSchema.CSharpName != AvroSchema.Bytes.CSharpName;
-    }
+    private static bool ShouldEmitCode(TopLevelSchema schema) =>
+        schema is not FixedSchema fixedSchema || fixedSchema.CSharpName != AvroSchema.Bytes.CSharpName;
 
-    private static string GetSchemaJson(TopLevelSchema schema, ImmutableDictionary<SchemaName, TopLevelSchema> registeredSchemas, RenderSettings settings)
+    private static string GetSchemaJson(TopLevelSchema schema, ImmutableDictionary<SchemaName, TopLevelSchema> registeredSchemas, TemplateSettings settings)
     {
-        if (settings.AvroLibrary is not AvroLibrary.Apache)
+        if (settings.TargetProfile is not TargetProfile.Apache)
         {
             return string.Empty;
         }
 
-        return (settings.LanguageFeatures & LanguageFeatures.RawStringLiterals) != 0
-            ? $""""
-            """
-            {schema.ToJsonString(registeredSchemas, new JsonWriterOptions { Indented = true })}
-            """
-            """"
-            : StringFunctions.Literal(schema.ToJsonString(registeredSchemas));
+        if (settings.UseRawStringLiterals)
+        {
+            return $""""
+                """
+                {schema.ToJsonString(registeredSchemas, new JsonWriterOptions { Indented = true })}
+                """
+                """";
+        }
+
+        return StringFunctions.Literal(schema.ToJsonString(registeredSchemas));
     }
 }

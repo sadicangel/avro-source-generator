@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
 namespace AvroSourceGenerator.Configuration;
@@ -18,5 +19,22 @@ internal readonly record struct CompilationInfo(ImmutableArray<AvroLibraryRefere
         }
 
         return hash.ToHashCode();
+    }
+
+    public static CompilationInfo FromCompilation(Compilation compilation, CancellationToken cancellationToken)
+    {
+        _ = cancellationToken;
+
+        var csharpCompilation = (CSharpCompilation)compilation;
+
+        var avroLibraries = ImmutableArray.CreateBuilder<AvroLibraryReference>();
+
+        if (csharpCompilation.GetTypeByMetadataName("Avro.Specific.ISpecificRecord") is not null)
+            avroLibraries.Add(AvroLibraryReference.Apache);
+
+        if (csharpCompilation.GetTypeByMetadataName("Chr.Avro.Abstract.Schema") is not null)
+            avroLibraries.Add(AvroLibraryReference.Chr);
+
+        return new CompilationInfo(avroLibraries.ToImmutable(), csharpCompilation.LanguageVersion);
     }
 }

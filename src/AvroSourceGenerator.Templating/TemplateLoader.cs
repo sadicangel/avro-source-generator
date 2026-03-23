@@ -3,7 +3,7 @@ using Scriban;
 using Scriban.Parsing;
 using Scriban.Runtime;
 
-namespace AvroSourceGenerator.Emit;
+namespace AvroSourceGenerator.Templating;
 
 internal sealed class TemplateLoader : ITemplateLoader
 {
@@ -15,15 +15,15 @@ internal sealed class TemplateLoader : ITemplateLoader
     {
         s_templatePaths = new Dictionary<string, string>
         {
-            ["enum"] = "AvroSourceGenerator.Templates.enum.sbncs",
-            ["error"] = "AvroSourceGenerator.Templates.error.sbncs",
-            ["field"] = "AvroSourceGenerator.Templates.field.sbncs",
-            ["fixed"] = "AvroSourceGenerator.Templates.fixed.sbncs",
-            ["getput"] = "AvroSourceGenerator.Templates.getput.sbncs",
-            ["protocol"] = "AvroSourceGenerator.Templates.protocol.sbncs",
-            ["record"] = "AvroSourceGenerator.Templates.record.sbncs",
-            ["schema"] = "AvroSourceGenerator.Templates.schema.sbncs",
-            ["variant"] = "AvroSourceGenerator.Templates.variant.sbncs",
+            ["enum"] = "AvroSourceGenerator.Templating.Templates.enum.sbncs",
+            ["error"] = "AvroSourceGenerator.Templating.Templates.error.sbncs",
+            ["field"] = "AvroSourceGenerator.Templating.Templates.field.sbncs",
+            ["fixed"] = "AvroSourceGenerator.Templating.Templates.fixed.sbncs",
+            ["getput"] = "AvroSourceGenerator.Templating.Templates.getput.sbncs",
+            ["protocol"] = "AvroSourceGenerator.Templating.Templates.protocol.sbncs",
+            ["record"] = "AvroSourceGenerator.Templating.Templates.record.sbncs",
+            ["schema"] = "AvroSourceGenerator.Templating.Templates.schema.sbncs",
+            ["variant"] = "AvroSourceGenerator.Templating.Templates.variant.sbncs",
         };
 
         s_templates = new Dictionary<string, Template>(s_templatePaths.Count);

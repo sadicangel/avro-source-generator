@@ -4,7 +4,7 @@
     {{ include 'field' field: field }}
     {{~ end ~}}
 }
-{{ if AvroLibrary == 'Apache' }}
+{{ if TargetProfile == 'Apache' }}
 partial {{ Record }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificRecord
 {
     global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => {{ $.schema.CSharpName.Name }}.s_schema; }

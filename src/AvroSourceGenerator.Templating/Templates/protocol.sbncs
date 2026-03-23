@@ -14,7 +14,7 @@
         {{- end -}});
     {{~ end ~}}
 }
-{{ if AvroLibrary == 'Apache' }}
+{{ if TargetProfile == 'Apache' }}
 partial class {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificProtocol
 {
     public global::Avro.Protocol Protocol { get => {{ $.schema.CSharpName.Name }}.s_protocol; }

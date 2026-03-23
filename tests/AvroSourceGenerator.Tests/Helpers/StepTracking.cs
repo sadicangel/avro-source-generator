@@ -9,7 +9,7 @@ internal static class StepTracking
     [
         .. typeof(AvroSourceGenerator)
             .Assembly
-            .GetType("AvroSourceGenerator.Parsing.TrackingNames", throwOnError: true)!
+            .GetType("AvroSourceGenerator.Diagnostics.TrackingNames", throwOnError: true)!
             .GetFields()
             .Where(fi => fi is { IsLiteral: true, IsInitOnly: false } && fi.FieldType == typeof(string))
             .Select(x => (string?)x.GetRawConstantValue()!)

@@ -5,12 +5,12 @@ public static class PrecisionExtensions
     extension(DateTime dateTime)
     {
         // Kafka seems to store with less precision, so we fix that here for comparison.
-        public DateTime WithPrecisionLossFixed() => dateTime.Date + TimeSpan.FromMilliseconds((long)dateTime.TimeOfDay.TotalMilliseconds);
+        public DateTime TruncateToMilliseconds() => dateTime.AddTicks(-(dateTime.Ticks % TimeSpan.TicksPerMillisecond));
     }
 
     extension(DateTimeOffset dateTime)
     {
         // Kafka seems to store with less precision, so we fix that here for comparison.
-        public DateTimeOffset WithPrecisionLossFixed() => dateTime.Date + TimeSpan.FromMilliseconds((long)dateTime.TimeOfDay.TotalMilliseconds);
+        public DateTimeOffset TruncateToMilliseconds() => dateTime.AddTicks(-(dateTime.Ticks % TimeSpan.TicksPerMillisecond));
     }
 }

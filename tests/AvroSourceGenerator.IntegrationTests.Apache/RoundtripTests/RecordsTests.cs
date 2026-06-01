@@ -12,7 +12,7 @@ public class RecordsTests(DockerFixture dockerFixture)
             Id = Guid.NewGuid(),
             Amount = new Avro.AvroDecimal(123.45m),
             Currency = "USD",
-            Timestamp = DateTime.UtcNow.WithPrecisionLossFixed(),
+            Timestamp = DateTime.UtcNow.TruncateToMilliseconds(),
             Status = TransactionStatus.COMPLETED,
             RecipientId = "123456",
             Metadata = new Dictionary<string, string>

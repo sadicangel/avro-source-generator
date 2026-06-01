@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <PackageScribanIncludeSource>true</PackageScribanIncludeSource>
-    <DefineConstants>SCRIBAN_NO_ASYNC</DefineConstants>
+    <DefineConstants>$(DefineConstants);SCRIBAN_NO_ASYNC</DefineConstants>
+    <PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
   </PropertyGroup>
 
   <ItemGroup>

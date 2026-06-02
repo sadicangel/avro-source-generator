@@ -15,16 +15,11 @@ internal static class RegisterSchemaExtensions
         {
             return schema.ValueKind switch
             {
-                JsonValueKind.String => schemaRegistry.Named(schema, containingNamespace),
+                JsonValueKind.String => schemaRegistry.Named(schema.ToRequiredString().ToSchemaName(), containingNamespace),
                 JsonValueKind.Object => schemaRegistry.Complex(schema, containingNamespace),
                 JsonValueKind.Array => schemaRegistry.Union(schema, containingNamespace),
                 _ => throw new InvalidSchemaException($"Invalid schema: {schema.GetRawText()}")
             };
-        }
-
-        private AvroSchema Named(JsonElement schema, string? containingNamespace)
-        {
-            return schemaRegistry.Named(schema.ToRequiredString().ToSchemaName(), containingNamespace);
         }
 
         private AvroSchema Named(SchemaName schemaName, string? containingNamespace)

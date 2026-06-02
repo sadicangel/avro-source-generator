@@ -38,7 +38,7 @@ internal static class AvroFile
             return path switch
             {
                 _ when path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase) => new AvroSchemaFile(path, text!),
-                //_ when path.EndsWith(".avdl", StringComparison.OrdinalIgnoreCase)  => Syntax(path, text),
+                // _ when path.EndsWith(".avdl", StringComparison.OrdinalIgnoreCase) => new AvroSourceFile(path, text!),
                 _ => throw new InvalidOperationException("Unreachable: Unsupported Avro file type."),
             };
         }

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Exceptions;

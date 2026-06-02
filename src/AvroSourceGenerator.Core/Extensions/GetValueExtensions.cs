@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Registry;
+namespace AvroSourceGenerator.Extensions;
 
 internal static class GetValueExtensions
 {

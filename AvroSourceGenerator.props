@@ -4,6 +4,7 @@
     <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorReferenceResolution" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />
   </ItemGroup>
 </Project>

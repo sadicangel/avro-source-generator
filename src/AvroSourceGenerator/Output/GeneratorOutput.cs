@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
@@ -48,6 +48,7 @@ internal readonly record struct GeneratorOutput(ImmutableArray<RenderedSchema> S
             new SchemaRegistryOptions(
                 TargetProfile: config.TargetProfile,
                 UseNullableReferenceTypes: config.LanguageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes),
+                ReferenceResolution: config.ReferenceResolution,
                 DuplicateResolution: config.DuplicateResolution));
 
         foreach (var file in files)
@@ -58,10 +59,6 @@ internal readonly record struct GeneratorOutput(ImmutableArray<RenderedSchema> S
                 {
                     case AvroSchemaFile schemaFile:
                         schemaRegistry.RegisterSchema(schema: schemaFile.Json);
-                        break;
-
-                    case AvroSubjectFile subjectFile:
-                        schemaRegistry.RegisterSubject(subject: subjectFile.Json);
                         break;
 
                     case AvroInvalidFile:

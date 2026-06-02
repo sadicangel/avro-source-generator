@@ -15,12 +15,17 @@
     <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorReferenceResolution" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="*.avsc;*.subject.json" />
+    <AdditionalFiles Include="*.avsc" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <AvroSourceGeneratorReferenceResolution>Deferred</AvroSourceGeneratorReferenceResolution>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AvroSourceGenerator\AvroSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

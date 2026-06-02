@@ -9,6 +9,7 @@ internal readonly record struct GeneratorConfig(
     TargetProfile TargetProfile,
     LanguageFeatures LanguageFeatures,
     AccessModifier AccessModifier,
+    ReferenceResolution ReferenceResolution,
     DuplicateResolution DuplicateResolution,
     ImmutableArray<DiagnosticInfo> Diagnostics)
 {
@@ -18,6 +19,7 @@ internal readonly record struct GeneratorConfig(
         TargetProfile == other.TargetProfile &&
         LanguageFeatures == other.LanguageFeatures &&
         AccessModifier == other.AccessModifier &&
+        ReferenceResolution == other.ReferenceResolution &&
         DuplicateResolution == other.DuplicateResolution &&
         // This will not avoid all cases, but it's good enough for now.
         Diagnostics.OrderBy(x => x.Descriptor.Id).SequenceEqual(other.Diagnostics.OrderBy(x => x.Descriptor.Id));
@@ -28,6 +30,7 @@ internal readonly record struct GeneratorConfig(
         hash.Add(TargetProfile);
         hash.Add(LanguageFeatures);
         hash.Add(AccessModifier);
+        hash.Add(ReferenceResolution);
         hash.Add(DuplicateResolution);
         foreach (var diagnostic in Diagnostics)
             hash.Add(diagnostic);
@@ -42,9 +45,10 @@ internal readonly record struct GeneratorConfig(
         var targetProfile = GetTargetProfile(projectSettings.AvroLibrary ?? AvroLibrary.Auto, compilationInfo.LanguageVersion, compilationInfo.AvroLibraries, out var diagnostics);
         var languageFeatures = GetLanguageFeatures(projectSettings.LanguageFeatures ?? MapVersionToFeatures(compilationInfo.LanguageVersion), targetProfile, projectSettings.RecordDeclaration);
         var accessModifier = projectSettings.AccessModifier ?? AccessModifier.Public;
+        var referenceResolution = projectSettings.ReferenceResolution ?? ReferenceResolution.Strict;
         var duplicateResolution = projectSettings.DuplicateResolution ?? DuplicateResolution.Error;
 
-        return new GeneratorConfig(targetProfile, languageFeatures, accessModifier, duplicateResolution, diagnostics);
+        return new GeneratorConfig(targetProfile, languageFeatures, accessModifier, referenceResolution, duplicateResolution, diagnostics);
     }
 
     private static TargetProfile GetTargetProfile(AvroLibrary avroLibrary, LanguageVersion languageVersion, ImmutableArray<AvroLibraryReference> references, out ImmutableArray<DiagnosticInfo> diagnostics)

@@ -6,7 +6,7 @@ namespace AvroSourceGenerator.Diagnostics;
 
 internal static class MissingReferenceDiagnostic
 {
-    private static readonly DiagnosticDescriptor s_descriptor = new(id: "AVROSG0006", title: "Missing schema reference", messageFormat: "The following schema references could not be resolved: {0}", category: "Compiler", defaultSeverity: DiagnosticSeverity.Error, isEnabledByDefault: true, description: "One or more Avro schema references could not be resolved from the available schema inputs or declared subject references.");
+    private static readonly DiagnosticDescriptor s_descriptor = new(id: "AVROSG0006", title: "Missing schema reference", messageFormat: "The following schema references could not be resolved: {0}", category: "Compiler", defaultSeverity: DiagnosticSeverity.Error, isEnabledByDefault: true, description: "One or more Avro schema references could not be resolved from the available schema inputs.");
 
     public static DiagnosticInfo Create(LocationInfo location, ImmutableArray<SchemaName> missingReferences) => new(s_descriptor, location, string.Join(", ", missingReferences.Select(static x => x.FullName)));
 }

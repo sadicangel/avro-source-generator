@@ -8,8 +8,8 @@ internal readonly record struct ProjectSettings(
     LanguageFeatures? LanguageFeatures,
     AccessModifier? AccessModifier,
     string? RecordDeclaration,
-    DuplicateResolution? DuplicateResolution
-)
+    ReferenceResolution? ReferenceResolution,
+    DuplicateResolution? DuplicateResolution)
 {
     public static ProjectSettings FromOptions(AnalyzerConfigOptionsProvider provider, CancellationToken cancellationToken)
     {
@@ -50,6 +50,15 @@ internal readonly record struct ProjectSettings(
             recordDeclaration = null;
         }
 
+        var referenceResolution = default(ReferenceResolution?);
+        if (provider.GlobalOptions.TryGetValue(
+                "build_property.AvroSourceGeneratorReferenceResolution",
+                out var referenceResolutionString) &&
+            Enum.TryParse<ReferenceResolution>(referenceResolutionString, ignoreCase: true, out var parsedReferenceResolution))
+        {
+            referenceResolution = parsedReferenceResolution;
+        }
+
         var duplicateResolution = default(DuplicateResolution?);
         if (provider.GlobalOptions.TryGetValue(
                 "build_property.AvroSourceGeneratorDuplicateResolution",
@@ -59,6 +68,6 @@ internal readonly record struct ProjectSettings(
             duplicateResolution = parsedDuplicateResolution;
         }
 
-        return new ProjectSettings(avroLibrary, languageFeatures, accessModifier, recordDeclaration, duplicateResolution);
+        return new ProjectSettings(avroLibrary, languageFeatures, accessModifier, recordDeclaration, referenceResolution, duplicateResolution);
     }
 }

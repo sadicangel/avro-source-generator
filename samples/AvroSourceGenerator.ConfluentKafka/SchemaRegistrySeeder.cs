@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Confluent.SchemaRegistry;
 using Schema = Confluent.SchemaRegistry.Schema;
 
@@ -6,12 +5,12 @@ namespace AvroSourceGenerator.ConfluentKafka;
 
 internal static class SchemaRegistrySeeder
 {
-    private const string RootSchemaFileName = "Order.subject.json";
+    private const string RootSchemaFileName = "Order.avsc";
 
     private static readonly DependencySchemaFile[] s_dependencyFiles =
     [
         new("Customer.avsc", "AvroSourceGenerator.ConfluentKafka.Customer"),
-        new("OrderItem.subject.json", "AvroSourceGenerator.ConfluentKafka.OrderItem"),
+        new("OrderItem.avsc", "AvroSourceGenerator.ConfluentKafka.OrderItem"),
         new("OrderStatus.avsc", "AvroSourceGenerator.ConfluentKafka.OrderStatus")
     ];
 
@@ -23,8 +22,8 @@ internal static class SchemaRegistrySeeder
 
         foreach (var dependency in s_dependencyFiles)
         {
-            var definition = LoadSchemaDefinition(dependency.FileName);
-            var schema = new Schema(definition.SchemaText, definition.References, SchemaType.Avro);
+            var schemaText = LoadSchemaText(dependency.FileName);
+            var schema = new Schema(schemaText, references: [], SchemaType.Avro);
 
             await schemaRegistryClient.RegisterSchemaAsync(dependency.Subject, schema, normalize: false);
 
@@ -32,16 +31,16 @@ internal static class SchemaRegistrySeeder
             subjectVersions[dependency.Subject] = latest.Version;
         }
 
-        var rootDefinition = LoadSchemaDefinition(RootSchemaFileName);
-        var rootReferences = rootDefinition.References
-            .Select(reference => new SchemaReference(
-                reference.Name,
-                reference.Subject,
-                subjectVersions.TryGetValue(reference.Subject, out var version) ? version : reference.Version))
+        var rootSchemaText = LoadSchemaText(RootSchemaFileName);
+        var rootReferences = s_dependencyFiles
+            .Select(dependency => new SchemaReference(
+                dependency.Subject,
+                dependency.Subject,
+                subjectVersions[dependency.Subject]))
             .ToList();
 
         var rootSubject = GetRootSubject(topicName);
-        var rootSchema = new Schema(rootDefinition.SchemaText, rootReferences, SchemaType.Avro);
+        var rootSchema = new Schema(rootSchemaText, rootReferences, SchemaType.Avro);
         return await schemaRegistryClient.RegisterSchemaAsync(rootSubject, rootSchema, normalize: false);
     }
 
@@ -70,48 +69,14 @@ internal static class SchemaRegistrySeeder
         }
     }
 
-    private static SchemaDefinition LoadSchemaDefinition(string fileName)
+    private static string LoadSchemaText(string fileName)
     {
         var path = Path.Combine(AppContext.BaseDirectory, fileName);
-        var text = File.ReadAllText(path);
-
-        if (fileName.EndsWith(".subject.json", StringComparison.OrdinalIgnoreCase))
-        {
-            using var document = JsonDocument.Parse(text);
-            var root = document.RootElement;
-            var schemaType = root.GetProperty("schemaType").GetString();
-            if (!string.Equals(schemaType, "AVRO", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException($"Schema file '{fileName}' must use schemaType 'AVRO'.");
-            }
-
-            var references = new List<SchemaReference>();
-            if (root.TryGetProperty("references", out var referencesElement))
-            {
-                foreach (var reference in referencesElement.EnumerateArray())
-                {
-                    references.Add(
-                        new SchemaReference(
-                            reference.GetProperty("name").GetString()
-                            ?? throw new InvalidOperationException($"Reference in '{fileName}' is missing a name."),
-                            reference.GetProperty("subject").GetString()
-                            ?? throw new InvalidOperationException($"Reference in '{fileName}' is missing a subject."),
-                            reference.GetProperty("version").GetInt32()));
-                }
-            }
-
-            return new SchemaDefinition(
-                root.GetProperty("schema").GetString()
-                ?? throw new InvalidOperationException($"Schema file '{fileName}' is missing a schema payload."),
-                references);
-        }
-
-        return new SchemaDefinition(text, []);
+        return File.ReadAllText(path);
     }
 
     private static string GetRootSubject(string topicName) => $"{topicName}-value";
 
     private sealed record DependencySchemaFile(string FileName, string Subject);
 
-    private sealed record SchemaDefinition(string SchemaText, List<SchemaReference> References);
 }

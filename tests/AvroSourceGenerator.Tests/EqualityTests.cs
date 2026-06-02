@@ -72,7 +72,7 @@ public class EqualityTests
         Assert.Equal(a, b);
     }
 
-    public static TheoryData<Type> AvroFileTypesData => new(AvroFileTypes);
+    public static TheoryData<Type> AvroFileTypesData => new TheoryData<Type>(AvroFileTypes);
 
     [Theory]
     [MemberData(nameof(AvroFileTypesData))]
@@ -133,22 +133,6 @@ file sealed class AvroFileOverride(Type avroFileType, IReadOnlyList<Type> avroFi
         var (path, text) = context.GenerateType.Type?.Name switch
         {
             "AvroSchemaFile" => (Path.ChangeExtension(context.Faker.System.FileName(), "avsc"), TestSchemas.Get("record").ToJsonString()),
-            "AvroSubjectFile" => (Path.ChangeExtension(context.Faker.System.FileName(), "subject.json"), new JsonObject().With(
-                "schema",
-                TestSchemas.Get("record").With(
-                    "fields",
-                    [
-                        new
-                        {
-                            name = "ExternalEnum",
-                            type = "external.namespace.Enum"
-                        },
-                        new
-                        {
-                            name = "ExternalRecord",
-                            type = "external.namespace.Record"
-                        }
-                    ]).ToJsonString()).ToJsonString()),
             _ => (Path.ChangeExtension(context.Faker.System.FileName(), "avsc"), context.Faker.Lorem.Paragraph())
         };
         context.Instance = CreateFile.Invoke(null, [path, text])!;

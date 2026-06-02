@@ -15,11 +15,35 @@ internal static class RegisterSchemaExtensions
         {
             return schema.ValueKind switch
             {
-                JsonValueKind.String => schemaRegistry.Find(schema.ToRequiredString().ToSchemaName(), containingNamespace) ?? throw new MissingReferenceException(schema.ToRequiredString().ToSchemaName().ResolveIn(containingNamespace)),
+                JsonValueKind.String => schemaRegistry.Named(schema, containingNamespace),
                 JsonValueKind.Object => schemaRegistry.Complex(schema, containingNamespace),
                 JsonValueKind.Array => schemaRegistry.Union(schema, containingNamespace),
                 _ => throw new InvalidSchemaException($"Invalid schema: {schema.GetRawText()}")
             };
+        }
+
+        private AvroSchema Named(JsonElement schema, string? containingNamespace)
+        {
+            return schemaRegistry.Named(schema.ToRequiredString().ToSchemaName(), containingNamespace);
+        }
+
+        private AvroSchema Named(SchemaName schemaName, string? containingNamespace)
+        {
+            if (schemaRegistry.Find(schemaName, containingNamespace) is { } named)
+            {
+                return named;
+            }
+
+            schemaName = schemaName.ResolveIn(containingNamespace);
+            if (schemaRegistry.Options.ReferenceResolution is ReferenceResolution.Strict)
+            {
+                throw new MissingReferenceException(schemaName);
+            }
+
+            schemaRegistry.AddReference(schemaName);
+
+            return schemaRegistry.Find(schemaName, containingNamespace: null)
+                ?? throw new InvalidOperationException("Unreachable code: reference should have been added in the registry.");
         }
 
         public AvroSchema Complex(JsonElement schema, string? containingNamespace)
@@ -39,7 +63,7 @@ internal static class RegisterSchemaExtensions
                 AvroTypeNames.Record => schemaRegistry.Record(schema, containingNamespace),
                 AvroTypeNames.Error => schemaRegistry.Error(schema, containingNamespace),
                 AvroTypeNames.Fixed => schemaRegistry.Fixed(schema, containingNamespace),
-                _ => schemaRegistry.Find(type.ToSchemaName(), containingNamespace) ?? throw new MissingReferenceException(type.ToSchemaName().ResolveIn(containingNamespace))
+                _ => schemaRegistry.Named(type.ToSchemaName(), containingNamespace)
             };
 
             if (underlyingSchema is PrimitiveSchema primitive)

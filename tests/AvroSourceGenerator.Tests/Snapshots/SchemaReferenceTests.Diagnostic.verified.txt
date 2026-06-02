@@ -1,11 +1,11 @@
-{
+﻿{
   Location: 8VnhhC-Ga7k5S-tg43sP1q9Z5dk.avsc: (0,0)-(10,1),
   Message: The following schema references could not be resolved: This.Type.Was.Not.Defined.In.The.Schema,
   Severity: Error,
   Descriptor: {
     Id: AVROSG0006,
     Title: Missing schema reference,
-    Description: One or more Avro schema references could not be resolved from the available schema inputs or declared subject references.,
+    Description: One or more Avro schema references could not be resolved from the available schema inputs.,
     MessageFormat: The following schema references could not be resolved: {0},
     Category: Compiler,
     DefaultSeverity: Error,

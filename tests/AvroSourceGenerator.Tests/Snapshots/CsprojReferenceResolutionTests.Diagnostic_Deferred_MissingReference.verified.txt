@@ -1,6 +1,5 @@
 ﻿{
-  Location: 8m7Ad-VG1kDXZFpsiFg29zSAAHs.avsc: (0,0)-(10,1),
-  Message: The following schema references could not be resolved: SchemaNamespace.MissingResponse,
+  Message: The following schema references could not be resolved: Demo.Store.OrderLine,
   Severity: Error,
   Descriptor: {
     Id: AVROSG0006,

@@ -1,10 +1,11 @@
 ﻿{
-  Message: The following schema references could not be resolved: external.namespace.Record, external.namespace.Enum,
+  Location: 7ne69Miwm3AbPqt5Q8iw551pqPs.avsc: (0,0)-(19,1),
+  Message: The following schema references could not be resolved: Demo.Store.Customer,
   Severity: Error,
   Descriptor: {
     Id: AVROSG0006,
     Title: Missing schema reference,
-    Description: One or more Avro schema references could not be resolved from the available schema inputs or declared subject references.,
+    Description: One or more Avro schema references could not be resolved from the available schema inputs.,
     MessageFormat: The following schema references could not be resolved: {0},
     Category: Compiler,
     DefaultSeverity: Error,

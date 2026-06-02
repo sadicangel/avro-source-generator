@@ -274,6 +274,25 @@ Supported values:
 
 > [!Warning]  
 > **Ignore** is nondeterministic and should only be used when duplicate outputs are intentional and safe.
+
+---
+
+### Reference Resolution
+
+By default, the generator follows Avro's schema resolution rules and requires named schemas to be defined before they are referenced.
+
+If your project keeps related schemas in separate `.avsc` files, you can defer reference checks until all schema files have been registered:
+
+```xml
+<PropertyGroup>
+  <AvroSourceGeneratorReferenceResolution>Deferred</AvroSourceGeneratorReferenceResolution>
+</PropertyGroup>
+```
+
+Supported values:
+- `Strict` (default) — unresolved references emit a diagnostic as soon as the schema is read
+- `Deferred` — unresolved references are collected and resolved after all `.avsc` inputs are read
+
 ---
 
 ## Contributing

@@ -1,6 +1,6 @@
 ﻿using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Extensions;
+namespace AvroSourceGenerator.Avsc;
 
 internal static class ReservedSchemaProperties
 {

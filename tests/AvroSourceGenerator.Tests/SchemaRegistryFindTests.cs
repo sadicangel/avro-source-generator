@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
 
@@ -85,7 +86,7 @@ public sealed class SchemaRegistryFindTests
     }
 
     private static RecordSchema CreateRecord(string name, string? @namespace) =>
-        new RecordSchema(
+        new(
             Json: Parse(
                 $$"""
                 {

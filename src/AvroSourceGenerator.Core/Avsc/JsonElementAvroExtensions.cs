@@ -1,9 +1,10 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Exceptions;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Extensions;
+namespace AvroSourceGenerator.Avsc;
 
 internal static class JsonElementAvroExtensions
 {

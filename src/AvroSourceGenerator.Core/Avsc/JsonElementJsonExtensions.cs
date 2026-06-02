@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using AvroSourceGenerator.Exceptions;
 
-namespace AvroSourceGenerator.Extensions;
+namespace AvroSourceGenerator.Avsc;
 
 internal static class JsonElementJsonExtensions
 {

@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.HashCode" />
     <PackageReference Include="System.Collections.Immutable" PrivateAssets="all" />
     <PackageReference Include="System.Text.Json" PrivateAssets="all" />
     <PackageReference Include="PolySharp" PrivateAssets="all" />

@@ -90,7 +90,7 @@ internal readonly ref struct JsonParser(SyntaxTokenStream stream)
             _ = stream.Match(SyntaxKind.ColonToken);
             var propertyValue = ParseJson();
 
-            @object.Add((string?)propertyName.Value ?? propertyName.SourceSpan.ToString(), propertyValue);
+            @object.Add((string?)propertyName.Value ?? propertyName.ValueText, propertyValue);
             if (stream.Current.SyntaxKind is not SyntaxKind.CommaToken)
                 break;
 
@@ -105,6 +105,6 @@ internal readonly ref struct JsonParser(SyntaxTokenStream stream)
     private JsonValue ParseSymbol()
     {
         var symbolToken = stream.Match(SyntaxKind.IdentifierToken);
-        return JsonValue.Create(symbolToken.SourceSpan.ToString());
+        return JsonValue.Create(symbolToken.ValueText);
     }
 }

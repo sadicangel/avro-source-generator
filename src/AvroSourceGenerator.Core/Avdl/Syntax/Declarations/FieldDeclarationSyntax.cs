@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Avdl.Syntax.Types;
+﻿using AvroSourceGenerator.Avdl.Syntax.Annotations;
+using AvroSourceGenerator.Avdl.Syntax.Types;
 
 namespace AvroSourceGenerator.Avdl.Syntax.Declarations;
 
@@ -6,7 +7,7 @@ public sealed record class FieldDeclarationSyntax(
     ITypeSyntax Type,
     SimpleNameSyntax Name,
     SyntaxList<DocumentationSyntax> Documentation,
-    SyntaxList<AnnotationSyntax> Annotations,
+    SyntaxList<IAnnotationSyntax> Annotations,
     DefaultValueClauseSyntax? DefaultValueClause,
     SyntaxToken SemicolonToken)
     : ISyntaxNode

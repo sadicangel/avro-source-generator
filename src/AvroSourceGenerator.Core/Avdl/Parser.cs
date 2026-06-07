@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using AvroSourceGenerator.Avdl.Syntax;
+using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Directives;
 using AvroSourceGenerator.Avdl.Syntax.Types;
@@ -9,7 +10,7 @@ namespace AvroSourceGenerator.Avdl;
 public sealed class Parser(SourceText sourceText)
 {
     private readonly SyntaxTokenStream _stream = new(sourceText);
-    private readonly List<AnnotationSyntax> _annotations = [];
+    private readonly List<IAnnotationSyntax> _annotations = [];
     private readonly List<DocumentationSyntax> _documentation = [];
 
     public static CompilationUnitSyntax Parse(SourceText sourceText)
@@ -107,11 +108,11 @@ public sealed class Parser(SourceText sourceText)
         }
     }
 
-    private (SyntaxList<DocumentationSyntax> Documentation, SyntaxList<AnnotationSyntax> Annotations) DequeueMetadata()
+    private (SyntaxList<DocumentationSyntax> Documentation, SyntaxList<IAnnotationSyntax> Annotations) DequeueMetadata()
     {
         var documentation = new SyntaxList<DocumentationSyntax>([.. _documentation]);
         _documentation.Clear();
-        var annotations = new SyntaxList<AnnotationSyntax>([.. _annotations]);
+        var annotations = new SyntaxList<IAnnotationSyntax>([.. _annotations]);
         _annotations.Clear();
         return (documentation, annotations);
     }
@@ -122,14 +123,21 @@ public sealed class Parser(SourceText sourceText)
         return new DocumentationSyntax(documentationTrivia);
     }
 
-    private AnnotationSyntax ParseAnnotation()
+    private IAnnotationSyntax ParseAnnotation()
     {
         var atSignToken = _stream.Match(SyntaxKind.AtSignToken);
-        var name = SyntaxFacts.GetKeywordKind(_stream.Current.SourceSpan.Text) is not SyntaxKind.IdentifierToken ? _stream.Next() : _stream.Match(SyntaxKind.IdentifierToken);
+        var name = _stream.Current.SyntaxKind is SyntaxKind.NamespaceKeyword ? _stream.Next() : _stream.Match(SyntaxKind.IdentifierToken);
         var parenthesisOpenToken = _stream.Match(SyntaxKind.ParenthesisOpenToken);
         var jsonValue = ParseJsonValue();
         var parenthesisCloseToken = _stream.Match(SyntaxKind.ParenthesisCloseToken);
-        return new AnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken);
+        return name switch
+        {
+            { SyntaxKind: SyntaxKind.NamespaceKeyword } => new NamespaceAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+            { ValueText: "aliases" } => new AliasesAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+            { ValueText: "order" } => new OrderAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+
+            _ => new CustomAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+        };
     }
 
     private JsonValueSyntax ParseJsonValue()

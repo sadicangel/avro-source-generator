@@ -45,6 +45,13 @@ public enum SyntaxKind
     DoubleKeyword,
     BytesKeyword,
 
+    DecimalKeyword,
+    DateKeyword,
+    TimeMsKeyword,
+    TimestampMsKeyword,
+    LocalTimestampMsKeyword,
+    UuidKeyword,
+
     ArrayKeyword,
     MapKeyword,
     UnionKeyword,
@@ -60,13 +67,6 @@ public enum SyntaxKind
     ImportKeyword,
     IdlKeyword,
     TypedefKeyword,
-
-    DecimalKeyword,
-    DateKeyword,
-    TimeMsKeyword,
-    TimestampMsKeyword,
-    LocalTimestampMsKeyword,
-    UuidKeyword,
 
     ThrowsKeyword,
     OneWayKeyword,
@@ -103,8 +103,12 @@ public enum SyntaxKind
     SchemaDirective,
     ImportDirective,
 
-    Annotation,
     Documentation,
+
+    NamespaceAnnotation,
+    AliasesAnnotation,
+    OrderAnnotation,
+    CustomAnnotation,
 
     EnumDeclaration,
     RecordDeclaration,

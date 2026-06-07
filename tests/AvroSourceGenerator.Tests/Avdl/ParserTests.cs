@@ -38,8 +38,51 @@ public sealed class ParserTests
         Assert.Equal(SyntaxKind.SchemaKeyword, schemaImport.ImportTypeKeyword.SyntaxKind);
         Assert.Equal("dep.avsc", schemaImport.ImportPathLiteralToken.Value);
 
-        var protocol = Assert.Single(unit.Declarations);
-        Assert.Equal("P", Assert.IsType<ProtocolDeclarationSyntax>(protocol).Name.Identifier.SourceSpan.ToString());
+        var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(unit.Declarations));
+        Assert.Equal("P", protocol.Name.Identifier.SourceSpan.ToString());
+        Assert.Empty(protocol.Imports);
+    }
+
+    [Fact]
+    public void Parse_ProtocolImports_ReturnsImportsOnProtocol()
+    {
+        var unit = Parse(
+            """
+            protocol P {
+                import idl "common.avdl";
+                import protocol "dep.avpr";
+                import schema "dep.avsc";
+
+                record Request {
+                    string name;
+                }
+
+                void ping();
+            }
+            """);
+
+        Assert.Empty(unit.Directives);
+
+        var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(unit.Declarations));
+        Assert.Equal(3, protocol.Imports.Count);
+
+        var idlImport = protocol.Imports[0];
+        Assert.Equal(SyntaxKind.IdlKeyword, idlImport.ImportTypeKeyword.SyntaxKind);
+        Assert.Equal("common.avdl", idlImport.ImportPathLiteralToken.Value);
+
+        var protocolImport = protocol.Imports[1];
+        Assert.Equal(SyntaxKind.ProtocolKeyword, protocolImport.ImportTypeKeyword.SyntaxKind);
+        Assert.Equal("dep.avpr", protocolImport.ImportPathLiteralToken.Value);
+
+        var schemaImport = protocol.Imports[2];
+        Assert.Equal(SyntaxKind.SchemaKeyword, schemaImport.ImportTypeKeyword.SyntaxKind);
+        Assert.Equal("dep.avsc", schemaImport.ImportPathLiteralToken.Value);
+
+        Assert.Single(protocol.Types);
+        Assert.Single(protocol.Messages);
+
+        var kinds = AvdlTestHelpers.FlattenKinds(unit);
+        Assert.Equal(3, kinds.Count(kind => kind == SyntaxKind.ImportDirective));
     }
 
     [Fact]
@@ -137,6 +180,7 @@ public sealed class ParserTests
         Assert.Equal("Service", protocol.Name.Identifier.SourceSpan.ToString());
         var namespaceAnnotation = Assert.IsType<NamespaceAnnotationSyntax>(Assert.Single(protocol.Annotations));
         Assert.Equal("example", namespaceAnnotation.Namespace);
+        Assert.Empty(protocol.Imports);
         Assert.Equal(4, protocol.Types.Count);
         Assert.Equal(2, protocol.Messages.Count);
 

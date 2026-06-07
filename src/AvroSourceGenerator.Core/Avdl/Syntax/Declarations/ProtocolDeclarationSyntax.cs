@@ -1,4 +1,5 @@
 ﻿using AvroSourceGenerator.Avdl.Syntax.Annotations;
+using AvroSourceGenerator.Avdl.Syntax.Directives;
 
 namespace AvroSourceGenerator.Avdl.Syntax.Declarations;
 
@@ -8,6 +9,7 @@ public sealed record class ProtocolDeclarationSyntax(
     SyntaxList<DocumentationSyntax> Documentation,
     SyntaxList<IAnnotationSyntax> Annotations,
     SyntaxToken BraceOpenToken,
+    SyntaxList<ImportDirectiveSyntax> Imports,
     SyntaxList<ISchemaDeclarationSyntax> Types,
     SyntaxList<MessageDeclarationSyntax> Messages,
     SyntaxToken BraceCloseToken)
@@ -24,6 +26,8 @@ public sealed record class ProtocolDeclarationSyntax(
         foreach (var annotation in Annotations)
             yield return annotation;
         yield return BraceOpenToken;
+        foreach (var import in Imports)
+            yield return import;
         foreach (var type in Types)
             yield return type;
         foreach (var message in Messages)

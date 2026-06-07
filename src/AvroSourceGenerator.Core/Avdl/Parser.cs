@@ -24,6 +24,7 @@ public sealed class Parser(SourceText sourceText)
     {
         var directives = ParseDirectives();
         var declarations = ParseDeclarations();
+        // TODO: Check if protocol or schema IDL and validate directives.
         return new CompilationUnitSyntax(directives, declarations);
     }
 
@@ -228,6 +229,7 @@ public sealed class Parser(SourceText sourceText)
         var name = ParseSimpleName();
         var (documentation, annotations) = DequeueMetadata();
         var braceOpenToken = _stream.Match(SyntaxKind.BraceOpenToken);
+        var imports = ImmutableArray.CreateBuilder<ImportDirectiveSyntax>();
         var types = ImmutableArray.CreateBuilder<ISchemaDeclarationSyntax>();
         var messages = ImmutableArray.CreateBuilder<MessageDeclarationSyntax>();
         while (!_stream.IsAtEnd && _stream.Current.SyntaxKind != SyntaxKind.BraceCloseToken)
@@ -235,6 +237,9 @@ public sealed class Parser(SourceText sourceText)
             EnqueueMetadata();
             switch (_stream.Current.SyntaxKind)
             {
+                case SyntaxKind.ImportKeyword:
+                    imports.Add(ParseImportDirective());
+                    break;
                 case SyntaxKind.EnumKeyword:
                     types.Add(ParseEnumDeclaration());
                     break;
@@ -261,6 +266,7 @@ public sealed class Parser(SourceText sourceText)
             documentation,
             annotations,
             braceOpenToken,
+            new SyntaxList<ImportDirectiveSyntax>(imports.ToImmutable()),
             new SyntaxList<ISchemaDeclarationSyntax>(types.ToImmutable()),
             new SyntaxList<MessageDeclarationSyntax>(messages.ToImmutable()),
             braceCloseToken);

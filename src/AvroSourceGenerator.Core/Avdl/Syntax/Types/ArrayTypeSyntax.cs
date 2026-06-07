@@ -3,7 +3,7 @@
 public sealed record class ArrayTypeSyntax(
     SyntaxToken ArrayKeyword,
     SyntaxToken LessThanToken,
-    ITypeSyntax ElementType,
+    ITypeSyntax ItemType,
     SyntaxToken GreaterThanToken)
     : ITypeSyntax
 {
@@ -13,7 +13,7 @@ public sealed record class ArrayTypeSyntax(
     {
         yield return ArrayKeyword;
         yield return LessThanToken;
-        yield return ElementType;
+        yield return ItemType;
         yield return GreaterThanToken;
     }
 }

@@ -96,6 +96,7 @@ public static class SyntaxFacts
             SyntaxKind.UnionType => null,
             SyntaxKind.OptionalType => null,
             SyntaxKind.NamedType => null,
+            SyntaxKind.LogicalType => null,
 
             SyntaxKind.NamespaceDirective => null,
             SyntaxKind.SchemaDirective => null,
@@ -106,6 +107,7 @@ public static class SyntaxFacts
             SyntaxKind.NamespaceAnnotation => null,
             SyntaxKind.AliasesAnnotation => null,
             SyntaxKind.OrderAnnotation => null,
+            SyntaxKind.LogicalTypeAnnotation => null,
             SyntaxKind.CustomAnnotation => null,
 
             SyntaxKind.EnumDeclaration => null,

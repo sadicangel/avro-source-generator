@@ -243,6 +243,82 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void Parse_LogicalTypeAnnotation_ReturnsLogicalTypeAnnotation()
+    {
+        var unit = Parse(
+            """
+            record User {
+                @logicalType("uuid") string id;
+                @logicalType("timestamp-millis") long createdAt;
+            }
+            """);
+
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(unit.Declarations));
+
+        var id = record.Fields[0];
+        var uuid = Assert.IsType<LogicalTypeAnnotationSyntax>(Assert.Single(id.Annotations));
+        Assert.Equal("logicalType", uuid.LogicalTypeIdentifier.ValueText);
+        Assert.Equal("uuid", uuid.LogicalTypeName);
+        Assert.Equal("uuid", uuid.JsonValue.JsonNode!.GetValue<string>());
+
+        var createdAt = record.Fields[1];
+        var timestampMillis = Assert.IsType<LogicalTypeAnnotationSyntax>(Assert.Single(createdAt.Annotations));
+        Assert.Equal("timestamp-millis", timestampMillis.LogicalTypeName);
+    }
+
+    [Fact]
+    public void Parse_LogicalTypes_ReturnsLogicalTypeSyntax()
+    {
+        var unit = Parse(
+            """
+            record Logical {
+                date birthday;
+                time_ms wakeUp;
+                timestamp_ms createdAt;
+                local_timestamp_ms localCreatedAt;
+                uuid id;
+                decimal(12, 4) amount;
+                array<uuid> ids;
+                map<decimal(9, 2)> amounts;
+                union { null, date, decimal(18, 6) } maybe;
+            }
+            """);
+
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(unit.Declarations));
+        Assert.Equal(9, record.Fields.Count);
+
+        AssertLogicalType(record.Fields[0].Type, SyntaxKind.DateKeyword);
+        AssertLogicalType(record.Fields[1].Type, SyntaxKind.TimeMsKeyword);
+        AssertLogicalType(record.Fields[2].Type, SyntaxKind.TimestampMsKeyword);
+        AssertLogicalType(record.Fields[3].Type, SyntaxKind.LocalTimestampMsKeyword);
+        AssertLogicalType(record.Fields[4].Type, SyntaxKind.UuidKeyword);
+
+        var amount = Assert.IsType<DecimalLogicalTypeSyntax>(record.Fields[5].Type);
+        Assert.Equal(SyntaxKind.DecimalKeyword, amount.DecimalKeyword.SyntaxKind);
+        Assert.Equal(12, amount.PrecisionLiteralToken.Value);
+        Assert.Equal(4, amount.ScaleLiteralToken.Value);
+
+        var ids = Assert.IsType<ArrayTypeSyntax>(record.Fields[6].Type);
+        AssertLogicalType(ids.ItemType, SyntaxKind.UuidKeyword);
+
+        var amounts = Assert.IsType<MapTypeSyntax>(record.Fields[7].Type);
+        var mapDecimal = Assert.IsType<DecimalLogicalTypeSyntax>(amounts.ValueType);
+        Assert.Equal(9, mapDecimal.PrecisionLiteralToken.Value);
+        Assert.Equal(2, mapDecimal.ScaleLiteralToken.Value);
+
+        var maybe = Assert.IsType<UnionTypeSyntax>(record.Fields[8].Type);
+        Assert.Equal(3, maybe.Types.Count);
+        Assert.Equal(SyntaxKind.NullType, maybe.Types[0].SyntaxKind);
+        AssertLogicalType(maybe.Types[1], SyntaxKind.DateKeyword);
+        var unionDecimal = Assert.IsType<DecimalLogicalTypeSyntax>(maybe.Types[2]);
+        Assert.Equal(18, unionDecimal.PrecisionLiteralToken.Value);
+        Assert.Equal(6, unionDecimal.ScaleLiteralToken.Value);
+
+        var kinds = AvdlTestHelpers.FlattenKinds(unit);
+        Assert.Equal(10, kinds.Count(kind => kind == SyntaxKind.LogicalType));
+    }
+
+    [Fact]
     public void Parse_FlattensExpectedSyntaxKinds()
     {
         var unit = Parse("record User { string name; }");
@@ -254,6 +330,12 @@ public sealed class ParserTests
         Assert.Contains(SyntaxKind.FieldDeclaration, kinds);
         Assert.Contains(SyntaxKind.StringType, kinds);
         Assert.Contains(SyntaxKind.IdentifierToken, kinds);
+    }
+
+    private static void AssertLogicalType(ITypeSyntax type, SyntaxKind logicalTypeKeyword)
+    {
+        var logicalType = Assert.IsType<LogicalTypeSyntax>(type);
+        Assert.Equal(logicalTypeKeyword, logicalType.LogicalTypeNameKeyword.SyntaxKind);
     }
 
     private static CompilationUnitSyntax Parse(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text));

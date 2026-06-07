@@ -3,7 +3,7 @@
 public sealed record class MapTypeSyntax(
     SyntaxToken MapKeyword,
     SyntaxToken LessThanToken,
-    ITypeSyntax ElementType,
+    ITypeSyntax ValueType,
     SyntaxToken GreaterThanToken)
     : ITypeSyntax
 {
@@ -13,7 +13,7 @@ public sealed record class MapTypeSyntax(
     {
         yield return MapKeyword;
         yield return LessThanToken;
-        yield return ElementType;
+        yield return ValueType;
         yield return GreaterThanToken;
     }
 }

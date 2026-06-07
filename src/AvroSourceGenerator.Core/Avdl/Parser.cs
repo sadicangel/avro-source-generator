@@ -131,11 +131,13 @@ public sealed class Parser(SourceText sourceText)
         var parenthesisOpenToken = _stream.Match(SyntaxKind.ParenthesisOpenToken);
         var jsonValue = ParseJsonValue();
         var parenthesisCloseToken = _stream.Match(SyntaxKind.ParenthesisCloseToken);
+        // TODO: Should we validate the location of these annotations or just ignore/treat as custom properties if misplaced?
         return name switch
         {
             { SyntaxKind: SyntaxKind.NamespaceKeyword } => new NamespaceAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
             { ValueText: "aliases" } => new AliasesAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
             { ValueText: "order" } => new OrderAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+            { ValueText: "logicalType" } => new LogicalTypeAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
 
             _ => new CustomAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
         };
@@ -354,6 +356,13 @@ public sealed class Parser(SourceText sourceText)
             SyntaxKind.MapKeyword => ParseMapType(),
             SyntaxKind.UnionKeyword => ParseUnionType(),
 
+            SyntaxKind.DecimalKeyword => ParseDecimalLogicalType(),
+            SyntaxKind.DateKeyword
+                or SyntaxKind.TimeMsKeyword
+                or SyntaxKind.TimestampMsKeyword
+                or SyntaxKind.LocalTimestampMsKeyword
+                or SyntaxKind.UuidKeyword => new LogicalTypeSyntax(_stream.Next()),
+
             _ => ParseNamedType(),
         };
 
@@ -390,6 +399,23 @@ public sealed class Parser(SourceText sourceText)
         var types = ParseSeparatedList(ParseType, SyntaxKind.CommaToken, SyntaxKind.BraceCloseToken);
         var braceCloseToken = _stream.Match(SyntaxKind.BraceCloseToken);
         return new UnionTypeSyntax(unionKeyword, braceOpenToken, types, braceCloseToken);
+    }
+
+    private DecimalLogicalTypeSyntax ParseDecimalLogicalType()
+    {
+        var decimalKeyword = _stream.Match(SyntaxKind.DecimalKeyword);
+        var parenthesisOpenToken = _stream.Match(SyntaxKind.ParenthesisOpenToken);
+        var precisionLiteralToken = _stream.Match(SyntaxKind.IntegerLiteralToken);
+        var commaToken = _stream.Match(SyntaxKind.CommaToken);
+        var scaleLiteralToken = _stream.Match(SyntaxKind.IntegerLiteralToken);
+        var parenthesisCloseToken = _stream.Match(SyntaxKind.ParenthesisCloseToken);
+        return new DecimalLogicalTypeSyntax(
+            decimalKeyword,
+            parenthesisOpenToken,
+            precisionLiteralToken,
+            commaToken,
+            scaleLiteralToken,
+            parenthesisCloseToken);
     }
 
     private NamedTypeSyntax ParseNamedType()

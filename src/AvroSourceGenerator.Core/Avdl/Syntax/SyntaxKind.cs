@@ -98,6 +98,7 @@ public enum SyntaxKind
     UnionType,
     OptionalType,
     NamedType,
+    LogicalType,
 
     NamespaceDirective,
     SchemaDirective,
@@ -108,6 +109,7 @@ public enum SyntaxKind
     NamespaceAnnotation,
     AliasesAnnotation,
     OrderAnnotation,
+    LogicalTypeAnnotation,
     CustomAnnotation,
 
     EnumDeclaration,

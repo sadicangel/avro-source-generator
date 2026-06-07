@@ -123,10 +123,11 @@ public sealed class ScannerTests
         Assert.Empty(scanner.BadTokens);
         Assert.Equal(SyntaxKind.IdentifierToken, tokens[0].SyntaxKind);
         Assert.Equal("name_1", tokens[0].SourceSpan.ToString());
+        Assert.Equal("name_1", tokens[0].ValueText);
     }
 
     [Fact]
-    public void Scan_VerbatimIdentifier_ReturnsIdentifierWithoutBackticks()
+    public void Scan_VerbatimIdentifier_ReturnsIdentifierWithValueTextWithoutBackticks()
     {
         var scanner = CreateScanner("`error`");
 
@@ -134,8 +135,38 @@ public sealed class ScannerTests
 
         Assert.Empty(scanner.BadTokens);
         Assert.Equal(SyntaxKind.IdentifierToken, tokens[0].SyntaxKind);
-        Assert.Equal("error", tokens[0].SourceSpan.ToString());
+        Assert.Equal("`error`", tokens[0].SourceSpan.ToString());
         Assert.Equal("error", tokens[0].Value);
+        Assert.Equal("error", tokens[0].ValueText);
+    }
+
+    [Fact]
+    public void Scan_AnnotationIdentifier_AllowsDash()
+    {
+        var scanner = CreateScanner("@java-class(true)");
+
+        var tokens = scanner.ScanAllTokens().ToArray();
+
+        Assert.Empty(scanner.BadTokens);
+        Assert.Equal(SyntaxKind.AtSignToken, tokens[0].SyntaxKind);
+        Assert.Equal(SyntaxKind.IdentifierToken, tokens[1].SyntaxKind);
+        Assert.Equal("java-class", tokens[1].SourceSpan.ToString());
+        Assert.Equal("java-class", tokens[1].ValueText);
+    }
+
+    [Fact]
+    public void Scan_Identifier_DoesNotAllowDashOutsideAnnotationName()
+    {
+        var scanner = CreateScanner("java-class");
+
+        var tokens = scanner.ScanAllTokens().ToArray();
+
+        Assert.Single(scanner.BadTokens);
+        Assert.Equal("-", scanner.BadTokens[0].SourceSpan.ToString());
+        Assert.Equal(SyntaxKind.IdentifierToken, tokens[0].SyntaxKind);
+        Assert.Equal("java", tokens[0].ValueText);
+        Assert.Equal(SyntaxKind.IdentifierToken, tokens[1].SyntaxKind);
+        Assert.Equal("class", tokens[1].ValueText);
     }
 
     [Fact]
@@ -173,6 +204,7 @@ public sealed class ScannerTests
         Assert.Empty(scanner.BadTokens);
         Assert.Equal(SyntaxKind.StringLiteralToken, tokens[0].SyntaxKind);
         Assert.Equal("a\n\t\"\\/A", tokens[0].Value);
+        Assert.Equal("a\n\t\"\\/A", tokens[0].ValueText);
     }
 
     [Theory]

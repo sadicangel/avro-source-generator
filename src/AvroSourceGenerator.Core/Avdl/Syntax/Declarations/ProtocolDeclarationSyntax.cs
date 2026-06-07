@@ -1,10 +1,12 @@
-﻿namespace AvroSourceGenerator.Avdl.Syntax.Declarations;
+﻿using AvroSourceGenerator.Avdl.Syntax.Annotations;
+
+namespace AvroSourceGenerator.Avdl.Syntax.Declarations;
 
 public sealed record class ProtocolDeclarationSyntax(
     SyntaxToken ProtocolKeyword,
     SimpleNameSyntax Name,
     SyntaxList<DocumentationSyntax> Documentation,
-    SyntaxList<AnnotationSyntax> Annotations,
+    SyntaxList<IAnnotationSyntax> Annotations,
     SyntaxToken BraceOpenToken,
     SyntaxList<ISchemaDeclarationSyntax> Types,
     SyntaxList<MessageDeclarationSyntax> Messages,

@@ -97,11 +97,16 @@ public static class SyntaxFacts
             SyntaxKind.OptionalType => null,
             SyntaxKind.NamedType => null,
 
-            SyntaxKind.Annotation => null,
-            SyntaxKind.Documentation => null,
             SyntaxKind.NamespaceDirective => null,
             SyntaxKind.SchemaDirective => null,
             SyntaxKind.ImportDirective => null,
+
+            SyntaxKind.Documentation => null,
+
+            SyntaxKind.NamespaceAnnotation => null,
+            SyntaxKind.AliasesAnnotation => null,
+            SyntaxKind.OrderAnnotation => null,
+            SyntaxKind.CustomAnnotation => null,
 
             SyntaxKind.EnumDeclaration => null,
             SyntaxKind.RecordDeclaration => null,

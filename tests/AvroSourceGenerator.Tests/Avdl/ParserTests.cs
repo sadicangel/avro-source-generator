@@ -1,5 +1,6 @@
-using AvroSourceGenerator.Avdl;
+﻿using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Avdl.Syntax;
+using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Directives;
 using AvroSourceGenerator.Avdl.Syntax.Types;
@@ -11,7 +12,8 @@ public sealed class ParserTests
     [Fact]
     public void Parse_DirectivesAndProtocol_ReturnsCompilationUnit()
     {
-        var unit = Parse("""
+        var unit = Parse(
+            """
             namespace example.avro;
             schema Main;
             import idl "dep.avdl";
@@ -43,7 +45,8 @@ public sealed class ParserTests
     [Fact]
     public void Parse_TopLevelDeclarations_ReturnsDeclarationShapesAndMetadata()
     {
-        var unit = Parse("""
+        var unit = Parse(
+            """
             /** Kind doc */
             @aliases(["OldKind", "OlderKind"])
             enum Kind { A, B } = A;
@@ -66,9 +69,11 @@ public sealed class ParserTests
         var enumDeclaration = Assert.IsType<EnumDeclarationSyntax>(unit.Declarations[0]);
         Assert.Equal("Kind", enumDeclaration.Name.Identifier.SourceSpan.ToString());
         Assert.Equal(" Kind doc ", Assert.Single(enumDeclaration.Documentation).DocumentationTrivia.SourceSpan.ToString());
-        Assert.Equal(2, Assert.IsType<JsonArray>(Assert.Single(enumDeclaration.Annotations).Json!.Json).Count);
+        var aliases = Assert.IsType<AliasesAnnotationSyntax>(Assert.Single(enumDeclaration.Annotations));
+        Assert.Equal(["OldKind", "OlderKind"], aliases.Aliases);
+        Assert.Equal(2, Assert.IsType<JsonArray>(aliases.JsonValue.JsonNode).Count);
         Assert.Equal(2, enumDeclaration.Symbols.Count);
-        Assert.Equal("A", enumDeclaration.DefaultValue!.JsonValue.Json!.GetValue<string>());
+        Assert.Equal("A", enumDeclaration.DefaultValue!.JsonValue.JsonNode?.GetValue<string>());
 
         var fixedDeclaration = Assert.IsType<FixedDeclarationSyntax>(unit.Declarations[1]);
         Assert.Equal("MD5", fixedDeclaration.Name.Identifier.SourceSpan.ToString());
@@ -85,14 +90,15 @@ public sealed class ParserTests
         var nameField = recordDeclaration.Fields[0];
         Assert.Equal(SyntaxKind.StringType, nameField.Type.SyntaxKind);
         Assert.Equal("name", nameField.Name.Identifier.SourceSpan.ToString());
-        Assert.Equal("ignore", Assert.Single(nameField.Annotations).Json!.Json!.GetValue<string>());
-        Assert.Equal("Ada", nameField.DefaultValueClause!.JsonValue.Json!.GetValue<string>());
+        var order = Assert.IsType<OrderAnnotationSyntax>(Assert.Single(nameField.Annotations));
+        Assert.Equal("ignore", order.Order);
+        Assert.Equal("Ada", nameField.DefaultValueClause!.JsonValue.JsonNode?.GetValue<string>());
 
         var resultCodeField = recordDeclaration.Fields[1];
         Assert.Equal("result_code", resultCodeField.Name.Identifier.SourceSpan.ToString());
-        Assert.Equal(-1, resultCodeField.DefaultValueClause!.JsonValue.Json!.GetValue<int>());
+        Assert.Equal(-1, resultCodeField.DefaultValueClause!.JsonValue.JsonNode?.GetValue<int>());
 
-        var configDefault = Assert.IsType<JsonObject>(recordDeclaration.Fields[2].DefaultValueClause!.JsonValue.Json);
+        var configDefault = Assert.IsType<JsonObject>(recordDeclaration.Fields[2].DefaultValueClause!.JsonValue.JsonNode);
         Assert.Equal(1, configDefault["x"]!.GetValue<int>());
         Assert.True(configDefault["ok"]!.GetValue<bool>());
         Assert.Equal("b", Assert.IsType<JsonArray>(configDefault["tags"]).Last()!.GetValue<string>());
@@ -105,7 +111,8 @@ public sealed class ParserTests
     [Fact]
     public void Parse_Protocol_ReturnsTypesMessagesAndClauses()
     {
-        var unit = Parse("""
+        var unit = Parse(
+            """
             @namespace("example")
             protocol Service {
                 enum Kind { A }
@@ -128,7 +135,8 @@ public sealed class ParserTests
 
         var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(unit.Declarations));
         Assert.Equal("Service", protocol.Name.Identifier.SourceSpan.ToString());
-        Assert.Equal("example", Assert.Single(protocol.Annotations).Json!.Json!.GetValue<string>());
+        var namespaceAnnotation = Assert.IsType<NamespaceAnnotationSyntax>(Assert.Single(protocol.Annotations));
+        Assert.Equal("example", namespaceAnnotation.Namespace);
         Assert.Equal(4, protocol.Types.Count);
         Assert.Equal(2, protocol.Messages.Count);
 
@@ -151,14 +159,15 @@ public sealed class ParserTests
         Assert.Equal("hello", hello.Name.Identifier.SourceSpan.ToString());
         Assert.Equal(2, hello.Parameters.Count);
         Assert.Equal("greeting", hello.Parameters[0].Name.Identifier.SourceSpan.ToString());
-        Assert.Equal(1, hello.Parameters[1].DefaultValueClause!.JsonValue.Json!.GetValue<int>());
+        Assert.Equal(1, hello.Parameters[1].DefaultValueClause!.JsonValue.JsonNode?.GetValue<int>());
         Assert.Equal(2, hello.ThrowsErrorClause!.Errors.Count);
     }
 
     [Fact]
     public void Parse_VerbatimIdentifiers_AllowsKeywordsAsNames()
     {
-        var unit = Parse("""
+        var unit = Parse(
+            """
             protocol P {
                 void `error`(string `record`);
             }
@@ -166,8 +175,27 @@ public sealed class ParserTests
 
         var message = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(unit.Declarations)).Messages[0];
 
-        Assert.Equal("error", message.Name.Identifier.SourceSpan.ToString());
-        Assert.Equal("record", message.Parameters[0].Name.Identifier.SourceSpan.ToString());
+        Assert.Equal("`error`", message.Name.Identifier.SourceSpan.ToString());
+        Assert.Equal("error", message.Name.FullName);
+        Assert.Equal("error", message.Name.Identifier.ValueText);
+        Assert.Equal("`record`", message.Parameters[0].Name.Identifier.SourceSpan.ToString());
+        Assert.Equal("record", message.Parameters[0].Name.FullName);
+    }
+
+    [Fact]
+    public void Parse_CustomAnnotation_AllowsDashInName()
+    {
+        var unit = Parse(
+            """
+            @java-class("com.example.User")
+            record User {}
+            """);
+
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(unit.Declarations));
+        var annotation = Assert.IsType<CustomAnnotationSyntax>(Assert.Single(record.Annotations));
+
+        Assert.Equal("java-class", annotation.NameIdentifier.ValueText);
+        Assert.Equal("com.example.User", annotation.JsonValue.JsonNode!.GetValue<string>());
     }
 
     [Fact]

@@ -1,21 +1,21 @@
-﻿namespace AvroSourceGenerator.Avdl.Syntax;
+﻿namespace AvroSourceGenerator.Avdl.Syntax.Annotations;
 
-public sealed record class AnnotationSyntax(
+public sealed record class CustomAnnotationSyntax(
     SyntaxToken AtSignToken,
     SyntaxToken NameIdentifier,
     SyntaxToken ParenthesisOpenToken,
-    JsonValueSyntax? Json,
+    JsonValueSyntax JsonValue,
     SyntaxToken ParenthesisCloseToken)
-    : ISyntaxNode
+    : IAnnotationSyntax
 {
-    public SyntaxKind SyntaxKind => SyntaxKind.Annotation;
+    public SyntaxKind SyntaxKind => SyntaxKind.CustomAnnotation;
 
     public IEnumerable<ISyntaxNode> Children()
     {
         yield return AtSignToken;
         yield return NameIdentifier;
         yield return ParenthesisOpenToken;
-        if (Json is not null) yield return Json;
+        yield return JsonValue;
         yield return ParenthesisCloseToken;
     }
 }

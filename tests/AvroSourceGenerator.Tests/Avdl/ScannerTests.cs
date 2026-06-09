@@ -1,91 +1,109 @@
+﻿using AvroSourceGenerator.Avdl.Diagnostics;
 using AvroSourceGenerator.Avdl.Syntax;
 
 namespace AvroSourceGenerator.Tests.Avdl;
 
 public sealed class ScannerTests
 {
-    public static TheoryData<string, SyntaxKind> Punctuation => new()
-    {
-        { "{", SyntaxKind.BraceOpenToken },
-        { "}", SyntaxKind.BraceCloseToken },
-        { "(", SyntaxKind.ParenthesisOpenToken },
-        { ")", SyntaxKind.ParenthesisCloseToken },
-        { "[", SyntaxKind.BracketOpenToken },
-        { "]", SyntaxKind.BracketCloseToken },
-        { "<", SyntaxKind.LessThanToken },
-        { ">", SyntaxKind.GreaterThanToken },
-        { "@", SyntaxKind.AtSignToken },
-        { ",", SyntaxKind.CommaToken },
-        { ".", SyntaxKind.DotToken },
-        { ":", SyntaxKind.ColonToken },
-        { ";", SyntaxKind.SemicolonToken },
-        { "=", SyntaxKind.EqualsToken },
-        { "?", SyntaxKind.QuestionMarkToken },
-    };
+    public static TheoryData<string, SyntaxKind> Punctuation =>
+        new TheoryData<string, SyntaxKind>
+        {
+            { "{", SyntaxKind.BraceOpenToken },
+            { "}", SyntaxKind.BraceCloseToken },
+            { "(", SyntaxKind.ParenthesisOpenToken },
+            { ")", SyntaxKind.ParenthesisCloseToken },
+            { "[", SyntaxKind.BracketOpenToken },
+            { "]", SyntaxKind.BracketCloseToken },
+            { "<", SyntaxKind.LessThanToken },
+            { ">", SyntaxKind.GreaterThanToken },
+            { "@", SyntaxKind.AtSignToken },
+            { ",", SyntaxKind.CommaToken },
+            { ".", SyntaxKind.DotToken },
+            { ":", SyntaxKind.ColonToken },
+            { ";", SyntaxKind.SemicolonToken },
+            { "=", SyntaxKind.EqualsToken },
+            { "?", SyntaxKind.QuestionMarkToken },
+        };
 
-    public static TheoryData<string, SyntaxKind> Keywords => new()
-    {
-        { "true", SyntaxKind.TrueKeyword },
-        { "false", SyntaxKind.FalseKeyword },
-        { "void", SyntaxKind.VoidKeyword },
-        { "null", SyntaxKind.NullKeyword },
-        { "int", SyntaxKind.IntKeyword },
-        { "long", SyntaxKind.LongKeyword },
-        { "string", SyntaxKind.StringKeyword },
-        { "boolean", SyntaxKind.BooleanKeyword },
-        { "float", SyntaxKind.FloatKeyword },
-        { "double", SyntaxKind.DoubleKeyword },
-        { "bytes", SyntaxKind.BytesKeyword },
-        { "array", SyntaxKind.ArrayKeyword },
-        { "map", SyntaxKind.MapKeyword },
-        { "union", SyntaxKind.UnionKeyword },
-        { "enum", SyntaxKind.EnumKeyword },
-        { "fixed", SyntaxKind.FixedKeyword },
-        { "record", SyntaxKind.RecordKeyword },
-        { "error", SyntaxKind.ErrorKeyword },
-        { "protocol", SyntaxKind.ProtocolKeyword },
-        { "namespace", SyntaxKind.NamespaceKeyword },
-        { "schema", SyntaxKind.SchemaKeyword },
-        { "import", SyntaxKind.ImportKeyword },
-        { "idl", SyntaxKind.IdlKeyword },
-        { "typedef", SyntaxKind.TypedefKeyword },
-        { "decimal", SyntaxKind.DecimalKeyword },
-        { "date", SyntaxKind.DateKeyword },
-        { "time_ms", SyntaxKind.TimeMsKeyword },
-        { "timestamp_ms", SyntaxKind.TimestampMsKeyword },
-        { "local_timestamp_ms", SyntaxKind.LocalTimestampMsKeyword },
-        { "uuid", SyntaxKind.UuidKeyword },
-        { "throws", SyntaxKind.ThrowsKeyword },
-        { "oneway", SyntaxKind.OneWayKeyword },
-    };
+    public static TheoryData<string, SyntaxKind> Keywords =>
+        new TheoryData<string, SyntaxKind>
+        {
+            { "true", SyntaxKind.TrueKeyword },
+            { "false", SyntaxKind.FalseKeyword },
+            { "void", SyntaxKind.VoidKeyword },
+            { "null", SyntaxKind.NullKeyword },
+            { "int", SyntaxKind.IntKeyword },
+            { "long", SyntaxKind.LongKeyword },
+            { "string", SyntaxKind.StringKeyword },
+            { "boolean", SyntaxKind.BooleanKeyword },
+            { "float", SyntaxKind.FloatKeyword },
+            { "double", SyntaxKind.DoubleKeyword },
+            { "bytes", SyntaxKind.BytesKeyword },
+            { "array", SyntaxKind.ArrayKeyword },
+            { "map", SyntaxKind.MapKeyword },
+            { "union", SyntaxKind.UnionKeyword },
+            { "enum", SyntaxKind.EnumKeyword },
+            { "fixed", SyntaxKind.FixedKeyword },
+            { "record", SyntaxKind.RecordKeyword },
+            { "error", SyntaxKind.ErrorKeyword },
+            { "protocol", SyntaxKind.ProtocolKeyword },
+            { "namespace", SyntaxKind.NamespaceKeyword },
+            { "schema", SyntaxKind.SchemaKeyword },
+            { "import", SyntaxKind.ImportKeyword },
+            { "idl", SyntaxKind.IdlKeyword },
+            { "typedef", SyntaxKind.TypedefKeyword },
+            { "decimal", SyntaxKind.DecimalKeyword },
+            { "date", SyntaxKind.DateKeyword },
+            { "time_ms", SyntaxKind.TimeMsKeyword },
+            { "timestamp_ms", SyntaxKind.TimestampMsKeyword },
+            { "local_timestamp_ms", SyntaxKind.LocalTimestampMsKeyword },
+            { "uuid", SyntaxKind.UuidKeyword },
+            { "throws", SyntaxKind.ThrowsKeyword },
+            { "oneway", SyntaxKind.OneWayKeyword },
+        };
 
-    public static TheoryData<string, object> IntegerLiterals => new()
-    {
-        { "0", 0 },
-        { "42", 42 },
-        { "-1", -1 },
-        { "2147483648", 2147483648L },
-    };
+    public static TheoryData<string, object> IntegerLiterals =>
+        new TheoryData<string, object>
+        {
+            { "0", 0 },
+            { "42", 42 },
+            { "-1", -1 },
+            { "2147483648", 2147483648L },
+        };
 
-    public static TheoryData<string, double> FloatLiterals => new()
-    {
-        { "0.5", 0.5D },
-        { ".5", 0.5D },
-        { "-0.5", -0.5D },
-        { "1e2", 100D },
-        { "1e+2", 100D },
-        { "1E-2", 0.01D },
-    };
+    public static TheoryData<string, double> FloatLiterals =>
+        new TheoryData<string, double>
+        {
+            { "0.5", 0.5D },
+            { ".5", 0.5D },
+            { "-0.5", -0.5D },
+            { "1e2", 100D },
+            { "1e+2", 100D },
+            { "1E-2", 0.01D },
+        };
 
-    public static TheoryData<string> InvalidInputs => new()
-    {
-        "$",
-        "\"unterminated",
-        "\"bad\\q\"",
-        "/** unterminated",
-        "`unterminated",
-        "1e",
-    };
+    public static TheoryData<string> InvalidInputs =>
+        new TheoryData<string>
+        {
+            "$",
+            "\"unterminated",
+            "\"bad\\q\"",
+            "/** unterminated",
+            "`unterminated",
+            "1e",
+        };
+
+    public static TheoryData<string, SyntaxDiagnosticCode, int, int> InvalidInputDiagnostics =>
+        new TheoryData<string, SyntaxDiagnosticCode, int, int>
+        {
+            { "$", SyntaxDiagnosticCode.InvalidCharacter, 0, 1 },
+            { "\"bad\\q\"", SyntaxDiagnosticCode.InvalidEscapeSequence, 0, 7 },
+            { "1e", SyntaxDiagnosticCode.InvalidNumber, 0, 2 },
+            { "\"unterminated", SyntaxDiagnosticCode.UnterminatedString, 0, 13 },
+            { "/** unterminated", SyntaxDiagnosticCode.UnterminatedDocumentation, 0, 16 },
+            { "/* unterminated", SyntaxDiagnosticCode.UnterminatedComment, 0, 15 },
+            { "`unterminated", SyntaxDiagnosticCode.UnterminatedVerbatimIdentifier, 0, 13 },
+        };
 
     [Theory]
     [MemberData(nameof(Punctuation))]
@@ -246,6 +264,20 @@ public sealed class ScannerTests
         Assert.Equal(SyntaxKind.EofToken, Assert.Single(tokens).SyntaxKind);
     }
 
+    [Theory]
+    [MemberData(nameof(InvalidInputDiagnostics))]
+    public void Scan_InvalidInput_RecordsDiagnostic(string text, SyntaxDiagnosticCode expectedCode, int expectedOffset, int expectedLength)
+    {
+        var scanner = CreateScanner(text);
+
+        _ = scanner.ScanAllTokens().ToArray();
+
+        var diagnostic = Assert.Single(scanner.Diagnostics);
+        Assert.Equal(expectedCode, diagnostic.Code);
+        Assert.Equal(expectedOffset, diagnostic.SourceSpan.Offset);
+        Assert.Equal(expectedLength, diagnostic.SourceSpan.Length);
+    }
+
     [Fact]
     public void SyntaxFacts_GetText_HandlesEverySyntaxKind()
     {
@@ -253,5 +285,5 @@ public sealed class ScannerTests
             _ = SyntaxFacts.GetText(syntaxKind);
     }
 
-    private static Scanner CreateScanner(string text) => new(AvdlTestHelpers.SourceText(text));
+    private static Scanner CreateScanner(string text) => new Scanner(AvdlTestHelpers.SourceText(text));
 }

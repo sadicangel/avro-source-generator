@@ -1,16 +1,20 @@
-﻿namespace AvroSourceGenerator.Avdl.Syntax;
+using AvroSourceGenerator.Avdl.Diagnostics;
+using AvroSourceGenerator.Avdl.Text;
+
+namespace AvroSourceGenerator.Avdl.Syntax;
 
 internal static class SyntaxTriviaScanner
 {
-    public static int Skip(ReadOnlySpan<char> sourceCode)
+    public static int Skip(SourceText sourceText, int offset, List<SyntaxDiagnostic> diagnostics)
     {
+        var sourceCode = sourceText.Text.AsSpan(offset);
         var totalSkipped = 0;
         var skipped = 0;
         do
         {
             skipped = sourceCode switch
             {
-                ['/', '*', not '*', ..] => SkipMultiLineComment(sourceCode),
+                ['/', '*', not '*', ..] => SkipMultiLineComment(sourceText, offset + totalSkipped, sourceCode, diagnostics),
                 ['/', '/', ..] => SkipSingleLineComment(sourceCode),
                 ['\n' or '\r', ..] => SkipLineBreak(sourceCode),
                 [' ' or '\t', ..] => SkipWhiteSpace(sourceCode),
@@ -34,9 +38,10 @@ internal static class SyntaxTriviaScanner
         return length;
     }
 
-    private static int SkipMultiLineComment(ReadOnlySpan<char> sourceCode)
+    private static int SkipMultiLineComment(SourceText sourceText, int offset, ReadOnlySpan<char> sourceCode, List<SyntaxDiagnostic> diagnostics)
     {
         var done = false;
+        var terminated = false;
         // Skip '/*'.
         var length = 2;
         while (!done)
@@ -45,12 +50,11 @@ internal static class SyntaxTriviaScanner
             {
                 case []:
                 case ['\0', ..]:
-                    // TODO: Report unterminated comment.
-                    // sourceCode.Diagnostics.ReportUnterminatedComment(new SourceSpan(sourceCode.SourceText, offset, length));
                     done = true;
                     break;
                 case ['*', '/', ..]:
                     length += 2;
+                    terminated = true;
                     done = true;
                     break;
                 default:
@@ -58,6 +62,9 @@ internal static class SyntaxTriviaScanner
                     break;
             }
         }
+
+        if (!terminated)
+            diagnostics.Add(SyntaxDiagnostic.UnterminatedComment(new SourceSpan(sourceText, offset, length)));
 
         return length;
     }

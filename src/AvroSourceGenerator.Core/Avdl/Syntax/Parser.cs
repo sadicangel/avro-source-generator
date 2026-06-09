@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using AvroSourceGenerator.Avdl.Diagnostics;
 using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
@@ -21,7 +21,7 @@ public sealed class Parser(SourceText sourceText)
     {
         var document = ParseDocument();
 
-        return new SyntaxTree(sourceText, document, [.. _diagnostics]);
+        return new SyntaxTree(sourceText, document, [.. _stream.Diagnostics.Concat(_diagnostics)]);
     }
 
     private DocumentSyntax ParseDocument()
@@ -34,16 +34,24 @@ public sealed class Parser(SourceText sourceText)
 
     private SyntaxList<IDirectiveSyntax> ParseDirectives()
     {
-        var directives = ParseList<IDirectiveSyntax>(
-            parseNode: () => _stream.Current.SyntaxKind switch
+        var directives = ImmutableArray.CreateBuilder<IDirectiveSyntax>();
+        while (_stream.Current.SyntaxKind is SyntaxKind.NamespaceKeyword or SyntaxKind.SchemaKeyword or SyntaxKind.ImportKeyword)
+        {
+            if (_stream.Current.SyntaxKind is SyntaxKind.NamespaceKeyword)
             {
-                SyntaxKind.NamespaceKeyword => ParseNamespaceDirective(),
-                SyntaxKind.SchemaKeyword => ParseSchemaDirective(),
-                SyntaxKind.ImportKeyword => ParseImportDirective(),
-                _ => throw new InvalidOperationException($"Unexpected syntax kind: {_stream.Current.SyntaxKind}"),
-            },
-            terminators: [SyntaxKind.AtSignToken, SyntaxKind.DocumentationTrivia, SyntaxKind.EnumKeyword, SyntaxKind.FixedKeyword, SyntaxKind.RecordKeyword, SyntaxKind.ErrorKeyword, SyntaxKind.ProtocolKeyword]);
-        return directives;
+                directives.Add(ParseNamespaceDirective());
+            }
+            else if (_stream.Current.SyntaxKind is SyntaxKind.SchemaKeyword)
+            {
+                directives.Add(ParseSchemaDirective());
+            }
+            else
+            {
+                directives.Add(ParseImportDirective());
+            }
+        }
+
+        return new SyntaxList<IDirectiveSyntax>(directives.ToImmutable());
     }
 
     private NamespaceDirectiveSyntax ParseNamespaceDirective()
@@ -78,13 +86,23 @@ public sealed class Parser(SourceText sourceText)
 
     private SyntaxList<IDeclarationSyntax> ParseDeclarations()
     {
-        var declarations = ParseList(ParseDeclaration);
-        return declarations;
+        var declarations = ImmutableArray.CreateBuilder<IDeclarationSyntax>();
+        while (!_stream.IsAtEnd)
+        {
+            EnqueueMetadata();
+            if (_stream.IsAtEnd)
+            {
+                break;
+            }
+
+            declarations.Add(ParseDeclaration());
+        }
+
+        return new SyntaxList<IDeclarationSyntax>(declarations.ToImmutable());
     }
 
     private IDeclarationSyntax ParseDeclaration()
     {
-        EnqueueMetadata();
         return _stream.Current.SyntaxKind switch
         {
             SyntaxKind.EnumKeyword => ParseEnumDeclaration(),
@@ -113,6 +131,17 @@ public sealed class Parser(SourceText sourceText)
         }
     }
 
+    private void ReportAndClearMisplacedMetadata(string target)
+    {
+        foreach (var documentation in _documentation)
+            _diagnostics.Add(SyntaxDiagnostic.MisplacedDocumentation(documentation.DocumentationTrivia.SourceSpan, target));
+        foreach (var annotation in _annotations)
+            _diagnostics.Add(SyntaxDiagnostic.MisplacedAnnotation(GetAnnotationSpan(annotation), GetAnnotationName(annotation), target));
+
+        _documentation.Clear();
+        _annotations.Clear();
+    }
+
     private (SyntaxList<DocumentationSyntax> Documentation, SyntaxList<IAnnotationSyntax> Annotations) DequeueMetadata()
     {
         var documentation = new SyntaxList<DocumentationSyntax>([.. _documentation]);
@@ -135,7 +164,6 @@ public sealed class Parser(SourceText sourceText)
         var parenthesisOpenToken = _stream.Match(SyntaxKind.ParenthesisOpenToken);
         var jsonValue = ParseJsonValue();
         var parenthesisCloseToken = _stream.Match(SyntaxKind.ParenthesisCloseToken);
-        // TODO: Should we validate the location of these annotations or just ignore/treat as custom properties if misplaced?
         return name switch
         {
             { SyntaxKind: SyntaxKind.NamespaceKeyword } => new NamespaceAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
@@ -241,9 +269,16 @@ public sealed class Parser(SourceText sourceText)
         while (!_stream.IsAtEnd && _stream.Current.SyntaxKind != SyntaxKind.BraceCloseToken)
         {
             EnqueueMetadata();
+            if (_stream.Current.SyntaxKind is SyntaxKind.BraceCloseToken)
+            {
+                ReportAndClearMisplacedMetadata("protocol body");
+                break;
+            }
+
             switch (_stream.Current.SyntaxKind)
             {
                 case SyntaxKind.ImportKeyword:
+                    ReportAndClearMisplacedMetadata("import directive");
                     imports.Add(ParseImportDirective());
                     break;
                 case SyntaxKind.EnumKeyword:
@@ -259,6 +294,7 @@ public sealed class Parser(SourceText sourceText)
                     types.Add(ParseErrorDeclaration());
                     break;
                 default:
+                    ReportAndClearMisplacedMetadata("message declaration");
                     messages.Add(ParseMessageDeclaration());
                     break;
             }
@@ -448,6 +484,28 @@ public sealed class Parser(SourceText sourceText)
 
         return new SeparatedSyntaxList<T>(nodes.ToImmutable());
     }
+
+    private static SourceSpan GetAnnotationSpan(IAnnotationSyntax annotation) =>
+        annotation switch
+        {
+            NamespaceAnnotationSyntax namespaceAnnotation => namespaceAnnotation.AtSignToken.SourceSpan,
+            AliasesAnnotationSyntax aliasesAnnotation => aliasesAnnotation.AtSignToken.SourceSpan,
+            OrderAnnotationSyntax orderAnnotation => orderAnnotation.AtSignToken.SourceSpan,
+            LogicalTypeAnnotationSyntax logicalTypeAnnotation => logicalTypeAnnotation.AtSignToken.SourceSpan,
+            CustomAnnotationSyntax customAnnotation => customAnnotation.AtSignToken.SourceSpan,
+            _ => annotation.Children().OfType<SyntaxToken>().First().SourceSpan,
+        };
+
+    private static string GetAnnotationName(IAnnotationSyntax annotation) =>
+        annotation switch
+        {
+            NamespaceAnnotationSyntax => "namespace",
+            AliasesAnnotationSyntax aliasesAnnotation => aliasesAnnotation.AliasesIdentifier.ValueText,
+            OrderAnnotationSyntax orderAnnotation => orderAnnotation.OrderIdentifier.ValueText,
+            LogicalTypeAnnotationSyntax logicalTypeAnnotation => logicalTypeAnnotation.LogicalTypeIdentifier.ValueText,
+            CustomAnnotationSyntax customAnnotation => customAnnotation.NameIdentifier.ValueText,
+            _ => "unknown",
+        };
 }
 
 file static class SpanExtensions

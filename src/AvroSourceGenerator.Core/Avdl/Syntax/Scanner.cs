@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text;
+using AvroSourceGenerator.Avdl.Diagnostics;
 using AvroSourceGenerator.Avdl.Text;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
@@ -7,12 +8,15 @@ namespace AvroSourceGenerator.Avdl.Syntax;
 public sealed class Scanner(SourceText sourceText)
 {
     private readonly List<SyntaxToken> _badTokens = [];
+    private readonly List<SyntaxDiagnostic> _diagnostics = [];
     private int _position = 0;
     private SyntaxToken? _previousSyntaxToken = null;
 
     private ReadOnlySpan<char> CurrentSpan => sourceText.Text.AsSpan(_position);
 
     public IReadOnlyList<SyntaxToken> BadTokens => _badTokens;
+
+    public IReadOnlyList<SyntaxDiagnostic> Diagnostics => _diagnostics;
 
     public IEnumerable<SyntaxToken> ScanAllTokens()
     {
@@ -29,7 +33,7 @@ public sealed class Scanner(SourceText sourceText)
     {
         while (true)
         {
-            _position += SyntaxTriviaScanner.Skip(CurrentSpan);
+            _position += SyntaxTriviaScanner.Skip(sourceText, _position, _diagnostics);
             var syntaxToken = _previousSyntaxToken = ScanAny();
             _position += syntaxToken.SourceSpan.Length;
 
@@ -113,10 +117,15 @@ public sealed class Scanner(SourceText sourceText)
                 return new SyntaxToken(SyntaxKind.EofToken, new SourceSpan(sourceText, _position, 0));
 
             default:
-                // TODO: Report invalid character diagnostic.
-                // syntaxTree.Diagnostics.ReportInvalidCharacter(span, span.Text[0]);
-                return new SyntaxToken(SyntaxKind.InvalidSyntax, new SourceSpan(sourceText, _position, 1));
+                var sourceSpan = new SourceSpan(sourceText, _position, 1);
+                return CreateInvalidToken(sourceSpan, SyntaxDiagnostic.InvalidCharacter(sourceSpan));
         }
+    }
+
+    private SyntaxToken CreateInvalidToken(SourceSpan sourceSpan, SyntaxDiagnostic diagnostic)
+    {
+        _diagnostics.Add(diagnostic);
+        return new SyntaxToken(SyntaxKind.InvalidSyntax, sourceSpan);
     }
 
     private SyntaxToken ScanDocumentation()
@@ -130,10 +139,10 @@ public sealed class Scanner(SourceText sourceText)
             switch (CurrentSpan[length..])
             {
                 case [] or ['\0', ..]:
-                    // TODO: Report unterminated documentation.
-                    // Diagnostics.ReportUnterminatedDocumentation(new SourceSpan(CurrentSpan.SourceText, offset, length));
+                    var sourceSpan = new SourceSpan(sourceText, start, sourceText.Text.Length - start);
                     _position = start;
-                    return new SyntaxToken(SyntaxKind.InvalidSyntax, new SourceSpan(sourceText, start, sourceText.Text.Length - start));
+                    _diagnostics.Add(SyntaxDiagnostic.UnterminatedDocumentation(sourceSpan));
+                    return new SyntaxToken(SyntaxKind.InvalidSyntax, sourceSpan);
 
                 case ['*', '/', ..]:
                     var syntaxToken = new SyntaxToken(SyntaxKind.DocumentationTrivia, new SourceSpan(sourceText, _position, length));
@@ -159,9 +168,9 @@ public sealed class Scanner(SourceText sourceText)
                 case ['\r', ..]:
                 case ['\n', ..]:
                 case []:
-                    // TODO: Report unterminated string diagnostic.
-                    // syntaxTree.Diagnostics.ReportUnterminatedString(new SourceSpan(syntaxTree.SourceText, offset, length));
-                    return new SyntaxToken(SyntaxKind.InvalidSyntax, new SourceSpan(sourceText, _position, length));
+                    var sourceSpan = new SourceSpan(sourceText, _position, length);
+                    _diagnostics.Add(SyntaxDiagnostic.UnterminatedString(sourceSpan));
+                    return new SyntaxToken(SyntaxKind.InvalidSyntax, sourceSpan);
                 case ['\\', '"', ..]:
                     builder.Append('"');
                     length += 2;
@@ -199,7 +208,8 @@ public sealed class Scanner(SourceText sourceText)
                     length += 6;
                     break;
                 case ['\\', ..]:
-                    return new SyntaxToken(SyntaxKind.InvalidSyntax, new SourceSpan(sourceText, _position, GetInvalidStringLength(length + 2)));
+                    var invalidEscapeSpan = new SourceSpan(sourceText, _position, GetInvalidStringLength(length + 2));
+                    return CreateInvalidToken(invalidEscapeSpan, SyntaxDiagnostic.InvalidEscapeSequence(invalidEscapeSpan));
                 case ['"', ..]:
                     return new SyntaxToken(SyntaxKind.StringLiteralToken, new SourceSpan(sourceText, _position, length + 1), builder.ToString());
                 default:
@@ -248,7 +258,8 @@ public sealed class Scanner(SourceText sourceText)
 
             if (!hasWholeDigits && length == fractionDigitsStart)
             {
-                return new SyntaxToken(SyntaxKind.InvalidSyntax, new SourceSpan(sourceText, _position, length));
+                var sourceSpan = new SourceSpan(sourceText, _position, length);
+                return CreateInvalidToken(sourceSpan, SyntaxDiagnostic.InvalidNumber(sourceSpan));
             }
         }
 
@@ -267,13 +278,15 @@ public sealed class Scanner(SourceText sourceText)
 
             if (length == exponentDigitsStart)
             {
-                return new SyntaxToken(SyntaxKind.InvalidSyntax, new SourceSpan(sourceText, _position, length));
+                var sourceSpan = new SourceSpan(sourceText, _position, length);
+                return CreateInvalidToken(sourceSpan, SyntaxDiagnostic.InvalidNumber(sourceSpan));
             }
         }
 
         if (!hasWholeDigits && CurrentSpan[0] is not '.')
         {
-            return new SyntaxToken(SyntaxKind.InvalidSyntax, new SourceSpan(sourceText, _position, Math.Max(length, 1)));
+            var sourceSpan = new SourceSpan(sourceText, _position, Math.Max(length, 1));
+            return CreateInvalidToken(sourceSpan, SyntaxDiagnostic.InvalidNumber(sourceSpan));
         }
 
         SyntaxKind syntaxKind;
@@ -282,7 +295,10 @@ public sealed class Scanner(SourceText sourceText)
         {
             syntaxKind = SyntaxKind.FloatLiteralToken;
             if (!double.TryParse(CurrentSpan[..length].ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var @float))
-                return new SyntaxToken(SyntaxKind.InvalidSyntax, new SourceSpan(sourceText, _position, length));
+            {
+                var sourceSpan = new SourceSpan(sourceText, _position, length);
+                return CreateInvalidToken(sourceSpan, SyntaxDiagnostic.InvalidNumber(sourceSpan));
+            }
 
             value = @float;
         }
@@ -290,7 +306,10 @@ public sealed class Scanner(SourceText sourceText)
         {
             syntaxKind = SyntaxKind.IntegerLiteralToken;
             if (!long.TryParse(CurrentSpan[..length].ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var @int))
-                return new SyntaxToken(SyntaxKind.InvalidSyntax, new SourceSpan(sourceText, _position, length));
+            {
+                var sourceSpan = new SourceSpan(sourceText, _position, length);
+                return CreateInvalidToken(sourceSpan, SyntaxDiagnostic.InvalidNumber(sourceSpan));
+            }
 
             value = @int is >= int.MinValue and <= int.MaxValue ? (object)(int)@int : @int;
         }
@@ -329,7 +348,8 @@ public sealed class Scanner(SourceText sourceText)
 
         if (identifierSpan.IsEmpty || !IsIdentifierStart(identifierSpan[0]))
         {
-            return new SyntaxToken(SyntaxKind.InvalidSyntax, new SourceSpan(sourceText, start, 1));
+            var sourceSpan = new SourceSpan(sourceText, start, 1);
+            return CreateInvalidToken(sourceSpan, SyntaxDiagnostic.InvalidCharacter(sourceSpan));
         }
 
         var length = GetIdentifierLength(identifierSpan, _previousSyntaxToken?.SyntaxKind is SyntaxKind.AtSignToken);
@@ -338,12 +358,11 @@ public sealed class Scanner(SourceText sourceText)
         {
             if (length >= identifierSpan.Length || identifierSpan[length] is not '`')
             {
-                return new SyntaxToken(
-                    SyntaxKind.InvalidSyntax,
-                    new SourceSpan(
-                        sourceText,
-                        start,
-                        Math.Min(sourceText.Text.Length - start, length + 1)));
+                var sourceSpan = new SourceSpan(
+                    sourceText,
+                    start,
+                    Math.Min(sourceText.Text.Length - start, length + 1));
+                return CreateInvalidToken(sourceSpan, SyntaxDiagnostic.UnterminatedVerbatimIdentifier(sourceSpan));
             }
 
             return new SyntaxToken(

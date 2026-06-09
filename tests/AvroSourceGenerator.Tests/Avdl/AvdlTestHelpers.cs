@@ -1,11 +1,11 @@
-﻿using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Avdl.Syntax;
+﻿using AvroSourceGenerator.Avdl.Syntax;
+using AvroSourceGenerator.Avdl.Text;
 
 namespace AvroSourceGenerator.Tests.Avdl;
 
 internal static class AvdlTestHelpers
 {
-    public static SourceText SourceText(string text) => new(text, "test.avdl");
+    public static SourceText SourceText(string text) => new SourceText("test.avdl", text);
 
     public static IReadOnlyList<ISyntaxNode> Flatten(ISyntaxNode node)
     {

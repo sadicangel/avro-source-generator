@@ -1,9 +1,6 @@
-﻿namespace AvroSourceGenerator.Avdl.Syntax;
+﻿using AvroSourceGenerator.Avdl.Text;
 
-public readonly record struct SourceSpan(SourceText SourceText, int Offset, int Length)
-{
-    public override string ToString() => SourceText.Text.AsSpan(Offset, Length).ToString();
-}
+namespace AvroSourceGenerator.Avdl.Syntax;
 
 public sealed record class SyntaxToken(SyntaxKind SyntaxKind, SourceSpan SourceSpan, object? Value = null) : ISyntaxNode
 {

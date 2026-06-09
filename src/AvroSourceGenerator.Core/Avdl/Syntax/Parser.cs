@@ -1,32 +1,35 @@
 ﻿using System.Collections.Immutable;
-using AvroSourceGenerator.Avdl.Syntax;
+using AvroSourceGenerator.Avdl.Diagnostics;
 using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Directives;
 using AvroSourceGenerator.Avdl.Syntax.Types;
 using AvroSourceGenerator.Avdl.Text;
 
-namespace AvroSourceGenerator.Avdl;
+namespace AvroSourceGenerator.Avdl.Syntax;
 
 public sealed class Parser(SourceText sourceText)
 {
     private readonly SyntaxTokenStream _stream = new(sourceText);
     private readonly List<IAnnotationSyntax> _annotations = [];
     private readonly List<DocumentationSyntax> _documentation = [];
+    private readonly List<SyntaxDiagnostic> _diagnostics = [];
 
-    public static CompilationUnitSyntax Parse(SourceText sourceText)
+    public static SyntaxTree Parse(SourceText sourceText) => new Parser(sourceText).Parse();
+
+    public SyntaxTree Parse()
     {
-        // TODO: Worth to use a single instance and reset it for each file?
-        var parser = new Parser(sourceText);
-        return parser.Parse();
+        var document = ParseDocument();
+
+        return new SyntaxTree(sourceText, document, [.. _diagnostics]);
     }
 
-    private CompilationUnitSyntax Parse()
+    private DocumentSyntax ParseDocument()
     {
         var directives = ParseDirectives();
         var declarations = ParseDeclarations();
         // TODO: Check if protocol or schema IDL and validate directives.
-        return new CompilationUnitSyntax(directives, declarations);
+        return new DocumentSyntax(directives, declarations);
     }
 
     private SyntaxList<IDirectiveSyntax> ParseDirectives()

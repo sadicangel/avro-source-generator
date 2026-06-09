@@ -78,7 +78,7 @@ public enum SyntaxKind
     InvalidTextTrivia,
     DocumentationTrivia,
 
-    CompilationUnit,
+    Document,
 
     SimpleName,
     QualifiedName,

@@ -2,7 +2,7 @@
 
 public sealed record class NamespaceAnnotationSyntax(
     SyntaxToken AtSignToken,
-    SyntaxToken NamespaceKeyword,
+    AnnotationNameSyntax AnnotationName,
     SyntaxToken ParenthesisOpenToken,
     JsonValueSyntax JsonValue,
     SyntaxToken ParenthesisCloseToken)
@@ -15,7 +15,7 @@ public sealed record class NamespaceAnnotationSyntax(
     public IEnumerable<ISyntaxNode> Children()
     {
         yield return AtSignToken;
-        yield return NamespaceKeyword;
+        yield return AnnotationName;
         yield return ParenthesisOpenToken;
         yield return JsonValue;
         yield return ParenthesisCloseToken;

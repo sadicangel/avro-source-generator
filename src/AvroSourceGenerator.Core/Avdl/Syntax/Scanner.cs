@@ -352,7 +352,7 @@ public sealed class Scanner(SourceText sourceText)
             return CreateInvalidToken(sourceSpan, SyntaxDiagnostic.InvalidCharacter(sourceSpan));
         }
 
-        var length = GetIdentifierLength(identifierSpan, _previousSyntaxToken?.SyntaxKind is SyntaxKind.AtSignToken);
+        var length = GetIdentifierLength(identifierSpan, _previousSyntaxToken?.SyntaxKind is SyntaxKind.AtSignToken or SyntaxKind.DotToken);
 
         if (isVerbatim)
         {

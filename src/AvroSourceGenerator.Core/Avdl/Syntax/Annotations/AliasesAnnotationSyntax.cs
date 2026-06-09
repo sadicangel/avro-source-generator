@@ -4,7 +4,7 @@ namespace AvroSourceGenerator.Avdl.Syntax.Annotations;
 
 public sealed record class AliasesAnnotationSyntax(
     SyntaxToken AtSignToken,
-    SyntaxToken AliasesIdentifier,
+    AnnotationNameSyntax AnnotationName,
     SyntaxToken ParenthesisOpenToken,
     JsonValueSyntax JsonValue,
     SyntaxToken ParenthesisCloseToken)
@@ -17,7 +17,7 @@ public sealed record class AliasesAnnotationSyntax(
     public IEnumerable<ISyntaxNode> Children()
     {
         yield return AtSignToken;
-        yield return AliasesIdentifier;
+        yield return AnnotationName;
         yield return ParenthesisOpenToken;
         yield return JsonValue;
         yield return ParenthesisCloseToken;

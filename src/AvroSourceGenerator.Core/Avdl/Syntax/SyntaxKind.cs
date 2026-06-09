@@ -97,6 +97,7 @@ public enum SyntaxKind
     MapType,
     UnionType,
     OptionalType,
+    AnnotatedType,
     NamedType,
     LogicalType,
 
@@ -106,6 +107,7 @@ public enum SyntaxKind
 
     Documentation,
 
+    AnnotationName,
     NamespaceAnnotation,
     AliasesAnnotation,
     OrderAnnotation,

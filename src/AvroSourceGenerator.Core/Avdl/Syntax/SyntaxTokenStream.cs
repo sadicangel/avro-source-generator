@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using AvroSourceGenerator.Avdl.Text;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
 

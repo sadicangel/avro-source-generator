@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text;
+using AvroSourceGenerator.Avdl.Text;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
 

@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+using System.Text.Json.Nodes;
+using AvroSourceGenerator.Avdl.Diagnostics;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
 
@@ -18,8 +19,18 @@ internal readonly ref struct JsonParser(SyntaxTokenStream stream)
             SyntaxKind.BracketOpenToken => ParseArray(),
             SyntaxKind.BraceOpenToken => ParseObject(),
             SyntaxKind.IdentifierToken => ParseSymbol(),
-            _ => throw new InvalidOperationException($"Unexpected token: {stream.Current.SyntaxKind}"),
+            _ => ParseUnexpected(),
         };
+    }
+
+    private JsonNode? ParseUnexpected()
+    {
+        var token = stream.Current;
+        stream.Report(SyntaxDiagnostic.UnexpectedJsonValue(token));
+        if (!stream.IsAtEnd)
+            _ = stream.Next();
+
+        return null;
     }
 
     private JsonValue? ParseNull()

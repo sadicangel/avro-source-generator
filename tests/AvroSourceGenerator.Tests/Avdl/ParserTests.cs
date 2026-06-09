@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Avdl.Syntax;
+﻿using AvroSourceGenerator.Avdl.Diagnostics;
+using AvroSourceGenerator.Avdl.Syntax;
 using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Directives;
@@ -331,6 +332,86 @@ public sealed class ParserTests
         Assert.Contains(SyntaxKind.IdentifierToken, kinds);
     }
 
+    [Fact]
+    public void Parse_InvalidScannerInput_ReturnsSyntaxTreeDiagnostic()
+    {
+        var tree = ParseTree("$ record User { string name; }");
+
+        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.InvalidCharacter);
+    }
+
+    [Fact]
+    public void Parse_MissingExpectedToken_ReturnsUnexpectedTokenDiagnosticAtCurrentTokenOffset()
+    {
+        const string text = "record User { string name }";
+        var tree = ParseTree(text);
+
+        var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.UnexpectedToken);
+        Assert.Equal(text.IndexOf('}'), diagnostic.SourceSpan.Offset);
+        Assert.Equal(1, diagnostic.SourceSpan.Length);
+    }
+
+    [Fact]
+    public void Parse_InvalidJsonDefault_ReturnsUnexpectedJsonValueDiagnostic()
+    {
+        var tree = ParseTree("record User { string name = ; }");
+
+        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.UnexpectedJsonValue);
+    }
+
+    [Fact]
+    public void Parse_KnownAnnotationsWithUnexpectedValues_DoesNotReturnDiagnostics()
+    {
+        var tree = ParseTree(
+            """
+            @namespace(1)
+            @aliases(["OldUser", 2])
+            record User {
+                @order("sideways") string name;
+                @logicalType(42) string id;
+            }
+            """);
+
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Fact]
+    public void Parse_MisplacedMetadata_ReturnsDiagnosticsAndDoesNotLeakToNextDeclaration()
+    {
+        var tree = ParseTree(
+            """
+            protocol P {
+                @order("ignore")
+                void ping();
+
+                /** Import doc */
+                @namespace("example")
+                import idl "common.avdl";
+
+                record User {}
+            }
+            """);
+
+        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.MisplacedAnnotation && diagnostic.SourceSpan.ToString() == "@");
+        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.MisplacedDocumentation && diagnostic.SourceSpan.ToString() == " Import doc ");
+
+        var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        Assert.Empty(Assert.IsType<RecordDeclarationSyntax>(Assert.Single(protocol.Types)).Annotations);
+    }
+
+    [Fact]
+    public void Parse_MetadataAtEndOfFile_DoesNotReturnDiagnostics()
+    {
+        var tree = ParseTree(
+            """
+            record User {}
+            /** trailing */
+            @aliases(["OldUser"])
+            """);
+
+        Assert.Empty(tree.Diagnostics);
+    }
+
     private static void AssertLogicalType(ITypeSyntax type, SyntaxKind logicalTypeKeyword)
     {
         var logicalType = Assert.IsType<LogicalTypeSyntax>(type);
@@ -338,4 +419,6 @@ public sealed class ParserTests
     }
 
     private static DocumentSyntax Parse(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text)).Document;
+
+    private static SyntaxTree ParseTree(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text));
 }

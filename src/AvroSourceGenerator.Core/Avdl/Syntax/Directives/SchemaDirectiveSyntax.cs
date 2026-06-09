@@ -1,17 +1,21 @@
-﻿namespace AvroSourceGenerator.Avdl.Syntax.Directives;
+using AvroSourceGenerator.Avdl.Syntax.Types;
+
+namespace AvroSourceGenerator.Avdl.Syntax.Directives;
 
 public sealed record class SchemaDirectiveSyntax(
     SyntaxToken SchemaKeyword,
-    SimpleNameSyntax MainSchemaName,
+    ITypeSyntax MainSchemaType,
     SyntaxToken SemicolonToken)
     : IDirectiveSyntax
 {
     public SyntaxKind SyntaxKind => SyntaxKind.SchemaDirective;
 
+    public SimpleNameSyntax? MainSchemaName => (MainSchemaType as NamedTypeSyntax)?.Name as SimpleNameSyntax;
+
     public IEnumerable<ISyntaxNode> Children()
     {
         yield return SchemaKeyword;
-        yield return MainSchemaName;
+        yield return MainSchemaType;
         yield return SemicolonToken;
     }
 }

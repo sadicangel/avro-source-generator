@@ -2,7 +2,7 @@
 
 public sealed record class LogicalTypeAnnotationSyntax(
     SyntaxToken AtSignToken,
-    SyntaxToken LogicalTypeIdentifier,
+    AnnotationNameSyntax AnnotationName,
     SyntaxToken ParenthesisOpenToken,
     JsonValueSyntax JsonValue,
     SyntaxToken ParenthesisCloseToken)
@@ -15,7 +15,7 @@ public sealed record class LogicalTypeAnnotationSyntax(
     public IEnumerable<ISyntaxNode> Children()
     {
         yield return AtSignToken;
-        yield return LogicalTypeIdentifier;
+        yield return AnnotationName;
         yield return ParenthesisOpenToken;
         yield return JsonValue;
         yield return ParenthesisCloseToken;

@@ -95,6 +95,7 @@ public static class SyntaxFacts
             SyntaxKind.MapType => null,
             SyntaxKind.UnionType => null,
             SyntaxKind.OptionalType => null,
+            SyntaxKind.AnnotatedType => null,
             SyntaxKind.NamedType => null,
             SyntaxKind.LogicalType => null,
 
@@ -104,6 +105,7 @@ public static class SyntaxFacts
 
             SyntaxKind.Documentation => null,
 
+            SyntaxKind.AnnotationName => null,
             SyntaxKind.NamespaceAnnotation => null,
             SyntaxKind.AliasesAnnotation => null,
             SyntaxKind.OrderAnnotation => null,

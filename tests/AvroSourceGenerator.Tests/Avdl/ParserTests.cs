@@ -24,7 +24,7 @@ public sealed class ParserTests
 
         Assert.Equal(5, unit.Directives.Count);
         Assert.IsType<QualifiedNameSyntax>(Assert.IsType<NamespaceDirectiveSyntax>(unit.Directives[0]).NamespaceName);
-        Assert.Equal("Main", Assert.IsType<SchemaDirectiveSyntax>(unit.Directives[1]).MainSchemaName.Identifier.SourceSpan.ToString());
+        Assert.Equal("Main", Assert.IsType<SchemaDirectiveSyntax>(unit.Directives[1]).MainSchemaName!.Identifier.SourceSpan.ToString());
 
         var idlImport = Assert.IsType<ImportDirectiveSyntax>(unit.Directives[2]);
         Assert.Equal(SyntaxKind.IdlKeyword, idlImport.ImportTypeKeyword.SyntaxKind);
@@ -41,6 +41,19 @@ public sealed class ParserTests
         var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(unit.Declarations));
         Assert.Equal("P", protocol.Name.Identifier.SourceSpan.ToString());
         Assert.Empty(protocol.Imports);
+    }
+
+    [Theory]
+    [InlineData("schema int;", SyntaxKind.IntType)]
+    [InlineData("schema array<string>;", SyntaxKind.ArrayType)]
+    [InlineData("schema union { null, string };", SyntaxKind.UnionType)]
+    [InlineData("schema Message;", SyntaxKind.NamedType)]
+    public void Parse_SchemaDirective_ReturnsMainSchemaType(string text, SyntaxKind expectedTypeKind)
+    {
+        var unit = Parse(text);
+
+        var schema = Assert.IsType<SchemaDirectiveSyntax>(Assert.Single(unit.Directives));
+        Assert.Equal(expectedTypeKind, schema.MainSchemaType.SyntaxKind);
     }
 
     [Fact]
@@ -190,7 +203,8 @@ public sealed class ParserTests
         Assert.IsType<MapTypeSyntax>(request.Fields[1].Type);
         Assert.IsType<UnionTypeSyntax>(request.Fields[2].Type);
         Assert.IsType<OptionalTypeSyntax>(request.Fields[3].Type);
-        Assert.Single(request.Fields[4].Annotations);
+        Assert.Empty(request.Fields[4].Annotations);
+        Assert.Single(Assert.IsType<AnnotatedTypeSyntax>(request.Fields[4].Type).Annotations);
 
         var ping = protocol.Messages[0];
         Assert.Equal(SyntaxKind.VoidType, ping.Type.SyntaxKind);
@@ -238,7 +252,7 @@ public sealed class ParserTests
         var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(unit.Declarations));
         var annotation = Assert.IsType<CustomAnnotationSyntax>(Assert.Single(record.Annotations));
 
-        Assert.Equal("java-class", annotation.NameIdentifier.ValueText);
+        Assert.Equal("java-class", annotation.AnnotationName.FullName);
         Assert.Equal("com.example.User", annotation.JsonValue.JsonNode!.GetValue<string>());
     }
 
@@ -256,14 +270,75 @@ public sealed class ParserTests
         var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(unit.Declarations));
 
         var id = record.Fields[0];
-        var uuid = Assert.IsType<LogicalTypeAnnotationSyntax>(Assert.Single(id.Annotations));
-        Assert.Equal("logicalType", uuid.LogicalTypeIdentifier.ValueText);
+        Assert.Empty(id.Annotations);
+        var idType = Assert.IsType<AnnotatedTypeSyntax>(id.Type);
+        var uuid = Assert.IsType<LogicalTypeAnnotationSyntax>(Assert.Single(idType.Annotations));
+        Assert.Equal("logicalType", uuid.AnnotationName.FullName);
         Assert.Equal("uuid", uuid.LogicalTypeName);
         Assert.Equal("uuid", uuid.JsonValue.JsonNode!.GetValue<string>());
+        Assert.Equal(SyntaxKind.StringType, idType.Type.SyntaxKind);
 
         var createdAt = record.Fields[1];
-        var timestampMillis = Assert.IsType<LogicalTypeAnnotationSyntax>(Assert.Single(createdAt.Annotations));
+        Assert.Empty(createdAt.Annotations);
+        var createdAtType = Assert.IsType<AnnotatedTypeSyntax>(createdAt.Type);
+        var timestampMillis = Assert.IsType<LogicalTypeAnnotationSyntax>(Assert.Single(createdAtType.Annotations));
         Assert.Equal("timestamp-millis", timestampMillis.LogicalTypeName);
+        Assert.Equal(SyntaxKind.LongType, createdAtType.Type.SyntaxKind);
+    }
+
+    [Fact]
+    public void Parse_MessageMetadata_ReturnsDocumentationAndAnnotationsOnMessage()
+    {
+        var tree = ParseTree(
+            """
+            protocol P {
+                /** Ping doc */
+                @timeout-ms(1000)
+                void ping();
+            }
+            """);
+
+        Assert.Empty(tree.Diagnostics);
+        var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        var message = Assert.Single(protocol.Messages);
+        Assert.Equal(" Ping doc ", Assert.Single(message.Documentation).DocumentationTrivia.SourceSpan.ToString());
+        var annotation = Assert.IsType<CustomAnnotationSyntax>(Assert.Single(message.Annotations));
+        Assert.Equal("timeout-ms", annotation.AnnotationName.FullName);
+    }
+
+    [Fact]
+    public void Parse_CustomAnnotation_AllowsDottedAndDashedName()
+    {
+        var unit = Parse(
+            """
+            @foo.bar-baz(true)
+            record User {}
+            """);
+
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(unit.Declarations));
+        var annotation = Assert.IsType<CustomAnnotationSyntax>(Assert.Single(record.Annotations));
+
+        Assert.Equal("foo.bar-baz", annotation.AnnotationName.FullName);
+        Assert.True(annotation.JsonValue.JsonNode!.GetValue<bool>());
+    }
+
+    [Fact]
+    public void Parse_NestedTypeAnnotation_ReturnsAnnotatedTypeSyntax()
+    {
+        var unit = Parse(
+            """
+            record Weights {
+                array<@java-class("java.math.BigDecimal") string> weights;
+            }
+            """);
+
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(unit.Declarations));
+        var array = Assert.IsType<ArrayTypeSyntax>(Assert.Single(record.Fields).Type);
+        var itemType = Assert.IsType<AnnotatedTypeSyntax>(array.ItemType);
+        var annotation = Assert.IsType<CustomAnnotationSyntax>(Assert.Single(itemType.Annotations));
+
+        Assert.Equal("java-class", annotation.AnnotationName.FullName);
+        Assert.Equal(SyntaxKind.StringType, itemType.Type.SyntaxKind);
     }
 
     [Fact]

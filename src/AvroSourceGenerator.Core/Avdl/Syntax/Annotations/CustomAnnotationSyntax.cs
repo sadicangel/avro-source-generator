@@ -2,7 +2,7 @@
 
 public sealed record class CustomAnnotationSyntax(
     SyntaxToken AtSignToken,
-    SyntaxToken NameIdentifier,
+    AnnotationNameSyntax AnnotationName,
     SyntaxToken ParenthesisOpenToken,
     JsonValueSyntax JsonValue,
     SyntaxToken ParenthesisCloseToken)
@@ -13,7 +13,7 @@ public sealed record class CustomAnnotationSyntax(
     public IEnumerable<ISyntaxNode> Children()
     {
         yield return AtSignToken;
-        yield return NameIdentifier;
+        yield return AnnotationName;
         yield return ParenthesisOpenToken;
         yield return JsonValue;
         yield return ParenthesisCloseToken;

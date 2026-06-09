@@ -2,7 +2,7 @@
 
 public sealed record class OrderAnnotationSyntax(
     SyntaxToken AtSignToken,
-    SyntaxToken OrderIdentifier,
+    AnnotationNameSyntax AnnotationName,
     SyntaxToken ParenthesisOpenToken,
     JsonValueSyntax JsonValue,
     SyntaxToken ParenthesisCloseToken)
@@ -16,7 +16,7 @@ public sealed record class OrderAnnotationSyntax(
     public IEnumerable<ISyntaxNode> Children()
     {
         yield return AtSignToken;
-        yield return OrderIdentifier;
+        yield return AnnotationName;
         yield return ParenthesisOpenToken;
         yield return JsonValue;
         yield return ParenthesisCloseToken;

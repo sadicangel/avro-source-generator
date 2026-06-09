@@ -65,9 +65,9 @@ public sealed class Parser(SourceText sourceText)
     private SchemaDirectiveSyntax ParseSchemaDirective()
     {
         var schemaKeyword = _stream.Match(SyntaxKind.SchemaKeyword);
-        var mainSchemaName = ParseSimpleName();
+        var mainSchemaType = ParseType();
         var semicolonToken = _stream.Match(SyntaxKind.SemicolonToken);
-        return new SchemaDirectiveSyntax(schemaKeyword, mainSchemaName, semicolonToken);
+        return new SchemaDirectiveSyntax(schemaKeyword, mainSchemaType, semicolonToken);
     }
 
     private ImportDirectiveSyntax ParseImportDirective()
@@ -131,6 +131,12 @@ public sealed class Parser(SourceText sourceText)
         }
     }
 
+    private void EnqueueDocumentation()
+    {
+        while (_stream.Current.SyntaxKind is SyntaxKind.DocumentationTrivia)
+            _documentation.Add(ParseDocumentation());
+    }
+
     private void ReportAndClearMisplacedMetadata(string target)
     {
         foreach (var documentation in _documentation)
@@ -160,19 +166,29 @@ public sealed class Parser(SourceText sourceText)
     private IAnnotationSyntax ParseAnnotation()
     {
         var atSignToken = _stream.Match(SyntaxKind.AtSignToken);
-        var name = _stream.Current.SyntaxKind is SyntaxKind.NamespaceKeyword ? _stream.Next() : _stream.Match(SyntaxKind.IdentifierToken);
+        var name = ParseAnnotationName();
         var parenthesisOpenToken = _stream.Match(SyntaxKind.ParenthesisOpenToken);
         var jsonValue = ParseJsonValue();
         var parenthesisCloseToken = _stream.Match(SyntaxKind.ParenthesisCloseToken);
-        return name switch
+        return name.FullName switch
         {
-            { SyntaxKind: SyntaxKind.NamespaceKeyword } => new NamespaceAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
-            { ValueText: "aliases" } => new AliasesAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
-            { ValueText: "order" } => new OrderAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
-            { ValueText: "logicalType" } => new LogicalTypeAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+            "namespace" => new NamespaceAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+            "aliases" => new AliasesAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+            "order" => new OrderAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+            "logicalType" => new LogicalTypeAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
 
             _ => new CustomAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
         };
+    }
+
+    private AnnotationNameSyntax ParseAnnotationName()
+    {
+        var separatedIdentifiers = ParseSeparatedList(
+            parseNode: () => _stream.Current.SyntaxKind is SyntaxKind.NamespaceKeyword ? _stream.Next() : _stream.Match(SyntaxKind.IdentifierToken),
+            separator: SyntaxKind.DotToken,
+            terminators: SyntaxKind.ParenthesisOpenToken);
+
+        return new AnnotationNameSyntax(separatedIdentifiers);
     }
 
     private JsonValueSyntax ParseJsonValue()
@@ -239,7 +255,7 @@ public sealed class Parser(SourceText sourceText)
 
     private FieldDeclarationSyntax ParseFieldDeclaration()
     {
-        EnqueueMetadata();
+        EnqueueDocumentation();
         var type = ParseType();
         EnqueueMetadata();
         var name = ParseSimpleName();
@@ -294,7 +310,6 @@ public sealed class Parser(SourceText sourceText)
                     types.Add(ParseErrorDeclaration());
                     break;
                 default:
-                    ReportAndClearMisplacedMetadata("message declaration");
                     messages.Add(ParseMessageDeclaration());
                     break;
             }
@@ -318,6 +333,7 @@ public sealed class Parser(SourceText sourceText)
     {
         var type = ParseType();
         var name = ParseSimpleName();
+        var (documentation, annotations) = DequeueMetadata();
         var parenthesisOpenToken = _stream.Match(SyntaxKind.ParenthesisOpenToken);
         var parameters = ParseSeparatedList(ParseParameterDeclaration, SyntaxKind.CommaToken, SyntaxKind.ParenthesisCloseToken);
         var parenthesisCloseToken = _stream.Match(SyntaxKind.ParenthesisCloseToken);
@@ -327,6 +343,8 @@ public sealed class Parser(SourceText sourceText)
         return new MessageDeclarationSyntax(
             type,
             name,
+            documentation,
+            annotations,
             parenthesisOpenToken,
             parameters,
             parenthesisCloseToken,
@@ -380,6 +398,15 @@ public sealed class Parser(SourceText sourceText)
 
     private ITypeSyntax ParseType()
     {
+        SyntaxList<IAnnotationSyntax> annotations = [];
+        if (_stream.Current.SyntaxKind is SyntaxKind.AtSignToken)
+        {
+            var builder = ImmutableArray.CreateBuilder<IAnnotationSyntax>();
+            while (_stream.Current.SyntaxKind is SyntaxKind.AtSignToken)
+                builder.Add(ParseAnnotation());
+            annotations = new SyntaxList<IAnnotationSyntax>(builder.ToImmutable());
+        }
+
         ITypeSyntax type = _stream.Current.SyntaxKind switch
         {
             SyntaxKind.VoidKeyword
@@ -409,6 +436,11 @@ public sealed class Parser(SourceText sourceText)
         if (_stream.Current.SyntaxKind is SyntaxKind.QuestionMarkToken)
         {
             type = new OptionalTypeSyntax(type, _stream.Next());
+        }
+
+        if (annotations.Count > 0)
+        {
+            type = new AnnotatedTypeSyntax(annotations, type);
         }
 
         return type;
@@ -497,15 +529,7 @@ public sealed class Parser(SourceText sourceText)
         };
 
     private static string GetAnnotationName(IAnnotationSyntax annotation) =>
-        annotation switch
-        {
-            NamespaceAnnotationSyntax => "namespace",
-            AliasesAnnotationSyntax aliasesAnnotation => aliasesAnnotation.AliasesIdentifier.ValueText,
-            OrderAnnotationSyntax orderAnnotation => orderAnnotation.OrderIdentifier.ValueText,
-            LogicalTypeAnnotationSyntax logicalTypeAnnotation => logicalTypeAnnotation.LogicalTypeIdentifier.ValueText,
-            CustomAnnotationSyntax customAnnotation => customAnnotation.NameIdentifier.ValueText,
-            _ => "unknown",
-        };
+        annotation.AnnotationName.FullName;
 }
 
 file static class SpanExtensions

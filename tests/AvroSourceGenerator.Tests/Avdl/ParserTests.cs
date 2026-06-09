@@ -1,5 +1,4 @@
-﻿using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Avdl.Syntax;
+﻿using AvroSourceGenerator.Avdl.Syntax;
 using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Directives;
@@ -10,7 +9,7 @@ namespace AvroSourceGenerator.Tests.Avdl;
 public sealed class ParserTests
 {
     [Fact]
-    public void Parse_DirectivesAndProtocol_ReturnsCompilationUnit()
+    public void Parse_DirectivesAndProtocol_ReturnsDocument()
     {
         var unit = Parse(
             """
@@ -325,7 +324,7 @@ public sealed class ParserTests
 
         var kinds = AvdlTestHelpers.FlattenKinds(unit);
 
-        Assert.Contains(SyntaxKind.CompilationUnit, kinds);
+        Assert.Contains(SyntaxKind.Document, kinds);
         Assert.Contains(SyntaxKind.RecordDeclaration, kinds);
         Assert.Contains(SyntaxKind.FieldDeclaration, kinds);
         Assert.Contains(SyntaxKind.StringType, kinds);
@@ -338,5 +337,5 @@ public sealed class ParserTests
         Assert.Equal(logicalTypeKeyword, logicalType.LogicalTypeNameKeyword.SyntaxKind);
     }
 
-    private static CompilationUnitSyntax Parse(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text));
+    private static DocumentSyntax Parse(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text)).Document;
 }

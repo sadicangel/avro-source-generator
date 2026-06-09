@@ -76,7 +76,7 @@ public static class SyntaxFacts
             SyntaxKind.InvalidTextTrivia => null,
             SyntaxKind.DocumentationTrivia => null,
 
-            SyntaxKind.CompilationUnit => null,
+            SyntaxKind.Document => null,
 
             SyntaxKind.SimpleName => null,
             SyntaxKind.QualifiedName => null,

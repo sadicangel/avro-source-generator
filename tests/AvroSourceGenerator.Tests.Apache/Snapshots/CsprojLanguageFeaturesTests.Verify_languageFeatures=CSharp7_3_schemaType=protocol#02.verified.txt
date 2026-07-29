@@ -13,8 +13,8 @@ namespace SchemaNamespace
     
     partial class RpcProtocol : global::Avro.Specific.ISpecificProtocol
     {
-        public global::Avro.Protocol Protocol { get => RpcProtocol.s_protocol; }
-        private static readonly global::Avro.Protocol s_protocol = global::Avro.Protocol.Parse(
+        public global::Avro.Protocol Protocol { get => RpcProtocol.protocol; }
+        private static readonly global::Avro.Protocol protocol = global::Avro.Protocol.Parse(
         "{\"protocol\":\"RpcProtocol\",\"namespace\":\"SchemaNamespace\",\"types\":[{\"type\":\"record\",\"name\":\"Greeting\",\"namespace\":\"SchemaNamespace\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"}]},{\"type\":\"error\",\"name\":\"Curse\",\"namespace\":\"SchemaNamespace\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"}]}],\"messages\":{\"hello\":{\"doc\":\"Say hello.\",\"request\":[{\"name\":\"greeting\",\"type\":\"Greeting\"}],\"response\":\"Greeting\",\"errors\":[\"Curse\"]}},\"fields\":[{\"type\":\"string\",\"name\":\"Field\"}]}");
     
         public void Request(global::Avro.Specific.ICallbackRequestor requestor, string messageName, object[] args, object callback)
@@ -40,4 +40,4 @@ namespace SchemaNamespace
     
     }
 }
-#pragma warning restore CS8618, CS8633, CS8714, CS8775
+#pragma warning restore CS8618, CS8633, CS8714, CS8775, CS8981

@@ -23,7 +23,7 @@ public sealed class AvroProtocolTests
     private static Avro.Protocol GetGeneratedTypeProtocol(string typeName)
     {
         var type = Type.GetType($"AvroSourceGenerator.IntegrationTests.Schemas.{typeName}", throwOnError: true)!;
-        var field = type.GetField("s_protocol", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!;
+        var field = type.GetField("protocol", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!;
         return (Avro.Protocol)field.GetValue(null)!;
     }
 }

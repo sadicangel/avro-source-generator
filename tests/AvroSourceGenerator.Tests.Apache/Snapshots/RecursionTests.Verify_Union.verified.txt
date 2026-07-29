@@ -12,8 +12,8 @@ namespace ex
     
     partial record Node : global::Avro.Specific.ISpecificRecord
     {
-        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Node.s_schema; }
-        private static readonly global::Avro.Schema s_schema = global::Avro.Schema.Parse(
+        global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => Node._SCHEMA; }
+        public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
         """
         {
           "type": "record",
@@ -65,4 +65,4 @@ namespace ex
     }
 }
 #nullable restore
-#pragma warning restore CS8618, CS8633, CS8714, CS8775
+#pragma warning restore CS8618, CS8633, CS8714, CS8775, CS8981

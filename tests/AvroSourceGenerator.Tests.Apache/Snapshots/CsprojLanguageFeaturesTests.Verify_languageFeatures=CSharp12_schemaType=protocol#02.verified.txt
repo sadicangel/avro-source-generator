@@ -13,8 +13,8 @@ namespace SchemaNamespace
     
     partial class RpcProtocol : global::Avro.Specific.ISpecificProtocol
     {
-        public global::Avro.Protocol Protocol { get => RpcProtocol.s_protocol; }
-        private static readonly global::Avro.Protocol s_protocol = global::Avro.Protocol.Parse(
+        public global::Avro.Protocol Protocol { get => RpcProtocol.protocol; }
+        private static readonly global::Avro.Protocol protocol = global::Avro.Protocol.Parse(
         """
         {
           "protocol": "RpcProtocol",
@@ -90,4 +90,4 @@ namespace SchemaNamespace
     
     }
 }
-#pragma warning restore CS8618, CS8633, CS8714, CS8775
+#pragma warning restore CS8618, CS8633, CS8714, CS8775, CS8981

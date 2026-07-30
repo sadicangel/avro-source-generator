@@ -8,40 +8,40 @@ internal static partial class LogicalSchemaExtensions
         {
             LogicalTypeNames.Date => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("DateTime", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("DateTime", "System")),
             LogicalTypeNames.Decimal when underlyingSchema.Type is SchemaType.Bytes => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("AvroDecimal", "Avro"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("AvroDecimal", "Avro")),
             LogicalTypeNames.TimeMicros => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("TimeSpan", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("TimeSpan", "System")),
             LogicalTypeNames.TimeMillis => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("TimeSpan", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("TimeSpan", "System")),
             LogicalTypeNames.TimestampMicros => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("DateTime", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("DateTime", "System")),
             LogicalTypeNames.TimestampMillis => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("DateTime", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("DateTime", "System")),
             LogicalTypeNames.LocalTimestampMicros => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("DateTime", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("DateTime", "System")),
             LogicalTypeNames.LocalTimestampMillis => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("DateTime", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("DateTime", "System")),
             LogicalTypeNames.Uuid when underlyingSchema.Type is SchemaType.String => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("Guid", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("Guid", "System")),
 
             // TODO: Language implementations must ignore unknown logical types when reading, and should use the underlying Avro type.
             // Apache.Avro will throw an exception when it encounters an unknown logical type, which is not compliant.

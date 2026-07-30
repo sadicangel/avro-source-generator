@@ -4,13 +4,12 @@ using System.Text.Json;
 namespace AvroSourceGenerator.Schemas;
 
 public sealed record class RecordSchema(
-    JsonElement Json,
     SchemaName SchemaName,
     string? Documentation,
     ImmutableArray<string> Aliases,
     ImmutableArray<Field> Fields,
     ImmutableSortedDictionary<string, JsonElement> Properties)
-    : NamedSchema(SchemaType.Record, Json, SchemaName, Documentation, Aliases, Properties)
+    : NamedSchema(SchemaType.Record, SchemaName, Documentation, Aliases, Properties)
 {
     public AvroSchema? InheritsFrom { get; set; }
 

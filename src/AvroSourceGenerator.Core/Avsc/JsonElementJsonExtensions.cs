@@ -43,20 +43,6 @@ internal static class JsonElementJsonExtensions
         public string? GetOptionalString(string propertyName) =>
             schema.GetOptionalProperty(propertyName)?.ToOptionalString();
 
-        public int? GetNullableInt32(string propertyName)
-        {
-            var maybeJson = schema.GetNullableProperty(propertyName);
-            if (maybeJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }) return null;
-
-            var json = maybeJson.Value;
-            if (json.ValueKind is JsonValueKind.Null) return null;
-
-            if (json.ValueKind is not JsonValueKind.Number || !json.TryGetInt32(out var value))
-                throw new InvalidSchemaException($"'{propertyName}' property must be an integer (found '{schema.GetNullableProperty(propertyName)}') in schema: {schema.GetRawText()}");
-
-            return value;
-        }
-
         public JsonElement.ArrayEnumerator GetRequiredArray(string propertyName)
         {
             var json = schema.GetRequiredProperty(propertyName);

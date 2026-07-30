@@ -8,44 +8,44 @@ internal static partial class LogicalSchemaExtensions
         {
             LogicalTypeNames.Date => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("DateOnly", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("DateOnly", "System")),
             LogicalTypeNames.Decimal => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("decimal"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("decimal")),
             LogicalTypeNames.Duration => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("TimeSpan", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("TimeSpan", "System")),
             LogicalTypeNames.TimeMicros => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("TimeOnly", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("TimeOnly", "System")),
             LogicalTypeNames.TimeMillis => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("TimeOnly", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("TimeOnly", "System")),
             LogicalTypeNames.TimestampMicros => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("DateTimeOffset", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("DateTimeOffset", "System")),
             LogicalTypeNames.TimestampMillis => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("DateTimeOffset", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("DateTimeOffset", "System")),
             LogicalTypeNames.LocalTimestampMicros => new LogicalSchema(
                 underlyingSchema,
-                underlyingSchema.CSharpName,
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                underlyingSchema.CSharpName),
             LogicalTypeNames.LocalTimestampMillis => new LogicalSchema(
                 underlyingSchema,
-                underlyingSchema.CSharpName,
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                underlyingSchema.CSharpName),
             LogicalTypeNames.Uuid => new LogicalSchema(
                 underlyingSchema,
-                new CSharpName("Guid", "System"),
-                new SchemaName(logicalType)),
+                new SchemaName(logicalType),
+                new CSharpName("Guid", "System")),
             _ => underlyingSchema,
         };
     }

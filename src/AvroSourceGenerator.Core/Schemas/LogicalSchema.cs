@@ -5,9 +5,9 @@ namespace AvroSourceGenerator.Schemas;
 
 public sealed record class LogicalSchema(
     AvroSchema UnderlyingSchema,
-    CSharpName CSharpName,
-    SchemaName SchemaName)
-    : AvroSchema(SchemaType.Logical, CSharpName, SchemaName, UnderlyingSchema.Documentation, UnderlyingSchema.Properties)
+    SchemaName SchemaName,
+    CSharpName CSharpName)
+    : AvroSchema(SchemaType.Logical, SchemaName, CSharpName, UnderlyingSchema.Documentation, UnderlyingSchema.Properties)
 {
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {

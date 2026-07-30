@@ -8,7 +8,6 @@ public sealed record class VariantSchema(
     ImmutableArray<AvroSchema> DerivedSchemas)
     : TopLevelSchema(
         SchemaType.Variant,
-        default,
         SchemaName,
         GetDefaultDocumentation(DerivedSchemas),
         ImmutableSortedDictionary<string, JsonElement>.Empty)

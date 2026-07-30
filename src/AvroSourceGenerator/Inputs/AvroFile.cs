@@ -47,4 +47,9 @@ internal static class AvroFile
             return AvroInvalidFile.Invalid(path, text, ex);
         }
     }
+
+    extension(IAvroFile file)
+    {
+        public bool IsValid => !file.Diagnostics.Any(d => d.Descriptor.DefaultSeverity is DiagnosticSeverity.Error);
+    }
 }

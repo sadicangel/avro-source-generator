@@ -5,8 +5,7 @@ namespace AvroSourceGenerator.Schemas;
 
 public abstract record class TopLevelSchema(
     SchemaType Type,
-    JsonElement Json,
     SchemaName SchemaName,
     string? Documentation,
     ImmutableSortedDictionary<string, JsonElement> Properties)
-    : AvroSchema(Type, CSharpName.FromSchemaName(SchemaName), SchemaName, Documentation, Properties);
+    : AvroSchema(Type, SchemaName, CSharpName.FromSchemaName(SchemaName), Documentation, Properties);

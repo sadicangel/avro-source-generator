@@ -4,23 +4,21 @@ using System.Text.Json;
 namespace AvroSourceGenerator.Schemas;
 
 public sealed record class FixedSchema(
-    JsonElement Json,
     SchemaName SchemaName,
     string? Documentation,
     ImmutableArray<string> Aliases,
     int Size,
     ImmutableSortedDictionary<string, JsonElement> Properties)
-    : NamedSchema(SchemaType.Fixed, Json, SchemaName, Documentation, Aliases, Properties)
+    : NamedSchema(SchemaType.Fixed, SchemaName, Documentation, Aliases, Properties)
 {
     public static FixedSchema CreateAsByteArray(
-        JsonElement json,
         SchemaName schemaName,
         string? documentation,
         ImmutableArray<string> aliases,
         int size,
         ImmutableSortedDictionary<string, JsonElement> properties)
     {
-        return new FixedSchema(json, schemaName, documentation, aliases, size, properties)
+        return new FixedSchema(schemaName, documentation, aliases, size, properties)
         {
             CSharpName = Bytes.CSharpName,
         };

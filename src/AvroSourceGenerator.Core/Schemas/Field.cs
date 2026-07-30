@@ -12,7 +12,7 @@ public sealed record class Field(
     ImmutableArray<string> Aliases,
     JsonElement? DefaultJson,
     object? Default,
-    int? Order,
+    string? Order,
     ImmutableSortedDictionary<string, JsonElement> Properties,
     string? Remarks)
 {
@@ -38,6 +38,11 @@ public sealed record class Field(
             writer.WritePropertyName(AvroJsonKeys.Default);
             DefaultJson.Value.WriteTo(writer);
         }
+
+        // Apache.Avro drops field order when CodeGen re-emits a schema. This is probably
+        // an upstream bug, but our generated schema text intentionally stays in sync.
+        // if (Order is not null)
+        //     writer.WriteString(AvroJsonKeys.Order, Order);
 
         foreach (var entry in Properties)
         {

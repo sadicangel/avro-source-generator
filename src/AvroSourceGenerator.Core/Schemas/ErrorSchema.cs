@@ -4,13 +4,12 @@ using System.Text.Json;
 namespace AvroSourceGenerator.Schemas;
 
 public sealed record class ErrorSchema(
-    JsonElement Json,
     SchemaName SchemaName,
     string? Documentation,
     ImmutableArray<string> Aliases,
     ImmutableArray<Field> Fields,
     ImmutableSortedDictionary<string, JsonElement> Properties)
-    : NamedSchema(SchemaType.Error, Json, SchemaName, Documentation, Aliases, Properties)
+    : NamedSchema(SchemaType.Error, SchemaName, Documentation, Aliases, Properties)
 {
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {

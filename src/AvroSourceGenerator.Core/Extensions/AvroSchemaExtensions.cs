@@ -3,10 +3,23 @@ using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Extensions;
 
-internal static class GetValueExtensions
+internal static class AvroSchemaExtensions
 {
     extension(AvroSchema schema)
     {
+        public bool ContainsTopLevelSchema()
+        {
+            return schema switch
+            {
+                TopLevelSchema => true,
+                ArraySchema array => array.ItemSchema.ContainsTopLevelSchema(),
+                MapSchema map => map.ValueSchema.ContainsTopLevelSchema(),
+                UnionSchema union => union.Schemas.Any(ContainsTopLevelSchema),
+                LogicalSchema logical => logical.UnderlyingSchema.ContainsTopLevelSchema(),
+                _ => false
+            };
+        }
+
         // TODO: This should probably be in AvroSchema hierarchy instead of being here.
         public string? GetValue(JsonElement? json)
         {

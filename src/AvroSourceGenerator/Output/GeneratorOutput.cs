@@ -58,6 +58,9 @@ internal readonly record struct GeneratorOutput(ImmutableArray<RenderedSchema> S
             {
                 switch (file)
                 {
+                    case { IsValid: false }:
+                        break;
+
                     case AvroSchemaFile schemaFile:
                         schemaRegistry.RegisterSchema(schema: schemaFile.Json);
                         break;

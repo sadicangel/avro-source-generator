@@ -1,17 +1,16 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Protocols;
 
 public sealed record class ProtocolSchema(
-    JsonElement Json,
     SchemaName SchemaName,
     string? Documentation,
     ImmutableArray<NamedSchema> Types,
     ImmutableArray<ProtocolMessage> Messages,
     ImmutableSortedDictionary<string, JsonElement> Properties)
-    : TopLevelSchema(SchemaType.Protocol, Json, SchemaName, Documentation, Properties)
+    : TopLevelSchema(SchemaType.Protocol, SchemaName, Documentation, Properties)
 {
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {

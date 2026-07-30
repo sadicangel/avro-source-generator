@@ -87,15 +87,6 @@ public sealed class SchemaRegistryFindTests
 
     private static RecordSchema CreateRecord(string name, string? @namespace) =>
         new(
-            Json: Parse(
-                $$"""
-                {
-                  "type": "record",
-                  "name": "{{name}}",
-                  "namespace": "{{@namespace}}",
-                  "fields": []
-                }
-                """),
             SchemaName: new SchemaName(name, @namespace),
             Documentation: null,
             Aliases: [],

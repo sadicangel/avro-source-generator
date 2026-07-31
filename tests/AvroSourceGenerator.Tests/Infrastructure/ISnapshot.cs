@@ -29,6 +29,9 @@ public static class SnapshotExtensions
         public static SettingsTask Protocol([StringSyntax(StringSyntaxAttribute.Json)] string protocol, ConfigureProject? configure = null, [CallerFilePath] string sourceFile = "") =>
             Files<TSnapshot>([ProjectFile.Protocol(protocol)], configure, sourceFile);
 
+        public static SettingsTask Source(string source, ConfigureProject? configure = null, [CallerFilePath] string sourceFile = "") =>
+            Files<TSnapshot>([ProjectFile.Source(source)], configure, sourceFile);
+
         public static SettingsTask Files(ImmutableArray<ProjectFile> projectFiles, ConfigureProject? configure = null, [CallerFilePath] string sourceFile = "")
         {
             var (diagnostics, documents) = Run<TSnapshot>(projectFiles, configure);

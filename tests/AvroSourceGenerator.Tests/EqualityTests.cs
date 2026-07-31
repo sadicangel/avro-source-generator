@@ -72,7 +72,7 @@ public class EqualityTests
         Assert.Equal(a, b);
     }
 
-    public static TheoryData<Type> AvroFileTypesData => new TheoryData<Type>(AvroFileTypes);
+    public static TheoryData<Type> AvroFileTypesData => new(AvroFileTypes);
 
     [Theory]
     [MemberData(nameof(AvroFileTypesData))]
@@ -133,6 +133,7 @@ file sealed class AvroFileOverride(Type avroFileType, IReadOnlyList<Type> avroFi
         var (path, text) = context.GenerateType.Type?.Name switch
         {
             "AvroSchemaFile" => (Path.ChangeExtension(context.Faker.System.FileName(), "avsc"), TestSchemas.Get("record").ToJsonString()),
+            "AvroSourceFile" => (Path.ChangeExtension(context.Faker.System.FileName(), "avdl"), TestSources.Get("record")),
             _ => (Path.ChangeExtension(context.Faker.System.FileName(), "avsc"), context.Faker.Lorem.Paragraph())
         };
         context.Instance = CreateFile.Invoke(null, [path, text])!;

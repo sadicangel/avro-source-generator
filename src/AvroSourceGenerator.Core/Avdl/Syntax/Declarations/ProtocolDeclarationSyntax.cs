@@ -13,7 +13,7 @@ public sealed record class ProtocolDeclarationSyntax(
     SyntaxList<ISchemaDeclarationSyntax> Types,
     SyntaxList<MessageDeclarationSyntax> Messages,
     SyntaxToken BraceCloseToken)
-    : IDeclarationSyntax
+    : ITopLevelDeclarationSyntax
 {
     public SyntaxKind SyntaxKind => SyntaxKind.ProtocolDeclaration;
 

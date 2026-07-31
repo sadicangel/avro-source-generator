@@ -1,3 +1,10 @@
-﻿namespace AvroSourceGenerator.Avdl.Syntax.Declarations;
+﻿using AvroSourceGenerator.Avdl.Syntax.Annotations;
 
-public interface IDeclarationSyntax : ISyntaxNode;
+namespace AvroSourceGenerator.Avdl.Syntax.Declarations;
+
+public interface IDeclarationSyntax : ISyntaxNode
+{
+    SimpleNameSyntax Name { get; }
+    SyntaxList<DocumentationSyntax> Documentation { get; }
+    SyntaxList<IAnnotationSyntax> Annotations { get; }
+}

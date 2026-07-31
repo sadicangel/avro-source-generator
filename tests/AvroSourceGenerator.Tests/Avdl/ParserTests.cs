@@ -427,6 +427,55 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void Parse_InvalidFieldStartToken_RecoversAndParsesFollowingField()
+    {
+        var tree = ParseTree("record User { , string name; }");
+
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        var field = Assert.Single(record.Fields, field => field.Name.FullName == "name");
+
+        Assert.Equal(SyntaxKind.StringType, field.Type.SyntaxKind);
+        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.UnexpectedToken);
+    }
+
+    [Fact]
+    public void Parse_ConsecutiveSyntheticTokens_ReportSingleUnexpectedTokenDiagnostic()
+    {
+        const string text = "record User { , }";
+        var tree = ParseTree(text);
+
+        var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.UnexpectedToken);
+        Assert.Equal(text.IndexOf(','), diagnostic.SourceSpan.Offset);
+    }
+
+    [Fact]
+    public void Parse_MissingTokenBeforeClosingBrace_DoesNotConsumeClosingBrace()
+    {
+        const string text = "record User { string name }";
+        var tree = ParseTree(text);
+
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        Assert.Equal("}", record.BraceCloseToken.SourceSpan.ToString());
+        Assert.Equal(text.IndexOf('}'), record.BraceCloseToken.SourceSpan.Offset);
+        Assert.Equal(1, record.BraceCloseToken.SourceSpan.Length);
+    }
+
+    [Fact]
+    public void Parse_ExtraTokenImmediatelyBeforeExpectedToken_SkipsTokenAndMatchesExpectedToken()
+    {
+        const string text = "record User { string name extra; }";
+        var tree = ParseTree(text);
+
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        var field = Assert.Single(record.Fields);
+        var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.UnexpectedToken);
+
+        Assert.Equal("name", field.Name.FullName);
+        Assert.Equal(";", field.SemicolonToken.SourceSpan.ToString());
+        Assert.Equal(text.IndexOf("extra", StringComparison.Ordinal), diagnostic.SourceSpan.Offset);
+    }
+
+    [Fact]
     public void Parse_InvalidJsonDefault_ReturnsUnexpectedJsonValueDiagnostic()
     {
         var tree = ParseTree("record User { string name = ; }");

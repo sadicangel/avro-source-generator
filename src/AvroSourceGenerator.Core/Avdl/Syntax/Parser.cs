@@ -84,9 +84,9 @@ public sealed class Parser(SourceText sourceText)
         return new ImportDirectiveSyntax(importKeyword, importTypeKeyword, importPathLiteralToken, semicolonToken);
     }
 
-    private SyntaxList<IDeclarationSyntax> ParseDeclarations()
+    private SyntaxList<ITopLevelDeclarationSyntax> ParseDeclarations()
     {
-        var declarations = ImmutableArray.CreateBuilder<IDeclarationSyntax>();
+        var declarations = ImmutableArray.CreateBuilder<ITopLevelDeclarationSyntax>();
         while (!_stream.IsAtEnd)
         {
             EnqueueMetadata();
@@ -95,13 +95,16 @@ public sealed class Parser(SourceText sourceText)
                 break;
             }
 
-            declarations.Add(ParseDeclaration());
+            using (EnsureProgress())
+            {
+                declarations.Add(ParseDeclaration());
+            }
         }
 
-        return new SyntaxList<IDeclarationSyntax>(declarations.ToImmutable());
+        return new SyntaxList<ITopLevelDeclarationSyntax>(declarations.ToImmutable());
     }
 
-    private IDeclarationSyntax ParseDeclaration()
+    private ITopLevelDeclarationSyntax ParseDeclaration()
     {
         return _stream.Current.SyntaxKind switch
         {
@@ -291,27 +294,30 @@ public sealed class Parser(SourceText sourceText)
                 break;
             }
 
-            switch (_stream.Current.SyntaxKind)
+            using (EnsureProgress())
             {
-                case SyntaxKind.ImportKeyword:
-                    ReportAndClearMisplacedMetadata("import directive");
-                    imports.Add(ParseImportDirective());
-                    break;
-                case SyntaxKind.EnumKeyword:
-                    types.Add(ParseEnumDeclaration());
-                    break;
-                case SyntaxKind.FixedKeyword:
-                    types.Add(ParseFixedDeclaration());
-                    break;
-                case SyntaxKind.RecordKeyword:
-                    types.Add(ParseRecordDeclaration());
-                    break;
-                case SyntaxKind.ErrorKeyword:
-                    types.Add(ParseErrorDeclaration());
-                    break;
-                default:
-                    messages.Add(ParseMessageDeclaration());
-                    break;
+                switch (_stream.Current.SyntaxKind)
+                {
+                    case SyntaxKind.ImportKeyword:
+                        ReportAndClearMisplacedMetadata("import directive");
+                        imports.Add(ParseImportDirective());
+                        break;
+                    case SyntaxKind.EnumKeyword:
+                        types.Add(ParseEnumDeclaration());
+                        break;
+                    case SyntaxKind.FixedKeyword:
+                        types.Add(ParseFixedDeclaration());
+                        break;
+                    case SyntaxKind.RecordKeyword:
+                        types.Add(ParseRecordDeclaration());
+                        break;
+                    case SyntaxKind.ErrorKeyword:
+                        types.Add(ParseErrorDeclaration());
+                        break;
+                    default:
+                        messages.Add(ParseMessageDeclaration());
+                        break;
+                }
             }
         }
 
@@ -332,6 +338,7 @@ public sealed class Parser(SourceText sourceText)
     private MessageDeclarationSyntax ParseMessageDeclaration()
     {
         var type = ParseType();
+        EnqueueMetadata();
         var name = ParseSimpleName();
         var (documentation, annotations) = DequeueMetadata();
         var parenthesisOpenToken = _stream.Match(SyntaxKind.ParenthesisOpenToken);
@@ -357,8 +364,9 @@ public sealed class Parser(SourceText sourceText)
     {
         var type = ParseType();
         var name = ParseSimpleName();
+        var (documentation, annotations) = DequeueMetadata();
         var defaultValue = ParseDefaultValueClause();
-        return new ParameterDeclarationSyntax(type, name, defaultValue);
+        return new ParameterDeclarationSyntax(type, name, documentation, annotations, defaultValue);
     }
 
     private OneWayClauseSyntax? ParseOneWayClause()
@@ -441,6 +449,9 @@ public sealed class Parser(SourceText sourceText)
         if (annotations.Count > 0)
         {
             type = new AnnotatedTypeSyntax(annotations, type);
+            // TODO:
+            // Do we want to emit diagnostics for annotations on named type references?
+            // The annotations should be on the declaration itself, not on the reference.
         }
 
         return type;
@@ -499,7 +510,14 @@ public sealed class Parser(SourceText sourceText)
     private SyntaxList<T> ParseList<T>(Func<T> parseNode, params ReadOnlySpan<SyntaxKind> terminators) where T : ISyntaxNode
     {
         var nodes = ImmutableArray.CreateBuilder<T>();
-        while (!_stream.IsAtEnd && !terminators.Contains(_stream.Current.SyntaxKind)) nodes.Add(parseNode());
+        while (!_stream.IsAtEnd && !terminators.Contains(_stream.Current.SyntaxKind))
+        {
+            using (EnsureProgress(terminators))
+            {
+                nodes.Add(parseNode());
+            }
+        }
+
         return new SyntaxList<T>(nodes.ToImmutable());
     }
 
@@ -530,6 +548,22 @@ public sealed class Parser(SourceText sourceText)
 
     private static string GetAnnotationName(IAnnotationSyntax annotation) =>
         annotation.AnnotationName.FullName;
+
+    private ProgressTracker EnsureProgress(ReadOnlySpan<SyntaxKind> terminators = default) => new(_stream, terminators);
+
+    private readonly ref struct ProgressTracker(SyntaxTokenStream stream, ReadOnlySpan<SyntaxKind> terminators)
+    {
+        private readonly int _startPosition = stream.Position;
+        private readonly ReadOnlySpan<SyntaxKind> _terminators = terminators;
+
+        public void Dispose()
+        {
+            if (stream.Position != _startPosition || stream.IsAtEnd || _terminators.Contains(stream.Current.SyntaxKind))
+                return;
+
+            _ = stream.Next();
+        }
+    }
 }
 
 file static class SpanExtensions

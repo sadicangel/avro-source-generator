@@ -7,7 +7,7 @@ public readonly record struct SyntaxDiagnostic(SyntaxDiagnosticCode Code, Source
 
 internal static class SyntaxDiagnosticExtensions
 {
-    private static string? GetDisplayText(SyntaxKind syntaxKind) => SyntaxFacts.GetText(syntaxKind) ?? syntaxKind.ToString();
+    private static string? GetDisplayText(SyntaxKind syntaxKind) => SyntaxFacts.GetDisplayText(syntaxKind) ?? syntaxKind.ToString();
 
     extension(SyntaxDiagnostic)
     {
@@ -32,8 +32,14 @@ internal static class SyntaxDiagnosticExtensions
         public static SyntaxDiagnostic UnterminatedVerbatimIdentifier(SourceSpan sourceSpan) =>
             new(SyntaxDiagnosticCode.UnterminatedVerbatimIdentifier, sourceSpan, "Unterminated verbatim identifier");
 
-        public static SyntaxDiagnostic UnexpectedToken(SyntaxKind expected, SyntaxToken actual) =>
-            new(SyntaxDiagnosticCode.UnexpectedToken, actual.SourceSpan, $"Unexpected token '{actual.ValueText}'. Expected '{GetDisplayText(expected)}'");
+        public static SyntaxDiagnostic UnexpectedToken(SyntaxKind expected, SyntaxToken actual)
+        {
+            var actualValueText = actual.ValueText;
+            var actualDisplayText = SyntaxFacts.GetDisplayText(actual.SyntaxKind);
+            return actualDisplayText is not null && actualDisplayText != actualValueText
+                ? new SyntaxDiagnostic(SyntaxDiagnosticCode.UnexpectedToken, actual.SourceSpan, $"Unexpected token '{actualValueText}' ({actualDisplayText}). Expected '{GetDisplayText(expected)}'")
+                : new SyntaxDiagnostic(SyntaxDiagnosticCode.UnexpectedToken, actual.SourceSpan, $"Unexpected token '{actualValueText}'. Expected '{GetDisplayText(expected)}'");
+        }
 
         public static SyntaxDiagnostic UnexpectedJsonValue(SyntaxToken actual) =>
             new(SyntaxDiagnosticCode.UnexpectedJsonValue, actual.SourceSpan, $"Unexpected JSON value token '{actual.ValueText}'");

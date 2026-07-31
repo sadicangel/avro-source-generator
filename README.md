@@ -7,7 +7,7 @@
 
 ![Avro Source Generator](https://raw.githubusercontent.com/sadicangel/avro-source-generator/refs/heads/main/icon.png)
 
-**Avro Source Generator** is a modern .NET source generator that produces strongly typed C# models from [Avro](https://avro.apache.org/) schema files (`.avsc`).  
+**Avro Source Generator** is a modern .NET source generator that produces strongly typed C# models from [Avro](https://avro.apache.org/) schema files (`.avsc`).
 It’s designed to be **fast**, **incremental**, and **compatible** with Apache Avro.
 
 Generated code takes advantage of modern C# language features, including **nullable reference types**, **init-only and required properties**, and **partial records or classes** — ensuring clean, idiomatic C# output.
@@ -67,7 +67,7 @@ Add a schema file under `schemas/`, e.g. `schemas/user.avsc`:
 ```
 
 > [!NOTE]  
-> Avro schema files must have the `.avsc` extension.
+> Avro JSON protocol files (`.avpr`) are also accepted as `AdditionalFiles`.
 
 Build your project — the generator will create C# types matching your schemas.
 
@@ -257,8 +257,8 @@ Supported values:
 
 ### Duplicate Resolution
 
-By default, the generator **fails on duplicate schema outputs**.  
-A duplicate occurs when **multiple `.avsc` files would generate the same fully qualified name**.
+By default, the generator **fails on duplicate schema outputs**.
+A duplicate occurs when **multiple Avro input files would generate the same fully qualified name**.
 
 This behavior can be configured using the following MSBuild property:
 
@@ -281,7 +281,7 @@ Supported values:
 
 By default, the generator follows Avro's schema resolution rules and requires named schemas to be defined before they are referenced.
 
-If your project keeps related schemas in separate `.avsc` files, you can defer reference checks until all schema files have been registered:
+If your project keeps related schemas in separate Avro input files, you can defer reference checks until all supported inputs have been registered:
 
 ```xml
 <PropertyGroup>
@@ -291,7 +291,7 @@ If your project keeps related schemas in separate `.avsc` files, you can defer r
 
 Supported values:
 - `Strict` (default) — unresolved references emit a diagnostic as soon as the schema is read
-- `Deferred` — unresolved references are collected and resolved after all `.avsc` inputs are read
+- `Deferred` — unresolved references are collected and resolved after all supported Avro inputs are read
 
 ---
 

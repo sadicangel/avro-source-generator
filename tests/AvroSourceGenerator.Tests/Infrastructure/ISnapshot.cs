@@ -49,6 +49,9 @@ public static class SnapshotExtensions
         public static SettingsTask Diagnostic([StringSyntax(StringSyntaxAttribute.Json)] string schema, ConfigureProject? configure = null, [CallerFilePath] string sourceFile = "") =>
             Diagnostic<TSnapshot>([ProjectFile.Schema(schema)], configure, sourceFile);
 
+        public static SettingsTask Diagnostic(ProjectFile file, ConfigureProject? configure = null, [CallerFilePath] string sourceFile = "") =>
+            Diagnostic<TSnapshot>([file], configure, sourceFile);
+
         public static SettingsTask Diagnostic(ImmutableArray<ProjectFile> projectFiles, ConfigureProject? configure = null, [CallerFilePath] string sourceFile = "")
         {
             var (diagnostics, _) = Run<TSnapshot>(projectFiles, configure);

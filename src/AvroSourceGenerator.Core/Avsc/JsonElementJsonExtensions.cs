@@ -43,6 +43,18 @@ internal static class JsonElementJsonExtensions
         public string? GetOptionalString(string propertyName) =>
             schema.GetOptionalProperty(propertyName)?.ToOptionalString();
 
+        public bool? GetNullableBoolean(string propertyName)
+        {
+            var maybeJson = schema.GetNullableProperty(propertyName);
+            if (maybeJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }) return null;
+
+            var json = maybeJson.Value;
+            if (json.ValueKind is not JsonValueKind.True and not JsonValueKind.False)
+                throw new InvalidSchemaException($"'{propertyName}' property must be a boolean (found '{json}') in schema: {schema.GetRawText()}");
+
+            return json.GetBoolean();
+        }
+
         public JsonElement.ArrayEnumerator GetRequiredArray(string propertyName)
         {
             var json = schema.GetRequiredProperty(propertyName);

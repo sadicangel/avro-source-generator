@@ -333,7 +333,13 @@ public static class SchemaRegistrySchemaExtensions
             var requestParameters = schemaRegistry.ProtocolRequestParameters(message.Value, containingNamespace);
             var response = schemaRegistry.ProtocolResponse(message.Value.GetRequiredProperty(AvroJsonKeys.Response), containingNamespace);
             var errors = schemaRegistry.ProtocolErrors(message.Value.GetNullableArray(AvroJsonKeys.Errors), containingNamespace);
-            return new ProtocolMessage(methodName, documentation, requestParameters, response, errors);
+            var oneWay = message.Value.GetNullableBoolean(AvroJsonKeys.OneWay);
+            if (oneWay is true && (response.Type.Type is not SchemaType.Null || errors.Length > 0))
+            {
+                throw new InvalidSchemaException($"One-way protocol message '{message.Name}' must have a null response and no errors in schema: {message.Value.GetRawText()}");
+            }
+
+            return new ProtocolMessage(methodName, documentation, requestParameters, response, errors, oneWay);
         }
 
         private ImmutableArray<ProtocolRequestParameter> ProtocolRequestParameters(JsonElement schema, string? containingNamespace)

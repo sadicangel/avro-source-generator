@@ -21,4 +21,5 @@ internal static class AvroJsonKeys
     public const string Request = "request";
     public const string Response = "response";
     public const string Errors = "errors";
+    public const string OneWay = "one-way";
 }

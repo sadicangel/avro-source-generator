@@ -56,11 +56,12 @@ public sealed class FullNameTests
     [InlineData(".Name")]
     [InlineData("Example..Name")]
     public Task Diagnostic(string name) => Snapshot.Diagnostic(
-        $$"""
-        {
-          "type": "record",
-          "name": "{{name}}",
-          "fields": []
-        }
-        """);
+        ProjectFile.Schema(
+            $$"""
+            {
+              "type": "record",
+              "name": "{{name}}",
+              "fields": []
+            }
+            """));
 }

@@ -17,10 +17,10 @@ public sealed class ProtocolNameTests
     {
         var schema = TestSchemas.Get("protocol").With("protocol", JsonNode.Parse(json)!).ToString();
 
-        return Snapshot.Diagnostic([ProjectFile.Protocol(schema)]);
+        return Snapshot.Diagnostic(ProjectFile.Protocol(schema));
     }
 
-    public static TheoryData<string> ValidNames() => new TheoryData<string>("PascalCase", "snake_case", "object");
+    public static TheoryData<string> ValidNames() => new("PascalCase", "snake_case", "object");
 
-    public static TheoryData<string> InvalidNames() => new TheoryData<string>("null", "\"\"", "[]");
+    public static TheoryData<string> InvalidNames() => new("null", "\"\"", "[]");
 }

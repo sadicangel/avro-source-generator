@@ -17,7 +17,7 @@ public sealed class FixedDocumentationTests
     {
         var schema = TestSchemas.Get("fixed").With("doc", JsonNode.Parse(json)!).ToString();
 
-        return Snapshot.Diagnostic(schema);
+        return Snapshot.Diagnostic(ProjectFile.Schema(schema));
     }
 
     public static TheoryData<string> ValidDocumentationSchemaPairs() => new TheoryData<string>(null!, "", "Single line comment", "Multi\nline\ncomment");

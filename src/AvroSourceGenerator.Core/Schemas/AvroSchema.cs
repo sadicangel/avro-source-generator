@@ -12,7 +12,7 @@ public abstract record class AvroSchema(
     ImmutableSortedDictionary<string, JsonElement> Properties)
 {
     // ReSharper disable once UnusedMember.Global
-    public bool RequiresNullability => Type is SchemaType.Record or SchemaType.Error;
+    public bool RequiresNullability => Type is SchemaType.Record or SchemaType.Error or SchemaType.Protocol;
 
     public sealed override string ToString() => CSharpName.FullName;
 

@@ -9,7 +9,8 @@ public sealed record class ProtocolMessage(
     string? Documentation,
     ImmutableArray<ProtocolRequestParameter> RequestParameters,
     ProtocolResponse Response,
-    ImmutableArray<AvroSchema> Errors)
+    ImmutableArray<AvroSchema> Errors,
+    bool? OneWay)
 {
     public void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
@@ -29,6 +30,11 @@ public sealed record class ProtocolMessage(
         writer.WriteEndArray();
         writer.WritePropertyName(AvroJsonKeys.Response);
         Response.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
+        if (OneWay is { } oneWay)
+        {
+            writer.WriteBoolean(AvroJsonKeys.OneWay, oneWay);
+        }
+
         if (Errors.Length > 0)
         {
             writer.WriteStartArray(AvroJsonKeys.Errors);

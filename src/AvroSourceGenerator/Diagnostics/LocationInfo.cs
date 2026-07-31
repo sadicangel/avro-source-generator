@@ -1,6 +1,8 @@
 ﻿using System.Text.Json;
+using AvroSourceGenerator.Avdl.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using SourceText = Microsoft.CodeAnalysis.Text.SourceText;
 
 namespace AvroSourceGenerator.Diagnostics;
 
@@ -61,6 +63,28 @@ internal readonly record struct LocationInfo(string FilePath, TextSpan TextSpan,
         var lineSpan = sourceText.Lines.GetLinePositionSpan(span);
 
         return new LocationInfo(path, span, lineSpan);
+    }
+
+    public static LocationInfo FromSourceSpan(SourceSpan span)
+    {
+        var textSpan = new TextSpan(span.Offset, span.Length);
+        var lineSpan = MapLinePositionSpan(span);
+        return new LocationInfo(span.SourceText.Path, textSpan, lineSpan);
+
+        static LinePositionSpan MapLinePositionSpan(SourceSpan span)
+        {
+            var startIndex = span.SourceText.GetLineIndex(span.Offset);
+            var startLine = span.SourceText.Lines[startIndex];
+            var startCharacter = span.Offset - startLine.SourceSpan.Offset;
+            var startPosition = new LinePosition(startIndex, startCharacter);
+
+            var endIndex = span.SourceText.GetLineIndex(span.Offset + span.Length);
+            var endLine = span.SourceText.Lines[endIndex];
+            var endCharacter = span.Offset + span.Length - endLine.SourceSpan.Offset;
+            var endPosition = new LinePosition(endIndex, endCharacter);
+
+            return new LinePositionSpan(startPosition, endPosition);
+        }
     }
 
     private Location ToLocation() => string.IsNullOrWhiteSpace(FilePath) ? Location.None : Location.Create(FilePath, TextSpan, LineSpan);

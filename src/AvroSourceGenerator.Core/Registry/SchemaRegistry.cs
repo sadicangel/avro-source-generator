@@ -73,7 +73,7 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
             return new AvroSchemaReference(_recursionStack[index]);
 
         if (_stagedSchemas.TryGetValue(schemaName, out var stagedSchema) && stagedSchema is NamedSchema)
-            return new AvroSchemaReference(stagedSchema.SchemaName);
+            return new AvroSchemaReference(stagedSchema.SchemaName, stagedSchema.CSharpName);
 
         if (_stagedReferences.Contains(schemaName))
             return new AvroSchemaReference(schemaName);
@@ -81,9 +81,26 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
         return null;
     }
 
-    public RegisterScope EnterRegisterScope() => new RegisterScope(_stagedSchemas, _stagedReferences, _storedSchemas, _missingReferences);
+    public AvroSchema? Resolve(SchemaName schemaName)
+    {
+        // TODO: Isn't this an issue for types that have names that collide with primitive types? Do we need to support that?
+        return schemaName.FullName switch
+        {
+            AvroTypeNames.Null => AvroSchema.Object,
+            AvroTypeNames.Boolean => AvroSchema.Boolean,
+            AvroTypeNames.Int => AvroSchema.Int,
+            AvroTypeNames.Long => AvroSchema.Long,
+            AvroTypeNames.Float => AvroSchema.Float,
+            AvroTypeNames.Double => AvroSchema.Double,
+            AvroTypeNames.Bytes => AvroSchema.Bytes,
+            AvroTypeNames.String => AvroSchema.String,
+            _ => _stagedSchemas.TryGetValue(schemaName, out var stagedSchema) ? stagedSchema : null
+        };
+    }
 
-    public RecursionScope EnterRecursionScope(SchemaName schemaName) => new RecursionScope(_recursionStack, schemaName);
+    public RegisterScope EnterRegisterScope() => new(_stagedSchemas, _stagedReferences, _storedSchemas, _missingReferences);
+
+    public RecursionScope EnterRecursionScope(SchemaName schemaName) => new(_recursionStack, schemaName);
 
     public readonly struct RegisterScope : IDisposable
     {

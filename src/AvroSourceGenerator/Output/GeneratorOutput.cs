@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
@@ -58,6 +59,7 @@ internal readonly record struct GeneratorOutput(ImmutableArray<RenderedSchema> S
             {
                 switch (file)
                 {
+                    case AvroInvalidFile:
                     case { IsValid: false }:
                         break;
 
@@ -65,7 +67,8 @@ internal readonly record struct GeneratorOutput(ImmutableArray<RenderedSchema> S
                         schemaRegistry.RegisterSchema(schema: schemaFile.Json);
                         break;
 
-                    case AvroInvalidFile:
+                    case AvroSourceFile sourceFile:
+                        schemaRegistry.RegisterSource(syntaxTree: sourceFile.SyntaxTree);
                         break;
 
                     default:
@@ -85,6 +88,10 @@ internal readonly record struct GeneratorOutput(ImmutableArray<RenderedSchema> S
             catch (MissingReferenceException ex)
             {
                 diagnostics = diagnostics.Add(MissingReferenceDiagnostic.Create(LocationInfo.FromSourceFile(file.Path, file.Text), ex.MissingReferences));
+            }
+            catch (InvalidSourceException ex)
+            {
+                diagnostics = diagnostics.Add(InvalidSyntaxDiagnostic.Create(LocationInfo.FromSourceSpan(ex.SourceSpan), ex.Message));
             }
             catch (InvalidSchemaException ex)
             {

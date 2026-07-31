@@ -1,0 +1,14 @@
+{
+  Location: hbZLgMCOL8DyJ_VK6KfKhulyZhA.avdl: (1,4)-(1,10),
+  Message: The provided Avro IDL source is invalid: Imports are not yet supported in Avro IDL files.,
+  Severity: Error,
+  Descriptor: {
+    Id: AVROSG1000,
+    Title: Invalid Avro IDL,
+    Description: The Avro IDL source contains syntax or source-level validation errors. Fix the IDL definition.,
+    MessageFormat: The provided Avro IDL source is invalid: {0},
+    Category: Compiler,
+    DefaultSeverity: Error,
+    IsEnabledByDefault: true
+  }
+}

@@ -6,7 +6,7 @@ namespace AvroSourceGenerator.Inputs;
 
 internal sealed record class AvroSchemaFile(string Path, string Text) : IAvroFile
 {
-    public JsonElement Json { get; init; } = ParseJson(Text);
+    public JsonElement Json { get; } = ParseJson(Text);
 
     public ImmutableArray<DiagnosticInfo> Diagnostics => [];
 

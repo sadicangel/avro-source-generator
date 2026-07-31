@@ -4,8 +4,10 @@ public sealed class ProtocolReferenceTests
 {
     [Fact]
     public Task Diagnostic() => Snapshot.Diagnostic(
-        """
-        {
+    [
+        ProjectFile.Protocol(
+            """
+            {
             "protocol": "RpcProtocol",
             "namespace": "SchemaNamespace",
             "types": [],
@@ -15,6 +17,7 @@ public sealed class ProtocolReferenceTests
                     "response": "MissingResponse"
                 }
             }
-        }
-        """);
+            }
+            """)
+    ]);
 }

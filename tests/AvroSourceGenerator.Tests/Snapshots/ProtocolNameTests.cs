@@ -8,7 +8,7 @@ public sealed class ProtocolNameTests
     {
         var schema = TestSchemas.Get("protocol").With("protocol", name).ToString();
 
-        return Snapshot.Schema(schema);
+        return Snapshot.Protocol(schema);
     }
 
     [Theory]
@@ -17,7 +17,7 @@ public sealed class ProtocolNameTests
     {
         var schema = TestSchemas.Get("protocol").With("protocol", JsonNode.Parse(json)!).ToString();
 
-        return Snapshot.Diagnostic(schema);
+        return Snapshot.Diagnostic([ProjectFile.Protocol(schema)]);
     }
 
     public static TheoryData<string> ValidNames() => new TheoryData<string>("PascalCase", "snake_case", "object");

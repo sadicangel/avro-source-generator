@@ -15,7 +15,8 @@ internal interface IAvroFile
 internal static class AvroFile
 {
     public static bool IsAvroFile(AdditionalText text) =>
-        text.Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase) /* ||
+        text.Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase) ||
+        text.Path.EndsWith(".avpr", StringComparison.OrdinalIgnoreCase) /* ||
         text.Path.EndsWith(".avdl", StringComparison.OrdinalIgnoreCase) */;
 
     public static IAvroFile FromAdditionalText(AdditionalText additionalText, CancellationToken cancellationToken)
@@ -38,6 +39,7 @@ internal static class AvroFile
             return path switch
             {
                 _ when path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase) => new AvroSchemaFile(path, text!),
+                _ when path.EndsWith(".avpr", StringComparison.OrdinalIgnoreCase) => new AvroSchemaFile(path, text!),
                 // _ when path.EndsWith(".avdl", StringComparison.OrdinalIgnoreCase) => new AvroSourceFile(path, text!),
                 _ => throw new InvalidOperationException("Unreachable: Unsupported Avro file type."),
             };

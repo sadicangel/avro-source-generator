@@ -12,4 +12,5 @@ public readonly record struct ProjectFile(string Content, string Extension)
 
     public static ProjectFile CSharp(string content) => new ProjectFile(content, "cs");
     public static ProjectFile Schema(string content) => new ProjectFile(content, "avsc");
+    public static ProjectFile Protocol(string content) => new ProjectFile(content, "avpr");
 }

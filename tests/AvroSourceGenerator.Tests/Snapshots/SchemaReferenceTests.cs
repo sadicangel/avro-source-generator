@@ -44,17 +44,18 @@ public sealed class SchemaReferenceTests
 
     [Fact]
     public Task Diagnostic() => Snapshot.Diagnostic(
-        """
-        {
-            "type": "record",
-            "name": "MissingReference",
-            "doc": "This record contains a field that references a type that is not defined in the schema.",
-            "fields": [
-                {
-                    "name": "MissingField",
-                    "type": "This.Type.Was.Not.Defined.In.The.Schema"
-                }
-            ]
-        }
-        """);
+        ProjectFile.Schema(
+            """
+            {
+                "type": "record",
+                "name": "MissingReference",
+                "doc": "This record contains a field that references a type that is not defined in the schema.",
+                "fields": [
+                    {
+                        "name": "MissingField",
+                        "type": "This.Type.Was.Not.Defined.In.The.Schema"
+                    }
+                ]
+            }
+            """));
 }

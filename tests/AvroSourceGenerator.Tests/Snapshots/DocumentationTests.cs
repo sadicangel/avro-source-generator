@@ -17,10 +17,10 @@ public sealed class DocumentationTests
     {
         var schema = TestSchemas.Get(schemaType).With("doc", JsonNode.Parse(json)!).ToString();
 
-        return Snapshot.Diagnostic(schema);
+        return Snapshot.Diagnostic(ProjectFile.Schema(schema));
     }
 
-    public static MatrixTheoryData<string, string> ValidDocumentationSchemaPairs() => new MatrixTheoryData<string, string>([null!, "", "Single line comment", "Multi\nline\ncomment"], ["enum", "error", "record", "protocol"]);
+    public static MatrixTheoryData<string, string> ValidDocumentationSchemaPairs() => new([null!, "", "Single line comment", "Multi\nline\ncomment"], ["enum", "error", "record", "protocol"]);
 
-    public static MatrixTheoryData<string, string> InvalidDocumentationSchemaPairs() => new MatrixTheoryData<string, string>(["[]"], ["enum", "error", "record", "protocol"]);
+    public static MatrixTheoryData<string, string> InvalidDocumentationSchemaPairs() => new(["[]"], ["enum", "error", "record", "protocol"]);
 }

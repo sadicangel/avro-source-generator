@@ -7,7 +7,7 @@
 
 ![Avro Source Generator](https://raw.githubusercontent.com/sadicangel/avro-source-generator/refs/heads/main/icon.png)
 
-**Avro Source Generator** is a modern .NET source generator that produces strongly typed C# models from [Avro](https://avro.apache.org/) schema files (`.avsc`).
+**Avro Source Generator** is a modern .NET source generator that produces strongly typed C# models from [Avro](https://avro.apache.org/) schema, protocol, and IDL files (`.avsc`, `.avpr`, and `.avdl`).
 It’s designed to be **fast**, **incremental**, and **compatible** with Apache Avro.
 
 Generated code takes advantage of modern C# language features, including **nullable reference types**, **init-only and required properties**, and **partial records or classes** — ensuring clean, idiomatic C# output.
@@ -21,7 +21,7 @@ Generated code takes advantage of modern C# language features, including **nulla
   - [Apache.Avro](https://www.nuget.org/packages/Apache.Avro) — official Avro implementation for C#
   - [Chr.Avro](https://www.nuget.org/packages/Chr.Avro) — designed to serve as a flexible alternative to the Apache implementation
 
-> [!NOTE]  
+> [!NOTE]
 > You can use the generator without an Avro library, but library-specific features (e.g., `ISpecificRecord`) won’t be emitted.
 
 ---
@@ -43,11 +43,13 @@ Mark it as a build-only dependency in your `.csproj` file:
                   ExcludeAssets="runtime" />
 ```
 
-Include your `.avsc` schema files as `AdditionalFiles`:
+Include your `.avsc` schema files, `.avpr` protocol files, and `.avdl` IDL files as `AdditionalFiles`:
 
 ```xml
 <ItemGroup>
   <AdditionalFiles Include="schemas/*.avsc" />
+  <AdditionalFiles Include="schemas/*.avpr" />
+  <AdditionalFiles Include="schemas/*.avdl" />
 </ItemGroup>
 ```
 
@@ -66,10 +68,26 @@ Add a schema file under `schemas/`, e.g. `schemas/user.avsc`:
 }
 ```
 
-> [!NOTE]  
-> Avro JSON protocol files (`.avpr`) are also accepted as `AdditionalFiles`.
+Or add an Avro IDL file under `schemas/`, e.g. `schemas/user.avdl`:
 
-Build your project — the generator will create C# types matching your schemas.
+```avdl
+namespace example;
+
+/** Example user */
+record UserFromIdl {
+    string Name;
+    string? Email = null;
+    timestamp_ms CreatedAt;
+}
+```
+
+> [!NOTE]
+> Avro JSON schema files conventionally use `.avsc`, Avro JSON protocol files use `.avpr`, and Avro IDL files use `.avdl`.
+
+> [!NOTE]
+> AVDL imports are parsed but not supported yet.
+
+Build your project — the generator will create C# types matching your schemas and IDL definitions.
 
 ---
 
@@ -200,14 +218,14 @@ By default, types are generated as `record` when possible. To use `class` instea
 </PropertyGroup>
 ```
 
-> [!NOTE]  
+> [!NOTE]
 > Some schema kinds (e.g., `fixed`, `error` for `Apache.Avro`) require classes due to inheritance constraints.
 
 ---
 
 ### Language Features
 
-By default, the generator matches the consuming project’s C# version.  
+By default, the generator matches the consuming project’s C# version.
 You can target an older version for broader compatibility:
 
 ```xml
@@ -218,7 +236,7 @@ You can target an older version for broader compatibility:
 
 This disables newer features such as records or nullable reference types.
 
-Supported values are `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, `CSharp12`, `CSharp13`. 
+Supported values are `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, `CSharp12`, `CSharp13`.
 
 ---
 
@@ -257,8 +275,8 @@ Supported values:
 
 ### Duplicate Resolution
 
-By default, the generator **fails on duplicate schema outputs**.
-A duplicate occurs when **multiple Avro input files would generate the same fully qualified name**.
+By default, the generator **fails on duplicate generated outputs**.
+A duplicate occurs when **multiple Avro input files (`.avsc`, `.avpr`, or `.avdl`) would generate the same fully qualified name**.
 
 This behavior can be configured using the following MSBuild property:
 
@@ -272,7 +290,7 @@ Supported values:
 - `Ignore` — Allows duplicates and selects **one schema arbitrarily**, ignoring the rest.
 
 
-> [!Warning]  
+> [!Warning]
 > **Ignore** is nondeterministic and should only be used when duplicate outputs are intentional and safe.
 
 ---
@@ -291,13 +309,13 @@ If your project keeps related schemas in separate Avro input files, you can defe
 
 Supported values:
 - `Strict` (default) — unresolved references emit a diagnostic as soon as the schema is read
-- `Deferred` — unresolved references are collected and resolved after all supported Avro inputs are read
+- `Deferred` — unresolved references are collected and resolved after all `.avsc`, `.avpr`, and `.avdl` inputs are read
 
 ---
 
 ## Contributing
 
-Contributions are welcome!  
+Contributions are welcome!
 If you encounter bugs, want to propose features, or improve docs, please open an issue or submit a pull request on **GitHub**.
 
 ---

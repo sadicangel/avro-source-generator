@@ -35,7 +35,7 @@ public sealed class FixedDocumentationTests
                     }
                 ]).ToString();
 
-        return Snapshot.Diagnostic(schema);
+        return Snapshot.Diagnostic(ProjectFile.Schema(schema));
     }
 
     public static TheoryData<string> ValidDocumentationSchemaPairs() => new TheoryData<string>(null!, "", "Single line comment", "Multi\nline\ncomment");

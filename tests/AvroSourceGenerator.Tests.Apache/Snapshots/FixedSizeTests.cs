@@ -17,7 +17,7 @@ public sealed class FixedSizeTests
     {
         var schema = TestSchemas.Get("fixed").With("size", JsonNode.Parse(json)!).ToString();
 
-        return Snapshot.Diagnostic(schema);
+        return Snapshot.Diagnostic(ProjectFile.Schema(schema));
     }
 
     public static TheoryData<int> ValidSizes() => new TheoryData<int>(32);

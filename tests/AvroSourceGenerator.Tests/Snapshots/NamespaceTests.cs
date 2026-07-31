@@ -17,10 +17,10 @@ public sealed class NamespaceTests
     {
         var schema = TestSchemas.Get(schemaType).With("namespace", JsonNode.Parse(json)!).ToString();
 
-        return Snapshot.Diagnostic(schema);
+        return Snapshot.Diagnostic(ProjectFile.Schema(schema));
     }
 
-    public static MatrixTheoryData<string, string> ValidNamespaceSchemaPairs() => new MatrixTheoryData<string, string>([null!, "", "PascalCase.snake_case.object"], ["enum", "error", "record", "protocol"]);
+    public static MatrixTheoryData<string, string> ValidNamespaceSchemaPairs() => new([null!, "", "PascalCase.snake_case.object"], ["enum", "error", "record", "protocol"]);
 
-    public static MatrixTheoryData<string, string> InvalidNamespaceSchemaPairs() => new MatrixTheoryData<string, string>(["[]"], ["enum", "error", "record", "protocol"]);
+    public static MatrixTheoryData<string, string> InvalidNamespaceSchemaPairs() => new(["[]"], ["enum", "error", "record", "protocol"]);
 }

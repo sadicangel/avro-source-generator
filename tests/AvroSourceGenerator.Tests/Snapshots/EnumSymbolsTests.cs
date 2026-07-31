@@ -17,10 +17,10 @@ public class EnumSymbolsTests
     {
         var schema = TestSchemas.Get("enum").With("symbols", JsonNode.Parse(json)!).ToString();
 
-        return Snapshot.Diagnostic(schema);
+        return Snapshot.Diagnostic(ProjectFile.Schema(schema));
     }
 
-    public static TheoryData<string[]> ValidSymbols() => new TheoryData<string[]>([], ["A", "B"]);
+    public static TheoryData<string[]> ValidSymbols() => new([], ["A", "B"]);
 
-    public static TheoryData<string> InvalidSymbols() => new TheoryData<string>("null", "{}");
+    public static TheoryData<string> InvalidSymbols() => new("null", "{}");
 }

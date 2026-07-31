@@ -17,7 +17,7 @@ public sealed class FixedNameTests
     {
         var schema = TestSchemas.Get("fixed").With("name", JsonNode.Parse(json)!).ToString();
 
-        return Snapshot.Diagnostic(schema);
+        return Snapshot.Diagnostic(ProjectFile.Schema(schema));
     }
 
     public static TheoryData<string> ValidNameSchemaPairs() => new TheoryData<string>("PascalCase", "snake_case", "object");

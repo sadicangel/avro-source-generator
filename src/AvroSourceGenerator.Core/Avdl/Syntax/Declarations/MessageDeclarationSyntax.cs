@@ -1,4 +1,4 @@
-using AvroSourceGenerator.Avdl.Syntax.Annotations;
+﻿using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Types;
 
 namespace AvroSourceGenerator.Avdl.Syntax.Declarations;
@@ -14,7 +14,7 @@ public sealed record class MessageDeclarationSyntax(
     OneWayClauseSyntax? OneWayClause,
     ThrowsErrorClauseSyntax? ThrowsErrorClause,
     SyntaxToken SemicolonToken)
-    : ISyntaxNode
+    : IDeclarationSyntax
 {
     public SyntaxKind SyntaxKind => SyntaxKind.MessageDeclaration;
 

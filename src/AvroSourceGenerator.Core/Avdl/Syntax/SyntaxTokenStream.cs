@@ -12,6 +12,7 @@ internal sealed class SyntaxTokenStream
     private readonly SourceText _sourceText;
     private readonly ImmutableArray<SyntaxToken> _tokens;
     private readonly List<SyntaxDiagnostic> _diagnostics = [];
+    private bool _lastTokenWasSynthetic = false;
 
     public SyntaxTokenStream(SourceText sourceText)
     {
@@ -40,21 +41,66 @@ internal sealed class SyntaxTokenStream
             Next();
         }
 
-        if (Current.SyntaxKind != syntaxKind)
-            return CreateSynthetic(syntaxKind);
+        if (Current.SyntaxKind == syntaxKind)
+        {
+            return Next();
+        }
 
-        return Next();
+        if (CanSkipCurrentToMatch(syntaxKind))
+        {
+            ReportUnexpectedToken(syntaxKind, Current);
+            _ = Next();
+            return Next();
+        }
+
+        return CreateSynthetic(syntaxKind);
     }
 
     private SyntaxToken CreateSynthetic(SyntaxKind expectedSyntaxKind)
     {
-        _diagnostics.Add(SyntaxDiagnostic.UnexpectedToken(expectedSyntaxKind, Current));
+        ReportUnexpectedToken(expectedSyntaxKind, Current);
+        _lastTokenWasSynthetic = true;
         return new SyntaxToken(expectedSyntaxKind, new SourceSpan(_sourceText, Current.SourceSpan.Offset, 0));
     }
 
+    private void ReportUnexpectedToken(SyntaxKind expectedSyntaxKind, SyntaxToken actual)
+    {
+        if (!_lastTokenWasSynthetic)
+            _diagnostics.Add(SyntaxDiagnostic.UnexpectedToken(expectedSyntaxKind, actual));
+    }
+
+    private bool CanSkipCurrentToMatch(SyntaxKind syntaxKind) =>
+        !IsAtEnd
+        && Peek(1).SyntaxKind == syntaxKind
+        && !IsStructuralRecoveryAnchor(Current.SyntaxKind);
+
+    private static bool IsStructuralRecoveryAnchor(SyntaxKind syntaxKind) =>
+        syntaxKind is
+            SyntaxKind.EofToken
+            or SyntaxKind.BraceOpenToken
+            or SyntaxKind.BraceCloseToken
+            or SyntaxKind.ParenthesisOpenToken
+            or SyntaxKind.ParenthesisCloseToken
+            or SyntaxKind.BracketOpenToken
+            or SyntaxKind.BracketCloseToken
+            or SyntaxKind.LessThanToken
+            or SyntaxKind.GreaterThanToken
+            or SyntaxKind.AtSignToken
+            or SyntaxKind.CommaToken
+            or SyntaxKind.DotToken
+            or SyntaxKind.ColonToken
+            or SyntaxKind.SemicolonToken
+            or SyntaxKind.EqualsToken
+            or SyntaxKind.QuestionMarkToken;
+
     public SyntaxToken Peek(int offset = 0) => Position + offset < _tokens.Length ? _tokens[Position + offset] : _tokens[^1];
 
-    public SyntaxToken Next() => Position < _tokens.Length ? _tokens[Position++] : _tokens[^1];
+    public SyntaxToken Next()
+    {
+        var token = Position < _tokens.Length ? _tokens[Position++] : _tokens[^1];
+        _lastTokenWasSynthetic = false;
+        return token;
+    }
 
     public IEnumerable<SyntaxToken> GetTokens(int index = 0, int count = -1)
     {

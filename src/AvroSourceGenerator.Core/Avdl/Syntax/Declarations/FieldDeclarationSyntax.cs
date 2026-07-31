@@ -10,7 +10,7 @@ public sealed record class FieldDeclarationSyntax(
     SyntaxList<IAnnotationSyntax> Annotations,
     DefaultValueClauseSyntax? DefaultValueClause,
     SyntaxToken SemicolonToken)
-    : ISyntaxNode
+    : IDeclarationSyntax
 {
     public SyntaxKind SyntaxKind => SyntaxKind.FieldDeclaration;
 

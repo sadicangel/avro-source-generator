@@ -424,8 +424,8 @@ public static class SchemaRegistrySourceExtensions
             var requestParameters = schemaRegistry.ProtocolRequestParameters(syntax.Parameters, containingNamespace);
             var response = schemaRegistry.ProtocolResponse(syntax.Type, containingNamespace);
             var errors = schemaRegistry.ProtocolErrors(syntax.ThrowsErrorClause, containingNamespace);
-            var oneWay = syntax.OneWayClause is not null;
-            if (oneWay && (response.Type.Type is not SchemaType.Null || errors.Length > 0))
+            var oneWay = syntax.OneWayClause is not null ? true : default(bool?);
+            if (oneWay is true && (response.Type.Type is not SchemaType.Null || errors.Length > 0))
             {
                 throw new InvalidSourceException($"One-way protocol message '{syntax.Name.FullName}' must have a null response and no errors.", syntax.OneWayClause!.OneWayKeyword.SourceSpan);
             }

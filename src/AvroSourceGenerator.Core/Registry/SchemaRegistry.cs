@@ -47,6 +47,45 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
 
     public void AddReference(SchemaName schemaName) => _stagedReferences.Add(schemaName);
 
+    public AvroSchema ResolveFieldType(
+        AvroSchema fieldType,
+        string fieldName,
+        SchemaName containingSchemaName,
+        out AvroSchema underlyingType,
+        out bool isNullable,
+        out string? remarks)
+    {
+        underlyingType = fieldType;
+        isNullable = false;
+        remarks = null;
+
+        switch (fieldType)
+        {
+            case UnionSchema union:
+                if (union.SupportsVariant())
+                {
+                    var variant = new VariantSchema(fieldName, containingSchemaName, union.Schemas);
+                    // If a variant with the same name already exists, it has the same set of types, so we can just reuse it.
+                    if (!Schemas.ContainsKey(variant.SchemaName))
+                        Register(variant);
+
+                    remarks = variant.Documentation;
+                    union = union.WithVariant(variant);
+                }
+
+                isNullable = union.IsNullable;
+                underlyingType = union.UnderlyingSchema;
+                return union;
+
+            case FixedSchema @fixed when Options.TargetProfile is not TargetProfile.Apache:
+                remarks = @fixed.Documentation;
+                return fieldType;
+
+            default:
+                return fieldType;
+        }
+    }
+
     public ImmutableArray<SchemaName> GetMissingReferences() => [.. _missingReferences];
 
     public AvroSchema? Find(SchemaName schemaName, string? containingNamespace)

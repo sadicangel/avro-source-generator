@@ -258,37 +258,7 @@ public static class SchemaRegistrySourceExtensions
             var name = syntax.Name.FullName.ToValidName();
             var defaultJson = syntax.DefaultValueClause?.JsonValue.ToOptionalJsonElement();
             var type = schemaRegistry.Type(syntax.Type, containingSchemaName.Namespace, defaultJson: defaultJson);
-            var underlyingType = type;
-            var isNullable = false;
-            string? remarks = null;
-
-            switch (type)
-            {
-                case UnionSchema union:
-                    {
-                        if (union.SupportsVariant())
-                        {
-                            var variant = new VariantSchema(name, containingSchemaName, union.Schemas);
-                            // If a variant with the same name already exists, it has the same set of types, so we can just reuse it.
-                            if (!schemaRegistry.Schemas.ContainsKey(variant.SchemaName))
-                                schemaRegistry.Register(variant);
-
-                            remarks = variant.Documentation;
-                            union = union.WithVariant(variant);
-                        }
-
-                        type = union;
-                        isNullable = union.IsNullable;
-                        underlyingType = union.UnderlyingSchema;
-                    }
-                    break;
-
-                case FixedSchema @fixed when schemaRegistry.Options.TargetProfile is not TargetProfile.Apache:
-                    {
-                        remarks = @fixed.Documentation;
-                    }
-                    break;
-            }
+            type = schemaRegistry.ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var isNullable, out var remarks);
 
             var documentation = syntax.GetDocumentation();
             var aliases = syntax.GetAliases();

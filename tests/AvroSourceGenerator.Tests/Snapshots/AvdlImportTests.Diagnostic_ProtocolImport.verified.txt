@@ -1,6 +1,6 @@
 {
   Location: hbZLgMCOL8DyJ_VK6KfKhulyZhA.avdl: (1,4)-(1,10),
-  Message: The provided Avro IDL source is invalid: Imports are not yet supported in Avro IDL files.,
+  Message: The provided Avro IDL source is invalid: Imports are not yet supported in Avro IDL files. To work around this limitation, set AvroSourceGeneratorReferenceResolution to Deferred and include imported files as AdditionalFiles.,
   Severity: Error,
   Descriptor: {
     Id: AVROSG1000,

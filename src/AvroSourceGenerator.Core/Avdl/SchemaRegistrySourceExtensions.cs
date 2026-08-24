@@ -74,7 +74,9 @@ public static class SchemaRegistrySourceExtensions
             if (schemaRegistry.Options.ReferenceResolution is ReferenceResolution.Strict
                 && imports.FirstOrDefault() is { } import)
             {
-                throw new InvalidSourceException("Imports are not yet supported in Avro IDL files.", import.ImportKeyword.SourceSpan);
+                throw new InvalidSourceException(
+                    "Imports are not yet supported in Avro IDL files. To work around this limitation, set AvroSourceGeneratorReferenceResolution to Deferred and include imported files as AdditionalFiles.",
+                    import.ImportKeyword.SourceSpan);
             }
         }
 

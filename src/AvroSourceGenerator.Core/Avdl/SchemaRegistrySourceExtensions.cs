@@ -44,7 +44,7 @@ public static class SchemaRegistrySourceExtensions
             var document = syntaxTree.Document;
             var containingNamespace = document.NamespaceDirective?.NamespaceName.FullName;
             var mainSchema = document.SchemaDirective?.MainSchemaType;
-            schemaRegistry.ThrowIfImportsPresent(document.ImportDirectives);
+            schemaRegistry.ValidateImports(document.ImportDirectives);
 
             if (mainSchema is null)
             {
@@ -69,9 +69,10 @@ public static class SchemaRegistrySourceExtensions
             return schemaRegistry.Type(mainSchema, containingNamespace);
         }
 
-        private void ThrowIfImportsPresent(IEnumerable<ImportDirectiveSyntax> imports)
+        private void ValidateImports(IEnumerable<ImportDirectiveSyntax> imports)
         {
-            if (imports.FirstOrDefault() is { } import)
+            if (schemaRegistry.Options.ReferenceResolution is ReferenceResolution.Strict
+                && imports.FirstOrDefault() is { } import)
             {
                 throw new InvalidSourceException("Imports are not yet supported in Avro IDL files.", import.ImportKeyword.SourceSpan);
             }
@@ -352,7 +353,7 @@ public static class SchemaRegistrySourceExtensions
 
         private ProtocolSchema Protocol(ProtocolDeclarationSyntax syntax, string? containingNamespace)
         {
-            schemaRegistry.ThrowIfImportsPresent(syntax.Imports);
+            schemaRegistry.ValidateImports(syntax.Imports);
 
             var schemaName = syntax.GetRequiredSchemaName(containingNamespace);
             using (schemaRegistry.EnterRecursionScope(schemaName))

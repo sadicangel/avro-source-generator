@@ -85,7 +85,11 @@ record UserFromIdl {
 > Avro JSON schema files conventionally use `.avsc`, Avro JSON protocol files use `.avpr`, and Avro IDL files use `.avdl`.
 
 > [!NOTE]
-> AVDL imports are parsed but not supported yet.
+> AVDL import paths are not resolved, loaded, or validated yet. As a workaround, include every imported
+> `.avdl`, `.avsc`, or `.avpr` file explicitly as an `<AdditionalFiles>` item and set
+> `<AvroSourceGeneratorReferenceResolution>Deferred</AvroSourceGeneratorReferenceResolution>` (see
+> [Reference Resolution](#reference-resolution)). The generator will resolve referenced types after reading all
+> inputs, but it cannot detect a missing imported file when none of its types are referenced.
 
 Build your project — the generator will create C# types matching your schemas and IDL definitions.
 

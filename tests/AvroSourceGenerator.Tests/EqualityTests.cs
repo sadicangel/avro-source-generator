@@ -34,7 +34,7 @@ public class EqualityTests
             .WithOverride(new JsonElementOverride())
             .WithOverride(new TextSpanOverride())
             .WithOverride(new LinePositionSpanOverride())
-            .WithOverride(new AvroFileOverride(IAvroFileType, AvroFileTypes))
+            .WithOverride(new AvroFileOverride(IAvroFileType))
             .WithOverride(new ObjectArrayOverride()));
         _seed = _faker.Generate<int>();
     }
@@ -120,7 +120,7 @@ file sealed class ObjectArrayOverride : AutoFakerOverride<object?[]?>
         context.Instance = (object?[])[context.Faker.Hacker.Noun()];
 }
 
-file sealed class AvroFileOverride(Type avroFileType, IReadOnlyList<Type> avroFileTypes) : AutoFakerGeneratorOverride
+file sealed class AvroFileOverride(Type avroFileType) : AutoFakerGeneratorOverride
 {
     private static MethodInfo CreateFile => field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Inputs.AvroFile", throwOnError: true)!.GetMethod("FromFileText")!;
 

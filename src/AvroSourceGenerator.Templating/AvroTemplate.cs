@@ -13,18 +13,15 @@ public static class AvroTemplate
 {
     public static ImmutableArray<RenderedSchema> Render(in SchemaRegistry schemaRegistry, TemplateSettings settings)
     {
+        var templateLoader = new TemplateLoader(settings);
         var templateContext = new TemplateContext(new TemplateScriptObject(settings))
         {
             MemberRenamer = member => member.Name,
-            TemplateLoader = new TemplateLoader(),
+            TemplateLoader = templateLoader,
         };
 
-        foreach (var entry in TemplateLoader.Templates)
-        {
-            templateContext.CachedTemplates[entry.Key] = entry.Value;
-        }
-
-        var template = TemplateLoader.GetTemplate("schema");
+        var templatePath = templateContext.GetTemplatePathFromName("schema", callerContext: null) ?? throw new InvalidOperationException("Unreachable code");
+        var template = templateContext.GetOrCreateTemplate(templatePath, callerContext: null);
 
         var registeredSchemas = schemaRegistry.ToImmutableDictionary(x => x.SchemaName);
 
@@ -60,6 +57,7 @@ public static class AvroTemplate
                 """";
         }
 
-        return StringFunctions.Literal(schema.ToJsonString(registeredSchemas));
+        return StringFunctions.Literal(schema.ToJsonString(registeredSchemas))
+            ?? throw new InvalidOperationException("Unreachable code");
     }
 }

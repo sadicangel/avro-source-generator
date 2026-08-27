@@ -11,6 +11,7 @@ partial {{ Error }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.Speci
     public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
     {{ SchemaJson }});
 
-    {{ include 'getput' schema: $.schema override: true ~}}
+    {{ include 'apache_get' schema: $.schema override: true }}
+    {{ include 'apache_put' schema: $.schema override: true ~}}
 }
 {{- end }}

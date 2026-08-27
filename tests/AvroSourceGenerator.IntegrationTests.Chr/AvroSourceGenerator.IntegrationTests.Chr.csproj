@@ -28,7 +28,7 @@
   <ItemGroup>
     <PackageReference Include="Chr.Avro.Codegen" />
     <PackageReference Include="Chr.Avro.Confluent" />
-    <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" />
+    <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" VersionOverride="2.14.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Testcontainers" />
     <PackageReference Include="xunit.v3" />

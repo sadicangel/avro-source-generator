@@ -1,57 +1,48 @@
-﻿using System.Reflection;
+﻿using System.Collections.Immutable;
+using System.Reflection;
 using Scriban;
 using Scriban.Parsing;
 using Scriban.Runtime;
 
 namespace AvroSourceGenerator.Templating;
 
-internal sealed class TemplateLoader : ITemplateLoader
+internal sealed class TemplateLoader(TemplateSettings settings) : ITemplateLoader
 {
-    private static readonly Dictionary<string, string> s_templatePaths;
+    private static readonly ImmutableDictionary<string, string> s_templatePaths = BuildTemplatePaths();
+    private static readonly ImmutableArray<string> s_dynamicTemplateNames = ["apache_put"];
 
-    private static readonly Dictionary<string, Template> s_templates;
-
-    static TemplateLoader()
-    {
-        s_templatePaths = new Dictionary<string, string>
-        {
-            ["enum"] = "AvroSourceGenerator.Templating.Templates.enum.sbncs",
-            ["error"] = "AvroSourceGenerator.Templating.Templates.error.sbncs",
-            ["field"] = "AvroSourceGenerator.Templating.Templates.field.sbncs",
-            ["fixed"] = "AvroSourceGenerator.Templating.Templates.fixed.sbncs",
-            ["getput"] = "AvroSourceGenerator.Templating.Templates.getput.sbncs",
-            ["protocol"] = "AvroSourceGenerator.Templating.Templates.protocol.sbncs",
-            ["record"] = "AvroSourceGenerator.Templating.Templates.record.sbncs",
-            ["schema"] = "AvroSourceGenerator.Templating.Templates.schema.sbncs",
-            ["variant"] = "AvroSourceGenerator.Templating.Templates.variant.sbncs",
-        };
-
-        s_templates = new Dictionary<string, Template>(s_templatePaths.Count);
-        foreach (var templatePath in s_templatePaths.Values)
-        {
-            s_templates[templatePath] = LoadTemplate(templatePath);
-        }
-
-        return;
-
-        static Template LoadTemplate(string templatePath)
-        {
-            var assembly = Assembly.GetExecutingAssembly().GetManifestResourceStream(templatePath)
-                ?? throw new InvalidOperationException();
-
-            using var reader = new StreamReader(assembly);
-            return Template.Parse(reader.ReadToEnd(), templatePath);
-        }
-    }
-
-    public static IReadOnlyDictionary<string, Template> Templates => s_templates;
-
-    public static Template GetTemplate(string templateName) =>
-        s_templates[s_templatePaths[templateName]];
+    private readonly ImmutableDictionary<string, string> _templatePaths = s_templatePaths
+        .SetItems(s_dynamicTemplateNames.ToDictionary(name => name, name => GetDynamicTemplatePath(name, settings)));
 
     public string GetPath(TemplateContext context, SourceSpan callerSpan, string templateName) =>
-        s_templatePaths[templateName];
+        _templatePaths[templateName];
 
-    public string Load(TemplateContext context, SourceSpan callerSpan, string templatePath) =>
-        throw new InvalidOperationException("This method should not be called.");
+    public string Load(TemplateContext context, SourceSpan callerSpan, string templatePath)
+    {
+        var assembly = Assembly.GetExecutingAssembly().GetManifestResourceStream(templatePath)
+            ?? throw new InvalidOperationException($"Template resource '{templatePath}' was not found.");
+
+        using var reader = new StreamReader(assembly);
+        return reader.ReadToEnd();
+    }
+
+    private static ImmutableDictionary<string, string> BuildTemplatePaths()
+    {
+        const string TemplateNamespace = "AvroSourceGenerator.Templating.Templates";
+        const string TemplateExtension = ".sbncs";
+        return Assembly.GetExecutingAssembly().GetManifestResourceNames()
+            .Where(name => name.StartsWith(TemplateNamespace) && name.EndsWith(TemplateExtension))
+            .ToImmutableDictionary(GetTemplateName);
+
+        static string GetTemplateName(string templatePath) =>
+           templatePath.AsSpan()[(TemplateNamespace.Length + 1)..^TemplateExtension.Length].ToString();
+    }
+
+    private static string GetDynamicTemplatePath(string templateName, TemplateSettings settings) => templateName switch
+    {
+        "apache_put" when !settings.UseInitOnlyProperties => s_templatePaths["apache_put_mutable"],
+        "apache_put" when !settings.UseUnsafeAccessors => s_templatePaths["apache_put_immutable_reflection"],
+        "apache_put" => s_templatePaths["apache_put_immutable_unsafe"],
+        _ => throw new InvalidOperationException($"Template '{templateName}' is not supported."),
+    };
 }

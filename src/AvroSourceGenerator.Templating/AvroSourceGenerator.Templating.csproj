@@ -7,11 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Templates\apache_get.sbncs" />
+    <EmbeddedResource Include="Templates\apache_put_immutable_reflection.sbncs" />
+    <EmbeddedResource Include="Templates\apache_put_immutable_unsafe.sbncs" />
+    <EmbeddedResource Include="Templates\apache_put_mutable.sbncs" />
     <EmbeddedResource Include="Templates\enum.sbncs" />
     <EmbeddedResource Include="Templates\error.sbncs" />
     <EmbeddedResource Include="Templates\field.sbncs" />
     <EmbeddedResource Include="Templates\fixed.sbncs" />
-    <EmbeddedResource Include="Templates\getput.sbncs" />
     <EmbeddedResource Include="Templates\protocol.sbncs" />
     <EmbeddedResource Include="Templates\record.sbncs" />
     <EmbeddedResource Include="Templates\schema.sbncs" />

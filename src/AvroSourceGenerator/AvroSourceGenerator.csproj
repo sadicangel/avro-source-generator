@@ -39,14 +39,14 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Buffers" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="System.Collections.Immutable" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="System.IO.Pipelines" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="System.Collections.Immutable" VersionOverride="10.0.8" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="System.IO.Pipelines" VersionOverride="10.0.8" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="System.Memory" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="System.Text.Encodings.Web" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="System.Text.Json" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="System.Text.Encodings.Web" VersionOverride="10.0.8" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="System.Text.Json" VersionOverride="10.0.8" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="System.Threading.Tasks.Extensions" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" VersionOverride="10.0.8" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="Microsoft.Bcl.HashCode" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
 
@@ -70,14 +70,14 @@
   <ItemGroup>
     <None Include="$(OutputPath)\AvroSourceGenerator.Core.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(OutputPath)\AvroSourceGenerator.Templating.dll" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(PkgSystem_IO_Pipelines)\lib\netstandard2.0\System.IO.Pipelines.dll" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(PkgSystem_Runtime_CompilerServices_Unsafe)\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(PkgSystem_Text_Encodings_Web)\lib\netstandard2.0\System.Text.Encodings.Web.dll" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(PkgSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(PkgSystem_Threading_Tasks_Extensions)\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(PkgMicrosoft_Bcl_AsyncInterfaces)\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(PkgSystem_IO_Pipelines)\lib\netstandard2.0\System.IO.Pipelines.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(PkgSystem_Runtime_CompilerServices_Unsafe)\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(PkgSystem_Text_Encodings_Web)\lib\netstandard2.0\System.Text.Encodings.Web.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(PkgSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(PkgSystem_Threading_Tasks_Extensions)\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll" CopyToOutputDirectory="Always" />
+    <None Include="$(PkgMicrosoft_Bcl_AsyncInterfaces)\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
   <PropertyGroup>

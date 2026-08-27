@@ -4,7 +4,6 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator.Tests.Infrastructure;
@@ -40,9 +39,10 @@ public readonly record struct GeneratorInput(Compilation Compilation, AnalyzerCo
         {
             if (field.IsDefaultOrEmpty)
             {
-                field = ReferenceAssemblies.Net.Net100
-                    .ResolveAsync("C#", CancellationToken.None).GetAwaiter().GetResult()
-                    .AddRange(MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location));
+                field = Basic.Reference.Assemblies.Net110.References.All
+                    //.ResolveAsync("C#", CancellationToken.None).GetAwaiter().GetResult()
+                    .AddRange(MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location))
+                    .CastArray<MetadataReference>();
             }
 
             return field;

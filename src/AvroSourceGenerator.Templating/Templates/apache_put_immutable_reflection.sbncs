@@ -1,46 +1,16 @@
 {{~ $object = UseNullableReferenceTypes ? 'object?' : 'object' ~}}
-{{~ $.override ? $"public override {$object} Get" : $"{$object} global::Avro.Specific.ISpecificRecord.Get" ~}}(int fieldPos)
-{
-    switch (fieldPos)
-    {
-        {{~ for field in $.schema.Fields ~}}
-        case {{ for.index }}: return this.{{ field.Name }};
-        {{~ end ~}}
-        default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
-    }
-}
-
 {{~ $fieldValue = UseNullableReferenceTypes ? 'fieldValue!' : 'fieldValue' ~}}
 {{~ $.override ? 'public override void Put' : 'void global::Avro.Specific.ISpecificRecord.Put' ~}}(int fieldPos, {{ $object }} fieldValue)
 {
     switch (fieldPos)
     {
-        {{~ if !UseInitOnlyProperties ~}}
-        {{~ for field in $.schema.Fields ~}}
-        {{~ $expr = !field.IsNullable ? $"({ field.Type }){ $fieldValue }" : $"{ $fieldValue } is null ? null : ({ field.UnderlyingType }){ $fieldValue }" ~}}
-        case {{ for.index }}: this.{{ field.Name }} = {{ $expr }}; break;
-        {{~ end ~}}
-        default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
-        {{~ else if UseUnsafeAccessors ~}}
-        {{~ for field in $.schema.Fields ~}}
-        {{~ $expr = !field.IsNullable ? $"({ field.Type }){ $fieldValue }" : $"{ $fieldValue } is null ? null : ({ field.UnderlyingType }){ $fieldValue }" ~}}
-        case {{ for.index }}:
-            Set_{{ field.Name }}(this, {{ $expr }}); break;
-            [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = {{ $"\"set_{ field.Name }\"" }})]
-            extern static void Set_{{ field.Name }}({{ $.schema.CSharpName }} obj, {{ field.Type }} value);
-        {{~ end ~}}
-        default:
-            throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
-        {{~ else ~}}
         {{~ for field in $.schema.Fields ~}}
         {{~ $expr = !field.IsNullable ? $"({ field.Type }){ $fieldValue }" : $"{ $fieldValue } is null ? null : ({ field.UnderlyingType }){ $fieldValue }" ~}}
         case {{ for.index }}: {{ $.schema.CSharpName.Name }}Reflection.Set_{{ field.Name }}(this, {{ $expr }}); break;
         {{~ end ~}}
         default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
-        {{~ end ~}}
     }
 }
-{{~ if UseInitOnlyProperties && !UseUnsafeAccessors ~}}
 
 private static class {{ $.schema.CSharpName.Name }}Reflection
 {
@@ -58,4 +28,3 @@ private static class {{ $.schema.CSharpName.Name }}Reflection
         return lambda.Compile();
     }
 }
-{{~ end ~}}

@@ -45,7 +45,7 @@ namespace ex
                 default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
             }
         }
-        
+    
         void global::Avro.Specific.ISpecificRecord.Put(int fieldPos, object? fieldValue)
         {
             switch (fieldPos)

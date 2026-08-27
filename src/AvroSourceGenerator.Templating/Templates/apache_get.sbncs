@@ -1,0 +1,11 @@
+{{~ $object = UseNullableReferenceTypes ? 'object?' : 'object' ~}}
+{{~ $.override ? $"public override {$object} Get" : $"{$object} global::Avro.Specific.ISpecificRecord.Get" ~}}(int fieldPos)
+{
+    switch (fieldPos)
+    {
+        {{~ for field in $.schema.Fields ~}}
+        case {{ for.index }}: return this.{{ field.Name }};
+        {{~ end ~}}
+        default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
+    }
+}

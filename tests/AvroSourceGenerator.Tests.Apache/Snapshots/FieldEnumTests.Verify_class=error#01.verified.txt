@@ -53,7 +53,7 @@ namespace SchemaNamespace
                 default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
             }
         }
-        
+    
         public override void Put(int fieldPos, object? fieldValue)
         {
             switch (fieldPos)

@@ -18,7 +18,6 @@ namespace Avdl.Acceptance.Protocol
         /// </summary>
         public abstract object heartbeat();
     }
-    
 }
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775, CS8981

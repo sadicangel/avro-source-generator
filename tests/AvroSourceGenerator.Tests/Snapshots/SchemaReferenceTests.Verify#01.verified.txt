@@ -11,7 +11,6 @@ namespace This.Is.A.Full
         /// </summary>
         public required global::This.Is.A.Full.Name Field4 { get; init; }
     }
-    
 }
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775, CS8981

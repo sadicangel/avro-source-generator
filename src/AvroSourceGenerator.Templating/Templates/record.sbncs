@@ -5,13 +5,5 @@
     {{~ end ~}}
 }
 {{ if TargetProfile == 'Apache' }}
-partial {{ Record }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificRecord
-{
-    global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => {{ $.schema.CSharpName.Name }}._SCHEMA; }
-    public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
-    {{ SchemaJson }});
-
-    {{ include 'apache_get' schema: $.schema override: false }}
-    {{ include 'apache_put' schema: $.schema override: false ~}}
-}
-{{- end }}
+{{ include 'apache.record' schema: $.schema }}
+{{- end ~}}

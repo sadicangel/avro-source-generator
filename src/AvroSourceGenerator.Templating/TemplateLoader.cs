@@ -9,7 +9,7 @@ namespace AvroSourceGenerator.Templating;
 internal sealed class TemplateLoader(TemplateSettings settings) : ITemplateLoader
 {
     private static readonly ImmutableDictionary<string, string> s_templatePaths = BuildTemplatePaths();
-    private static readonly ImmutableArray<string> s_dynamicTemplateNames = ["apache_put"];
+    private static readonly ImmutableArray<string> s_dynamicTemplateNames = ["apache.put", "fixed"];
 
     private readonly ImmutableDictionary<string, string> _templatePaths = s_templatePaths
         .SetItems(s_dynamicTemplateNames.ToDictionary(name => name, name => GetDynamicTemplatePath(name, settings)));
@@ -40,9 +40,10 @@ internal sealed class TemplateLoader(TemplateSettings settings) : ITemplateLoade
 
     private static string GetDynamicTemplatePath(string templateName, TemplateSettings settings) => templateName switch
     {
-        "apache_put" when !settings.UseInitOnlyProperties => s_templatePaths["apache_put_mutable"],
-        "apache_put" when !settings.UseUnsafeAccessors => s_templatePaths["apache_put_immutable_reflection"],
-        "apache_put" => s_templatePaths["apache_put_immutable_unsafe"],
+        "apache.put" when !settings.UseInitOnlyProperties => s_templatePaths["apache.put_mutable"],
+        "apache.put" when !settings.UseUnsafeAccessors => s_templatePaths["apache.put_immutable_reflection"],
+        "apache.put" => s_templatePaths["apache.put_immutable_unsafe"],
+        "fixed" => s_templatePaths["apache.fixed"],
         _ => throw new InvalidOperationException($"Template '{templateName}' is not supported."),
     };
 }

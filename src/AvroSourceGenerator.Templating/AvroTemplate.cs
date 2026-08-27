@@ -30,7 +30,8 @@ public static class AvroTemplate
             .. schemaRegistry.Where(ShouldEmitCode).Select(schema =>
             {
                 templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
-                templateContext.SetValue(new ScriptVariableGlobal("SchemaJson"), GetSchemaJson(schema, registeredSchemas, settings));
+                if (settings.TargetProfile is TargetProfile.Apache)
+                    templateContext.SetValue(new ScriptVariableGlobal("SchemaJson"), GetSchemaJson(schema, registeredSchemas, settings));
                 var hintName = $"{schema.SchemaName.FullName}.Avro.g.cs";
                 var sourceText = template.Render(templateContext);
                 return new RenderedSchema(hintName, sourceText);
@@ -43,11 +44,6 @@ public static class AvroTemplate
 
     private static string GetSchemaJson(TopLevelSchema schema, ImmutableDictionary<SchemaName, TopLevelSchema> registeredSchemas, TemplateSettings settings)
     {
-        if (settings.TargetProfile is not TargetProfile.Apache)
-        {
-            return string.Empty;
-        }
-
         if (settings.UseRawStringLiterals)
         {
             return $""""

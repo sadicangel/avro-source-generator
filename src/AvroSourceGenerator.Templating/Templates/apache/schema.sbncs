@@ -1,0 +1,3 @@
+{{~ $.override ? "public override global::Avro.Schema Schema " : "global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema " ~}} { get => {{ $.schema.CSharpName.Name }}._SCHEMA; }
+public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
+{{ SchemaJson }});

@@ -9,7 +9,6 @@ namespace Demo
         public required global::Demo.SharedRecord InlineShared { get; init; }
         public required global::Demo.SharedRecord ReferencedShared { get; init; }
     }
-    
 }
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775, CS8981

@@ -1,0 +1,6 @@
+partial {{ Record }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.ISpecificRecord
+{
+    {{ include 'apache.schema' schema: $.schema override: false }}
+    {{ include 'apache.get' schema: $.schema override: false }}
+    {{ include 'apache.put' schema: $.schema override: false ~}}
+}

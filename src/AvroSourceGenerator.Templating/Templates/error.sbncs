@@ -5,13 +5,5 @@
     {{~ end ~}}
 }
 {{ if TargetProfile == 'Apache' }}
-partial {{ Error }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.SpecificException
-{
-    public override global::Avro.Schema Schema { get => {{ $.schema.CSharpName.Name }}._SCHEMA; }
-    public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse(
-    {{ SchemaJson }});
-
-    {{ include 'apache_get' schema: $.schema override: true }}
-    {{ include 'apache_put' schema: $.schema override: true ~}}
-}
-{{- end }}
+{{ include 'apache.error' schema: $.schema }}
+{{- end ~}}

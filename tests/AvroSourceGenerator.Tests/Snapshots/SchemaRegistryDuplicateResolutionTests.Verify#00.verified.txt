@@ -7,7 +7,6 @@ namespace Demo
     public partial record SharedRecord
     {
     }
-    
 }
 #nullable restore
 #pragma warning restore CS8618, CS8633, CS8714, CS8775, CS8981

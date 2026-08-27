@@ -5,7 +5,7 @@
   <ItemGroup>
     <PackageVersion Include="Apache.Avro" Version="1.12.2" />
     <PackageVersion Include="AutoFixture" Version="4.18.1" />
-    <PackageVersion Include="Basic.Reference.Assemblies.Net110" Version="1.8.11" />
+    <PackageVersion Include="Basic.Reference.Assemblies" Version="1.8.11" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Chr.Avro" Version="10.13.1" />
     <PackageVersion Include="Chr.Avro.Binary" Version="10.13.1" />
@@ -15,12 +15,12 @@
     <PackageVersion Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.15.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="F0.CodeAnalysis.CSharp.IncrementalGenerator.Benchmarking" Version="0.3.0" />
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="11.0.0-preview.7.26381.103" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.8" />
     <PackageVersion Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.4" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
     <PackageVersion Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.2.6" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
@@ -28,15 +28,15 @@
     <PackageVersion Include="Scriban" Version="7.2.6" />
     <PackageVersion Include="Soenneker.Utils.AutoBogus" Version="4.0.926" />
     <PackageVersion Include="System.Buffers" Version="4.6.1" />
-    <PackageVersion Include="System.Collections.Immutable" Version="11.0.0-preview.7.26381.103" />
-    <PackageVersion Include="System.IO.Pipelines" Version="11.0.0-preview.7.26381.103" />
+    <PackageVersion Include="System.Collections.Immutable" Version="10.0.8" />
+    <PackageVersion Include="System.IO.Pipelines" Version="10.0.8" />
     <PackageVersion Include="System.Memory" Version="4.6.3" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
     <PackageVersion Include="System.Private.Uri" Version="4.3.2" />
     <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
-    <PackageVersion Include="System.Text.Encodings.Web" Version="11.0.0-preview.7.26381.103" />
-    <PackageVersion Include="System.Text.Json" Version="11.0.0-preview.7.26381.103" />
-    <PackageVersion Include="System.CodeDom" Version="11.0.0-preview.7.26381.103" />
+    <PackageVersion Include="System.Text.Encodings.Web" Version="10.0.8" />
+    <PackageVersion Include="System.Text.Json" Version="10.0.8" />
+    <PackageVersion Include="System.CodeDom" Version="10.0.8" />
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
     <PackageVersion Include="Testcontainers" Version="4.14.0" />

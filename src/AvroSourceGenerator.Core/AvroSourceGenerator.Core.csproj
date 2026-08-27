@@ -6,8 +6,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.HashCode" />
-    <PackageReference Include="System.Collections.Immutable" VersionOverride="10.0.8" PrivateAssets="all" />
-    <PackageReference Include="System.Text.Json" VersionOverride="10.0.8" PrivateAssets="all" />
+    <PackageReference Include="System.Collections.Immutable" PrivateAssets="all" />
+    <PackageReference Include="System.Text.Json" PrivateAssets="all" />
     <PackageReference Include="PolySharp" PrivateAssets="all" />
   </ItemGroup>
 

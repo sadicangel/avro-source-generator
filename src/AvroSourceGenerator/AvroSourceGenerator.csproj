@@ -39,14 +39,14 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Buffers" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="System.Collections.Immutable" VersionOverride="10.0.8" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="System.IO.Pipelines" VersionOverride="10.0.8" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="System.Collections.Immutable" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="System.IO.Pipelines" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="System.Memory" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="System.Text.Encodings.Web" VersionOverride="10.0.8" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="System.Text.Json" VersionOverride="10.0.8" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="System.Text.Encodings.Web" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="System.Text.Json" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="System.Threading.Tasks.Extensions" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" VersionOverride="10.0.8" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="Microsoft.Bcl.HashCode" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
 

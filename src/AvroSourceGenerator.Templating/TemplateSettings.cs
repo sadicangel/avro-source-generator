@@ -11,6 +11,9 @@ public readonly record struct TemplateSettings(TargetProfile TargetProfile, Lang
     public bool UseRawStringLiterals => (LanguageFeatures & LanguageFeatures.RawStringLiterals) != 0;
     public bool UseUnsafeAccessors => (LanguageFeatures & LanguageFeatures.UnsafeAccessors) != 0;
 
+    public string ObjectType => UseNullableReferenceTypes ? "object?" : "object";
+    public string FieldValueExpression => UseNullableReferenceTypes ? "fieldValue!" : "fieldValue";
+    public string Setter => UseInitOnlyProperties ? "init" : "set";
     public string Record => UseRecords ? "record" : "class";
     public string Fixed => TargetProfile == TargetProfile.Apache ? "class" : Record;
     public string Error => TargetProfile == TargetProfile.Apache ? "class" : Record;

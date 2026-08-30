@@ -7,7 +7,6 @@ public sealed record class Field(
     string Name,
     AvroSchema Type,
     AvroSchema UnderlyingType,
-    bool IsNullable,
     string? Documentation,
     ImmutableArray<string> Aliases,
     JsonElement? DefaultJson,
@@ -16,6 +15,10 @@ public sealed record class Field(
     ImmutableSortedDictionary<string, JsonElement> Properties,
     string? Remarks)
 {
+    public ImmutableArray<AvroSchema> PossibleTypes => Type is UnionSchema union ? union.Schemas : [Type];
+
+    public bool AllowsNull => PossibleTypes.Any(static schema => schema.Type is SchemaType.Null);
+
     public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();

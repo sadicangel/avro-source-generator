@@ -52,11 +52,9 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
         string fieldName,
         SchemaName containingSchemaName,
         out AvroSchema underlyingType,
-        out bool isNullable,
         out string? remarks)
     {
         underlyingType = fieldType;
-        isNullable = false;
         remarks = null;
 
         switch (fieldType)
@@ -73,7 +71,6 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
                     union = union.WithVariant(variant);
                 }
 
-                isNullable = union.IsNullable;
                 underlyingType = union.UnderlyingSchema;
                 return union;
 

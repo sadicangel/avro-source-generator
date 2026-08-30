@@ -6,7 +6,15 @@ public readonly record struct CSharpName(string Name, string? Namespace)
 {
     public string FullName { get; } = Namespace is null ? Name : $"global::{Namespace}.{Name}";
 
+    public bool HasNullableAnnotation => Name.EndsWith("?", StringComparison.Ordinal);
+
     public CSharpName(string name) : this(name, null) { }
+
+    public CSharpName WithNullableAnnotation() =>
+        HasNullableAnnotation ? this : new CSharpName($"{Name}?", Namespace);
+
+    public CSharpName WithoutNullableAnnotation() =>
+        HasNullableAnnotation ? new CSharpName(Name[..^1], Namespace) : this;
 
     public override string ToString() => ToString(includeGlobalPrefix: true);
 

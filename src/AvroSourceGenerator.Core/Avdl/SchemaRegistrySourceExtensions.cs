@@ -261,7 +261,7 @@ public static class SchemaRegistrySourceExtensions
             var name = syntax.Name.FullName.ToValidName();
             var defaultJson = syntax.DefaultValueClause?.JsonValue.ToOptionalJsonElement();
             var type = schemaRegistry.Type(syntax.Type, containingSchemaName.Namespace, defaultJson: defaultJson);
-            type = schemaRegistry.ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var isNullable, out var remarks);
+            type = schemaRegistry.ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var remarks);
 
             var documentation = syntax.GetDocumentation();
             var aliases = syntax.GetAliases();
@@ -269,17 +269,16 @@ public static class SchemaRegistrySourceExtensions
             var order = syntax.Annotations.OfType<OrderAnnotationSyntax>().LastOrDefault()?.Order;
             var properties = syntax.GetSchemaProperties();
 
-            return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order, properties, remarks);
+            return new Field(name, type, underlyingType, documentation, aliases, defaultJson, @default, order, properties, remarks);
         }
 
         private UnionSchema Optional(OptionalTypeSyntax syntax, string? containingNamespace, JsonElement? defaultJson)
         {
             var underlyingSchema = schemaRegistry.Type(syntax.Type, containingNamespace);
-            var csharpName = new CSharpName($"{underlyingSchema.CSharpName.Name}?", underlyingSchema.CSharpName.Namespace);
             var schemas = defaultJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }
                 ? ImmutableArray.Create(AvroSchema.Object, underlyingSchema)
                 : ImmutableArray.Create(underlyingSchema, AvroSchema.Object);
-            return new UnionSchema(csharpName, schemas, underlyingSchema, IsNullable: true);
+            return UnionSchema.Create(schemas, schemaRegistry.Options.UseNullableReferenceTypes);
         }
 
         private UnionSchema Union(UnionTypeSyntax syntax, string? containingNamespace)
@@ -289,37 +288,7 @@ public static class SchemaRegistrySourceExtensions
                 builder.Add(schemaRegistry.Type(typeSyntax, containingNamespace));
             var schemas = builder.MoveToImmutable();
 
-            var underlyingSchema = GetUnderlyingSchema(schemas);
-            var isNullable = schemas.Any(static schema => schema.Type == SchemaType.Null)
-                && (schemaRegistry.Options.UseNullableReferenceTypes || MapsToValueType(underlyingSchema.Type));
-            var csharpName = new CSharpName(
-                isNullable ? $"{underlyingSchema.CSharpName.Name}?" : underlyingSchema.CSharpName.Name,
-                underlyingSchema.CSharpName.Namespace);
-
-            return new UnionSchema(csharpName, schemas, underlyingSchema, isNullable);
-
-            static bool MapsToValueType(SchemaType type) =>
-                type is SchemaType.Boolean or SchemaType.Int or SchemaType.Long or SchemaType.Float or SchemaType.Double or SchemaType.Enum;
-
-            static AvroSchema GetUnderlyingSchema(ImmutableArray<AvroSchema> schemas)
-            {
-                var underlyingSchema = schemas switch
-                {
-                    // T1
-                    [var t1] => t1,
-                    // T1 | "null"
-                    [{ Type: not SchemaType.Null } t1, { Type: SchemaType.Null }] => t1,
-                    // "null" | T2
-                    [{ Type: SchemaType.Null }, { Type: not SchemaType.Null } t2] => t2,
-                    // T1 | T2 | ... | Tn
-                    _ => AvroSchema.Object,
-                };
-
-                while (underlyingSchema is UnionSchema { Schemas: var unionSchemas })
-                    underlyingSchema = GetUnderlyingSchema(unionSchemas);
-
-                return underlyingSchema;
-            }
+            return UnionSchema.Create(schemas, schemaRegistry.Options.UseNullableReferenceTypes);
         }
 
         private AvroSchema Logical(ILogicalTypeSyntax syntax, string? containingNamespace)
@@ -420,31 +389,19 @@ public static class SchemaRegistrySourceExtensions
             var name = syntax.Name.FullName.ToValidName();
             var defaultJson = syntax.DefaultValueClause?.JsonValue.ToOptionalJsonElement();
             var type = schemaRegistry.Type(syntax.Type, containingNamespace, defaultJson: defaultJson);
-            var underlyingType = type;
-            var isNullable = false;
-            if (type is UnionSchema union)
-            {
-                isNullable = union.IsNullable;
-                underlyingType = union.UnderlyingSchema;
-            }
+            var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
 
             var documentation = syntax.GetDocumentation();
             var @default = type.GetValue(defaultJson);
-            return new ProtocolRequestParameter(name, type, underlyingType, isNullable, documentation, defaultJson, @default);
+            return new ProtocolRequestParameter(name, type, underlyingType, documentation, defaultJson, @default);
         }
 
         private ProtocolResponse ProtocolResponse(ITypeSyntax syntax, string? containingNamespace)
         {
             var type = schemaRegistry.Type(syntax, containingNamespace);
-            var underlyingType = type;
-            var isNullable = false;
-            if (type is UnionSchema union)
-            {
-                isNullable = union.IsNullable;
-                underlyingType = union.UnderlyingSchema;
-            }
+            var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
 
-            return new ProtocolResponse(type, underlyingType, isNullable);
+            return new ProtocolResponse(type, underlyingType);
         }
 
         private ImmutableArray<AvroSchema> ProtocolErrors(ThrowsErrorClauseSyntax? syntax, string? containingNamespace)

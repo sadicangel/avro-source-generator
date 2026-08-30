@@ -7,7 +7,6 @@ public sealed record class ProtocolRequestParameter(
     string Name,
     AvroSchema Type,
     AvroSchema UnderlyingType,
-    bool IsNullable,
     string? Documentation,
     JsonElement? DefaultJson,
     object? Default)

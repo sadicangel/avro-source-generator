@@ -1,12 +1,9 @@
-{{~ $object = UseNullableReferenceTypes ? 'object?' : 'object' ~}}
-{{~ $fieldValue = UseNullableReferenceTypes ? 'fieldValue!' : 'fieldValue' ~}}
-{{~ $.override ? 'public override void Put' : 'void global::Avro.Specific.ISpecificRecord.Put' ~}}(int fieldPos, {{ $object }} fieldValue)
+{{~ $.override ? 'public override void Put' : 'void global::Avro.Specific.ISpecificRecord.Put' ~}}(int fieldPos, {{ ObjectType }} fieldValue)
 {
     switch (fieldPos)
     {
         {{~ for field in $.schema.Fields ~}}
-        {{~ $expr = !field.IsNullable ? $"({ field.Type }){ $fieldValue }" : $"{ $fieldValue } is null ? null : ({ field.UnderlyingType }){ $fieldValue }" ~}}
-        case {{ for.index }}: this.{{ field.Name }} = {{ $expr }}; break;
+        case {{ for.index }}: this.{{ field.Name }} = {{ include 'apache.put_field_value' field: field }}; break;
         {{~ end ~}}
         default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
     }

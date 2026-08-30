@@ -195,7 +195,7 @@ public static class SchemaRegistrySchemaExtensions
         {
             var name = field.GetRequiredString(AvroJsonKeys.Name).ToValidName();
             var type = schemaRegistry.Schema(field.GetRequiredProperty(AvroJsonKeys.Type), containingSchemaName.Namespace);
-            type = schemaRegistry.ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var isNullable, out var remarks);
+            type = schemaRegistry.ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var remarks);
 
             var documentation = field.GetDocumentation();
             var aliases = field.GetAliases();
@@ -204,7 +204,7 @@ public static class SchemaRegistrySchemaExtensions
             var order = field.GetOptionalString(AvroJsonKeys.Order);
             var properties = field.GetSchemaProperties();
 
-            return new Field(name, type, underlyingType, isNullable, documentation, aliases, defaultJson, @default, order, properties, remarks);
+            return new Field(name, type, underlyingType, documentation, aliases, defaultJson, @default, order, properties, remarks);
         }
 
         private UnionSchema Union(JsonElement schema, string? containingNamespace)
@@ -214,37 +214,7 @@ public static class SchemaRegistrySchemaExtensions
                 builder.Add(schemaRegistry.Schema(innerSchema, containingNamespace));
             var schemas = builder.ToImmutable();
 
-            var underlyingSchema = GetUnderlyingSchema(schemas);
-            var isNullable = schemas.Any(static schema => schema.Type == SchemaType.Null)
-                && (schemaRegistry.Options.UseNullableReferenceTypes || MapsToValueType(underlyingSchema.Type));
-            var csharpName = new CSharpName(
-                isNullable ? $"{underlyingSchema.CSharpName.Name}?" : underlyingSchema.CSharpName.Name,
-                underlyingSchema.CSharpName.Namespace);
-
-            return new UnionSchema(csharpName, schemas, underlyingSchema, isNullable);
-
-            static bool MapsToValueType(SchemaType type) =>
-                type is SchemaType.Boolean or SchemaType.Int or SchemaType.Long or SchemaType.Float or SchemaType.Double or SchemaType.Enum;
-
-            static AvroSchema GetUnderlyingSchema(ImmutableArray<AvroSchema> schemas)
-            {
-                var underlyingSchema = schemas switch
-                {
-                    // T1
-                    [var t1] => t1,
-                    // T1 | "null"
-                    [{ Type: not SchemaType.Null } t1, { Type: SchemaType.Null }] => t1,
-                    // "null" | T2
-                    [{ Type: SchemaType.Null }, { Type: not SchemaType.Null } t2] => t2,
-                    // T1 | T2 | ... | Tn
-                    _ => AvroSchema.Object,
-                };
-
-                while (underlyingSchema is UnionSchema { Schemas: var unionSchemas })
-                    underlyingSchema = GetUnderlyingSchema(unionSchemas);
-
-                return underlyingSchema;
-            }
+            return UnionSchema.Create(schemas, schemaRegistry.Options.UseNullableReferenceTypes);
         }
 
         private ProtocolSchema Protocol(JsonElement schema, string? containingNamespace)
@@ -325,32 +295,20 @@ public static class SchemaRegistrySchemaExtensions
         {
             var name = parameter.GetRequiredString(AvroJsonKeys.Name).ToValidName();
             var type = schemaRegistry.Schema(parameter.GetRequiredProperty(AvroJsonKeys.Type), containingNamespace);
-            var underlyingType = type;
-            var isNullable = false;
-            if (type is UnionSchema union)
-            {
-                isNullable = union.IsNullable;
-                underlyingType = union.UnderlyingSchema;
-            }
+            var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
 
             var documentation = parameter.GetDocumentation();
             var defaultJson = parameter.GetNullableProperty(AvroJsonKeys.Default);
             var @default = type.GetValue(defaultJson);
-            return new ProtocolRequestParameter(name, type, underlyingType, isNullable, documentation, defaultJson, @default);
+            return new ProtocolRequestParameter(name, type, underlyingType, documentation, defaultJson, @default);
         }
 
         private ProtocolResponse ProtocolResponse(JsonElement schema, string? containingNamespace)
         {
             var type = schemaRegistry.Schema(schema, containingNamespace);
-            var underlyingType = type;
-            var isNullable = false;
-            if (type is UnionSchema union)
-            {
-                isNullable = union.IsNullable;
-                underlyingType = union.UnderlyingSchema;
-            }
+            var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
 
-            return new ProtocolResponse(type, underlyingType, isNullable);
+            return new ProtocolResponse(type, underlyingType);
         }
 
         private ImmutableArray<AvroSchema> ProtocolErrors(JsonElement.ArrayEnumerator? errors, string? containingNamespace)

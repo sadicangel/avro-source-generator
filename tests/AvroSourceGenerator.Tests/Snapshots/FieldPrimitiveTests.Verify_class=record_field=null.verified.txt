@@ -6,7 +6,7 @@ namespace SchemaNamespace
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial record Class
     {
-        public required object Field { get; init; }
+        public object Field { get; init; }
         public object? NullableField { get; init; }
     }
 }

@@ -6,10 +6,21 @@ namespace AvroSourceGenerator.Schemas;
 public sealed record class UnionSchema(
     CSharpName CSharpName,
     ImmutableArray<AvroSchema> Schemas,
-    AvroSchema UnderlyingSchema,
-    bool IsNullable)
+    AvroSchema UnderlyingSchema)
     : AvroSchema(SchemaType.Union, new SchemaName(string.Empty), CSharpName, Documentation: null, Properties: ImmutableSortedDictionary<string, JsonElement>.Empty)
 {
+    public static UnionSchema Create(ImmutableArray<AvroSchema> schemas, bool useNullableReferenceTypes)
+    {
+        var underlyingSchema = GetUnderlyingSchema(schemas);
+        var useNullableAnnotation = schemas.Any(static schema => schema.Type is SchemaType.Null)
+            && (useNullableReferenceTypes || MapsToValueType(underlyingSchema.Type));
+        var csharpName = useNullableAnnotation
+            ? underlyingSchema.CSharpName.WithNullableAnnotation()
+            : underlyingSchema.CSharpName.WithoutNullableAnnotation();
+
+        return new UnionSchema(csharpName, schemas, underlyingSchema);
+    }
+
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         writer.WriteStartArray();
@@ -42,10 +53,33 @@ public sealed record class UnionSchema(
 
         return this with
         {
-            CSharpName = new CSharpName(
-                variant.CSharpName.Name + (IsNullable ? "?" : ""),
-                variant.CSharpName.Namespace),
+            CSharpName = CSharpName.HasNullableAnnotation
+                ? variant.CSharpName.WithNullableAnnotation()
+                : variant.CSharpName.WithoutNullableAnnotation(),
             UnderlyingSchema = variant
         };
+    }
+
+    private static bool MapsToValueType(SchemaType type) =>
+        type is SchemaType.Boolean or SchemaType.Int or SchemaType.Long or SchemaType.Float or SchemaType.Double or SchemaType.Enum;
+
+    private static AvroSchema GetUnderlyingSchema(ImmutableArray<AvroSchema> schemas)
+    {
+        var underlyingSchema = schemas switch
+        {
+            // T1
+            [var t1] => t1,
+            // T1 | "null"
+            [{ Type: not SchemaType.Null } t1, { Type: SchemaType.Null }] => t1,
+            // "null" | T2
+            [{ Type: SchemaType.Null }, { Type: not SchemaType.Null } t2] => t2,
+            // T1 | T2 | ... | Tn
+            _ => AvroSchema.Object,
+        };
+
+        while (underlyingSchema is UnionSchema { Schemas: var unionSchemas })
+            underlyingSchema = GetUnderlyingSchema(unionSchemas);
+
+        return underlyingSchema;
     }
 }

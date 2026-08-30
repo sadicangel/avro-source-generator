@@ -12,6 +12,5 @@
 {{~ end ~}}
 /// </remarks>
 {{~ end ~}}
-{{~ $required = UseRequiredProperties && !$.field.Type.IsNullable && !$.field.Default ? ' required ' : ' ' ~}}
-{{~ $set = UseInitOnlyProperties ? 'init' : 'set' ~}}
-public {{~ $required ~}} {{ $.field.Type }} {{ $.field.Name }} { get; {{ $set }}; } {{~ if $.field.Default; $" = {$.field.Default};"; end ~}}
+{{~ $required = UseRequiredProperties && !$.field.AllowsNull && !$.field.Default ? ' required ' : ' ' ~}}
+public {{~ $required ~}} {{ $.field.Type }} {{ $.field.Name }} { get; {{ Setter }}; } {{~ if $.field.Default; $" = {$.field.Default};"; end ~}}

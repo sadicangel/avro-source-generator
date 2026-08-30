@@ -11,6 +11,9 @@ internal sealed class TemplateScriptObject : BuiltinFunctions
         SetValue("Record", settings.Record, readOnly: true);
         SetValue("Error", settings.Error, readOnly: true);
         SetValue("Fixed", settings.Fixed, readOnly: true);
+        SetValue("ObjectType", settings.ObjectType, readOnly: true);
+        SetValue("FieldValueExpression", settings.FieldValueExpression, readOnly: true);
+        SetValue("Setter", settings.Setter, readOnly: true);
         SetValue("UseNullableReferenceTypes", settings.UseNullableReferenceTypes, readOnly: true);
         SetValue("UseRequiredProperties", settings.UseRequiredProperties, readOnly: true);
         SetValue("UseInitOnlyProperties", settings.UseInitOnlyProperties, readOnly: true);

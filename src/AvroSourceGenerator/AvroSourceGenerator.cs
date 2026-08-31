@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Inputs;
@@ -41,7 +41,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
 
     private static void Emit(SourceProductionContext context, GeneratorOutput output)
     {
-        var (schemas, diagnostics) = output;
+        var (schemas, diagnostics, _) = output;
 
         foreach (var diagnostic in diagnostics)
         {

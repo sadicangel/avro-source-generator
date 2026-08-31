@@ -13,6 +13,7 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
     private readonly Dictionary<SchemaName, TopLevelSchema> _stagedSchemas = [];
     private readonly HashSet<SchemaName> _stagedReferences = [];
     private readonly List<SchemaName> _recursionStack = [];
+    private readonly List<SchemaRegistration> _registrations = [];
 
     public int Count => _storedSchemas.Count;
 
@@ -21,11 +22,14 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
 
     public IReadOnlyDictionary<SchemaName, TopLevelSchema> Schemas => _storedSchemas;
 
+    internal IReadOnlyList<SchemaRegistration> Registrations => _registrations;
+
     public void Register(TopLevelSchema schema)
     {
         if (_stagedSchemas.ContainsKey(schema.SchemaName))
         {
             // Duplicate definition in the same file. Always an error.
+            _registrations.Add(new SchemaRegistration(schema.SchemaName, SchemaRegistrationKind.RejectedDuplicate));
             throw new DuplicateSchemaException(schema);
         }
 
@@ -33,16 +37,31 @@ public readonly record struct SchemaRegistry(SchemaRegistryOptions Options) : IR
         {
             if (Options.DuplicateResolution != DuplicateResolution.Ignore)
             {
+                _registrations.Add(new SchemaRegistration(schema.SchemaName, SchemaRegistrationKind.RejectedDuplicate));
                 throw new DuplicateSchemaException(schema);
             }
 
             // TODO: We should probably add 'Replace' resolution as well.
 
             // Keep the previously registered schema visible inside the current file so later references can still resolve it.
+            _registrations.Add(new SchemaRegistration(schema.SchemaName, SchemaRegistrationKind.IgnoredDuplicate));
             schema = storedSchema;
+        }
+        else
+        {
+            _registrations.Add(new SchemaRegistration(schema.SchemaName, SchemaRegistrationKind.Registered));
         }
 
         _stagedSchemas[schema.SchemaName] = schema;
+    }
+
+    internal readonly record struct SchemaRegistration(SchemaName SchemaName, SchemaRegistrationKind Kind);
+
+    internal enum SchemaRegistrationKind
+    {
+        Registered,
+        IgnoredDuplicate,
+        RejectedDuplicate,
     }
 
     public void AddReference(SchemaName schemaName) => _stagedReferences.Add(schemaName);

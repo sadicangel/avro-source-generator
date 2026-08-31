@@ -16,6 +16,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
         var avroFilesProvider = context.AdditionalTextsProvider
             .Where(AvroFile.IsAvroFile)
             .Select(AvroFile.FromAdditionalText)
+            .WithTrackingName(TrackingNames.AvroFile)
             .Collect()
             .WithTrackingName(TrackingNames.AvroFiles);
 

@@ -14,14 +14,7 @@ internal sealed class BenchmarkEnvironment : IDisposable
 
     private readonly BenchmarkScenario _scenario;
     private readonly CSharpCompilation _compilation;
-    private readonly AnalyzerConfigOptionsProvider _optionsProvider = new BenchmarkOptionsProvider(
-        new Dictionary<string, string>
-        {
-            ["build_property.AvroSourceGeneratorAvroLibrary"] = "Apache",
-            ["build_property.AvroSourceGeneratorLanguageFeatures"] = "CSharp12",
-            ["build_property.AvroSourceGeneratorAccessModifier"] = "public",
-            ["build_property.AvroSourceGeneratorRecordDeclaration"] = "record",
-        });
+    private readonly AnalyzerConfigOptionsProvider _optionsProvider;
     private readonly LoadedGenerator _lastGa;
     private readonly LoadedGenerator _current;
     private GeneratorDriver? _lastGaPrimedDriver;
@@ -30,6 +23,19 @@ internal sealed class BenchmarkEnvironment : IDisposable
     private BenchmarkEnvironment(BenchmarkScenario scenario)
     {
         _scenario = scenario;
+        var options = new Dictionary<string, string>
+        {
+            ["build_property.AvroSourceGeneratorAvroLibrary"] = "Apache",
+            ["build_property.AvroSourceGeneratorLanguageFeatures"] = "CSharp12",
+            ["build_property.AvroSourceGeneratorAccessModifier"] = "public",
+            ["build_property.AvroSourceGeneratorRecordDeclaration"] = "record",
+        };
+        if (scenario.ChangeScenario == IncrementalChangeScenario.ReferencedSchemaContent)
+        {
+            options["build_property.AvroSourceGeneratorReferenceResolution"] = "Deferred";
+        }
+
+        _optionsProvider = new BenchmarkOptionsProvider(options);
         _compilation = CSharpCompilation.Create(
             assemblyName: "AvroSourceGenerator.BenchmarkConsumer",
             syntaxTrees:
@@ -45,9 +51,12 @@ internal sealed class BenchmarkEnvironment : IDisposable
         _current = LoadedGenerator.Load(GeneratorLocations.CurrentAssemblyPath, "current-tip");
     }
 
-    public static BenchmarkEnvironment Create(int schemaCount, bool prepareIncrementalRuns)
+    public static BenchmarkEnvironment Create(
+        int schemaCount,
+        bool prepareIncrementalRuns,
+        IncrementalChangeScenario changeScenario = IncrementalChangeScenario.IndependentContent)
     {
-        var environment = new BenchmarkEnvironment(BenchmarkScenario.Create(schemaCount));
+        var environment = new BenchmarkEnvironment(BenchmarkScenario.Create(schemaCount, changeScenario));
 
         if (prepareIncrementalRuns)
         {
@@ -76,11 +85,19 @@ internal sealed class BenchmarkEnvironment : IDisposable
 
     public ValidationResult ValidateIncrementalRuns()
     {
+        if (_scenario.ChangeScenario == IncrementalChangeScenario.ReferencedSchemaContent)
+        {
+            throw new InvalidOperationException(
+                "The last GA baseline does not support Deferred cross-file references. Use ValidateCurrentIncrementalRun instead.");
+        }
+
         var lastGa = Validate(RunIncrementalLastGa(), "last GA incremental run");
-        var current = Validate(RunIncrementalCurrent(), "current tip incremental run");
+        var current = ValidateCurrentIncrementalRun();
         EnsureSourceCountsMatch(lastGa, current);
         return current;
     }
+
+    public ValidationResult ValidateCurrentIncrementalRun() => Validate(RunIncrementalCurrent(), "current tip incremental run");
 
     public void Dispose()
     {

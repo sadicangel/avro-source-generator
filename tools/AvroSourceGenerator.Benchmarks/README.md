@@ -4,10 +4,19 @@ This project compares the current local source-generator project with the latest
 
 The default workload contains 250 independent Avro record schemas with 36 fields each (9,000 fields total). The fields exercise primitives, nullable unions, arrays, maps, timestamps, decimals, defaults, and Apache-specific output. Both versions use C# 12 output so init-only properties, required properties, records, nullable annotations, raw strings, and unsafe accessors are enabled.
 
-Two operations are measured:
+Two operations are measured across three benchmark classes:
 
 - `FullGenerationBenchmarks` creates a fresh Roslyn generator driver and generates every schema.
-- `IncrementalGenerationBenchmarks` starts from a primed driver, changes one schema by adding a field, and runs the incremental pipeline again.
+- `IncrementalGenerationBenchmarks` compares GA and the current tip after an independent content or schema identity edit.
+- `ReferencedIncrementalGenerationBenchmarks` measures the current tip after a referenced schema changes. It is current-tip-only because 0.6.0 does not support Deferred cross-file references.
+
+The incremental scenarios are:
+
+- `IndependentContent` adds a field to an otherwise independent schema.
+- `ReferencedSchemaContent` adds a field to a schema referenced by half of the remaining schemas; the other half stay independent. This exercises dependent-consumer fan-out while retaining unrelated schemas for later cache assertions.
+- `SchemaIdentity` renames an independent schema, exercising export identity invalidation.
+
+The current pipeline collects all Avro additional files before project-level schema resolution and rendering. As a result, any of these edits currently invalidates the project-level generator output and produces every source again. These scenarios deliberately record that baseline without asserting elapsed time; they are guardrails for later dependency-aware caching work.
 
 Schema construction, generator assembly loading, initial incremental generation, and result validation happen outside the measured operations. The benchmark measures generator-driver execution and source production, but not NuGet restore, assembly loading, or compilation of generated C#.
 
@@ -30,6 +39,7 @@ Run only one scenario:
 ```powershell
 dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter "*FullGenerationBenchmarks*"
 dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter "*IncrementalGenerationBenchmarks*"
+dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter "*ReferencedIncrementalGenerationBenchmarks*"
 ```
 
 BenchmarkDotNet reports `LastGa` as the baseline. For `CurrentTip`, a time or allocation ratio above `1.00` is a regression and a ratio below `1.00` is an improvement. Focus on ratios larger than the reported noise rather than small single-run differences, and compare results on the same idle machine and runtime.

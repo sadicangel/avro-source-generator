@@ -1,11 +1,24 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator.Tests;
 
 public sealed class CachingTests
 {
+    [Fact]
+    public void Independent_schema_content_edit_invalidates_the_collected_project_output() =>
+        AssertCurrentInvalidationBaseline(IncrementalScenario.IndependentContent());
+
+    [Fact]
+    public void Referenced_schema_content_edit_invalidates_the_collected_project_output() =>
+        AssertCurrentInvalidationBaseline(IncrementalScenario.ReferencedSchemaContent());
+
+    [Fact]
+    public void Schema_identity_edit_invalidates_the_collected_project_output() =>
+        AssertCurrentInvalidationBaseline(IncrementalScenario.SchemaIdentity());
+
     [Fact]
     public void All_outputs_are_reused_when_input_is_unchanged()
     {
@@ -35,7 +48,7 @@ public sealed class CachingTests
 
         var projectConfig = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
 
-        var (compilation, _, generatorDriver) =
+        var (compilation, _, generatorDriver, _) =
             GeneratorInput.Create([ProjectFile.CSharp(Source), ProjectFile.Schema(Schema)], [], projectConfig);
 
         generatorDriver = generatorDriver
@@ -91,5 +104,104 @@ public sealed class CachingTests
                 steps2[i].Outputs.Select(x => x.Reason),
                 reason => Assert.True(reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged));
         }
+    }
+
+    private static void AssertCurrentInvalidationBaseline(IncrementalScenario scenario)
+    {
+        var projectConfig = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
+        projectConfig.ReferenceResolution = scenario.ReferenceResolution;
+
+        var input = GeneratorInput.Create(scenario.Files, [], projectConfig);
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        AssertSuccessfulGeneration(driver.GetRunResult(), scenario.ExpectedSourceCount);
+
+        var changedFile = new ChangedAdditionalText(
+            input.AdditionalTexts[scenario.ChangedFileIndex].Path,
+            scenario.ChangedFile.Content);
+        driver = driver.ReplaceAdditionalText(input.AdditionalTexts[scenario.ChangedFileIndex], changedFile)
+            .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var result = driver.GetRunResult();
+
+        AssertSuccessfulGeneration(result, scenario.ExpectedSourceCount);
+
+        var trackedSteps = StepTracking.GetTrackedSteps(result);
+        var fileOutputs = trackedSteps["AvroFile"].SelectMany(step => step.Outputs).ToArray();
+        Assert.Single(fileOutputs, output => output.Reason == IncrementalStepRunReason.Modified);
+        Assert.Equal(
+            scenario.ExpectedSourceCount - 1,
+            fileOutputs.Count(output => output.Reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged));
+
+        Assert.Contains(
+            trackedSteps["AvroFiles"].SelectMany(step => step.Outputs),
+            output => output.Reason == IncrementalStepRunReason.Modified);
+        Assert.Contains(
+            trackedSteps["GeneratorOutput"].SelectMany(step => step.Outputs),
+            output => output.Reason == IncrementalStepRunReason.Modified);
+    }
+
+    private static void AssertSuccessfulGeneration(GeneratorDriverRunResult result, int expectedSourceCount)
+    {
+        Assert.Empty(result.Diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.Equal(expectedSourceCount, result.Results.Single().GeneratedSources.Length);
+    }
+
+    private sealed record IncrementalScenario(
+        ImmutableArray<ProjectFile> Files,
+        int ChangedFileIndex,
+        ProjectFile ChangedFile,
+        string ReferenceResolution)
+    {
+        public int ExpectedSourceCount => Files.Length;
+
+        public static IncrementalScenario IndependentContent() => new(
+            [
+                ProjectFile.Schema(Record("Independent", "{\"name\": \"Value\", \"type\": \"string\"}")),
+                ProjectFile.Schema(Record("UnrelatedOne", "{\"name\": \"Value\", \"type\": \"string\"}")),
+                ProjectFile.Schema(Record("UnrelatedTwo", "{\"name\": \"Value\", \"type\": \"string\"}")),
+                ProjectFile.Schema(Record("UnrelatedThree", "{\"name\": \"Value\", \"type\": \"string\"}")),
+            ],
+            ChangedFileIndex: 0,
+            ChangedFile: ProjectFile.Schema(Record("Independent", "{\"name\": \"Value\", \"type\": \"string\"}, {\"name\": \"Revision\", \"type\": \"int\"}")),
+            ReferenceResolution: "Strict");
+
+        public static IncrementalScenario ReferencedSchemaContent() => new(
+            [
+                ProjectFile.Schema(Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}")),
+                ProjectFile.Schema(Record("Customer", "{\"name\": \"Address\", \"type\": \"Address\"}")),
+                ProjectFile.Schema(Record("Order", "{\"name\": \"Address\", \"type\": \"Address\"}")),
+                ProjectFile.Schema(Record("Unrelated", "{\"name\": \"Value\", \"type\": \"string\"}")),
+            ],
+            ChangedFileIndex: 0,
+            ChangedFile: ProjectFile.Schema(Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}, {\"name\": \"Revision\", \"type\": \"int\"}")),
+            ReferenceResolution: "Deferred");
+
+        public static IncrementalScenario SchemaIdentity() => new(
+            [
+                ProjectFile.Schema(Record("Original", "{\"name\": \"Value\", \"type\": \"string\"}")),
+                ProjectFile.Schema(Record("UnrelatedOne", "{\"name\": \"Value\", \"type\": \"string\"}")),
+                ProjectFile.Schema(Record("UnrelatedTwo", "{\"name\": \"Value\", \"type\": \"string\"}")),
+                ProjectFile.Schema(Record("UnrelatedThree", "{\"name\": \"Value\", \"type\": \"string\"}")),
+            ],
+            ChangedFileIndex: 0,
+            ChangedFile: ProjectFile.Schema(Record("Renamed", "{\"name\": \"Value\", \"type\": \"string\"}")),
+            ReferenceResolution: "Strict");
+
+        private static string Record(string name, string fields) => $$"""
+            {
+              "type": "record",
+              "namespace": "CachingTests",
+              "name": "{{name}}",
+              "fields": [{{fields}}]
+            }
+            """;
+    }
+
+    private sealed class ChangedAdditionalText(string path, string content) : AdditionalText
+    {
+        private readonly SourceText _text = SourceText.From(content);
+
+        public override string Path { get; } = path;
+
+        public override SourceText GetText(CancellationToken cancellationToken = default) => _text;
     }
 }

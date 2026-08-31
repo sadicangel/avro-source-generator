@@ -9,7 +9,11 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator.Tests.Infrastructure;
 
-public readonly record struct GeneratorInput(Compilation Compilation, AnalyzerConfigOptionsProvider OptionsProvider, GeneratorDriver GeneratorDriver)
+public readonly record struct GeneratorInput(
+    Compilation Compilation,
+    AnalyzerConfigOptionsProvider OptionsProvider,
+    GeneratorDriver GeneratorDriver,
+    ImmutableArray<AdditionalText> AdditionalTexts)
 {
     public static GeneratorInput Create(ImmutableArray<ProjectFile> projectFiles, ImmutableArray<MetadataReference> references, ProjectConfig projectConfig)
     {
@@ -22,16 +26,20 @@ public readonly record struct GeneratorInput(Compilation Compilation, AnalyzerCo
                 outputKind: OutputKind.DynamicallyLinkedLibrary,
                 warningLevel: int.MaxValue));
         var optionsProvider = new AnalyzerConfigOptionsProviderImplementation(projectConfig.GlobalOptions);
+        var additionalTexts = projectFiles
+            .Where(f => !f.IsSource)
+            .Select(text => (AdditionalText)new AdditionalTextImplementation(text))
+            .ToImmutableArray();
         var generatorDriver = CSharpGeneratorDriver.Create(
             generators: [new AvroSourceGenerator().AsSourceGenerator()],
-            additionalTexts: [.. projectFiles.Where(f => !f.IsSource).Select(text => new AdditionalTextImplementation(text))],
+            additionalTexts: additionalTexts,
             parseOptions: parseOptions,
             optionsProvider: optionsProvider,
             driverOptions: new GeneratorDriverOptions(
                 IncrementalGeneratorOutputKind.None,
                 trackIncrementalGeneratorSteps: true));
 
-        return new GeneratorInput(compilation, optionsProvider, generatorDriver);
+        return new GeneratorInput(compilation, optionsProvider, generatorDriver, additionalTexts);
     }
 
     private static ImmutableArray<MetadataReference> CompilerReferenceAssemblies

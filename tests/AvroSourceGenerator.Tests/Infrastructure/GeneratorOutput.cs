@@ -10,7 +10,7 @@ public readonly record struct GeneratorOutput(
 {
     public static GeneratorOutput Create(GeneratorInput generatorInput)
     {
-        var (compilation, optionsProvider, generatorDriver) = generatorInput;
+        var (compilation, optionsProvider, generatorDriver, _) = generatorInput;
 
         generatorDriver.RunGeneratorsAndUpdateCompilation(compilation, out compilation, out var diagnostics);
 

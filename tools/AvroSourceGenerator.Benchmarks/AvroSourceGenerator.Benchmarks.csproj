@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <LastGaVersion>0.6.0</LastGaVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageDownload Include="AvroSourceGenerator" Version="[$(LastGaVersion)]" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/AvroSourceGenerator/AvroSourceGenerator.csproj"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>AvroSourceGenerator.Benchmarks.LastGaVersion</_Parameter1>
+      <_Parameter2>$(LastGaVersion)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>AvroSourceGenerator.Benchmarks.LastGaAssembly</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(NuGetPackageRoot)avrosourcegenerator/$(LastGaVersion)/analyzers/dotnet/cs/AvroSourceGenerator.dll'))</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>AvroSourceGenerator.Benchmarks.CurrentAssembly</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../../src/AvroSourceGenerator/bin/$(Configuration)/netstandard2.0/AvroSourceGenerator.dll'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

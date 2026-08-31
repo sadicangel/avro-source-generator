@@ -1,8 +1,10 @@
-﻿using System.Text;
+﻿using System.Collections.Immutable;
+using System.Text;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Inputs;
 using AvroSourceGenerator.Output;
+using AvroSourceGenerator.Templating;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
@@ -13,10 +15,12 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var avroFilesProvider = context.AdditionalTextsProvider
+        var avroFileProvider = context.AdditionalTextsProvider
             .Where(AvroFile.IsAvroFile)
             .Select(AvroFile.FromAdditionalText)
-            .WithTrackingName(TrackingNames.AvroFile)
+            .WithTrackingName(TrackingNames.AvroFile);
+
+        var avroFilesProvider = avroFileProvider
             .Collect()
             .WithTrackingName(TrackingNames.AvroFiles);
 
@@ -36,18 +40,28 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             .Select(GeneratorOutput.FromInput)
             .WithTrackingName(TrackingNames.GeneratorOutput);
 
-        context.RegisterImplementationSourceOutput(generatorOutputProvider, Emit);
+        var fileRenderInputProvider = avroFileProvider.Combine(generatorOutputProvider)
+            .Select(static (input, _) => input.Right.CreateFileRenderInput(input.Left))
+            .WithTrackingName(TrackingNames.FileRenderInput);
+
+        var renderedFileProvider = fileRenderInputProvider
+            .Select(static (input, _) => AvroTemplate.Render(input.Schemas, input.RegisteredSchemas, input.Settings))
+            .WithTrackingName(TrackingNames.RenderedFile);
+
+        context.RegisterImplementationSourceOutput(generatorOutputProvider, EmitDiagnostics);
+        context.RegisterImplementationSourceOutput(renderedFileProvider, EmitSchemas);
     }
 
-    private static void Emit(SourceProductionContext context, GeneratorOutput output)
+    private static void EmitDiagnostics(SourceProductionContext context, GeneratorOutput output)
     {
-        var (schemas, diagnostics, _) = output;
-
-        foreach (var diagnostic in diagnostics)
+        foreach (var diagnostic in output.Diagnostics)
         {
             context.ReportDiagnostic(diagnostic);
         }
+    }
 
+    private static void EmitSchemas(SourceProductionContext context, ImmutableArray<RenderedSchema> schemas)
+    {
         foreach (var schema in schemas)
         {
             context.AddSource(schema.HintName, SourceText.From(schema.SourceText, Encoding.UTF8));

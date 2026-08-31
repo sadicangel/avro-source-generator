@@ -16,6 +16,10 @@ public sealed class CachingTests
         AssertCurrentInvalidationBaseline(IncrementalScenario.ReferencedSchemaContent());
 
     [Fact]
+    public void Apache_referenced_schema_content_edit_invalidates_transitive_consumers_only() =>
+        AssertCurrentInvalidationBaseline(IncrementalScenario.ReferencedSchemaContent(), avroLibrary: "Apache");
+
+    [Fact]
     public void Schema_identity_edit_invalidates_the_collected_project_output() =>
         AssertCurrentInvalidationBaseline(IncrementalScenario.SchemaIdentity());
 
@@ -106,10 +110,11 @@ public sealed class CachingTests
         }
     }
 
-    private static void AssertCurrentInvalidationBaseline(IncrementalScenario scenario)
+    private static void AssertCurrentInvalidationBaseline(IncrementalScenario scenario, string? avroLibrary = null)
     {
         var projectConfig = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
         projectConfig.ReferenceResolution = scenario.ReferenceResolution;
+        projectConfig.AvroLibrary = avroLibrary ?? projectConfig.AvroLibrary;
 
         var input = GeneratorInput.Create(scenario.Files, [], projectConfig);
         var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
@@ -123,6 +128,7 @@ public sealed class CachingTests
         var result = driver.GetRunResult();
 
         AssertSuccessfulGeneration(result, scenario.ExpectedSourceCount);
+        AssertSchemaIdentityOutput(result, scenario);
 
         var trackedSteps = StepTracking.GetTrackedSteps(result);
         var fileOutputs = trackedSteps["AvroFile"].SelectMany(step => step.Outputs).ToArray();
@@ -137,6 +143,26 @@ public sealed class CachingTests
         Assert.Contains(
             trackedSteps["GeneratorOutput"].SelectMany(step => step.Outputs),
             output => output.Reason == IncrementalStepRunReason.Modified);
+
+        AssertRenderFanout(trackedSteps, scenario.ExpectedRenderedFileInvalidations, scenario.ExpectedSourceCount);
+    }
+
+    private static void AssertRenderFanout(
+        ImmutableDictionary<string, ImmutableArray<IncrementalGeneratorRunStep>> trackedSteps,
+        int expectedModifiedFiles,
+        int expectedFileCount)
+    {
+        AssertStepHasExpectedFanout("FileRenderInput");
+        AssertStepHasExpectedFanout("RenderedFile");
+
+        void AssertStepHasExpectedFanout(string stepName)
+        {
+            var outputs = trackedSteps[stepName].SelectMany(step => step.Outputs).ToArray();
+            Assert.Equal(expectedModifiedFiles, outputs.Count(output => output.Reason == IncrementalStepRunReason.Modified));
+            Assert.Equal(
+                expectedFileCount - expectedModifiedFiles,
+                outputs.Count(output => output.Reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged));
+        }
     }
 
     private static void AssertSuccessfulGeneration(GeneratorDriverRunResult result, int expectedSourceCount)
@@ -145,11 +171,24 @@ public sealed class CachingTests
         Assert.Equal(expectedSourceCount, result.Results.Single().GeneratedSources.Length);
     }
 
+    private static void AssertSchemaIdentityOutput(GeneratorDriverRunResult result, IncrementalScenario scenario)
+    {
+        if (scenario.RemovedHintName is not { } removedHintName || scenario.AddedHintName is not { } addedHintName)
+            return;
+
+        var generatedSources = result.Results.Single().GeneratedSources;
+        Assert.DoesNotContain(generatedSources, source => source.HintName == removedHintName);
+        Assert.Contains(generatedSources, source => source.HintName == addedHintName);
+    }
+
     private sealed record IncrementalScenario(
         ImmutableArray<ProjectFile> Files,
         int ChangedFileIndex,
         ProjectFile ChangedFile,
-        string ReferenceResolution)
+        string ReferenceResolution,
+        int ExpectedRenderedFileInvalidations,
+        string? RemovedHintName = null,
+        string? AddedHintName = null)
     {
         public int ExpectedSourceCount => Files.Length;
 
@@ -162,18 +201,20 @@ public sealed class CachingTests
             ],
             ChangedFileIndex: 0,
             ChangedFile: ProjectFile.Schema(Record("Independent", "{\"name\": \"Value\", \"type\": \"string\"}, {\"name\": \"Revision\", \"type\": \"int\"}")),
-            ReferenceResolution: "Strict");
+            ReferenceResolution: "Strict",
+            ExpectedRenderedFileInvalidations: 1);
 
         public static IncrementalScenario ReferencedSchemaContent() => new(
             [
                 ProjectFile.Schema(Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}")),
                 ProjectFile.Schema(Record("Customer", "{\"name\": \"Address\", \"type\": \"Address\"}")),
-                ProjectFile.Schema(Record("Order", "{\"name\": \"Address\", \"type\": \"Address\"}")),
+                ProjectFile.Schema(Record("Order", "{\"name\": \"Customer\", \"type\": \"Customer\"}")),
                 ProjectFile.Schema(Record("Unrelated", "{\"name\": \"Value\", \"type\": \"string\"}")),
             ],
             ChangedFileIndex: 0,
             ChangedFile: ProjectFile.Schema(Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}, {\"name\": \"Revision\", \"type\": \"int\"}")),
-            ReferenceResolution: "Deferred");
+            ReferenceResolution: "Deferred",
+            ExpectedRenderedFileInvalidations: 3);
 
         public static IncrementalScenario SchemaIdentity() => new(
             [
@@ -184,7 +225,10 @@ public sealed class CachingTests
             ],
             ChangedFileIndex: 0,
             ChangedFile: ProjectFile.Schema(Record("Renamed", "{\"name\": \"Value\", \"type\": \"string\"}")),
-            ReferenceResolution: "Strict");
+            ReferenceResolution: "Strict",
+            ExpectedRenderedFileInvalidations: 1,
+            RemovedHintName: "CachingTests.Original.Avro.g.cs",
+            AddedHintName: "CachingTests.Renamed.Avro.g.cs");
 
         private static string Record(string name, string fields) => $$"""
             {

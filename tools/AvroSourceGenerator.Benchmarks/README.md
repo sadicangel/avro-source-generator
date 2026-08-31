@@ -16,7 +16,7 @@ The incremental scenarios are:
 - `ReferencedSchemaContent` adds a field to a schema referenced by half of the remaining schemas; the other half stay independent. This exercises dependent-consumer fan-out while retaining unrelated schemas for later cache assertions.
 - `SchemaIdentity` renames an independent schema, exercising export identity invalidation.
 
-The current pipeline collects all Avro additional files before project-level schema resolution and rendering. As a result, any of these edits currently invalidates the project-level generator output and produces every source again. These scenarios deliberately record that baseline without asserting elapsed time; they are guardrails for later dependency-aware caching work.
+The current pipeline still collects all Avro additional files and rebuilds the project registry after every edit. P3 then fans rendering and source emission out per input file: an independent edit rerenders only that file, while a referenced edit rerenders the changed file and its direct or transitive consumers; unrelated files remain cached. P4 will move project registration itself to a per-file incremental model. These scenarios deliberately avoid elapsed-time assertions while recording this behavior.
 
 Schema construction, generator assembly loading, initial incremental generation, and result validation happen outside the measured operations. The benchmark measures generator-driver execution and source production, but not NuGet restore, assembly loading, or compilation of generated C#.
 

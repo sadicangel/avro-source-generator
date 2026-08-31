@@ -8,4 +8,6 @@ internal static class TrackingNames
     public const string CompilationInfo = nameof(CompilationInfo);
     public const string RenderSettings = nameof(RenderSettings);
     public const string GeneratorOutput = nameof(GeneratorOutput);
+    public const string FileRenderInput = nameof(FileRenderInput);
+    public const string RenderedFile = nameof(RenderedFile);
 }

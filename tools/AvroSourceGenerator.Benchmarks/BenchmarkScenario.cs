@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
@@ -8,12 +8,13 @@ internal sealed record BenchmarkScenario(
     int SchemaCount,
     ImmutableArray<AdditionalText> Files,
     AdditionalText OriginalFile,
-    AdditionalText ChangedFile)
+    AdditionalText ChangedFile,
+    IncrementalChangeScenario ChangeScenario)
 {
     public const int DefaultSchemaCount = 250;
     private const int FieldGroupCount = 4;
 
-    public static BenchmarkScenario Create(int schemaCount)
+    public static BenchmarkScenario Create(int schemaCount, IncrementalChangeScenario changeScenario = IncrementalChangeScenario.IndependentContent)
     {
         if (schemaCount <= 0)
         {
@@ -21,21 +22,29 @@ internal sealed record BenchmarkScenario(
         }
 
         var files = Enumerable.Range(0, schemaCount)
-            .Select(index => (AdditionalText)new InMemoryAdditionalText(
-                GetPath(index),
-                CreateSchema(index, includeChangedField: false)))
+            .Select(index => (AdditionalText)new InMemoryAdditionalText(GetPath(index), CreateSchema(index, changeScenario)))
             .ToImmutableArray();
-        var changedFile = new InMemoryAdditionalText(
-            GetPath(0),
-            CreateSchema(0, includeChangedField: true));
+        var changedFile = new InMemoryAdditionalText(GetPath(0), CreateChangedSchema(changeScenario));
+        if (files[0].GetText()!.ContentEquals(changedFile.GetText()))
+        {
+            throw new InvalidOperationException($"The {changeScenario} scenario did not change its selected file.");
+        }
 
-        return new BenchmarkScenario(schemaCount, files, files[0], changedFile);
+        return new BenchmarkScenario(schemaCount, files, files[0], changedFile, changeScenario);
     }
 
     private static string GetPath(int index) => $"Schemas/BenchmarkModel{index:D4}.avsc";
 
-    private static string CreateSchema(int index, bool includeChangedField)
+    private static string CreateSchema(
+        int index,
+        IncrementalChangeScenario changeScenario,
+        bool includeChangedField = false)
     {
+        if (changeScenario == IncrementalChangeScenario.ReferencedSchemaContent && index % 2 != 0)
+        {
+            return CreateDependentSchema(index);
+        }
+
         var fields = new List<string>(FieldGroupCount * 9 + 1);
 
         for (var group = 0; group < FieldGroupCount; group++)
@@ -69,6 +78,35 @@ internal sealed record BenchmarkScenario(
             """;
     }
 
+    private static string CreateChangedSchema(IncrementalChangeScenario changeScenario) => changeScenario switch
+    {
+        IncrementalChangeScenario.IndependentContent or IncrementalChangeScenario.ReferencedSchemaContent =>
+            CreateRootSchema(includeChangedField: true, renamed: false),
+        IncrementalChangeScenario.SchemaIdentity => CreateRootSchema(includeChangedField: false, renamed: true),
+        _ => throw new ArgumentOutOfRangeException(nameof(changeScenario)),
+    };
+
+    private static string CreateRootSchema(bool includeChangedField, bool renamed)
+    {
+        var schema = CreateSchema(0, IncrementalChangeScenario.IndependentContent, includeChangedField);
+
+        return renamed
+            ? schema.Replace("BenchmarkModel0000", "RenamedBenchmarkModel0000", StringComparison.Ordinal)
+            : schema;
+    }
+
+    private static string CreateDependentSchema(int index) => $$"""
+        {
+          "type": "record",
+          "name": "BenchmarkModel{{index:D4}}",
+          "namespace": "AvroSourceGenerator.BenchmarkModels",
+          "fields": [
+            {"name": "Value", "type": "string"},
+            {"name": "Shared", "type": "BenchmarkModel0000"}
+          ]
+        }
+        """;
+
     private sealed class InMemoryAdditionalText(string path, string text) : AdditionalText
     {
         private readonly SourceText _text = SourceText.From(text);
@@ -77,4 +115,11 @@ internal sealed record BenchmarkScenario(
 
         public override SourceText GetText(CancellationToken cancellationToken = default) => _text;
     }
+}
+
+public enum IncrementalChangeScenario
+{
+    IndependentContent,
+    ReferencedSchemaContent,
+    SchemaIdentity,
 }

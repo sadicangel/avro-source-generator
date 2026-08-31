@@ -26,6 +26,7 @@
     <Project Path="tests/AvroSourceGenerator.Tests/AvroSourceGenerator.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/AvroSourceGenerator.Benchmarks/AvroSourceGenerator.Benchmarks.csproj" />
     <Project Path="tools/AvroSourceGenerator.Tracing/AvroSourceGenerator.Tracing.csproj" />
   </Folder>
   <Folder Name="/src/">

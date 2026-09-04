@@ -1,9 +1,15 @@
 ﻿using System.Collections.Immutable;
 
-namespace AvroSourceGenerator.Avdl.Text;
+namespace AvroSourceGenerator.Text;
 
-public readonly record struct SourceText(string Path, string Text)
+public readonly record struct SourceText(string Path, string Text) : IEquatable<SourceText>
 {
+    public SourceType Type =>
+        Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase) ? SourceType.Avsc :
+        Path.EndsWith(".avpr", StringComparison.OrdinalIgnoreCase) ? SourceType.Avpr :
+        Path.EndsWith(".avdl", StringComparison.OrdinalIgnoreCase) ? SourceType.Avdl :
+        throw new InvalidOperationException("Unreachable: Unsupported Avro file type.");
+
     private readonly Lazy<ImmutableArray<SourceLine>> _lines = new(() => ParseLines(Text, Path));
 
     public ImmutableArray<SourceLine> Lines => _lines.Value;
@@ -31,6 +37,10 @@ public readonly record struct SourceText(string Path, string Text)
 
         return lower - 1;
     }
+
+    public bool Equals(SourceText other) => Path == other.Path && Text == other.Text;
+
+    public override int GetHashCode() => HashCode.Combine(Path, Text);
 
     private static ImmutableArray<SourceLine> ParseLines(string text, string path)
     {

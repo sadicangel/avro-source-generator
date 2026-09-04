@@ -3,48 +3,55 @@ using System.Text.Json;
 using AvroSourceGenerator.Avdl.Syntax;
 using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
-using AvroSourceGenerator.Avdl.Syntax.Directives;
 using AvroSourceGenerator.Avdl.Syntax.Types;
-using AvroSourceGenerator.Avdl.Text;
 using AvroSourceGenerator.Avsc;
+using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
-using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avdl;
 
-public static class SchemaRegistrySourceExtensions
+// TODO:
+// We currently throw exceptions for invalid schemas.
+// We should consider returning diagnostics instead, maybe sharing the same diagnostic model as Avsc.
+public static class AvdlSchemaParser
 {
-    extension(in SchemaRegistry schemaRegistry)
+    public static ParseResult Parse(SourceText source, AvroParseOptions options)
     {
-        public void RegisterSource(SyntaxTree syntaxTree)
+        var parser = new ParserContext(options);
+        var syntaxTree = Parser.Parse(source);
+        if (!syntaxTree.Diagnostics.IsEmpty)
+            throw new InvalidSourceException(syntaxTree.Diagnostics);
+
+        var imports = syntaxTree.Document.ImportDirectives
+            .Concat(syntaxTree.Document.Declarations
+                .OfType<ProtocolDeclarationSyntax>()
+                .SelectMany(static protocol => protocol.Imports))
+            .Select(static import => import.ImportPathLiteralToken.Value as string ?? string.Empty)
+            .ToImmutableArray();
+        var root = parser.Document(syntaxTree);
+        if (imports.IsEmpty && root is not AvroSchemaReference && !root.ContainsTopLevelSchema())
         {
-            using (schemaRegistry.EnterRegisterScope())
-            {
-                var registeredSchema = schemaRegistry.Document(syntaxTree);
-                if (registeredSchema is AvroSchemaReference reference)
-                {
-                    registeredSchema = schemaRegistry.Resolve(reference.SchemaName) ?? registeredSchema;
-                }
-                if (!registeredSchema.ContainsTopLevelSchema())
-                {
-                    var sourceSpan = syntaxTree.Document.SchemaDirective?.MainSchemaType is { } mainSchemaType
-                        ? GetSourceSpan(mainSchemaType)
-                        : GetSourceSpan(syntaxTree);
-                    throw new InvalidSourceException("At least a named schema must be present in source.", sourceSpan);
-                }
-            }
+            var sourceSpan = syntaxTree.Document.SchemaDirective?.MainSchemaType is { } mainSchemaType
+                ? GetSourceSpan(mainSchemaType)
+                : GetSourceSpan(syntaxTree);
+            throw new InvalidSourceException("At least a named schema must be present in source.", sourceSpan);
         }
 
+        return parser.Complete(root, imports);
+    }
+
+    extension(ParserContext context)
+    {
         private AvroSchema Document(SyntaxTree syntaxTree)
         {
             var document = syntaxTree.Document;
             var containingNamespace = document.NamespaceDirective?.NamespaceName.FullName;
             var mainSchema = document.SchemaDirective?.MainSchemaType;
-            schemaRegistry.ValidateImports(document.ImportDirectives);
 
             if (mainSchema is null)
             {
@@ -53,7 +60,7 @@ public static class SchemaRegistrySourceExtensions
                     throw new InvalidSourceException("Avro IDL files must contain a main schema directive or a single protocol declaration.", GetSourceSpan(syntaxTree));
                 }
 
-                return schemaRegistry.Protocol(protocol, containingNamespace);
+                return context.Protocol(protocol, containingNamespace);
             }
 
             foreach (var declaration in document.Declarations)
@@ -63,21 +70,10 @@ public static class SchemaRegistrySourceExtensions
                     throw new InvalidSourceException($"Invalid declaration in Avro IDL file: {declaration.SyntaxKind}", GetSourceSpan(declaration));
                 }
 
-                schemaRegistry.Schema(schemaDeclaration, containingNamespace);
+                context.Schema(schemaDeclaration, containingNamespace);
             }
 
-            return schemaRegistry.Type(mainSchema, containingNamespace);
-        }
-
-        private void ValidateImports(IEnumerable<ImportDirectiveSyntax> imports)
-        {
-            if (schemaRegistry.Options.ReferenceResolution is ReferenceResolution.Strict
-                && imports.FirstOrDefault() is { } import)
-            {
-                throw new InvalidSourceException(
-                    "Imports are not yet supported in Avro IDL files. To work around this limitation, set AvroSourceGeneratorReferenceResolution to Deferred and include imported files as AdditionalFiles.",
-                    import.ImportKeyword.SourceSpan);
-            }
+            return context.Type(mainSchema, containingNamespace);
         }
 
         private AvroSchema Type(
@@ -90,46 +86,31 @@ public static class SchemaRegistrySourceExtensions
 
             return syntax switch
             {
-                AnnotatedTypeSyntax type => schemaRegistry.Annotated(type, containingNamespace, defaultJson),
-                ArrayTypeSyntax type => schemaRegistry.Array(type, containingNamespace, properties),
-                ILogicalTypeSyntax type => schemaRegistry.Logical(type, containingNamespace),
-                MapTypeSyntax type => schemaRegistry.Map(type, containingNamespace, properties),
-                NamedTypeSyntax type => schemaRegistry.Named(type.Name.FullName.ToSchemaName(), containingNamespace),
-                OptionalTypeSyntax type => schemaRegistry.Optional(type, containingNamespace, defaultJson),
-                PrimitiveTypeSyntax type => schemaRegistry.Primitive(type, containingNamespace, properties),
-                UnionTypeSyntax type => schemaRegistry.Union(type, containingNamespace),
-                // TODO: Fix this schema name. It's not a schema name, it's a type syntax.
-                _ => throw new MissingReferenceException(new SchemaName(syntax.SyntaxKind.ToString(), containingNamespace)),
+                AnnotatedTypeSyntax type => context.Annotated(type, containingNamespace, defaultJson),
+                ArrayTypeSyntax type => context.Array(type, containingNamespace, properties),
+                ILogicalTypeSyntax type => context.Logical(type, containingNamespace),
+                MapTypeSyntax type => context.Map(type, containingNamespace, properties),
+                NamedTypeSyntax type => context.Named(type.Name.FullName.ToSchemaName(), containingNamespace),
+                OptionalTypeSyntax type => context.Optional(type, containingNamespace, defaultJson),
+                PrimitiveTypeSyntax type => context.Primitive(type, containingNamespace, properties),
+                UnionTypeSyntax type => context.Union(type, containingNamespace),
+                _ => throw new InvalidSourceException($"Invalid type syntax: {syntax.SyntaxKind}", GetSourceSpan(syntax)),
             };
         }
 
         private AvroSchema Named(SchemaName schemaName, string? containingNamespace)
         {
-            if (schemaRegistry.Find(schemaName, containingNamespace) is { } named)
-            {
-                return named;
-            }
-
-            schemaName = schemaName.ResolveIn(containingNamespace);
-            if (schemaRegistry.Options.ReferenceResolution is ReferenceResolution.Strict)
-            {
-                throw new MissingReferenceException(schemaName);
-            }
-
-            schemaRegistry.AddReference(schemaName);
-
-            return schemaRegistry.Find(schemaName, containingNamespace: null)
-                ?? throw new InvalidOperationException("Unreachable code: reference should have been added in the registry.");
+            return context.Reference(schemaName, containingNamespace);
         }
 
         private NamedSchema Schema(ISchemaDeclarationSyntax declaration, string? containingNamespace)
         {
             return declaration switch
             {
-                EnumDeclarationSyntax syntax => schemaRegistry.Enum(syntax, containingNamespace),
-                ErrorDeclarationSyntax syntax => schemaRegistry.Error(syntax, containingNamespace),
-                FixedDeclarationSyntax syntax => schemaRegistry.Fixed(syntax, containingNamespace),
-                RecordDeclarationSyntax syntax => schemaRegistry.Record(syntax, containingNamespace),
+                EnumDeclarationSyntax syntax => context.Enum(syntax, containingNamespace),
+                ErrorDeclarationSyntax syntax => context.Error(syntax, containingNamespace),
+                FixedDeclarationSyntax syntax => context.Fixed(syntax, containingNamespace),
+                RecordDeclarationSyntax syntax => context.Record(syntax, containingNamespace),
                 _ => throw new InvalidSourceException($"Invalid declaration: {declaration.SyntaxKind}", GetSourceSpan(declaration))
             };
         }
@@ -140,9 +121,9 @@ public static class SchemaRegistrySourceExtensions
             var properties = syntax.Annotations.OfType<CustomAnnotationSyntax>()
                 .Where(a => !ReservedSchemaProperties.IsReserved(a.AnnotationName.FullName))
                 .ToImmutableSortedDictionary(a => a.AnnotationName.FullName, a => a.JsonValue.ToJsonElement());
-            var underlyingSchema = schemaRegistry.Type(syntax.Type, containingNamespace, properties, defaultJson);
+            var underlyingSchema = context.Type(syntax.Type, containingNamespace, properties, defaultJson);
             return logicalTypeName is not null
-                ? LogicalSchema.Create(logicalTypeName, underlyingSchema, schemaRegistry.Options.TargetProfile)
+                ? LogicalSchema.Create(logicalTypeName, underlyingSchema, context.Options.TargetProfile)
                 : underlyingSchema;
         }
 
@@ -166,20 +147,20 @@ public static class SchemaRegistrySourceExtensions
 
         private ArraySchema Array(ArrayTypeSyntax syntax, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
         {
-            var items = schemaRegistry.Type(syntax.ItemType, containingNamespace);
+            var items = context.Type(syntax.ItemType, containingNamespace);
             return new ArraySchema(items, Documentation: null, properties);
         }
 
         private MapSchema Map(MapTypeSyntax syntax, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
         {
-            var values = schemaRegistry.Type(syntax.ValueType, containingNamespace);
+            var values = context.Type(syntax.ValueType, containingNamespace);
             return new MapSchema(values, Documentation: null, properties);
         }
 
         private EnumSchema Enum(EnumDeclarationSyntax syntax, string? containingNamespace)
         {
             var schemaName = syntax.GetRequiredSchemaName(containingNamespace);
-            using (schemaRegistry.EnterRecursionScope(schemaName))
+            using (context.EnterRecursionScope(schemaName))
             {
                 var documentation = syntax.GetDocumentation();
                 var aliases = syntax.GetAliases();
@@ -188,7 +169,7 @@ public static class SchemaRegistrySourceExtensions
                 var properties = syntax.GetSchemaProperties();
 
                 var enumSchema = new EnumSchema(schemaName, documentation, aliases, symbols, @default, properties);
-                schemaRegistry.Register(enumSchema);
+                context.Declare(enumSchema);
                 return enumSchema;
             }
         }
@@ -196,7 +177,7 @@ public static class SchemaRegistrySourceExtensions
         private FixedSchema Fixed(FixedDeclarationSyntax syntax, string? containingNamespace)
         {
             var schemaName = syntax.GetRequiredSchemaName(containingNamespace);
-            using (schemaRegistry.EnterRecursionScope(schemaName))
+            using (context.EnterRecursionScope(schemaName))
             {
                 var documentation = syntax.GetDocumentation();
                 var aliases = syntax.GetAliases();
@@ -205,13 +186,13 @@ public static class SchemaRegistrySourceExtensions
                     : throw new InvalidSourceException("Fixed size must be a positive integer.", syntax.SizeLiteralToken.SourceSpan);
                 var properties = syntax.GetSchemaProperties();
 
-                var fixedSchema = schemaRegistry.Options.TargetProfile switch
+                var fixedSchema = context.Options.TargetProfile switch
                 {
                     // Only Apache.Avro needs a custom type for fixed, others use byte[].
                     TargetProfile.Apache => new FixedSchema(schemaName, documentation, aliases, size, properties),
                     _ => FixedSchema.CreateAsByteArray(schemaName, documentation, aliases, size, properties),
                 };
-                schemaRegistry.Register(fixedSchema);
+                context.Declare(fixedSchema);
                 return fixedSchema;
             }
         }
@@ -219,15 +200,15 @@ public static class SchemaRegistrySourceExtensions
         private ErrorSchema Error(ErrorDeclarationSyntax syntax, string? containingNamespace)
         {
             var schemaName = syntax.GetRequiredSchemaName(containingNamespace);
-            using (schemaRegistry.EnterRecursionScope(schemaName))
+            using (context.EnterRecursionScope(schemaName))
             {
                 var documentation = syntax.GetDocumentation();
                 var aliases = syntax.GetAliases();
-                var fields = schemaRegistry.Fields(syntax.Fields, schemaName);
+                var fields = context.Fields(syntax.Fields, schemaName);
                 var properties = syntax.GetSchemaProperties();
 
                 var errorSchema = new ErrorSchema(schemaName, documentation, aliases, fields, properties);
-                schemaRegistry.Register(errorSchema);
+                context.Declare(errorSchema);
                 return errorSchema;
             }
         }
@@ -235,15 +216,15 @@ public static class SchemaRegistrySourceExtensions
         private RecordSchema Record(RecordDeclarationSyntax syntax, string? containingNamespace)
         {
             var schemaName = syntax.GetRequiredSchemaName(containingNamespace);
-            using (schemaRegistry.EnterRecursionScope(schemaName))
+            using (context.EnterRecursionScope(schemaName))
             {
                 var documentation = syntax.GetDocumentation();
                 var aliases = syntax.GetAliases();
-                var fields = schemaRegistry.Fields(syntax.Fields, schemaName);
+                var fields = context.Fields(syntax.Fields, schemaName);
                 var properties = syntax.GetSchemaProperties();
 
                 var recordSchema = new RecordSchema(schemaName, documentation, aliases, fields, properties);
-                schemaRegistry.Register(recordSchema);
+                context.Declare(recordSchema);
                 return recordSchema;
             }
         }
@@ -252,7 +233,7 @@ public static class SchemaRegistrySourceExtensions
         {
             var fields = ImmutableArray.CreateBuilder<Field>(syntaxList.Count);
             foreach (var syntax in syntaxList)
-                fields.Add(schemaRegistry.Field(syntax, containingSchemaName));
+                fields.Add(context.Field(syntax, containingSchemaName));
             return fields.MoveToImmutable();
         }
 
@@ -260,8 +241,8 @@ public static class SchemaRegistrySourceExtensions
         {
             var name = syntax.Name.FullName.ToValidName();
             var defaultJson = syntax.DefaultValueClause?.JsonValue.ToOptionalJsonElement();
-            var type = schemaRegistry.Type(syntax.Type, containingSchemaName.Namespace, defaultJson: defaultJson);
-            type = schemaRegistry.ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var remarks);
+            var type = context.Type(syntax.Type, containingSchemaName.Namespace, defaultJson: defaultJson);
+            type = context.ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var remarks);
 
             var documentation = syntax.GetDocumentation();
             var aliases = syntax.GetAliases();
@@ -274,21 +255,21 @@ public static class SchemaRegistrySourceExtensions
 
         private UnionSchema Optional(OptionalTypeSyntax syntax, string? containingNamespace, JsonElement? defaultJson)
         {
-            var underlyingSchema = schemaRegistry.Type(syntax.Type, containingNamespace);
+            var underlyingSchema = context.Type(syntax.Type, containingNamespace);
             var schemas = defaultJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }
                 ? ImmutableArray.Create(AvroSchema.Object, underlyingSchema)
                 : ImmutableArray.Create(underlyingSchema, AvroSchema.Object);
-            return UnionSchema.Create(schemas, schemaRegistry.Options.UseNullableReferenceTypes);
+            return UnionSchema.Create(schemas, context.Options.UseNullableReferenceTypes);
         }
 
         private UnionSchema Union(UnionTypeSyntax syntax, string? containingNamespace)
         {
             var builder = ImmutableArray.CreateBuilder<AvroSchema>(syntax.Types.Count);
             foreach (var typeSyntax in syntax.Types)
-                builder.Add(schemaRegistry.Type(typeSyntax, containingNamespace));
+                builder.Add(context.Type(typeSyntax, containingNamespace));
             var schemas = builder.MoveToImmutable();
 
-            return UnionSchema.Create(schemas, schemaRegistry.Options.UseNullableReferenceTypes);
+            return UnionSchema.Create(schemas, context.Options.UseNullableReferenceTypes);
         }
 
         private AvroSchema Logical(ILogicalTypeSyntax syntax, string? containingNamespace)
@@ -303,7 +284,7 @@ public static class SchemaRegistrySourceExtensions
                     .Add("precision", JsonSerializer.SerializeToElement(precision))
                     .Add("scale", JsonSerializer.SerializeToElement(scale));
                 var bytes = AvroSchema.Bytes with { Properties = properties };
-                return LogicalSchema.Create(LogicalTypeNames.Decimal, bytes, schemaRegistry.Options.TargetProfile);
+                return LogicalSchema.Create(LogicalTypeNames.Decimal, bytes, context.Options.TargetProfile);
             }
 
             if (syntax is not LogicalTypeSyntax logical)
@@ -313,30 +294,28 @@ public static class SchemaRegistrySourceExtensions
 
             return logical.LogicalTypeNameKeyword.SyntaxKind switch
             {
-                SyntaxKind.DateKeyword => LogicalSchema.Create(LogicalTypeNames.Date, AvroSchema.Int, schemaRegistry.Options.TargetProfile),
-                SyntaxKind.TimeMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimeMillis, AvroSchema.Int, schemaRegistry.Options.TargetProfile),
-                SyntaxKind.TimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimestampMillis, AvroSchema.Long, schemaRegistry.Options.TargetProfile),
-                SyntaxKind.LocalTimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.LocalTimestampMillis, AvroSchema.Long, schemaRegistry.Options.TargetProfile),
-                SyntaxKind.UuidKeyword => LogicalSchema.Create(LogicalTypeNames.Uuid, AvroSchema.String, schemaRegistry.Options.TargetProfile),
+                SyntaxKind.DateKeyword => LogicalSchema.Create(LogicalTypeNames.Date, AvroSchema.Int, context.Options.TargetProfile),
+                SyntaxKind.TimeMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimeMillis, AvroSchema.Int, context.Options.TargetProfile),
+                SyntaxKind.TimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimestampMillis, AvroSchema.Long, context.Options.TargetProfile),
+                SyntaxKind.LocalTimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.LocalTimestampMillis, AvroSchema.Long, context.Options.TargetProfile),
+                SyntaxKind.UuidKeyword => LogicalSchema.Create(LogicalTypeNames.Uuid, AvroSchema.String, context.Options.TargetProfile),
                 _ => throw new InvalidSourceException($"Invalid logical type syntax: {syntax.SyntaxKind}", logical.LogicalTypeNameKeyword.SourceSpan)
             };
         }
 
         private ProtocolSchema Protocol(ProtocolDeclarationSyntax syntax, string? containingNamespace)
         {
-            schemaRegistry.ValidateImports(syntax.Imports);
-
             var schemaName = syntax.GetRequiredSchemaName(containingNamespace);
-            using (schemaRegistry.EnterRecursionScope(schemaName))
+            using (context.EnterRecursionScope(schemaName))
             {
                 var documentation = syntax.GetDocumentation();
-                var types = schemaRegistry.ProtocolTypes(syntax.Types, schemaName.Namespace);
-                var messages = schemaRegistry.ProtocolMessages(syntax.Messages, schemaName.Namespace);
+                var types = context.ProtocolTypes(syntax.Types, schemaName.Namespace);
+                var messages = context.ProtocolMessages(syntax.Messages, schemaName.Namespace);
                 var properties = syntax.GetProtocolProperties();
 
                 var protocolSchema = new ProtocolSchema(schemaName, documentation, types, messages, properties);
 
-                schemaRegistry.Register(protocolSchema);
+                context.Declare(protocolSchema);
 
                 return protocolSchema;
             }
@@ -346,7 +325,7 @@ public static class SchemaRegistrySourceExtensions
         {
             var types = ImmutableArray.CreateBuilder<NamedSchema>();
             foreach (var type in syntaxList)
-                types.Add(schemaRegistry.Schema(type, containingNamespace));
+                types.Add(context.Schema(type, containingNamespace));
 
             return types.ToImmutable();
         }
@@ -355,7 +334,7 @@ public static class SchemaRegistrySourceExtensions
         {
             var protocolMessages = ImmutableArray.CreateBuilder<ProtocolMessage>();
             foreach (var syntax in syntaxList)
-                protocolMessages.Add(schemaRegistry.Message(syntax, containingNamespace));
+                protocolMessages.Add(context.Message(syntax, containingNamespace));
             return protocolMessages.ToImmutable();
         }
 
@@ -363,9 +342,9 @@ public static class SchemaRegistrySourceExtensions
         {
             var methodName = syntax.Name.FullName.ToValidName();
             var documentation = syntax.GetDocumentation();
-            var requestParameters = schemaRegistry.ProtocolRequestParameters(syntax.Parameters, containingNamespace);
-            var response = schemaRegistry.ProtocolResponse(syntax.Type, containingNamespace);
-            var errors = schemaRegistry.ProtocolErrors(syntax.ThrowsErrorClause, containingNamespace);
+            var requestParameters = context.ProtocolRequestParameters(syntax.Parameters, containingNamespace);
+            var response = context.ProtocolResponse(syntax.Type, containingNamespace);
+            var errors = context.ProtocolErrors(syntax.ThrowsErrorClause, containingNamespace);
             var oneWay = syntax.OneWayClause is not null ? true : default(bool?);
             if (oneWay is true && (response.Type.Type is not SchemaType.Null || errors.Length > 0))
             {
@@ -379,7 +358,7 @@ public static class SchemaRegistrySourceExtensions
         {
             var fields = ImmutableArray.CreateBuilder<ProtocolRequestParameter>();
             foreach (var syntax in syntaxList)
-                fields.Add(schemaRegistry.ProtocolRequestParameter(syntax, containingNamespace));
+                fields.Add(context.ProtocolRequestParameter(syntax, containingNamespace));
 
             return fields.ToImmutable();
         }
@@ -388,7 +367,7 @@ public static class SchemaRegistrySourceExtensions
         {
             var name = syntax.Name.FullName.ToValidName();
             var defaultJson = syntax.DefaultValueClause?.JsonValue.ToOptionalJsonElement();
-            var type = schemaRegistry.Type(syntax.Type, containingNamespace, defaultJson: defaultJson);
+            var type = context.Type(syntax.Type, containingNamespace, defaultJson: defaultJson);
             var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
 
             var documentation = syntax.GetDocumentation();
@@ -398,7 +377,7 @@ public static class SchemaRegistrySourceExtensions
 
         private ProtocolResponse ProtocolResponse(ITypeSyntax syntax, string? containingNamespace)
         {
-            var type = schemaRegistry.Type(syntax, containingNamespace);
+            var type = context.Type(syntax, containingNamespace);
             var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
 
             return new ProtocolResponse(type, underlyingType);
@@ -415,7 +394,7 @@ public static class SchemaRegistrySourceExtensions
             foreach (var errorSyntax in syntax.Errors)
             {
                 // TODO: Do we need to validate that this is an error schema?
-                builder.Add(schemaRegistry.Type(errorSyntax, containingNamespace));
+                builder.Add(context.Type(errorSyntax, containingNamespace));
             }
 
             return builder.ToImmutable();

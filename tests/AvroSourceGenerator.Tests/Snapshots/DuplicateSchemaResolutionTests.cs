@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Tests.Snapshots;
 
-public sealed class SchemaRegistryDuplicateResolutionTests
+public sealed class DuplicateSchemaResolutionTests
 {
     [Fact]
     public Task Verify() => Snapshot.Files(

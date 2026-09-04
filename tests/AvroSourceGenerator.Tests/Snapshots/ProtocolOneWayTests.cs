@@ -1,31 +1,29 @@
-using System.Text.Json;
-using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Protocols;
-using AvroSourceGenerator.Registry;
+using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Tests.Snapshots;
 
 public sealed class ProtocolOneWayTests
 {
     [Fact]
-    public void Register_ExplicitFalse_PreservesOneWayWhenWritingProtocol()
+    public void Lower_ExplicitFalse_PreservesOneWayWhenWritingProtocol()
     {
-        var (registry, protocol) = RegisterProtocol("""
+        var (schemas, protocol) = LowerProtocol("""
             ,
                         "one-way": false
             """);
         var message = Assert.Single(protocol.Messages);
 
-        var json = protocol.ToJsonString(registry.Schemas);
+        var json = protocol.ToJsonString(schemas);
 
         Assert.False(message.OneWay);
         Assert.Contains("\"one-way\":false", json);
     }
 
     [Fact]
-    public void Register_Protocol_RequiresNullability()
+    public void Lower_Protocol_RequiresNullability()
     {
-        var (_, protocol) = RegisterProtocol();
+        var (_, protocol) = LowerProtocol();
 
         Assert.True(protocol.RequiresNullability);
     }
@@ -47,9 +45,9 @@ public sealed class ProtocolOneWayTests
             }
             """));
 
-    private static (SchemaRegistry Registry, ProtocolSchema Protocol) RegisterProtocol(string oneWayJson = "")
+    private static (IReadOnlyDictionary<SchemaName, TopLevelSchema> Schemas, ProtocolSchema Protocol) LowerProtocol(string oneWayJson = "")
     {
-        var schema = Parse(
+        var parsed = SchemaCompilerTestHelpers.ParseJson(
             $$"""
             {
                 "protocol": "Service",
@@ -62,14 +60,7 @@ public sealed class ProtocolOneWayTests
                 }
             }
             """);
-        var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
-        registry.RegisterSchema(schema);
-        return (registry, Assert.IsType<ProtocolSchema>(Assert.Single(registry.Schemas.Values)));
-    }
-
-    private static JsonElement Parse(string json)
-    {
-        using var document = JsonDocument.Parse(json);
-        return document.RootElement.Clone();
+        var schemas = parsed.Declarations.ToDictionary(static schema => schema.SchemaName);
+        return (schemas, Assert.IsType<ProtocolSchema>(Assert.Single(parsed.Declarations)));
     }
 }

@@ -1,4 +1,4 @@
-{{ AccessModifier }} partial {{ Record }} {{ $.schema.CSharpName.Name }}{{ if $.schema.InheritsFrom }} : {{ $.schema.InheritsFrom.CSharpName }}{{ end }}
+{{ AccessModifier }} partial {{ Record }} {{ $.schema.CSharpName.Name }}{{ if $.schema.InheritsFrom }} : {{ $.schema.InheritsFrom }}{{ end }}
 {
     {{~ for field in $.schema.Fields ~}}
     {{ include 'field' field: field }}

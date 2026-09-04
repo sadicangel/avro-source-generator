@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Tests.Snapshots;
 
-public sealed class SchemaRegistryRootSchemaValidationTests
+public sealed class RootSchemaValidationTests
 {
     [Theory]
     [MemberData(nameof(InvalidRootSchemas))]

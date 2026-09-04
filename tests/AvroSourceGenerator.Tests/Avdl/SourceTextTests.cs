@@ -1,4 +1,4 @@
-using AvroSourceGenerator.Avdl.Text;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Tests.Avdl;
 
@@ -58,7 +58,13 @@ public sealed class SourceTextTests
         Assert.Equal("example", span.ToString());
     }
 
-    private static void AssertLine(SourceLine line, int offset, int length, int lengthWithLineBreak, string text, string textWithLineBreak)
+    private static void AssertLine(
+        SourceLine line,
+        int offset,
+        int length,
+        int lengthWithLineBreak,
+        string text,
+        string textWithLineBreak)
     {
         Assert.Equal(offset, line.SourceSpan.Offset);
         Assert.Equal(length, line.SourceSpan.Length);

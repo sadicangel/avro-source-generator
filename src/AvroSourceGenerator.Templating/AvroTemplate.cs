@@ -1,59 +1,56 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
-using Scriban;
 using Scriban.Functions;
-using Scriban.Syntax;
 
 namespace AvroSourceGenerator.Templating;
 
 public static class AvroTemplate
 {
-    public static ImmutableArray<RenderedSchema> Render(in SchemaRegistry schemaRegistry, TemplateSettings settings)
+    internal static ImmutableArray<RenderedSchema> Render(
+        ImmutableArray<TopLevelSchema> schemas,
+        ImmutableDictionary<SchemaName, TopLevelSchema> schemasByName,
+        RenderOptions options,
+        CancellationToken cancellationToken)
     {
-        var templateLoader = new TemplateLoader(settings);
-        var templateContext = new TemplateContext(new TemplateScriptObject(settings))
+        var renderer = TemplateRendererPool.Rent(options);
+        var completed = false;
+        try
         {
-            MemberRenamer = member => member.Name,
-            TemplateLoader = templateLoader,
-        };
-
-        var templatePath = templateContext.GetTemplatePathFromName("schema", callerContext: null) ?? throw new InvalidOperationException("Unreachable code");
-        var template = templateContext.GetOrCreateTemplate(templatePath, callerContext: null);
-
-        var registeredSchemas = schemaRegistry.ToImmutableDictionary(x => x.SchemaName);
-
-        return
-        [
-            .. schemaRegistry.Where(ShouldEmitCode).Select(schema =>
+            var renderedSchemas = ImmutableArray.CreateRange(schemas.Select(schema =>
             {
-                templateContext.SetValue(new ScriptVariableGlobal("Schema"), schema);
-                if (settings.TargetProfile is TargetProfile.Apache)
-                    templateContext.SetValue(new ScriptVariableGlobal("SchemaJson"), GetSchemaJson(schema, registeredSchemas, settings));
+                cancellationToken.ThrowIfCancellationRequested();
+                var schemaJson = options.TargetProfile is TargetProfile.Apache
+                    ? GetSchemaJson(schema, schemasByName, options)
+                    : null;
                 var hintName = $"{schema.SchemaName.FullName}.Avro.g.cs";
-                var sourceText = template.Render(templateContext);
+                var sourceText = renderer.Render(schema, schemaJson);
                 return new RenderedSchema(hintName, sourceText);
-            })
-        ];
+            }));
+
+            completed = true;
+            return renderedSchemas;
+        }
+        finally
+        {
+            if (completed)
+                TemplateRendererPool.Return(options, renderer);
+        }
     }
 
-    private static bool ShouldEmitCode(TopLevelSchema schema) =>
-        schema is not FixedSchema fixedSchema || fixedSchema.CSharpName != AvroSchema.Bytes.CSharpName;
-
-    private static string GetSchemaJson(TopLevelSchema schema, ImmutableDictionary<SchemaName, TopLevelSchema> registeredSchemas, TemplateSettings settings)
+    private static string GetSchemaJson(TopLevelSchema schema, ImmutableDictionary<SchemaName, TopLevelSchema> schemasByName, RenderOptions options)
     {
-        if (settings.UseRawStringLiterals)
+        if (options.UseRawStringLiterals)
         {
             return $""""
                 """
-                {schema.ToJsonString(registeredSchemas, new JsonWriterOptions { Indented = true })}
+                {schema.ToJsonString(schemasByName, new JsonWriterOptions { Indented = true })}
                 """
                 """";
         }
 
-        return StringFunctions.Literal(schema.ToJsonString(registeredSchemas))
+        return StringFunctions.Literal(schema.ToJsonString(schemasByName))
             ?? throw new InvalidOperationException("Unreachable code");
     }
 }

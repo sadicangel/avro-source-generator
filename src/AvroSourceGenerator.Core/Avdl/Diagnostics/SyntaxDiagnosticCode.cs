@@ -13,4 +13,5 @@ public enum SyntaxDiagnosticCode
     UnexpectedJsonValue,
     MisplacedAnnotation,
     MisplacedDocumentation,
+    InvalidSource,
 }

@@ -1,9 +1,3 @@
-using System.Text.Json;
-using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avdl.Text;
-using AvroSourceGenerator.Avsc;
-using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Tests;
@@ -13,8 +7,7 @@ public sealed class FieldPossibleTypesTests
     [Fact]
     public void PossibleTypes_ReflectAvroSchemaBranchesInOrder()
     {
-        var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
-        registry.RegisterSchema(Parse(
+        var parsed = SchemaCompilerTestHelpers.ParseJson(
             """
             {
               "type": "record",
@@ -27,9 +20,9 @@ public sealed class FieldPossibleTypesTests
                 { "name": "onlyNull", "type": "null" }
               ]
             }
-            """));
+            """);
 
-        var record = Assert.IsType<RecordSchema>(Assert.Single(registry.Schemas.Values));
+        var record = Assert.IsType<RecordSchema>(Assert.Single(parsed.Declarations));
         var fields = record.Fields.ToDictionary(field => field.Name);
 
         AssertFieldMetadata(fields["ordinary"], allowsNull: false, hasNullableAnnotation: false, SchemaType.String);
@@ -42,18 +35,16 @@ public sealed class FieldPossibleTypesTests
     [Fact]
     public void PossibleTypes_AvdlOptionalSyntaxIncludesNullBranch()
     {
-        var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
-        registry.RegisterSource(Parser.Parse(new SourceText(
-            "test.avdl",
+        var parsed = SchemaCompilerTestHelpers.ParseSource(
             """
             schema OptionalRecord;
 
             record OptionalRecord {
                 string? value;
             }
-            """)));
+            """);
 
-        var record = Assert.IsType<RecordSchema>(Assert.Single(registry.Schemas.Values));
+        var record = Assert.IsType<RecordSchema>(Assert.Single(parsed.Declarations));
         var field = Assert.Single(record.Fields);
 
         AssertFieldMetadata(field, allowsNull: true, hasNullableAnnotation: true, SchemaType.Null, SchemaType.String);
@@ -62,8 +53,7 @@ public sealed class FieldPossibleTypesTests
     [Fact]
     public void NullableAnnotation_RespectsNullableReferenceTypeOptionIndependentlyOfAllowsNull()
     {
-        var registry = new SchemaRegistry(SchemaRegistryOptions.Default with { UseNullableReferenceTypes = false });
-        registry.RegisterSchema(Parse(
+        var parsed = SchemaCompilerTestHelpers.ParseJson(
             """
             {
               "type": "record",
@@ -73,9 +63,10 @@ public sealed class FieldPossibleTypesTests
                 { "name": "value", "type": ["null", "int"] }
               ]
             }
-            """));
+            """,
+            useNullableReferenceTypes: false);
 
-        var record = Assert.IsType<RecordSchema>(Assert.Single(registry.Schemas.Values));
+        var record = Assert.IsType<RecordSchema>(Assert.Single(parsed.Declarations));
         var fields = record.Fields.ToDictionary(field => field.Name);
 
         AssertFieldMetadata(fields["reference"], allowsNull: true, hasNullableAnnotation: false, SchemaType.Null, SchemaType.String);
@@ -85,9 +76,7 @@ public sealed class FieldPossibleTypesTests
     [Fact]
     public void NullableAnnotation_AvdlOptionalSyntaxRespectsNullableReferenceTypeOption()
     {
-        var registry = new SchemaRegistry(SchemaRegistryOptions.Default with { UseNullableReferenceTypes = false });
-        registry.RegisterSource(Parser.Parse(new SourceText(
-            "test.avdl",
+        var parsed = SchemaCompilerTestHelpers.ParseSource(
             """
             schema OptionalRecord;
 
@@ -95,9 +84,10 @@ public sealed class FieldPossibleTypesTests
                 string? reference;
                 int? value;
             }
-            """)));
+            """,
+            useNullableReferenceTypes: false);
 
-        var record = Assert.IsType<RecordSchema>(Assert.Single(registry.Schemas.Values));
+        var record = Assert.IsType<RecordSchema>(Assert.Single(parsed.Declarations));
         var fields = record.Fields.ToDictionary(field => field.Name);
 
         AssertFieldMetadata(fields["reference"], allowsNull: true, hasNullableAnnotation: false, SchemaType.Null, SchemaType.String);
@@ -109,11 +99,5 @@ public sealed class FieldPossibleTypesTests
         Assert.Equal(possibleTypes, field.PossibleTypes.Select(schema => schema.Type));
         Assert.Equal(allowsNull, field.AllowsNull);
         Assert.Equal(hasNullableAnnotation, field.Type.CSharpName.HasNullableAnnotation);
-    }
-
-    private static JsonElement Parse(string json)
-    {
-        using var document = JsonDocument.Parse(json);
-        return document.RootElement.Clone();
     }
 }

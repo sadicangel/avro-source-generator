@@ -4,7 +4,7 @@ using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Directives;
 using AvroSourceGenerator.Avdl.Syntax.Types;
-using AvroSourceGenerator.Avdl.Text;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
 

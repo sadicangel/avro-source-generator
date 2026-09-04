@@ -1,5 +1,5 @@
 ﻿using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avdl.Text;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Tests.Avdl;
 

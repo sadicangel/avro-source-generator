@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using AvroSourceGenerator.Avdl.Text;
+using AvroSourceGenerator.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using SourceText = Microsoft.CodeAnalysis.Text.SourceText;
@@ -59,7 +59,8 @@ internal readonly record struct LocationInfo(string FilePath, TextSpan TextSpan,
         var line = sourceText.Lines[Math.Min((int)lineNumber, sourceText.Lines.Count - 1)];
         var charIndex = Math.Min((int)bytePositionInLine, line.Span.Length);
 
-        var span = new TextSpan(line.Start + charIndex, line.End);
+        var start = line.Start + charIndex;
+        var span = new TextSpan(start, line.End - start);
         var lineSpan = sourceText.Lines.GetLinePositionSpan(span);
 
         return new LocationInfo(path, span, lineSpan);

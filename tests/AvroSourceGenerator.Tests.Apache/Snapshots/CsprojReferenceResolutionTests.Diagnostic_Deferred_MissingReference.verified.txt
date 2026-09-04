@@ -1,4 +1,5 @@
 ﻿{
+  Location: 7ne69Miwm3AbPqt5Q8iw551pqPs.avsc: (0,0)-(19,1),
   Message: The following schema references could not be resolved: Demo.Store.OrderLine,
   Severity: Error,
   Descriptor: {

@@ -1,4 +1,4 @@
-﻿namespace AvroSourceGenerator.Avdl.Text;
+﻿namespace AvroSourceGenerator.Text;
 
 public readonly record struct SourceLine(SourceSpan SourceSpan, SourceSpan SourceSpanWithLineBreak)
 {

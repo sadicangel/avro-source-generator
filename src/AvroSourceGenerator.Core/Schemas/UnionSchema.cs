@@ -45,17 +45,12 @@ public sealed record class UnionSchema(
 
     public UnionSchema WithVariant(VariantSchema variant)
     {
-        // TODO: Can we extend this to Fixed and Error types in the future?
-        foreach (var record in Schemas.OfType<RecordSchema>())
-        {
-            record.InheritsFrom = variant;
-        }
-
         return this with
         {
             CSharpName = CSharpName.HasNullableAnnotation
                 ? variant.CSharpName.WithNullableAnnotation()
                 : variant.CSharpName.WithoutNullableAnnotation(),
+            Schemas = variant.DerivedSchemas,
             UnderlyingSchema = variant
         };
     }

@@ -1,9 +1,9 @@
-using AvroSourceGenerator.Configuration;
+﻿using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Templating;
 
 namespace AvroSourceGenerator.Tests;
 
-public sealed class TemplateSettingsTests
+public sealed class RenderOptionsTests
 {
     public static TheoryData<LanguageFeatures, string, string, string> ConfigurationDerivedExpressions => new()
     {
@@ -21,10 +21,10 @@ public sealed class TemplateSettingsTests
         string fieldValueExpression,
         string setter)
     {
-        var settings = new TemplateSettings(TargetProfile.Modern, languageFeatures, AccessModifier.Public);
+        var options = new RenderOptions(TargetProfile.Modern, languageFeatures, AccessModifier.Public);
 
-        Assert.Equal(objectType, settings.ObjectType);
-        Assert.Equal(fieldValueExpression, settings.FieldValueExpression);
-        Assert.Equal(setter, settings.Setter);
+        Assert.Equal(objectType, options.ObjectType);
+        Assert.Equal(fieldValueExpression, options.FieldValueExpression);
+        Assert.Equal(setter, options.Setter);
     }
 }

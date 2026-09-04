@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace AvroSourceGenerator.Configuration;
 
-internal readonly record struct GeneratorConfig(
+internal readonly record struct AvroProjectOptions(
     TargetProfile TargetProfile,
     LanguageFeatures LanguageFeatures,
     AccessModifier AccessModifier,
@@ -15,7 +15,7 @@ internal readonly record struct GeneratorConfig(
 {
     public bool IsValid => !Diagnostics.Any(x => x.Descriptor.DefaultSeverity is Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
 
-    public bool Equals(GeneratorConfig other) =>
+    public bool Equals(AvroProjectOptions other) =>
         TargetProfile == other.TargetProfile &&
         LanguageFeatures == other.LanguageFeatures &&
         AccessModifier == other.AccessModifier &&
@@ -38,17 +38,18 @@ internal readonly record struct GeneratorConfig(
         return hash.ToHashCode();
     }
 
-    public static GeneratorConfig FromEnvironment((ProjectSettings, CompilationInfo) input, CancellationToken cancellationToken)
+    public static AvroProjectOptions FromEnvironment((CSharpProjectOptions, CompilationInfo) input, CancellationToken cancellationToken)
     {
-        var (projectSettings, compilationInfo) = input;
+        cancellationToken.ThrowIfCancellationRequested();
 
-        var targetProfile = GetTargetProfile(projectSettings.AvroLibrary ?? AvroLibrary.Auto, compilationInfo.LanguageVersion, compilationInfo.AvroLibraries, out var diagnostics);
-        var languageFeatures = GetLanguageFeatures(projectSettings.LanguageFeatures ?? MapVersionToFeatures(compilationInfo.LanguageVersion), targetProfile, projectSettings.RecordDeclaration);
-        var accessModifier = projectSettings.AccessModifier ?? AccessModifier.Public;
-        var referenceResolution = projectSettings.ReferenceResolution ?? ReferenceResolution.Strict;
-        var duplicateResolution = projectSettings.DuplicateResolution ?? DuplicateResolution.Error;
+        var (projectOptions, compilationInfo) = input;
+        var targetProfile = GetTargetProfile(projectOptions.AvroLibrary ?? AvroLibrary.Auto, compilationInfo.LanguageVersion, compilationInfo.AvroLibraries, out var diagnostics);
+        var languageFeatures = GetLanguageFeatures(projectOptions.LanguageFeatures ?? MapVersionToFeatures(compilationInfo.LanguageVersion), targetProfile, projectOptions.RecordDeclaration);
+        var accessModifier = projectOptions.AccessModifier ?? AccessModifier.Public;
+        var referenceResolution = projectOptions.ReferenceResolution ?? ReferenceResolution.Strict;
+        var duplicateResolution = projectOptions.DuplicateResolution ?? DuplicateResolution.Error;
 
-        return new GeneratorConfig(targetProfile, languageFeatures, accessModifier, referenceResolution, duplicateResolution, diagnostics);
+        return new AvroProjectOptions(targetProfile, languageFeatures, accessModifier, referenceResolution, duplicateResolution, diagnostics);
     }
 
     private static TargetProfile GetTargetProfile(AvroLibrary avroLibrary, LanguageVersion languageVersion, ImmutableArray<AvroLibraryReference> references, out ImmutableArray<DiagnosticInfo> diagnostics)

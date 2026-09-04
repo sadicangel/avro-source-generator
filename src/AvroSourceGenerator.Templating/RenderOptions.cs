@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Templating;
 
-public readonly record struct TemplateSettings(TargetProfile TargetProfile, LanguageFeatures LanguageFeatures, AccessModifier AccessModifier)
+public readonly record struct RenderOptions(TargetProfile TargetProfile, LanguageFeatures LanguageFeatures, AccessModifier AccessModifier)
 {
     public bool UseNullableReferenceTypes => (LanguageFeatures & LanguageFeatures.NullableReferenceTypes) != 0;
     public bool UseRecords => (LanguageFeatures & LanguageFeatures.Records) != 0;

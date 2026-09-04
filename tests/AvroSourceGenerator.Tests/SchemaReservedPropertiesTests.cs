@@ -1,17 +1,14 @@
-﻿using System.Text.Json;
-using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Protocols;
-using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Tests;
 
-public sealed class SchemaRegistryReservedPropertiesTests
+public sealed class SchemaReservedPropertiesTests
 {
     [Fact]
-    public void Register_RecordAndField_ExcludeReservedPropertiesFromCustomProperties()
+    public void Lower_RecordAndField_ExcludeReservedPropertiesFromCustomProperties()
     {
-        var schema = Parse(
+        var parsed = SchemaCompilerTestHelpers.ParseJson(
             """
             {
               "type": "record",
@@ -34,9 +31,7 @@ public sealed class SchemaRegistryReservedPropertiesTests
             }
             """);
 
-        var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
-        registry.RegisterSchema(schema);
-        var record = Assert.IsType<RecordSchema>(Assert.Single(registry.Schemas.Values));
+        var record = Assert.IsType<RecordSchema>(Assert.Single(parsed.Declarations));
         var field = Assert.Single(record.Fields);
 
         Assert.Equal(["x-record"], record.Properties.Keys);
@@ -44,9 +39,9 @@ public sealed class SchemaRegistryReservedPropertiesTests
     }
 
     [Fact]
-    public void Register_Protocol_ExcludeReservedProtocolPropertiesFromCustomProperties()
+    public void Lower_Protocol_ExcludeReservedProtocolPropertiesFromCustomProperties()
     {
-        var schema = Parse(
+        var parsed = SchemaCompilerTestHelpers.ParseJson(
             """
             {
               "protocol": "UserApi",
@@ -62,16 +57,8 @@ public sealed class SchemaRegistryReservedPropertiesTests
             }
             """);
 
-        var registry = new SchemaRegistry(SchemaRegistryOptions.Default);
-        registry.RegisterSchema(schema);
-        var protocol = Assert.IsType<ProtocolSchema>(Assert.Single(registry.Schemas.Values));
+        var protocol = Assert.IsType<ProtocolSchema>(Assert.Single(parsed.Declarations));
 
         Assert.Equal(["x-protocol"], protocol.Properties.Keys);
-    }
-
-    private static JsonElement Parse(string json)
-    {
-        using var document = JsonDocument.Parse(json);
-        return document.RootElement.Clone();
     }
 }

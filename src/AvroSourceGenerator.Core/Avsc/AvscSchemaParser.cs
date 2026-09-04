@@ -1,78 +1,69 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
-using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avsc;
 
-public static class SchemaRegistrySchemaExtensions
+// TODO:
+// We currently throw exceptions for invalid schemas. We should consider
+// returning diagnostics instead, maybe sharing the same diagnostic model as Avdl.
+public static class AvscSchemaParser
 {
-    extension(in SchemaRegistry schemaRegistry)
+    public static ParseResult Parse(SourceText source, AvroParseOptions options)
     {
-        public void RegisterSchema(JsonElement schema)
+        using var schema = JsonDocument.Parse(source.Text);
+        var context = new ParserContext(options);
+        var root = context.Schema(schema.RootElement, containingNamespace: null);
+        if (root is not AvroSchemaReference && !root.ContainsTopLevelSchema())
         {
-            using (schemaRegistry.EnterRegisterScope())
-            {
-                var registeredSchema = schemaRegistry.Schema(schema, containingNamespace: null);
-                if (!registeredSchema.ContainsTopLevelSchema())
-                {
-                    throw new InvalidSchemaException($"At least a named schema must be present in schema: {schema.GetRawText()}");
-                }
-            }
+            throw new InvalidSchemaException($"At least a named schema must be present in schema: {source.Text}");
         }
 
+        return context.Complete(root);
+    }
+
+    extension(ParserContext context)
+    {
         private AvroSchema Schema(JsonElement schema, string? containingNamespace)
         {
             return schema.ValueKind switch
             {
-                JsonValueKind.String => schemaRegistry.Named(schema.ToRequiredString().ToSchemaName(), containingNamespace),
-                JsonValueKind.Object => schemaRegistry.Complex(schema, containingNamespace),
-                JsonValueKind.Array => schemaRegistry.Union(schema, containingNamespace),
+                JsonValueKind.String => context.Named(schema.ToRequiredString().ToSchemaName(), containingNamespace),
+                JsonValueKind.Object => context.Complex(schema, containingNamespace),
+                JsonValueKind.Array => context.Union(schema, containingNamespace),
                 _ => throw new InvalidSchemaException($"Invalid schema: {schema.GetRawText()}")
             };
         }
 
         private AvroSchema Named(SchemaName schemaName, string? containingNamespace)
         {
-            if (schemaRegistry.Find(schemaName, containingNamespace) is { } named)
-            {
-                return named;
-            }
-
-            schemaName = schemaName.ResolveIn(containingNamespace);
-            if (schemaRegistry.Options.ReferenceResolution is ReferenceResolution.Strict)
-            {
-                throw new MissingReferenceException(schemaName);
-            }
-
-            schemaRegistry.AddReference(schemaName);
-
-            return schemaRegistry.Find(schemaName, containingNamespace: null)
-                ?? throw new InvalidOperationException("Unreachable code: reference should have been added in the registry.");
+            return context.Reference(schemaName, containingNamespace);
         }
 
         private AvroSchema Complex(JsonElement schema, string? containingNamespace)
         {
             if (schema.TryGetProperty(AvroJsonKeys.Protocol, out _))
             {
-                return schemaRegistry.Protocol(schema, containingNamespace);
+                return context.Protocol(schema, containingNamespace);
             }
 
             var type = schema.GetSchemaType();
 
             var underlyingSchema = type switch
             {
-                AvroTypeNames.Array => schemaRegistry.Array(schema, containingNamespace),
-                AvroTypeNames.Map => schemaRegistry.Map(schema, containingNamespace),
-                AvroTypeNames.Enum => schemaRegistry.Enum(schema, containingNamespace),
-                AvroTypeNames.Record => schemaRegistry.Record(schema, containingNamespace),
-                AvroTypeNames.Error => schemaRegistry.Error(schema, containingNamespace),
-                AvroTypeNames.Fixed => schemaRegistry.Fixed(schema, containingNamespace),
-                _ => schemaRegistry.Named(type.ToSchemaName(), containingNamespace)
+                AvroTypeNames.Array => context.Array(schema, containingNamespace),
+                AvroTypeNames.Map => context.Map(schema, containingNamespace),
+                AvroTypeNames.Enum => context.Enum(schema, containingNamespace),
+                AvroTypeNames.Record => context.Record(schema, containingNamespace),
+                AvroTypeNames.Error => context.Error(schema, containingNamespace),
+                AvroTypeNames.Fixed => context.Fixed(schema, containingNamespace),
+                _ => context.Named(type.ToSchemaName(), containingNamespace)
             };
 
             if (underlyingSchema is PrimitiveSchema primitive)
@@ -88,7 +79,7 @@ public static class SchemaRegistrySchemaExtensions
 
             if (schema.GetLogicalType() is { } logicalType)
             {
-                return LogicalSchema.Create(logicalType, underlyingSchema, schemaRegistry.Options.TargetProfile);
+                return LogicalSchema.Create(logicalType, underlyingSchema, context.Options.TargetProfile);
             }
 
             return underlyingSchema;
@@ -97,7 +88,7 @@ public static class SchemaRegistrySchemaExtensions
         private ArraySchema Array(JsonElement schema, string? containingNamespace)
         {
             var itemsSchema = schema.GetRequiredProperty(AvroJsonKeys.Items);
-            var items = schemaRegistry.Schema(itemsSchema, containingNamespace);
+            var items = context.Schema(itemsSchema, containingNamespace);
             var documentation = schema.GetDocumentation();
             var properties = schema.GetSchemaProperties();
             return new ArraySchema(items, documentation, properties);
@@ -106,7 +97,7 @@ public static class SchemaRegistrySchemaExtensions
         private MapSchema Map(JsonElement schema, string? containingNamespace)
         {
             var valuesSchema = schema.GetRequiredProperty(AvroJsonKeys.Values);
-            var values = schemaRegistry.Schema(valuesSchema, containingNamespace);
+            var values = context.Schema(valuesSchema, containingNamespace);
             var documentation = schema.GetDocumentation();
             var properties = schema.GetSchemaProperties();
             return new MapSchema(values, documentation, properties);
@@ -115,7 +106,7 @@ public static class SchemaRegistrySchemaExtensions
         private EnumSchema Enum(JsonElement schema, string? containingNamespace)
         {
             var schemaName = schema.GetRequiredSchemaName(containingNamespace);
-            using (schemaRegistry.EnterRecursionScope(schemaName))
+            using (context.EnterRecursionScope(schemaName))
             {
                 var documentation = schema.GetDocumentation();
                 var aliases = schema.GetAliases();
@@ -124,7 +115,7 @@ public static class SchemaRegistrySchemaExtensions
                 var properties = schema.GetSchemaProperties();
 
                 var enumSchema = new EnumSchema(schemaName, documentation, aliases, symbols, @default, properties);
-                schemaRegistry.Register(enumSchema);
+                context.Declare(enumSchema);
                 return enumSchema;
             }
         }
@@ -132,20 +123,20 @@ public static class SchemaRegistrySchemaExtensions
         private FixedSchema Fixed(JsonElement schema, string? containingNamespace)
         {
             var schemaName = schema.GetRequiredSchemaName(containingNamespace);
-            using (schemaRegistry.EnterRecursionScope(schemaName))
+            using (context.EnterRecursionScope(schemaName))
             {
                 var documentation = schema.GetDocumentation();
                 var aliases = schema.GetAliases();
                 var size = schema.GetFixedSize();
                 var properties = schema.GetSchemaProperties();
 
-                var fixedSchema = schemaRegistry.Options.TargetProfile switch
+                var fixedSchema = context.Options.TargetProfile switch
                 {
                     // Only Apache.Avro needs a custom type for fixed, others use byte[].
                     TargetProfile.Apache => new FixedSchema(schemaName, documentation, aliases, size, properties),
                     _ => FixedSchema.CreateAsByteArray(schemaName, documentation, aliases, size, properties),
                 };
-                schemaRegistry.Register(fixedSchema);
+                context.Declare(fixedSchema);
                 return fixedSchema;
             }
         }
@@ -153,15 +144,15 @@ public static class SchemaRegistrySchemaExtensions
         private ErrorSchema Error(JsonElement schema, string? containingNamespace)
         {
             var schemaName = schema.GetRequiredSchemaName(containingNamespace);
-            using (schemaRegistry.EnterRecursionScope(schemaName))
+            using (context.EnterRecursionScope(schemaName))
             {
                 var documentation = schema.GetDocumentation();
                 var aliases = schema.GetAliases();
-                var fields = schemaRegistry.Fields(schema, schemaName);
+                var fields = context.Fields(schema, schemaName);
                 var properties = schema.GetSchemaProperties();
 
                 var errorSchema = new ErrorSchema(schemaName, documentation, aliases, fields, properties);
-                schemaRegistry.Register(errorSchema);
+                context.Declare(errorSchema);
                 return errorSchema;
             }
         }
@@ -169,15 +160,15 @@ public static class SchemaRegistrySchemaExtensions
         private RecordSchema Record(JsonElement schema, string? containingNamespace)
         {
             var schemaName = schema.GetRequiredSchemaName(containingNamespace);
-            using (schemaRegistry.EnterRecursionScope(schemaName))
+            using (context.EnterRecursionScope(schemaName))
             {
                 var documentation = schema.GetDocumentation();
                 var aliases = schema.GetAliases();
-                var fields = schemaRegistry.Fields(schema, schemaName);
+                var fields = context.Fields(schema, schemaName);
                 var properties = schema.GetSchemaProperties();
 
                 var recordSchema = new RecordSchema(schemaName, documentation, aliases, fields, properties);
-                schemaRegistry.Register(recordSchema);
+                context.Declare(recordSchema);
                 return recordSchema;
             }
         }
@@ -186,7 +177,7 @@ public static class SchemaRegistrySchemaExtensions
         {
             var fields = ImmutableArray.CreateBuilder<Field>();
             foreach (var field in schema.GetRequiredArray(AvroJsonKeys.Fields))
-                fields.Add(schemaRegistry.Field(field, containingSchemaName));
+                fields.Add(context.Field(field, containingSchemaName));
 
             return fields.ToImmutable();
         }
@@ -194,12 +185,14 @@ public static class SchemaRegistrySchemaExtensions
         private Field Field(JsonElement field, SchemaName containingSchemaName)
         {
             var name = field.GetRequiredString(AvroJsonKeys.Name).ToValidName();
-            var type = schemaRegistry.Schema(field.GetRequiredProperty(AvroJsonKeys.Type), containingSchemaName.Namespace);
-            type = schemaRegistry.ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var remarks);
+            var type = context.Schema(field.GetRequiredProperty(AvroJsonKeys.Type), containingSchemaName.Namespace);
+            type = context.ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var remarks);
 
             var documentation = field.GetDocumentation();
             var aliases = field.GetAliases();
-            var defaultJson = field.GetNullableProperty(AvroJsonKeys.Default);
+            JsonElement? defaultJson = field.GetNullableProperty(AvroJsonKeys.Default) is { } fieldDefault
+                ? fieldDefault.Clone()
+                : null;
             var @default = type.GetValue(defaultJson);
             var order = field.GetOptionalString(AvroJsonKeys.Order);
             var properties = field.GetSchemaProperties();
@@ -211,25 +204,25 @@ public static class SchemaRegistrySchemaExtensions
         {
             var builder = ImmutableArray.CreateBuilder<AvroSchema>();
             foreach (var innerSchema in schema.EnumerateArray())
-                builder.Add(schemaRegistry.Schema(innerSchema, containingNamespace));
+                builder.Add(context.Schema(innerSchema, containingNamespace));
             var schemas = builder.ToImmutable();
 
-            return UnionSchema.Create(schemas, schemaRegistry.Options.UseNullableReferenceTypes);
+            return UnionSchema.Create(schemas, context.Options.UseNullableReferenceTypes);
         }
 
         private ProtocolSchema Protocol(JsonElement schema, string? containingNamespace)
         {
             var schemaName = schema.GetRequiredProtocolName(containingNamespace);
-            using (schemaRegistry.EnterRecursionScope(schemaName))
+            using (context.EnterRecursionScope(schemaName))
             {
                 var documentation = schema.GetDocumentation();
-                var types = schemaRegistry.ProtocolTypes(schema.GetRequiredArray(AvroJsonKeys.Types), schemaName.Namespace);
-                var messages = schemaRegistry.ProtocolMessages(schema.GetRequiredObject(AvroJsonKeys.Messages), schemaName.Namespace);
+                var types = context.ProtocolTypes(schema.GetRequiredArray(AvroJsonKeys.Types), schemaName.Namespace);
+                var messages = context.ProtocolMessages(schema.GetRequiredObject(AvroJsonKeys.Messages), schemaName.Namespace);
                 var properties = schema.GetProtocolProperties();
 
                 var protocolSchema = new ProtocolSchema(schemaName, documentation, types, messages, properties);
 
-                schemaRegistry.Register(protocolSchema);
+                context.Declare(protocolSchema);
 
                 return protocolSchema;
             }
@@ -239,7 +232,7 @@ public static class SchemaRegistrySchemaExtensions
         {
             var types = ImmutableArray.CreateBuilder<NamedSchema>();
             foreach (var type in schemas)
-                types.Add(schemaRegistry.NamedSchema(type, containingNamespace));
+                types.Add(context.NamedSchema(type, containingNamespace));
 
             return types.ToImmutable();
         }
@@ -250,10 +243,10 @@ public static class SchemaRegistrySchemaExtensions
 
             return type switch
             {
-                AvroTypeNames.Enum => schemaRegistry.Enum(schema, containingNamespace),
-                AvroTypeNames.Record => schemaRegistry.Record(schema, containingNamespace),
-                AvroTypeNames.Error => schemaRegistry.Error(schema, containingNamespace),
-                AvroTypeNames.Fixed => schemaRegistry.Fixed(schema, containingNamespace),
+                AvroTypeNames.Enum => context.Enum(schema, containingNamespace),
+                AvroTypeNames.Record => context.Record(schema, containingNamespace),
+                AvroTypeNames.Error => context.Error(schema, containingNamespace),
+                AvroTypeNames.Fixed => context.Fixed(schema, containingNamespace),
                 _ => throw new InvalidSchemaException($"Unknown schema type '{type}' in {schema.GetRawText()}")
             };
         }
@@ -262,7 +255,7 @@ public static class SchemaRegistrySchemaExtensions
         {
             var protocolMessages = ImmutableArray.CreateBuilder<ProtocolMessage>();
             foreach (var message in messages)
-                protocolMessages.Add(schemaRegistry.Message(message, containingNamespace));
+                protocolMessages.Add(context.Message(message, containingNamespace));
             return protocolMessages.ToImmutable();
         }
 
@@ -270,9 +263,9 @@ public static class SchemaRegistrySchemaExtensions
         {
             var methodName = message.Name.ToValidName();
             var documentation = message.Value.GetDocumentation();
-            var requestParameters = schemaRegistry.ProtocolRequestParameters(message.Value, containingNamespace);
-            var response = schemaRegistry.ProtocolResponse(message.Value.GetRequiredProperty(AvroJsonKeys.Response), containingNamespace);
-            var errors = schemaRegistry.ProtocolErrors(message.Value.GetNullableArray(AvroJsonKeys.Errors), containingNamespace);
+            var requestParameters = context.ProtocolRequestParameters(message.Value, containingNamespace);
+            var response = context.ProtocolResponse(message.Value.GetRequiredProperty(AvroJsonKeys.Response), containingNamespace);
+            var errors = context.ProtocolErrors(message.Value.GetNullableArray(AvroJsonKeys.Errors), containingNamespace);
             var oneWay = message.Value.GetNullableBoolean(AvroJsonKeys.OneWay);
             if (oneWay is true && (response.Type.Type is not SchemaType.Null || errors.Length > 0))
             {
@@ -286,7 +279,7 @@ public static class SchemaRegistrySchemaExtensions
         {
             var fields = ImmutableArray.CreateBuilder<ProtocolRequestParameter>();
             foreach (var parameter in schema.GetRequiredArray(AvroJsonKeys.Request))
-                fields.Add(schemaRegistry.ProtocolRequestParameter(parameter, containingNamespace));
+                fields.Add(context.ProtocolRequestParameter(parameter, containingNamespace));
 
             return fields.ToImmutable();
         }
@@ -294,18 +287,20 @@ public static class SchemaRegistrySchemaExtensions
         private ProtocolRequestParameter ProtocolRequestParameter(JsonElement parameter, string? containingNamespace)
         {
             var name = parameter.GetRequiredString(AvroJsonKeys.Name).ToValidName();
-            var type = schemaRegistry.Schema(parameter.GetRequiredProperty(AvroJsonKeys.Type), containingNamespace);
+            var type = context.Schema(parameter.GetRequiredProperty(AvroJsonKeys.Type), containingNamespace);
             var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
 
             var documentation = parameter.GetDocumentation();
-            var defaultJson = parameter.GetNullableProperty(AvroJsonKeys.Default);
+            JsonElement? defaultJson = parameter.GetNullableProperty(AvroJsonKeys.Default) is { } parameterDefault
+                ? parameterDefault.Clone()
+                : null;
             var @default = type.GetValue(defaultJson);
             return new ProtocolRequestParameter(name, type, underlyingType, documentation, defaultJson, @default);
         }
 
         private ProtocolResponse ProtocolResponse(JsonElement schema, string? containingNamespace)
         {
-            var type = schemaRegistry.Schema(schema, containingNamespace);
+            var type = context.Schema(schema, containingNamespace);
             var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
 
             return new ProtocolResponse(type, underlyingType);
@@ -321,7 +316,7 @@ public static class SchemaRegistrySchemaExtensions
             var builder = ImmutableArray.CreateBuilder<AvroSchema>();
             foreach (var error in errors.Value)
             {
-                builder.Add(schemaRegistry.Schema(error, containingNamespace));
+                builder.Add(context.Schema(error, containingNamespace));
             }
 
             return builder.ToImmutable();

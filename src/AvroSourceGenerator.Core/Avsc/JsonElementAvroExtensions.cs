@@ -84,7 +84,7 @@ internal static class JsonElementAvroExtensions
             foreach (var property in schema.EnumerateObject()
                 .Where(property => !ReservedSchemaProperties.IsReserved(property.Name)))
             {
-                properties.Add(property.Name, property.Value);
+                properties.Add(property.Name, property.Value.Clone());
             }
 
             return properties.ToImmutable();
@@ -96,7 +96,7 @@ internal static class JsonElementAvroExtensions
             foreach (var property in schema.EnumerateObject()
                 .Where(property => !ReservedProtocolProperties.IsReserved(property.Name)))
             {
-                properties.Add(property.Name, property.Value);
+                properties.Add(property.Name, property.Value.Clone());
             }
 
             return properties.ToImmutable();

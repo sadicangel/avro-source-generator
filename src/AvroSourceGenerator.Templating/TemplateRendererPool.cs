@@ -7,18 +7,18 @@ namespace AvroSourceGenerator.Templating;
 
 internal static class TemplateRendererPool
 {
-    private static readonly ConcurrentDictionary<TemplateSettings, ConcurrentBag<TemplateRenderer>> s_renderers = [];
+    private static readonly ConcurrentDictionary<RenderOptions, ConcurrentBag<TemplateRenderer>> s_renderers = [];
 
-    public static TemplateRenderer Rent(TemplateSettings settings)
+    public static TemplateRenderer Rent(RenderOptions options)
     {
-        var renderers = s_renderers.GetOrAdd(settings, static _ => []);
-        return renderers.TryTake(out var renderer) ? renderer : new TemplateRenderer(settings);
+        var renderers = s_renderers.GetOrAdd(options, static _ => []);
+        return renderers.TryTake(out var renderer) ? renderer : new TemplateRenderer(options);
     }
 
-    public static void Return(TemplateSettings settings, TemplateRenderer renderer)
+    public static void Return(RenderOptions options, TemplateRenderer renderer)
     {
         renderer.ClearSchemaValues();
-        var renderers = s_renderers.GetOrAdd(settings, static _ => []);
+        var renderers = s_renderers.GetOrAdd(options, static _ => []);
         renderers.Add(renderer);
     }
 }
@@ -30,10 +30,10 @@ internal sealed class TemplateRenderer
     private readonly TemplateContext _context;
     private readonly Template _template;
 
-    public TemplateRenderer(TemplateSettings settings)
+    public TemplateRenderer(RenderOptions options)
     {
-        var templateLoader = new TemplateLoader(settings);
-        _context = new TemplateContext(new TemplateScriptObject(settings))
+        var templateLoader = new TemplateLoader(options);
+        _context = new TemplateContext(new TemplateScriptObject(options))
         {
             MemberRenamer = member => member.Name,
             TemplateLoader = templateLoader,

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Registry;
 using AvroSourceGenerator.Schemas;
 using Scriban.Functions;
 
@@ -9,26 +8,21 @@ namespace AvroSourceGenerator.Templating;
 
 public static class AvroTemplate
 {
-    public static ImmutableArray<RenderedSchema> Render(in SchemaRegistry schemaRegistry, TemplateSettings settings)
-    {
-        var registeredSchemas = schemaRegistry.ToImmutableDictionary(x => x.SchemaName);
-        var schemas = schemaRegistry.Where(ShouldEmitCode).ToImmutableArray();
-        return Render(schemas, registeredSchemas, settings);
-    }
-
     internal static ImmutableArray<RenderedSchema> Render(
         ImmutableArray<TopLevelSchema> schemas,
-        ImmutableDictionary<SchemaName, TopLevelSchema> registeredSchemas,
-        TemplateSettings settings)
+        ImmutableDictionary<SchemaName, TopLevelSchema> schemasByName,
+        RenderOptions options,
+        CancellationToken cancellationToken)
     {
-        var renderer = TemplateRendererPool.Rent(settings);
+        var renderer = TemplateRendererPool.Rent(options);
         var completed = false;
         try
         {
             var renderedSchemas = ImmutableArray.CreateRange(schemas.Select(schema =>
             {
-                var schemaJson = settings.TargetProfile is TargetProfile.Apache
-                    ? GetSchemaJson(schema, registeredSchemas, settings)
+                cancellationToken.ThrowIfCancellationRequested();
+                var schemaJson = options.TargetProfile is TargetProfile.Apache
+                    ? GetSchemaJson(schema, schemasByName, options)
                     : null;
                 var hintName = $"{schema.SchemaName.FullName}.Avro.g.cs";
                 var sourceText = renderer.Render(schema, schemaJson);
@@ -41,25 +35,22 @@ public static class AvroTemplate
         finally
         {
             if (completed)
-                TemplateRendererPool.Return(settings, renderer);
+                TemplateRendererPool.Return(options, renderer);
         }
     }
 
-    private static bool ShouldEmitCode(TopLevelSchema schema) =>
-        schema is not FixedSchema fixedSchema || fixedSchema.CSharpName != AvroSchema.Bytes.CSharpName;
-
-    private static string GetSchemaJson(TopLevelSchema schema, ImmutableDictionary<SchemaName, TopLevelSchema> registeredSchemas, TemplateSettings settings)
+    private static string GetSchemaJson(TopLevelSchema schema, ImmutableDictionary<SchemaName, TopLevelSchema> schemasByName, RenderOptions options)
     {
-        if (settings.UseRawStringLiterals)
+        if (options.UseRawStringLiterals)
         {
             return $""""
                 """
-                {schema.ToJsonString(registeredSchemas, new JsonWriterOptions { Indented = true })}
+                {schema.ToJsonString(schemasByName, new JsonWriterOptions { Indented = true })}
                 """
                 """";
         }
 
-        return StringFunctions.Literal(schema.ToJsonString(registeredSchemas))
+        return StringFunctions.Literal(schema.ToJsonString(schemasByName))
             ?? throw new InvalidOperationException("Unreachable code");
     }
 }

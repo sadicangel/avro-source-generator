@@ -8,11 +8,11 @@ namespace AvroSourceGenerator.Tests;
 public sealed class CachingTests
 {
     [Fact]
-    public void Independent_schema_content_edit_invalidates_the_collected_project_output() =>
+    public void Independent_schema_content_edit_reuses_unchanged_bound_files() =>
         AssertCurrentInvalidationBaseline(IncrementalScenario.IndependentContent());
 
     [Fact]
-    public void Referenced_schema_content_edit_invalidates_the_collected_project_output() =>
+    public void Referenced_schema_content_edit_reuses_unchanged_bound_files() =>
         AssertCurrentInvalidationBaseline(IncrementalScenario.ReferencedSchemaContent());
 
     [Fact]
@@ -20,8 +20,60 @@ public sealed class CachingTests
         AssertCurrentInvalidationBaseline(IncrementalScenario.ReferencedSchemaContent(), avroLibrary: "Apache");
 
     [Fact]
-    public void Schema_identity_edit_invalidates_the_collected_project_output() =>
+    public void Schema_identity_edit_reuses_unaffected_bound_files() =>
         AssertCurrentInvalidationBaseline(IncrementalScenario.SchemaIdentity());
+
+    [Fact]
+    public void Schema_kind_change_relinks_and_rebinds_only_the_declaration_and_its_consumer()
+    {
+        var files = ImmutableArray.Create(
+            ProjectFile.Schema(Record("Shared", "")),
+            ProjectFile.Schema(Record("Consumer", "{\"name\": \"shared\", \"type\": \"Shared\"}")),
+            ProjectFile.Schema(Record("Unrelated", "")));
+        var config = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
+        config.ReferenceResolution = "Deferred";
+        var input = GeneratorInput.Create(files, [], config);
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var changed = new ChangedAdditionalText(
+            input.AdditionalTexts[0].Path,
+            """
+            { "type": "fixed", "namespace": "CachingTests", "name": "Shared", "size": 16 }
+            """);
+
+        driver = driver.ReplaceAdditionalText(input.AdditionalTexts[0], changed)
+            .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var trackedSteps = StepTracking.GetTrackedSteps(driver.GetRunResult());
+
+        Assert.Equal(1, CountModified(trackedSteps, "SymbolTable"));
+        Assert.Equal(2, CountModified(trackedSteps, "LinkedAvroFile"));
+        Assert.Equal(2, CountModified(trackedSteps, "BoundAvroFile"));
+    }
+
+    [Fact]
+    public void Reference_resolution_change_rebuilds_the_project_without_reparsing_files()
+    {
+        var files = ImmutableArray.Create(
+            ProjectFile.Schema(Record("Shared", "")),
+            ProjectFile.Schema(Record("Consumer", "{\"name\": \"shared\", \"type\": \"Shared\"}")));
+
+        AssertProjectOnlyConfigChange(
+            files,
+            initial => initial["AvroSourceGeneratorReferenceResolution"] = "Strict",
+            changed => changed["AvroSourceGeneratorReferenceResolution"] = "Deferred");
+    }
+
+    [Fact]
+    public void Duplicate_policy_change_rebuilds_the_project_without_reparsing_files()
+    {
+        var files = ImmutableArray.Create(
+            ProjectFile.Schema(Record("Shared", "")),
+            ProjectFile.Schema(Record("Shared", "{\"name\": \"value\", \"type\": \"string\"}")));
+
+        AssertProjectOnlyConfigChange(
+            files,
+            initial => initial["AvroSourceGeneratorDuplicateResolution"] = "Error",
+            changed => changed["AvroSourceGeneratorDuplicateResolution"] = "Ignore");
+    }
 
     [Fact]
     public void All_outputs_are_reused_when_input_is_unchanged()
@@ -137,22 +189,80 @@ public sealed class CachingTests
             scenario.ExpectedSourceCount - 1,
             fileOutputs.Count(output => output.Reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged));
 
+        Assert.Equal(scenario.ExpectedSymbolTableInvalidations, CountModified(trackedSteps, "SymbolTable"));
+
+        var linkedFileOutputs = trackedSteps["LinkedAvroFile"].SelectMany(step => step.Outputs).ToArray();
+        Assert.Single(linkedFileOutputs, output => output.Reason == IncrementalStepRunReason.Modified);
+        Assert.Equal(
+            scenario.ExpectedSourceCount - 1,
+            linkedFileOutputs.Count(output => output.Reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged));
+
+        var boundFileOutputs = trackedSteps["BoundAvroFile"].SelectMany(step => step.Outputs).ToArray();
+        Assert.Single(boundFileOutputs, output => output.Reason == IncrementalStepRunReason.Modified);
+        Assert.Equal(
+            scenario.ExpectedSourceCount - 1,
+            boundFileOutputs.Count(output => output.Reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged));
+
         Assert.Contains(
-            trackedSteps["AvroFiles"].SelectMany(step => step.Outputs),
+            trackedSteps["BoundAvroFiles"].SelectMany(step => step.Outputs),
             output => output.Reason == IncrementalStepRunReason.Modified);
         Assert.Contains(
-            trackedSteps["GeneratorOutput"].SelectMany(step => step.Outputs),
+            trackedSteps["AvroProject"].SelectMany(step => step.Outputs),
             output => output.Reason == IncrementalStepRunReason.Modified);
 
         AssertRenderFanout(trackedSteps, scenario.ExpectedRenderedFileInvalidations, scenario.ExpectedSourceCount);
     }
+
+    private static void AssertProjectOnlyConfigChange(
+        ImmutableArray<ProjectFile> files,
+        Action<Dictionary<string, string>> configureInitial,
+        Action<Dictionary<string, string>> configureChanged)
+    {
+        var initialConfig = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
+        configureInitial(initialConfig.GlobalOptions);
+        var input = GeneratorInput.Create(files, [], initialConfig);
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+
+        var changedConfig = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
+        configureChanged(changedConfig.GlobalOptions);
+        var changedInput = GeneratorInput.Create(files, [], changedConfig);
+        driver = driver.WithUpdatedAnalyzerConfigOptions(changedInput.OptionsProvider)
+            .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var trackedSteps = StepTracking.GetTrackedSteps(driver.GetRunResult());
+
+        Assert.All(
+            trackedSteps["AvroFile"].SelectMany(static step => step.Outputs),
+            static output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
+        Assert.Equal(0, CountModified(trackedSteps, "BoundAvroFile"));
+        Assert.Contains(
+            trackedSteps["AvroProject"].SelectMany(static step => step.Outputs),
+            static output => output.Reason is IncrementalStepRunReason.Modified);
+    }
+
+    private static int CountModified(
+        ImmutableDictionary<string, ImmutableArray<IncrementalGeneratorRunStep>> trackedSteps,
+        string stepName) =>
+        trackedSteps.TryGetValue(stepName, out var steps)
+            ? steps
+                .SelectMany(static step => step.Outputs)
+                .Count(static output => output.Reason is IncrementalStepRunReason.Modified)
+            : 0;
+
+    private static string Record(string name, string fields) => $$"""
+        {
+          "type": "record",
+          "namespace": "CachingTests",
+          "name": "{{name}}",
+          "fields": [{{fields}}]
+        }
+        """;
 
     private static void AssertRenderFanout(
         ImmutableDictionary<string, ImmutableArray<IncrementalGeneratorRunStep>> trackedSteps,
         int expectedModifiedFiles,
         int expectedFileCount)
     {
-        AssertStepHasExpectedFanout("FileRenderInput");
+        AssertStepHasExpectedFanout("RenderableAvroFile");
         AssertStepHasExpectedFanout("RenderedFile");
 
         void AssertStepHasExpectedFanout(string stepName)
@@ -186,6 +296,7 @@ public sealed class CachingTests
         int ChangedFileIndex,
         ProjectFile ChangedFile,
         string ReferenceResolution,
+        int ExpectedSymbolTableInvalidations,
         int ExpectedRenderedFileInvalidations,
         string? RemovedHintName = null,
         string? AddedHintName = null)
@@ -202,6 +313,7 @@ public sealed class CachingTests
             ChangedFileIndex: 0,
             ChangedFile: ProjectFile.Schema(Record("Independent", "{\"name\": \"Value\", \"type\": \"string\"}, {\"name\": \"Revision\", \"type\": \"int\"}")),
             ReferenceResolution: "Strict",
+            ExpectedSymbolTableInvalidations: 0,
             ExpectedRenderedFileInvalidations: 1);
 
         public static IncrementalScenario ReferencedSchemaContent() => new(
@@ -214,6 +326,7 @@ public sealed class CachingTests
             ChangedFileIndex: 0,
             ChangedFile: ProjectFile.Schema(Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}, {\"name\": \"Revision\", \"type\": \"int\"}")),
             ReferenceResolution: "Deferred",
+            ExpectedSymbolTableInvalidations: 0,
             ExpectedRenderedFileInvalidations: 3);
 
         public static IncrementalScenario SchemaIdentity() => new(
@@ -226,6 +339,7 @@ public sealed class CachingTests
             ChangedFileIndex: 0,
             ChangedFile: ProjectFile.Schema(Record("Renamed", "{\"name\": \"Value\", \"type\": \"string\"}")),
             ReferenceResolution: "Strict",
+            ExpectedSymbolTableInvalidations: 1,
             ExpectedRenderedFileInvalidations: 1,
             RemovedHintName: "CachingTests.Original.Avro.g.cs",
             AddedHintName: "CachingTests.Renamed.Avro.g.cs");

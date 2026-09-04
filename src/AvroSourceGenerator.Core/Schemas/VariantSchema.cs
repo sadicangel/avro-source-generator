@@ -13,9 +13,9 @@ public sealed record class VariantSchema(
         ImmutableSortedDictionary<string, JsonElement>.Empty)
 {
     public VariantSchema(string fieldName, SchemaName containingSchemaName, ImmutableArray<AvroSchema> derivedSchemas)
-        : this(GetVariantName(containingSchemaName, fieldName), derivedSchemas) { }
+        : this(GetSchemaName(containingSchemaName, fieldName), derivedSchemas) { }
 
-    private static SchemaName GetVariantName(SchemaName containingSchemaName, string fieldName)
+    internal static SchemaName GetSchemaName(SchemaName containingSchemaName, string fieldName)
     {
         char[] name = ['I', .. containingSchemaName.Name.AsSpan(), .. fieldName.AsSpan(), 'V', 'a', 'r', 'i', 'a', 'n', 't'];
         name[containingSchemaName.Name.Length + 1] = char.ToUpperInvariant(fieldName[0]);

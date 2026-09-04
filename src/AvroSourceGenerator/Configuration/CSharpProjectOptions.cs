@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace AvroSourceGenerator.Configuration;
 
-internal readonly record struct ProjectSettings(
+internal readonly record struct CSharpProjectOptions(
     AvroLibrary? AvroLibrary,
     LanguageFeatures? LanguageFeatures,
     AccessModifier? AccessModifier,
@@ -11,7 +11,7 @@ internal readonly record struct ProjectSettings(
     ReferenceResolution? ReferenceResolution,
     DuplicateResolution? DuplicateResolution)
 {
-    public static ProjectSettings FromOptions(AnalyzerConfigOptionsProvider provider, CancellationToken cancellationToken)
+    public static CSharpProjectOptions FromOptions(AnalyzerConfigOptionsProvider provider, CancellationToken cancellationToken)
     {
         _ = cancellationToken;
 
@@ -68,6 +68,6 @@ internal readonly record struct ProjectSettings(
             duplicateResolution = parsedDuplicateResolution;
         }
 
-        return new ProjectSettings(avroLibrary, languageFeatures, accessModifier, recordDeclaration, referenceResolution, duplicateResolution);
+        return new CSharpProjectOptions(avroLibrary, languageFeatures, accessModifier, recordDeclaration, referenceResolution, duplicateResolution);
     }
 }

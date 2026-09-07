@@ -5,6 +5,7 @@ namespace AvroSourceGenerator.Inputs;
 internal sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>
 {
     private readonly Dictionary<SchemaName, CSharpName?> _references;
+    private int? _hashCode;
 
     private LinkedAvroFile(AvroFile file, Dictionary<SchemaName, CSharpName?> references)
     {
@@ -27,7 +28,9 @@ internal sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>
 
     public override bool Equals(object? obj) => obj is LinkedAvroFile other && Equals(other);
 
-    public override int GetHashCode()
+    public override int GetHashCode() => _hashCode ??= ComputeHashCode();
+
+    private int ComputeHashCode()
     {
         var hash = new HashCode();
         hash.Add(File);

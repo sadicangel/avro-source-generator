@@ -107,22 +107,24 @@ internal static class CSharpNameExtensions
         {
             if (!@namespace.Contains('.')) return @namespace.ToValidName();
 
-            // TODO: Might be a good idea to pool this builder.
-            var builder = new StringBuilder();
-
-            var first = true;
+            StringBuilder? builder = null;
+            var position = 0;
+            var unchangedStart = 0;
             foreach (var part in new SplitEnumerable(@namespace, '.'))
             {
-                if (first) first = false;
-                else builder.Append('.');
-
-                var name = TryGetReservedName(part, out var replacement) ? replacement.AsSpan() : part;
-                builder.EnsureCapacity(builder.Length + name.Length);
-                foreach (var @char in name)
-                    builder.Append(@char);
+                if (TryGetReservedName(part, out var replacement))
+                {
+                    builder ??= new StringBuilder(@namespace.Length);
+                    builder.Append(@namespace.AsSpan(unchangedStart, position - unchangedStart));
+                    builder.Append(replacement);
+                    unchangedStart = position + part.Length;
+                }
+                position += part.Length + 1;
             }
 
-            return builder.ToString();
+            return builder is null
+                ? @namespace
+                : builder.Append(@namespace.AsSpan(unchangedStart)).ToString();
         }
     }
 }

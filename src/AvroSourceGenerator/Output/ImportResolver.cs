@@ -32,7 +32,7 @@ internal sealed class ImportResolver(
         if (file.File.Imports.IsEmpty)
             return file.File.IsValid ? ImportResolution.Empty : ImportResolution.Invalid;
 
-        if (_visiting.Contains(fileIndex))
+        if (!_visiting.Add(fileIndex))
         {
             var cycleStart = _stack.IndexOf(fileIndex);
             var cycle = _stack.Skip(cycleStart).ToArray();
@@ -56,7 +56,6 @@ internal sealed class ImportResolver(
             return ImportResolution.Invalid;
         }
 
-        _visiting.Add(fileIndex);
         _stack.Add(fileIndex);
         var isValid = file.File.IsValid;
         var importedFileIndexes = new HashSet<int>();
@@ -107,7 +106,7 @@ internal sealed class ImportResolver(
         _visiting.Remove(fileIndex);
         var resolution = new ImportResolution(
             isValid && !_cycleFiles.Contains(fileIndex),
-            importedFileIndexes.ToImmutableHashSet());
+            importedFileIndexes);
         _resolutions.Add(fileIndex, resolution);
         return resolution;
     }
@@ -152,10 +151,15 @@ internal sealed class ImportResolver(
             message);
 }
 
-internal readonly record struct ImportResolution(
-    bool IsValid,
-    ImmutableHashSet<int> ImportedFileIndexes)
+internal readonly struct ImportResolution(bool isValid, HashSet<int> importedFileIndexes)
 {
+    // Ownership is transferred by the resolver; callers only read the completed set.
+    private readonly HashSet<int> _importedFileIndexes = importedFileIndexes;
+
+    public bool IsValid { get; } = isValid;
+    public bool Contains(int fileIndex) => _importedFileIndexes.Contains(fileIndex);
+    public IEnumerable<int> ImportedFileIndexes => _importedFileIndexes;
+
     public static readonly ImportResolution Empty = new(true, []);
     public static readonly ImportResolution Invalid = new(false, []);
 }

@@ -158,10 +158,13 @@ public sealed class Scanner(SourceText sourceText)
 
     private SyntaxToken ScanString()
     {
-        var builder = new StringBuilder();
+        StringBuilder? builder = null;
+        var segmentStart = 1;
         var length = 1;
         while (true)
         {
+            char escaped;
+            var escapeWidth = 2;
             switch (CurrentSpan[length..])
             {
                 case ['\0', ..]:
@@ -172,51 +175,50 @@ public sealed class Scanner(SourceText sourceText)
                     _diagnostics.Add(SyntaxDiagnostic.UnterminatedString(sourceSpan));
                     return new SyntaxToken(SyntaxKind.InvalidSyntax, sourceSpan);
                 case ['\\', '"', ..]:
-                    builder.Append('"');
-                    length += 2;
+                    escaped = '"';
                     break;
                 case ['\\', '\\', ..]:
-                    builder.Append('\\');
-                    length += 2;
+                    escaped = '\\';
                     break;
                 case ['\\', '/', ..]:
-                    builder.Append('/');
-                    length += 2;
+                    escaped = '/';
                     break;
                 case ['\\', 'b', ..]:
-                    builder.Append('\b');
-                    length += 2;
+                    escaped = '\b';
                     break;
                 case ['\\', 'f', ..]:
-                    builder.Append('\f');
-                    length += 2;
+                    escaped = '\f';
                     break;
                 case ['\\', 'n', ..]:
-                    builder.Append('\n');
-                    length += 2;
+                    escaped = '\n';
                     break;
                 case ['\\', 'r', ..]:
-                    builder.Append('\r');
-                    length += 2;
+                    escaped = '\r';
                     break;
                 case ['\\', 't', ..]:
-                    builder.Append('\t');
-                    length += 2;
+                    escaped = '\t';
                     break;
                 case ['\\', 'u', var h1, var h2, var h3, var h4, ..] when IsHexDigit(h1) && IsHexDigit(h2) && IsHexDigit(h3) && IsHexDigit(h4):
-                    builder.Append((char)((HexValue(h1) << 12) + (HexValue(h2) << 8) + (HexValue(h3) << 4) + HexValue(h4)));
-                    length += 6;
+                    escaped = (char)((HexValue(h1) << 12) + (HexValue(h2) << 8) + (HexValue(h3) << 4) + HexValue(h4));
+                    escapeWidth = 6;
                     break;
                 case ['\\', ..]:
                     var invalidEscapeSpan = new SourceSpan(sourceText, _position, GetInvalidStringLength(length + 2));
                     return CreateInvalidToken(invalidEscapeSpan, SyntaxDiagnostic.InvalidEscapeSequence(invalidEscapeSpan));
                 case ['"', ..]:
-                    return new SyntaxToken(SyntaxKind.StringLiteralToken, new SourceSpan(sourceText, _position, length + 1), builder.ToString());
+                    var content = CurrentSpan.Slice(segmentStart, length - segmentStart);
+                    var value = builder is null ? content.ToString() : builder.Append(content).ToString();
+                    return new SyntaxToken(SyntaxKind.StringLiteralToken, new SourceSpan(sourceText, _position, length + 1), value);
                 default:
-                    builder.Append(CurrentSpan[length]);
                     length++;
-                    break;
+                    continue;
             }
+
+            builder ??= new StringBuilder();
+            builder.Append(CurrentSpan.Slice(segmentStart, length - segmentStart));
+            builder.Append(escaped);
+            length += escapeWidth;
+            segmentStart = length;
         }
     }
 

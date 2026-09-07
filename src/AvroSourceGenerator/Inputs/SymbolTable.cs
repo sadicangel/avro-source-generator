@@ -4,9 +4,15 @@ using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Inputs;
 
-internal sealed class SymbolTable(Dictionary<SchemaName, CSharpName> symbols) : IEquatable<SymbolTable>, IReadOnlyDictionary<SchemaName, CSharpName>
+internal sealed class SymbolTable : IEquatable<SymbolTable>, IReadOnlyDictionary<SchemaName, CSharpName>
 {
-    private readonly Dictionary<SchemaName, CSharpName> _symbols = symbols;
+    private readonly Dictionary<SchemaName, CSharpName> _symbols;
+    private int? _hashCode;
+
+    private SymbolTable(Dictionary<SchemaName, CSharpName> symbols)
+    {
+        _symbols = symbols;
+    }
 
     public IEnumerable<SchemaName> Keys => _symbols.Keys;
     public IEnumerable<CSharpName> Values => _symbols.Values;
@@ -22,7 +28,9 @@ internal sealed class SymbolTable(Dictionary<SchemaName, CSharpName> symbols) : 
 
     public override bool Equals(object? obj) => obj is SymbolTable other && Equals(other);
 
-    public override int GetHashCode()
+    public override int GetHashCode() => _hashCode ??= ComputeHashCode();
+
+    private int ComputeHashCode()
     {
         var hash = new HashCode();
         foreach (var kvp in _symbols.OrderBy(
@@ -53,10 +61,7 @@ internal sealed class SymbolTable(Dictionary<SchemaName, CSharpName> symbols) : 
 
             foreach (var declaration in file.Declarations)
             {
-                if (!symbols.ContainsKey(declaration.SchemaName))
-                {
-                    symbols[declaration.SchemaName] = declaration.CSharpName;
-                }
+                symbols.TryAdd(declaration.SchemaName, declaration.CSharpName);
             }
         }
 

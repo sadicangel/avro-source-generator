@@ -15,7 +15,7 @@ internal sealed class RenderableAvroFile : IEquatable<RenderableAvroFile>
 
     public RenderableAvroFile(
         ImmutableArray<TopLevelSchema> emittedSchemas,
-        ImmutableDictionary<SchemaName, TopLevelSchema> projectSchemas,
+        IReadOnlyDictionary<SchemaName, TopLevelSchema> projectSchemas,
         ImmutableArray<BoundAvroFile> contributingFiles,
         RenderOptions options)
     {
@@ -27,7 +27,7 @@ internal sealed class RenderableAvroFile : IEquatable<RenderableAvroFile>
 
     public ImmutableArray<TopLevelSchema> EmittedSchemas { get; }
 
-    public ImmutableDictionary<SchemaName, TopLevelSchema> ProjectSchemas { get; }
+    public IReadOnlyDictionary<SchemaName, TopLevelSchema> ProjectSchemas { get; }
 
     public RenderOptions Options { get; }
 
@@ -64,7 +64,7 @@ internal sealed class RenderableAvroFile : IEquatable<RenderableAvroFile>
 
         return true;
     }
-    public static RenderableAvroFile Invalid() => new([], [], [], default);
+    public static RenderableAvroFile Invalid() => new([], new Dictionary<SchemaName, TopLevelSchema>(), [], default);
 
     public static RenderableAvroFile FromInput((BoundAvroFile File, AvroProject ProjecT) input, CancellationToken cancellationToken)
     {

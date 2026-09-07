@@ -51,7 +51,7 @@ public sealed class Parser(SourceText sourceText)
             }
         }
 
-        return new SyntaxList<IDirectiveSyntax>(directives.ToImmutable());
+        return new SyntaxList<IDirectiveSyntax>(directives.DrainToImmutable());
     }
 
     private NamespaceDirectiveSyntax ParseNamespaceDirective()
@@ -101,7 +101,7 @@ public sealed class Parser(SourceText sourceText)
             }
         }
 
-        return new SyntaxList<ITopLevelDeclarationSyntax>(declarations.ToImmutable());
+        return new SyntaxList<ITopLevelDeclarationSyntax>(declarations.DrainToImmutable());
     }
 
     private ITopLevelDeclarationSyntax ParseDeclaration()
@@ -329,9 +329,9 @@ public sealed class Parser(SourceText sourceText)
             documentation,
             annotations,
             braceOpenToken,
-            new SyntaxList<ImportDirectiveSyntax>(imports.ToImmutable()),
-            new SyntaxList<ISchemaDeclarationSyntax>(types.ToImmutable()),
-            new SyntaxList<MessageDeclarationSyntax>(messages.ToImmutable()),
+            new SyntaxList<ImportDirectiveSyntax>(imports.DrainToImmutable()),
+            new SyntaxList<ISchemaDeclarationSyntax>(types.DrainToImmutable()),
+            new SyntaxList<MessageDeclarationSyntax>(messages.DrainToImmutable()),
             braceCloseToken);
     }
 
@@ -412,7 +412,7 @@ public sealed class Parser(SourceText sourceText)
             var builder = ImmutableArray.CreateBuilder<IAnnotationSyntax>();
             while (_stream.Current.SyntaxKind is SyntaxKind.AtSignToken)
                 builder.Add(ParseAnnotation());
-            annotations = new SyntaxList<IAnnotationSyntax>(builder.ToImmutable());
+            annotations = new SyntaxList<IAnnotationSyntax>(builder.DrainToImmutable());
         }
 
         ITypeSyntax type = _stream.Current.SyntaxKind switch
@@ -518,7 +518,7 @@ public sealed class Parser(SourceText sourceText)
             }
         }
 
-        return new SyntaxList<T>(nodes.ToImmutable());
+        return new SyntaxList<T>(nodes.DrainToImmutable());
     }
 
     private SeparatedSyntaxList<T> ParseSeparatedList<T>(Func<T> parseNode, SyntaxKind separator, params ReadOnlySpan<SyntaxKind> terminators) where T : ISyntaxNode
@@ -532,7 +532,7 @@ public sealed class Parser(SourceText sourceText)
             nodes.Add(_stream.Next());
         }
 
-        return new SeparatedSyntaxList<T>(nodes.ToImmutable());
+        return new SeparatedSyntaxList<T>(nodes.DrainToImmutable());
     }
 
     private static SourceSpan GetAnnotationSpan(IAnnotationSyntax annotation) =>

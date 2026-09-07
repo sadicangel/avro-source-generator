@@ -8,6 +8,40 @@ namespace AvroSourceGenerator.Tests;
 public sealed class AvroProjectTests
 {
     [Fact]
+    public void Repeated_diamond_imports_reuse_completed_closures()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("consumer.avdl", """
+                namespace GraphTests;
+                import idl "left.avdl";
+                import idl "right.avdl";
+                import idl "left.avdl";
+                schema Consumer;
+                record Consumer { Common common; Left left; Right right; }
+                """),
+            ("left.avdl", """
+                namespace GraphTests;
+                import schema "common.avsc";
+                schema Left;
+                record Left { Common common; }
+                """),
+            ("right.avdl", """
+                namespace GraphTests;
+                import schema "common.avsc";
+                schema Right;
+                record Right { Common common; }
+                """),
+            ("common.avsc", Record("Common")));
+
+        Assert.Empty(compiled.Project.Diagnostics);
+        Assert.True(compiled.Project.CanRender);
+        Assert.Equal(4, compiled.RenderableFiles[0].ProjectSchemas.Count);
+        Assert.All(compiled.RenderableFiles, file => Assert.Single(file.EmittedSchemas));
+    }
+
+    [Fact]
     public void Reuses_the_project_schema_lookup_for_each_renderable_file()
     {
         var compiled = Compile(

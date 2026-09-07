@@ -3,7 +3,6 @@
   <PropertyGroup>
     <PackageScribanIncludeSource>true</PackageScribanIncludeSource>
     <DefineConstants>$(DefineConstants);SCRIBAN_NO_ASYNC</DefineConstants>
-    <PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +12,7 @@
   <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" PrivateAssets="all" />
     <PackageReference Include="System.Text.Json" PrivateAssets="all" />
-    <PackageReference Include="PolySharp" PrivateAssets="all" />
+    <PackageReference Include="Meziantou.Polyfill" PrivateAssets="all" />
     <PackageReference Include="Scriban" PrivateAssets="all" IncludeAssets="build" />
   </ItemGroup>
 

@@ -1,12 +1,12 @@
 ﻿{
   Location: hbZLgMCOL8DyJ_VK6KfKhulyZhA.avdl: (0,0)-(3,1),
-  Message: The provided Avro IDL source is invalid: Imports are not yet supported in Avro IDL files. To work around this limitation, set AvroSourceGeneratorReferenceResolution to Deferred and include imported files as AdditionalFiles.,
+  Message: The Avro import is invalid: Path 'common.avdl' does not match an Avro AdditionalFile.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG1000,
-    Title: Invalid Avro IDL,
-    Description: The Avro IDL source contains syntax or source-level validation errors. Fix the IDL definition.,
-    MessageFormat: The provided Avro IDL source is invalid: {0},
+    Id: AVROSG1001,
+    Title: Invalid Avro import,
+    Description: An Avro IDL import path could not be resolved to a compatible AdditionalFile.,
+    MessageFormat: The Avro import is invalid: {0},
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

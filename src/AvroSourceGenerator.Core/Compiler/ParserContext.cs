@@ -108,7 +108,7 @@ internal readonly struct ParserContext(AvroParseOptions options)
 
     public RecursionScope EnterRecursionScope(SchemaName schemaName) => new(_recursionStack, schemaName);
 
-    public ParseResult Complete(AvroSchema root, ImmutableArray<string> imports = default) => new(
+    public ParseResult Complete(AvroSchema root, ImmutableArray<AvroImport> imports = default) => new(
         root,
         [.. _declarations],
         [.. _references.OrderBy(static reference => reference.FullName, StringComparer.Ordinal)],

@@ -10,6 +10,8 @@ public readonly record struct SourceText(string Path, string Text) : IEquatable<
         Path.EndsWith(".avdl", StringComparison.OrdinalIgnoreCase) ? SourceType.Avdl :
         throw new InvalidOperationException("Unreachable: Unsupported Avro file type.");
 
+    public bool IsEmpty => string.IsNullOrWhiteSpace(Text);
+
     private readonly Lazy<ImmutableArray<SourceLine>> _lines = new(() => ParseLines(Text, Path));
 
     public ImmutableArray<SourceLine> Lines => _lines.Value;

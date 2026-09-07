@@ -19,4 +19,9 @@ var transaction = new Transaction
 
 new Random().NextBytes(transaction.signature.Value);
 
-Console.WriteLine(transaction);
+var envelope = new TransactionEnvelope
+{
+    transaction = transaction,
+};
+
+Console.WriteLine(envelope);

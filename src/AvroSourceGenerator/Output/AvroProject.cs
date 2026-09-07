@@ -60,10 +60,8 @@ internal sealed class AvroProject : IEquatable<AvroProject>
         var (files, options) = input;
         var diagnostics = options.Diagnostics
             .AddRange(files.SelectMany(static file => file.File.Diagnostics));
-        var importDiagnostics = GetUnsupportedImportDiagnostics(files, options.ReferenceResolution);
-        diagnostics = diagnostics.AddRange(importDiagnostics);
 
-        if (!options.IsValid || !importDiagnostics.IsEmpty)
+        if (!options.IsValid)
         {
             return new AvroProject(
                 files,
@@ -75,33 +73,65 @@ internal sealed class AvroProject : IEquatable<AvroProject>
                 canRender: false);
         }
 
-        var schemas = new Dictionary<SchemaName, TopLevelSchema>();
-        var owners = new Dictionary<SchemaName, BoundAvroFile>();
-        var dependencies = new Dictionary<SchemaName, ImmutableArray<SchemaName>>();
+        var schemaIndex = BuildSchemaIndex(
+            files,
+            options.DuplicateResolution,
+            cancellationToken);
+        diagnostics = diagnostics
+            .AddRange(schemaIndex.Diagnostics)
+            .AddRange(ValidateReferences(
+                files,
+                schemaIndex,
+                options.ReferenceResolution,
+                cancellationToken));
+
+        var hasErrors = diagnostics.Any(static diagnostic =>
+            diagnostic.Descriptor.DefaultSeverity is DiagnosticSeverity.Error);
+        return new AvroProject(
+            files,
+            options,
+            schemaIndex.Schemas.ToImmutableDictionary(),
+            schemaIndex.Owners.ToImmutableDictionary(
+                static owner => owner.Key,
+                static owner => owner.Value.File),
+            schemaIndex.Dependencies.ToImmutableDictionary(),
+            diagnostics,
+            canRender: !hasErrors);
+    }
+
+    private static SchemaIndex BuildSchemaIndex(
+        ImmutableArray<BoundAvroFile> files,
+        DuplicateResolution duplicateResolution,
+        CancellationToken cancellationToken)
+    {
+        var schemaIndex = new SchemaIndex();
         var localNames = new HashSet<SchemaName>();
-        foreach (var file in files)
+        foreach (var (fileIndex, file) in files.Index())
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var filePath = file.File.SourceText.Path;
+            schemaIndex.FileIndexes.TryAdd(filePath, fileIndex);
+
             localNames.Clear();
             foreach (var declaration in file.Declarations)
             {
                 var name = declaration.SchemaName;
                 if (!localNames.Add(name))
                 {
-                    diagnostics = diagnostics.Add(DuplicateDiagnostic(declaration));
+                    schemaIndex.Diagnostics.Add(DuplicateDiagnostic(declaration));
                     continue;
                 }
 
-                if (schemas.ContainsKey(name))
+                if (schemaIndex.Schemas.ContainsKey(name))
                 {
-                    if (options.DuplicateResolution is DuplicateResolution.Error)
-                        diagnostics = diagnostics.Add(DuplicateDiagnostic(declaration));
+                    if (duplicateResolution is DuplicateResolution.Error)
+                        schemaIndex.Diagnostics.Add(DuplicateDiagnostic(declaration));
                     continue;
                 }
 
-                schemas.Add(name, declaration);
-                owners.Add(name, file);
-                dependencies.Add(
+                schemaIndex.Schemas.Add(name, declaration);
+                schemaIndex.Owners.Add(name, new SchemaOwner(file, fileIndex));
+                schemaIndex.Dependencies.Add(
                     name,
                     file.Dependencies.TryGetValue(name, out var schemaDependencies)
                         ? schemaDependencies
@@ -109,33 +139,58 @@ internal sealed class AvroProject : IEquatable<AvroProject>
             }
         }
 
-        foreach (var file in files)
+        return schemaIndex;
+    }
+
+    private static ImmutableArray<DiagnosticInfo> ValidateReferences(
+        ImmutableArray<BoundAvroFile> files,
+        SchemaIndex schemaIndex,
+        ReferenceResolution referenceResolution,
+        CancellationToken cancellationToken)
+    {
+        var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
+        ImportResolver? importResolver = null;
+        foreach (var (fileIndex, file) in files.Index())
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var importResolution = ImportResolution.Empty;
+            if (!file.File.Imports.IsEmpty)
+            {
+                importResolver ??= new ImportResolver(
+                    files,
+                    schemaIndex.FileIndexes,
+                    cancellationToken);
+                importResolution = importResolver.Resolve(fileIndex);
+                if (!importResolution.IsValid)
+                    continue;
+            }
+
             var missingReferences = file.References.Keys
                 .Where(reference =>
-                    options.ReferenceResolution is ReferenceResolution.Strict ||
-                    !schemas.ContainsKey(reference))
+                {
+                    if (!schemaIndex.Owners.TryGetValue(reference, out var owner))
+                        return true;
+
+                    if (referenceResolution is not ReferenceResolution.Strict)
+                        return false;
+
+                    return owner.FileIndex == fileIndex ||
+                           !importResolution.ImportedFileIndexes.Contains(owner.FileIndex);
+                })
                 .OrderBy(static reference => reference.FullName, StringComparer.Ordinal)
                 .ToImmutableArray();
             if (!missingReferences.IsEmpty)
             {
-                diagnostics = diagnostics.Add(MissingReferenceDiagnostic.Create(
-                    LocationInfo.FromSourceFile(file.File.SourceText.Path, file.File.SourceText.Text),
+                diagnostics.Add(MissingReferenceDiagnostic.Create(
+                    LocationInfo.FromSourceText(file.File.SourceText),
                     missingReferences));
             }
         }
 
-        var hasErrors = diagnostics.Any(static diagnostic =>
-            diagnostic.Descriptor.DefaultSeverity is DiagnosticSeverity.Error);
-        return new AvroProject(
-            files,
-            options,
-            schemas.ToImmutableDictionary(),
-            owners.ToImmutableDictionary(),
-            dependencies.ToImmutableDictionary(),
-            diagnostics,
-            canRender: !hasErrors);
+        if (importResolver is not null)
+            diagnostics.AddRange(importResolver.Diagnostics);
+
+        return diagnostics.ToImmutable();
     }
 
     public RenderableAvroFile CreateRenderableFile(BoundAvroFile file)
@@ -195,31 +250,21 @@ internal sealed class AvroProject : IEquatable<AvroProject>
             LocationInfo.None,
             declaration.CSharpName.ToString(includeGlobalPrefix: false));
 
-    private static ImmutableArray<DiagnosticInfo> GetUnsupportedImportDiagnostics(
-        ImmutableArray<BoundAvroFile> files,
-        ReferenceResolution referenceResolution)
+    private sealed class SchemaIndex
     {
-        if (referenceResolution is not ReferenceResolution.Strict)
-            return [];
+        public Dictionary<SchemaName, TopLevelSchema> Schemas { get; } = [];
 
-        ImmutableArray<DiagnosticInfo>.Builder? diagnostics = null;
-        foreach (var file in files)
-        {
-            if (file.File.Imports.IsEmpty)
-                continue;
+        public Dictionary<SchemaName, SchemaOwner> Owners { get; } = [];
 
-            const string UnsupportedImportMessage =
-               "Imports are not yet supported in Avro IDL files. To work around this limitation, set " +
-               "AvroSourceGeneratorReferenceResolution to Deferred and include imported files as AdditionalFiles.";
+        public Dictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies { get; } = [];
 
-            diagnostics ??= ImmutableArray.CreateBuilder<DiagnosticInfo>();
-            diagnostics.Add(InvalidSyntaxDiagnostic.Create(
-                LocationInfo.FromSourceFile(file.File.SourceText.Path, file.File.SourceText.Text),
-                UnsupportedImportMessage));
-        }
+        public Dictionary<string, int> FileIndexes { get; } = new(StringComparer.Ordinal);
 
-        return diagnostics?.ToImmutable() ?? [];
+        public ImmutableArray<DiagnosticInfo>.Builder Diagnostics { get; } =
+            ImmutableArray.CreateBuilder<DiagnosticInfo>();
     }
+
+    private readonly record struct SchemaOwner(BoundAvroFile File, int FileIndex);
 
     private static bool EmitsSource(TopLevelSchema schema) =>
         schema.Type is not SchemaType.Fixed ||

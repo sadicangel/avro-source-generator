@@ -59,7 +59,7 @@ public readonly record struct GeneratorInput(
 
     private sealed class AdditionalTextImplementation(ProjectFile projectFile) : AdditionalText
     {
-        public override string Path => projectFile.Hash;
+        public override string Path => projectFile.Path;
 
         public override SourceText GetText(CancellationToken cancellationToken = default) => SourceText.From(projectFile.Content, Encoding.UTF8);
     }

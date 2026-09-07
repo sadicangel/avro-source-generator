@@ -1,0 +1,9 @@
+namespace AvroSourceGenerator.IntegrationTests.Schemas;
+
+import schema "NestedType.avsc";
+
+schema ImportedEnvelope;
+
+record ImportedEnvelope {
+    NestedType Item;
+}

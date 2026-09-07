@@ -156,17 +156,25 @@ public sealed class AvroFileTests
     }
 
     [Fact]
-    public void Avdl_imports_are_exposed_as_paths()
+    public void Avdl_imports_preserve_kind_and_path()
     {
         var file = Parse(
             "schema.avdl",
             """
             import idl "common.avdl";
+            import protocol "common.avpr";
+            import schema "common.avsc";
             schema string;
             """);
 
         Assert.True(file.IsValid);
-        Assert.Equal(["common.avdl"], file.Imports);
+        Assert.Equal(
+            [
+                new AvroImport(AvroImportKind.Idl, "common.avdl"),
+                new AvroImport(AvroImportKind.Protocol, "common.avpr"),
+                new AvroImport(AvroImportKind.Schema, "common.avsc"),
+            ],
+            file.Imports);
     }
 
     [Fact]

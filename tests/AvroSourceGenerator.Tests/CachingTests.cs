@@ -16,6 +16,10 @@ public sealed class CachingTests
         AssertCurrentInvalidationBaseline(IncrementalScenario.ReferencedSchemaContent());
 
     [Fact]
+    public void Imported_schema_content_edit_does_not_relink_the_importer() =>
+        AssertCurrentInvalidationBaseline(IncrementalScenario.ImportedSchemaContent());
+
+    [Fact]
     public void Apache_referenced_schema_content_edit_invalidates_transitive_consumers_only() =>
         AssertCurrentInvalidationBaseline(IncrementalScenario.ReferencedSchemaContent(), avroLibrary: "Apache");
 
@@ -27,11 +31,18 @@ public sealed class CachingTests
     public void Schema_kind_change_relinks_and_rebinds_only_the_declaration_and_its_consumer()
     {
         var files = ImmutableArray.Create(
-            ProjectFile.Schema(Record("Shared", "")),
-            ProjectFile.Schema(Record("Consumer", "{\"name\": \"shared\", \"type\": \"Shared\"}")),
-            ProjectFile.Schema(Record("Unrelated", "")));
+            ProjectFile.Schema(Record("Shared", ""), "schemas/shared.avsc"),
+            ProjectFile.Source(
+                """
+                namespace CachingTests;
+                import schema "shared.avsc";
+                schema Consumer;
+                record Consumer { Shared shared; }
+                """,
+                "schemas/consumer.avdl"),
+            ProjectFile.Schema(Record("Unrelated", ""), "schemas/unrelated.avsc"));
         var config = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
-        config.ReferenceResolution = "Deferred";
+        config.ReferenceResolution = "Strict";
         var input = GeneratorInput.Create(files, [], config);
         var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         var changed = new ChangedAdditionalText(
@@ -328,6 +339,29 @@ public sealed class CachingTests
             ReferenceResolution: "Deferred",
             ExpectedSymbolTableInvalidations: 0,
             ExpectedRenderedFileInvalidations: 3);
+
+        public static IncrementalScenario ImportedSchemaContent() => new(
+            [
+                ProjectFile.Schema(
+                    Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}"),
+                    "schemas/common.avsc"),
+                ProjectFile.Source(
+                    """
+                    namespace CachingTests;
+                    import schema "common.avsc";
+                    schema Customer;
+                    record Customer { Address address; }
+                    """,
+                    "schemas/consumer.avdl"),
+                ProjectFile.Schema(Record("Unrelated", "{\"name\": \"Value\", \"type\": \"string\"}"), "schemas/unrelated.avsc"),
+            ],
+            ChangedFileIndex: 0,
+            ChangedFile: ProjectFile.Schema(
+                Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}, {\"name\": \"Revision\", \"type\": \"int\"}"),
+                "schemas/common.avsc"),
+            ReferenceResolution: "Strict",
+            ExpectedSymbolTableInvalidations: 0,
+            ExpectedRenderedFileInvalidations: 2);
 
         public static IncrementalScenario SchemaIdentity() => new(
             [

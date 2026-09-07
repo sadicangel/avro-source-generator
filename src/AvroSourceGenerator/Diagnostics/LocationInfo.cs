@@ -2,7 +2,7 @@
 using AvroSourceGenerator.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
-using SourceText = Microsoft.CodeAnalysis.Text.SourceText;
+using SourceText = AvroSourceGenerator.Text.SourceText;
 
 namespace AvroSourceGenerator.Diagnostics;
 
@@ -10,8 +10,9 @@ internal readonly record struct LocationInfo(string FilePath, TextSpan TextSpan,
 {
     public static readonly LocationInfo None = default;
 
-    public static LocationInfo FromSourceFile(string path, string? text)
+    public static LocationInfo FromSourceText(SourceText sourceText)
     {
+        var (path, text) = sourceText;
         return new LocationInfo(path, new TextSpan(0, text?.Length ?? 0), new LinePositionSpan(LinePosition.Zero, GetLastLinePosition(text.AsSpan())));
 
         static LinePosition GetLastLinePosition(ReadOnlySpan<char> text)
@@ -45,25 +46,25 @@ internal readonly record struct LocationInfo(string FilePath, TextSpan TextSpan,
         }
     }
 
-    public static LocationInfo FromException(string path, string? text, JsonException exception)
+    public static LocationInfo FromException(SourceText sourceText, JsonException exception)
     {
-        if (string.IsNullOrWhiteSpace(text))
+        if (sourceText.IsEmpty)
         {
-            return FromSourceFile(path, text);
+            return FromSourceText(sourceText);
         }
 
-        var sourceText = SourceText.From(text!);
+        var csSourceText = Microsoft.CodeAnalysis.Text.SourceText.From(sourceText.Text);
         var lineNumber = exception.LineNumber ?? 0;
         var bytePositionInLine = exception.BytePositionInLine ?? 0;
 
-        var line = sourceText.Lines[Math.Min((int)lineNumber, sourceText.Lines.Count - 1)];
+        var line = csSourceText.Lines[Math.Min((int)lineNumber, csSourceText.Lines.Count - 1)];
         var charIndex = Math.Min((int)bytePositionInLine, line.Span.Length);
 
         var start = line.Start + charIndex;
         var span = new TextSpan(start, line.End - start);
-        var lineSpan = sourceText.Lines.GetLinePositionSpan(span);
+        var lineSpan = csSourceText.Lines.GetLinePositionSpan(span);
 
-        return new LocationInfo(path, span, lineSpan);
+        return new LocationInfo(sourceText.Path, span, lineSpan);
     }
 
     public static LocationInfo FromSourceSpan(SourceSpan span)

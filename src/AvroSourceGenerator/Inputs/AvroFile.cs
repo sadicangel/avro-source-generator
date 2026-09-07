@@ -19,7 +19,7 @@ internal sealed class AvroFile : IEquatable<AvroFile>
         ImmutableArray<TopLevelSchema> declarations,
         ImmutableArray<SchemaName> references,
         IReadOnlyDictionary<SchemaName, ImmutableArray<SchemaName>> dependencies,
-        ImmutableArray<string> imports,
+        ImmutableArray<AvroImport> imports,
         ImmutableArray<DiagnosticInfo> diagnostics,
         AvroParseOptions parseOptions)
     {
@@ -43,7 +43,7 @@ internal sealed class AvroFile : IEquatable<AvroFile>
 
     public IReadOnlyDictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies { get; }
 
-    public ImmutableArray<string> Imports { get; }
+    public ImmutableArray<AvroImport> Imports { get; }
 
     public ImmutableArray<DiagnosticInfo> Diagnostics { get; }
 
@@ -71,7 +71,7 @@ internal sealed class AvroFile : IEquatable<AvroFile>
         {
             return Invalid(
                 sourceText,
-                InvalidJsonDiagnostic.Create(LocationInfo.FromSourceFile(sourceText.Path, sourceText.Text), "The file is empty."),
+                InvalidJsonDiagnostic.Create(LocationInfo.FromSourceText(sourceText), "The file is empty."),
                 parseOptions);
         }
 
@@ -97,7 +97,7 @@ internal sealed class AvroFile : IEquatable<AvroFile>
         }
         catch (JsonException ex)
         {
-            return Invalid(sourceText, InvalidJsonDiagnostic.Create(LocationInfo.FromException(sourceText.Path, sourceText.Text, ex), ex.Message), parseOptions);
+            return Invalid(sourceText, InvalidJsonDiagnostic.Create(LocationInfo.FromException(sourceText, ex), ex.Message), parseOptions);
         }
         catch (InvalidSourceException ex)
         {
@@ -108,11 +108,11 @@ internal sealed class AvroFile : IEquatable<AvroFile>
         }
         catch (InvalidSchemaException ex)
         {
-            return Invalid(sourceText, InvalidSchemaDiagnostic.Create(LocationInfo.FromSourceFile(sourceText.Path, sourceText.Text), ex.Message), parseOptions);
+            return Invalid(sourceText, InvalidSchemaDiagnostic.Create(LocationInfo.FromSourceText(sourceText), ex.Message), parseOptions);
         }
         catch (Exception ex)
         {
-            return Invalid(sourceText, UnknownErrorDiagnostic.Create(LocationInfo.FromSourceFile(sourceText.Path, sourceText.Text), ex.Message), parseOptions);
+            return Invalid(sourceText, UnknownErrorDiagnostic.Create(LocationInfo.FromSourceText(sourceText), ex.Message), parseOptions);
         }
     }
 

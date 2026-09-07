@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AdditionalFiles Include="*.avdl" />
     <AdditionalFiles Include="*.avsc" />
   </ItemGroup>
 

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
@@ -60,7 +59,7 @@ internal sealed class BoundAvroFile : IEquatable<BoundAvroFile>
         private readonly CancellationToken _cancellationToken = cancellationToken;
         private readonly AvroParseOptions _options = linkedFile.File.ParseOptions;
         private readonly IReadOnlyDictionary<SchemaName, CSharpName?> _references = linkedFile.References;
-        private readonly Dictionary<AvroSchema, AvroSchema> _boundSchemas = new(SchemaReferenceComparer.Instance);
+        private readonly Dictionary<AvroSchema, AvroSchema> _boundSchemas = new(ReferenceEqualityComparer.Instance);
 
         public AvroSchema Bind(AvroSchema schema)
         {
@@ -274,12 +273,4 @@ internal sealed class BoundAvroFile : IEquatable<BoundAvroFile>
 
     }
 
-    private sealed class SchemaReferenceComparer : IEqualityComparer<AvroSchema>
-    {
-        public static readonly SchemaReferenceComparer Instance = new();
-
-        public bool Equals(AvroSchema? x, AvroSchema? y) => ReferenceEquals(x, y);
-
-        public int GetHashCode(AvroSchema obj) => RuntimeHelpers.GetHashCode(obj);
-    }
 }

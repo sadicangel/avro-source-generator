@@ -8,4 +8,4 @@ public readonly record struct ParseResult(
     ImmutableArray<TopLevelSchema> Declarations,
     ImmutableArray<SchemaName> References,
     IReadOnlyDictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies,
-    ImmutableArray<string> Imports);
+    ImmutableArray<AvroImport> Imports);

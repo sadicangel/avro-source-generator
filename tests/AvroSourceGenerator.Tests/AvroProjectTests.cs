@@ -137,7 +137,7 @@ public sealed class AvroProjectTests
     }
 
     [Fact]
-    public void Strict_import_reports_one_unsupported_import_diagnostic_without_missing_reference_noise()
+    public void Strict_import_resolves_a_reference_from_the_imported_file()
     {
         var compiled = Compile(
             ReferenceResolution.Strict,
@@ -148,9 +148,224 @@ public sealed class AvroProjectTests
                 schema Consumer;
                 record Consumer { Common common; }
                 """),
-            ("unrelated.avsc", Record("Unrelated", Field("Missing", "Missing"))));
+            ("common.avdl", """
+                namespace GraphTests;
+                schema Common;
+                record Common { }
+                """));
 
-        Assert.Equal(["AVROSG1000"], compiled.Project.Diagnostics.Select(static diagnostic => diagnostic.Descriptor.Id));
+        Assert.Empty(compiled.Project.Diagnostics);
+        Assert.True(compiled.Project.CanRender);
+    }
+
+    [Fact]
+    public void Strict_imports_avsc_and_avpr_types()
+    {
+        var avsc = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("consumer.avdl", """
+                namespace GraphTests;
+                import schema "common.avsc";
+                schema Consumer;
+                record Consumer { Common common; }
+                """),
+            ("common.avsc", Record("Common")));
+        var avpr = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("consumer.avdl", """
+                namespace GraphTests;
+                protocol Consumer {
+                    import protocol "common.avpr";
+                    Request get();
+                }
+                """),
+            ("common.avpr", Protocol()));
+
+        Assert.Empty(avsc.Project.Diagnostics);
+        Assert.Empty(avpr.Project.Diagnostics);
+    }
+
+    [Fact]
+    public void Strict_uses_the_transitive_relative_import_closure()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("schemas/consumer.avdl", """
+                namespace GraphTests;
+                import idl "imports/middle.avdl";
+                schema Consumer;
+                record Consumer { Common common; }
+                """),
+            ("schemas/imports/middle.avdl", """
+                namespace GraphTests;
+                import schema "../shared/common.avsc";
+                schema Common;
+                """),
+            ("schemas/shared/common.avsc", Record("Common")));
+
+        Assert.Empty(compiled.Project.Diagnostics);
+        Assert.True(compiled.Project.CanRender);
+    }
+
+    [Fact]
+    public void Missing_import_reports_one_import_diagnostic_without_reference_noise()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("consumer.avdl", """
+                namespace GraphTests;
+                import idl "missing.avdl";
+                schema Consumer;
+                record Consumer { Missing missing; }
+                """));
+
+        Assert.Equal(["AVROSG1001"], compiled.Project.Diagnostics.Select(static diagnostic => diagnostic.Descriptor.Id));
+        Assert.False(compiled.Project.CanRender);
+    }
+
+    [Theory]
+    [InlineData(ReferenceResolution.Strict)]
+    [InlineData(ReferenceResolution.Deferred)]
+    public void Import_kind_mismatch_is_invalid(ReferenceResolution resolution)
+    {
+        var compiled = Compile(
+            resolution,
+            DuplicateResolution.Error,
+            ("consumer.avdl", """
+                import schema "common.avpr";
+                schema Standalone;
+                record Standalone { }
+                """),
+            ("common.avpr", Protocol()));
+
+        Assert.Equal(["AVROSG1001"], compiled.Project.Diagnostics.Select(static diagnostic => diagnostic.Descriptor.Id));
+        Assert.False(compiled.Project.CanRender);
+    }
+
+    [Fact]
+    public void Protocol_import_rejects_non_protocol_json()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("consumer.avdl", """
+                import protocol "common.avpr";
+                schema Standalone;
+                record Standalone { }
+                """),
+            ("common.avpr", Record("Common")));
+
+        Assert.Equal(["AVROSG1001"], compiled.Project.Diagnostics.Select(static diagnostic => diagnostic.Descriptor.Id));
+        Assert.False(compiled.Project.CanRender);
+    }
+
+    [Fact]
+    public void Malformed_imported_file_uses_its_parser_diagnostic_without_reference_noise()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("consumer.avdl", """
+                namespace GraphTests;
+                import schema "common.avsc";
+                schema Consumer;
+                record Consumer { Common common; }
+                """),
+            ("common.avsc", "not json"));
+
+        Assert.Equal(["AVROSG0001"], compiled.Project.Diagnostics.Select(static diagnostic => diagnostic.Descriptor.Id));
+        Assert.False(compiled.Project.CanRender);
+    }
+
+    [Fact]
+    public void Import_cycles_are_invalid()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("a.avdl", """
+                import idl "b.avdl";
+                schema A;
+                record A { }
+                """),
+            ("b.avdl", """
+                import idl "a.avdl";
+                schema B;
+                record B { }
+                """));
+
+        Assert.Equal(["AVROSG1001"], compiled.Project.Diagnostics.Select(static diagnostic => diagnostic.Descriptor.Id));
+        Assert.False(compiled.Project.CanRender);
+    }
+
+    [Fact]
+    public void Import_cycle_is_reported_once_for_multiple_importers()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("first.avdl", """
+                import idl "a.avdl";
+                schema First;
+                record First { Missing missing; }
+                """),
+            ("second.avdl", """
+                import idl "b.avdl";
+                schema Second;
+                record Second { Missing missing; }
+                """),
+            ("a.avdl", """
+                import idl "b.avdl";
+                schema A;
+                record A { }
+                """),
+            ("b.avdl", """
+                import idl "a.avdl";
+                schema B;
+                record B { }
+                """));
+
+        Assert.Equal(["AVROSG1001"], compiled.Project.Diagnostics.Select(static diagnostic => diagnostic.Descriptor.Id));
+        Assert.False(compiled.Project.CanRender);
+    }
+
+    [Fact]
+    public void Strict_rejects_an_unimported_cross_file_reference()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("common.avsc", Record("Common")),
+            ("consumer.avdl", """
+                namespace GraphTests;
+                schema Consumer;
+                record Consumer { Common common; }
+                """));
+
+        Assert.Equal(["AVROSG0006"], compiled.Project.Diagnostics.Select(static diagnostic => diagnostic.Descriptor.Id));
+        Assert.False(compiled.Project.CanRender);
+    }
+
+    [Fact]
+    public void Strict_checks_visibility_of_the_accepted_duplicate_owner()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Ignore,
+            ("unimported/common.avsc", Record("Common")),
+            ("schemas/common.avsc", Record("Common")),
+            ("schemas/consumer.avdl", """
+                namespace GraphTests;
+                import schema "common.avsc";
+                schema Consumer;
+                record Consumer { Common common; }
+                """));
+
+        Assert.Equal(["AVROSG0006"], compiled.Project.Diagnostics.Select(static diagnostic => diagnostic.Descriptor.Id));
         Assert.False(compiled.Project.CanRender);
     }
 

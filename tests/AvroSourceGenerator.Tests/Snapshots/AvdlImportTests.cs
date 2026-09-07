@@ -56,14 +56,16 @@ public sealed class AvdlImportTests
         var output = GeneratorOutput.Create(
             GeneratorInput.Create([ProjectFile.Source(ProtocolImportSource)], Snapshot.References, Snapshot.ProjectConfig));
 
-        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG1000");
+        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG1001");
         Assert.Empty(output.Documents);
     }
 
     [Fact]
     public void Deferred_TopLevelImport_ResolvesDependencyFromAdditionalFiles()
     {
-        var output = GenerateDeferred(ConsumerSource, DependencySource);
+        var output = GenerateDeferred(
+            ("consumer.avdl", ConsumerSource),
+            ("common.avdl", DependencySource));
 
         Assert.Empty(output.Diagnostics);
         Assert.Contains(output.Documents, document => document.Content.Contains("global::Example.Common common", StringComparison.Ordinal));
@@ -72,7 +74,9 @@ public sealed class AvdlImportTests
     [Fact]
     public void Deferred_ProtocolImport_ResolvesDependencyFromAdditionalFiles()
     {
-        var output = GenerateDeferred(ProtocolConsumerSource, DependencySource);
+        var output = GenerateDeferred(
+            ("consumer.avdl", ProtocolConsumerSource),
+            ("common.avdl", DependencySource));
 
         Assert.Empty(output.Diagnostics);
         Assert.Contains(output.Documents, document => document.Content.Contains("global::Example.Common", StringComparison.Ordinal));
@@ -82,7 +86,7 @@ public sealed class AvdlImportTests
     [InlineData("idl")]
     [InlineData("schema")]
     [InlineData("protocol")]
-    public void Deferred_ImportKinds_DoNotResolveOrValidatePaths(string importKind)
+    public void Deferred_ImportKinds_ValidatePaths(string importKind)
     {
         var source = $$"""
             import {{importKind}} "missing-and-unused.file";
@@ -91,25 +95,25 @@ public sealed class AvdlImportTests
             record Standalone { }
             """;
 
-        var output = GenerateDeferred(source);
+        var output = GenerateDeferred(("consumer.avdl", source));
 
-        Assert.Empty(output.Diagnostics);
-        Assert.NotEmpty(output.Documents);
+        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG1001");
+        Assert.Empty(output.Documents);
     }
 
     [Fact]
     public void Deferred_MissingReferencedDependency_ReportsDiagnosticAndDoesNotGenerateDocuments()
     {
-        var output = GenerateDeferred(ConsumerSource);
+        var output = GenerateDeferred(("consumer.avdl", ConsumerSource));
 
-        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG0006");
+        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG1001");
         Assert.Empty(output.Documents);
     }
 
-    private static GeneratorOutput GenerateDeferred(params string[] sources) =>
+    private static GeneratorOutput GenerateDeferred(params (string Path, string Source)[] sources) =>
         GeneratorOutput.Create(
             GeneratorInput.Create(
-                [.. sources.Select(ProjectFile.Source)],
+                [.. sources.Select(static source => ProjectFile.Source(source.Source, source.Path))],
                 Snapshot.References,
                 Snapshot.ProjectConfig with { ReferenceResolution = "Deferred" }));
 }

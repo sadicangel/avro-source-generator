@@ -12,4 +12,5 @@ AVROSG0004  | Configuration | Warning  | Multiple Avro libraries detected
 AVROSG0005  | Compiler      | Error    | Duplicate Avro schema
 AVROSG0006  | Compiler      | Error    | Missing schema reference
 AVROSG1000  | Compiler      | Error    | Invalid Avro IDL
+AVROSG1001  | Compiler      | Error    | Invalid Avro import
 AVROSG9999  | Compiler      | Error    | Unknown generator error

@@ -31,7 +31,15 @@ public static class AvdlSchemaParser
             .Concat(syntaxTree.Document.Declarations
                 .OfType<ProtocolDeclarationSyntax>()
                 .SelectMany(static protocol => protocol.Imports))
-            .Select(static import => import.ImportPathLiteralToken.Value as string ?? string.Empty)
+            .Select(static import => new AvroImport(
+                import.ImportTypeKeyword.SyntaxKind switch
+                {
+                    SyntaxKind.IdlKeyword => AvroImportKind.Idl,
+                    SyntaxKind.ProtocolKeyword => AvroImportKind.Protocol,
+                    SyntaxKind.SchemaKeyword => AvroImportKind.Schema,
+                    _ => throw new InvalidOperationException("Unreachable: Unsupported Avro import kind."),
+                },
+                import.ImportPathLiteralToken.Value as string ?? string.Empty))
             .ToImmutableArray();
         var root = parser.Document(syntaxTree);
         if (imports.IsEmpty && root is not AvroSchemaReference && !root.ContainsTopLevelSchema())

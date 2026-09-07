@@ -1,0 +1,9 @@
+namespace com.example.finance;
+
+import schema "Transaction.avsc";
+
+schema TransactionEnvelope;
+
+record TransactionEnvelope {
+    Transaction transaction;
+}

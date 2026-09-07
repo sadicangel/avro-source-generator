@@ -85,11 +85,9 @@ record UserFromIdl {
 > Avro JSON schema files conventionally use `.avsc`, Avro JSON protocol files use `.avpr`, and Avro IDL files use `.avdl`.
 
 > [!NOTE]
-> AVDL import paths are not resolved, loaded, or validated yet. As a workaround, include every imported
-> `.avdl`, `.avsc`, or `.avpr` file explicitly as an `<AdditionalFiles>` item and set
-> `<AvroSourceGeneratorReferenceResolution>Deferred</AvroSourceGeneratorReferenceResolution>` (see
-> [Reference Resolution](#reference-resolution)). The generator will resolve referenced types after reading all
-> inputs, but it cannot detect a missing imported file when none of its types are referenced.
+> AVDL imports are resolved relative to the importing file. Every imported `.avdl`, `.avsc`, or `.avpr` file,
+> including transitive imports, must also be included explicitly as an `<AdditionalFiles>` item. Import cycles,
+> missing files, and import kind/file type mismatches are reported as errors.
 
 Build your project — the generator will create C# types matching your schemas and IDL definitions.
 
@@ -312,8 +310,10 @@ If your project keeps related schemas in separate Avro input files, you can defe
 ```
 
 Supported values:
-- `Strict` (default) — unresolved references emit a diagnostic as soon as the schema is read
-- `Deferred` — unresolved references are collected and resolved after all `.avsc`, `.avpr`, and `.avdl` inputs are read
+- `Strict` (default) — references must resolve to an earlier declaration in the same file or to a declaration in
+  the file's transitive AVDL import closure
+- `Deferred` — unresolved references are collected and resolved after all `.avsc`, `.avpr`, and `.avdl` inputs are read;
+  declared import paths are still validated
 
 ---
 

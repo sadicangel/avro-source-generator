@@ -285,5 +285,38 @@ public sealed class ScannerTests
             _ = SyntaxFacts.GetText(syntaxKind);
     }
 
+    [Theory]
+    [InlineData("\"\"", "")]
+    [InlineData("\"Olá 世界 😀\"", "Olá 世界 😀")]
+    [InlineData("\"before\\nafter\\tmiddle\"", "before\nafter\tmiddle")]
+    [InlineData("\"\\b\\f\\r\"", "\b\f\r")]
+    [InlineData("\"a\\uD83D\\uDE00z\"", "a😀z")]
+    public void Scan_strings_preserves_content_and_source_span(string text, string expected)
+    {
+        var scanner = CreateScanner(text);
+        var tokens = scanner.ScanAllTokens().ToArray();
+        Assert.Empty(scanner.Diagnostics);
+        Assert.Empty(scanner.BadTokens);
+        Assert.Equal(SyntaxKind.StringLiteralToken, tokens[0].SyntaxKind);
+        Assert.Equal(expected, tokens[0].Value);
+        Assert.Equal(text, tokens[0].SourceSpan.ToString());
+        Assert.Equal(0, tokens[0].SourceSpan.Offset);
+        Assert.Equal(text.Length, tokens[0].SourceSpan.Length);
+    }
+
+    [Theory]
+    [InlineData("\"prefix\\u12xz\"", SyntaxDiagnosticCode.InvalidEscapeSequence)]
+    [InlineData("\"prefix\\ntext\\q\"", SyntaxDiagnosticCode.InvalidEscapeSequence)]
+    [InlineData("\"prefix\\ntext", SyntaxDiagnosticCode.UnterminatedString)]
+    public void Scan_malformed_strings_keeps_the_full_diagnostic_span(string text, SyntaxDiagnosticCode code)
+    {
+        var scanner = CreateScanner(text);
+        _ = scanner.ScanAllTokens().ToArray();
+        var diagnostic = Assert.Single(scanner.Diagnostics);
+        Assert.Equal(code, diagnostic.Code);
+        Assert.Equal(0, diagnostic.SourceSpan.Offset);
+        Assert.Equal(text.Length, diagnostic.SourceSpan.Length);
+    }
+
     private static Scanner CreateScanner(string text) => new Scanner(AvdlTestHelpers.SourceText(text));
 }

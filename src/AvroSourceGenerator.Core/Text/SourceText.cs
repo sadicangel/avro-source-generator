@@ -53,7 +53,7 @@ public readonly record struct SourceText(string Path, string Text) : IEquatable<
         var lineStart = 0;
         while (position < text.Length)
         {
-            var lineBreakWidth = text[position..] switch
+            var lineBreakWidth = text.AsSpan(position) switch
             {
                 ['\r', '\n', ..] => 2,
                 ['\r', ..] or ['\n', ..] => 1,
@@ -75,6 +75,6 @@ public readonly record struct SourceText(string Path, string Text) : IEquatable<
         if (position >= lineStart)
             lines.Add(new SourceLine(sourceText.GetSpan(lineStart, position - lineStart), sourceText.GetSpan(lineStart, position - lineStart)));
 
-        return lines.ToImmutable();
+        return lines.DrainToImmutable();
     }
 }

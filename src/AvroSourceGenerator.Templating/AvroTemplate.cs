@@ -10,7 +10,7 @@ public static class AvroTemplate
 {
     internal static ImmutableArray<RenderedSchema> Render(
         ImmutableArray<TopLevelSchema> schemas,
-        ImmutableDictionary<SchemaName, TopLevelSchema> schemasByName,
+        IReadOnlyDictionary<SchemaName, TopLevelSchema> schemasByName,
         RenderOptions options,
         CancellationToken cancellationToken)
     {
@@ -39,7 +39,7 @@ public static class AvroTemplate
         }
     }
 
-    private static string GetSchemaJson(TopLevelSchema schema, ImmutableDictionary<SchemaName, TopLevelSchema> schemasByName, RenderOptions options)
+    private static string GetSchemaJson(TopLevelSchema schema, IReadOnlyDictionary<SchemaName, TopLevelSchema> schemasByName, RenderOptions options)
     {
         if (options.UseRawStringLiterals)
         {

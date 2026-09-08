@@ -1,65 +1,78 @@
-﻿namespace AvroSourceGenerator.Output;
+﻿using System.Text;
 
-// TODO: We can probably avoid some allocations here using the split span enumerable.
+namespace AvroSourceGenerator.Output;
+
 internal static class ImportPathResolver
 {
     public static string Resolve(string importerPath, string importPath)
     {
         var separator = GetSeparator(importerPath, importPath);
         if (Path.IsPathRooted(importPath))
-            return Normalize(importPath, separator);
+        {
+            var importRoot = Path.GetPathRoot(importPath) ?? string.Empty;
+            return ResolveSegments(default, importPath.AsSpan(importRoot.Length), importRoot, separator);
+        }
 
         var directory = Path.GetDirectoryName(importerPath) ?? string.Empty;
-        return ResolveRelative(directory, importPath, separator);
+        var root = Path.GetPathRoot(directory) ?? string.Empty;
+        return ResolveSegments(directory.AsSpan(root.Length), importPath.AsSpan(), root, separator);
     }
 
-    private static string ResolveRelative(string directory, string importPath, char separator)
+    private static string ResolveSegments(ReadOnlySpan<char> directory, ReadOnlySpan<char> importPath, string root, char separator)
     {
-        var root = Path.GetPathRoot(directory) ?? string.Empty;
-        var segments = directory[root.Length..].Split(
-                [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
-                StringSplitOptions.RemoveEmptyEntries)
-            .ToList();
-        foreach (var segment in importPath.Split(
-                     [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
-                     StringSplitOptions.RemoveEmptyEntries))
+        // Keep ranges into each source; existing directory segments are deliberately not normalized.
+        var segments = new List<(bool FromDirectory, int Start, int Length)>();
+        var position = 0;
+        while (TryReadSegment(directory, ref position, out var start, out var length))
+            segments.Add((true, start, length));
+
+        position = 0;
+        while (TryReadSegment(importPath, ref position, out var start, out var length))
         {
-            if (segment == ".")
+            var segment = importPath.Slice(start, length);
+            if (segment is ".")
                 continue;
 
-            if (segment == "..")
+            if (segment is "..")
             {
-                if (segments.Count > 0 && segments[^1] != "..")
-                {
+                var last = segments.Count > 0 ? segments[^1] : default;
+                var lastSegment = (last.FromDirectory ? directory : importPath).Slice(last.Start, last.Length);
+                if (segments.Count > 0 && lastSegment is not "..")
                     segments.RemoveAt(segments.Count - 1);
-                }
                 else if (root.Length == 0)
-                {
-                    segments.Add(segment);
-                }
-
+                    segments.Add((false, start, length));
                 continue;
             }
 
-            segments.Add(segment);
+            segments.Add((false, start, length));
         }
 
-        if (Path.DirectorySeparatorChar != Path.AltDirectorySeparatorChar)
+        var capacity = root.Length + Math.Max(0, segments.Count - 1);
+        foreach (var segment in segments)
+            capacity += segment.Length;
+        var builder = new StringBuilder(capacity);
+        foreach (var character in root)
+            builder.Append(IsSeparator(character) ? separator : character);
+        for (var index = 0; index < segments.Count; index++)
         {
-            var alternateSeparator = separator == Path.DirectorySeparatorChar
-                ? Path.AltDirectorySeparatorChar
-                : Path.DirectorySeparatorChar;
-            root = root.Replace(alternateSeparator, separator);
+            if (index > 0) builder.Append(separator);
+            var segment = segments[index];
+            builder.Append((segment.FromDirectory ? directory : importPath).Slice(segment.Start, segment.Length));
         }
-
-        return root + string.Join(separator.ToString(), segments);
+        return builder.ToString();
     }
 
-    private static string Normalize(string path, char separator)
+    private static bool TryReadSegment(ReadOnlySpan<char> path, ref int position, out int start, out int length)
     {
-        var root = Path.GetPathRoot(path) ?? string.Empty;
-        return ResolveRelative(root, path[root.Length..], separator);
+        while (position < path.Length && IsSeparator(path[position])) position++;
+        start = position;
+        while (position < path.Length && !IsSeparator(path[position])) position++;
+        length = position - start;
+        return length > 0;
     }
+
+    private static bool IsSeparator(char character) =>
+        character == Path.DirectorySeparatorChar || character == Path.AltDirectorySeparatorChar;
 
     private static char GetSeparator(string path, string fallback)
     {

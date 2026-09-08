@@ -40,6 +40,7 @@ public sealed class LinkedAvroFileTests
             TestContext.Current.CancellationToken);
 
         Assert.Equal(first, second);
+        Assert.Equal(first.GetHashCode(), second.GetHashCode());
     }
 
     [Fact]
@@ -80,6 +81,17 @@ public sealed class LinkedAvroFileTests
         var afterSymbols = SymbolTable.FromFiles([after], TestContext.Current.CancellationToken);
 
         Assert.Equal(beforeSymbols, afterSymbols);
+    }
+
+    [Fact]
+    public void Symbol_hashes_ignore_declaration_insertion_order()
+    {
+        var first = Parse("first.avsc", Record("First"));
+        var second = Parse("second.avsc", Record("Second"));
+        var a = SymbolTable.FromFiles([first, second], TestContext.Current.CancellationToken);
+        var b = SymbolTable.FromFiles([second, first], TestContext.Current.CancellationToken);
+        Assert.Equal(a, b);
+        Assert.Equal(a.GetHashCode(), b.GetHashCode());
     }
 
     private static SchemaName Name(string name) => new(name, "Example");

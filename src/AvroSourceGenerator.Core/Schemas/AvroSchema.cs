@@ -22,7 +22,7 @@ public abstract record class AvroSchema(
         using var writer = new Utf8JsonWriter(stream, options);
         WriteTo(writer, registeredSchemas, [], SchemaName.Namespace);
         writer.Flush();
-        return Encoding.UTF8.GetString(stream.ToArray());
+        return Encoding.UTF8.GetString(stream.GetBuffer(), 0, checked((int)stream.Length));
     }
 
     public abstract void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace);

@@ -331,19 +331,19 @@ public static class AvdlSchemaParser
 
         private ImmutableArray<NamedSchema> ProtocolTypes(SyntaxList<ISchemaDeclarationSyntax> syntaxList, string? containingNamespace)
         {
-            var types = ImmutableArray.CreateBuilder<NamedSchema>();
+            var types = ImmutableArray.CreateBuilder<NamedSchema>(syntaxList.Count);
             foreach (var type in syntaxList)
                 types.Add(context.Schema(type, containingNamespace));
 
-            return types.ToImmutable();
+            return types.MoveToImmutable();
         }
 
         private ImmutableArray<ProtocolMessage> ProtocolMessages(SyntaxList<MessageDeclarationSyntax> syntaxList, string? containingNamespace)
         {
-            var protocolMessages = ImmutableArray.CreateBuilder<ProtocolMessage>();
+            var protocolMessages = ImmutableArray.CreateBuilder<ProtocolMessage>(syntaxList.Count);
             foreach (var syntax in syntaxList)
                 protocolMessages.Add(context.Message(syntax, containingNamespace));
-            return protocolMessages.ToImmutable();
+            return protocolMessages.MoveToImmutable();
         }
 
         private ProtocolMessage Message(MessageDeclarationSyntax syntax, string? containingNamespace)
@@ -364,11 +364,11 @@ public static class AvdlSchemaParser
 
         private ImmutableArray<ProtocolRequestParameter> ProtocolRequestParameters(SeparatedSyntaxList<ParameterDeclarationSyntax> syntaxList, string? containingNamespace)
         {
-            var fields = ImmutableArray.CreateBuilder<ProtocolRequestParameter>();
+            var fields = ImmutableArray.CreateBuilder<ProtocolRequestParameter>(syntaxList.Count);
             foreach (var syntax in syntaxList)
                 fields.Add(context.ProtocolRequestParameter(syntax, containingNamespace));
 
-            return fields.ToImmutable();
+            return fields.MoveToImmutable();
         }
 
         private ProtocolRequestParameter ProtocolRequestParameter(ParameterDeclarationSyntax syntax, string? containingNamespace)
@@ -398,14 +398,14 @@ public static class AvdlSchemaParser
                 return [];
             }
 
-            var builder = ImmutableArray.CreateBuilder<AvroSchema>();
+            var builder = ImmutableArray.CreateBuilder<AvroSchema>(syntax.Errors.Count);
             foreach (var errorSyntax in syntax.Errors)
             {
                 // TODO: Do we need to validate that this is an error schema?
                 builder.Add(context.Type(errorSyntax, containingNamespace));
             }
 
-            return builder.ToImmutable();
+            return builder.MoveToImmutable();
         }
     }
 

@@ -21,8 +21,7 @@ internal readonly record struct AvroProjectOptions(
         AccessModifier == other.AccessModifier &&
         ReferenceResolution == other.ReferenceResolution &&
         DuplicateResolution == other.DuplicateResolution &&
-        // This will not avoid all cases, but it's good enough for now.
-        Diagnostics.OrderBy(x => x.Descriptor.Id).SequenceEqual(other.Diagnostics.OrderBy(x => x.Descriptor.Id));
+        Diagnostics.SequenceEqual(other.Diagnostics);
 
     public override int GetHashCode()
     {

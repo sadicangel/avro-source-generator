@@ -8,6 +8,7 @@ namespace AvroSourceGenerator.Compiler;
 internal readonly struct ParserContext(AvroParseOptions options)
 {
     private readonly List<TopLevelSchema> _declarations = [];
+    private readonly Dictionary<SchemaName, int> _declarationIndexes = [];
     private readonly HashSet<SchemaName> _references = [];
     private readonly Dictionary<SchemaName, HashSet<SchemaName>> _dependencies = [];
     private readonly List<SchemaName> _recursionStack = [];
@@ -16,6 +17,7 @@ internal readonly struct ParserContext(AvroParseOptions options)
 
     public void Declare(TopLevelSchema schema)
     {
+        _declarationIndexes[schema.SchemaName] = _declarations.Count;
         _declarations.Add(schema);
 
         if (_recursionStack.Count == 0)
@@ -50,12 +52,8 @@ internal readonly struct ParserContext(AvroParseOptions options)
         if (_recursionStack is [.., var containingSchema])
             AddDependency(containingSchema, schemaName);
 
-        for (var index = _declarations.Count - 1; index >= 0; index--)
-        {
-            var declaration = _declarations[index];
-            if (declaration.SchemaName == schemaName)
-                return new AvroSchemaReference(schemaName, declaration.CSharpName);
-        }
+        if (_declarationIndexes.TryGetValue(schemaName, out var index))
+            return new AvroSchemaReference(schemaName, _declarations[index].CSharpName);
 
         if (_recursionStack.Contains(schemaName))
             return new AvroSchemaReference(schemaName);

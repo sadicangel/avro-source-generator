@@ -12,16 +12,16 @@ internal sealed class AvroProject : IEquatable<AvroProject>
 {
     private readonly ImmutableArray<BoundAvroFile> _files;
     private readonly AvroProjectOptions _options;
-    private readonly ImmutableDictionary<SchemaName, TopLevelSchema> _schemas;
-    private readonly ImmutableDictionary<SchemaName, BoundAvroFile> _owners;
-    private readonly ImmutableDictionary<SchemaName, ImmutableArray<SchemaName>> _dependencies;
+    private readonly Dictionary<SchemaName, TopLevelSchema> _schemas;
+    private readonly Dictionary<SchemaName, SchemaOwner> _owners;
+    private readonly Dictionary<SchemaName, ImmutableArray<SchemaName>> _dependencies;
 
     private AvroProject(
         ImmutableArray<BoundAvroFile> files,
         AvroProjectOptions options,
-        ImmutableDictionary<SchemaName, TopLevelSchema> schemas,
-        ImmutableDictionary<SchemaName, BoundAvroFile> owners,
-        ImmutableDictionary<SchemaName, ImmutableArray<SchemaName>> dependencies,
+        Dictionary<SchemaName, TopLevelSchema> schemas,
+        Dictionary<SchemaName, SchemaOwner> owners,
+        Dictionary<SchemaName, ImmutableArray<SchemaName>> dependencies,
         ImmutableArray<DiagnosticInfo> diagnostics,
         bool canRender)
     {
@@ -90,11 +90,9 @@ internal sealed class AvroProject : IEquatable<AvroProject>
         return new AvroProject(
             files,
             options,
-            schemaIndex.Schemas.ToImmutableDictionary(),
-            schemaIndex.Owners.ToImmutableDictionary(
-                static owner => owner.Key,
-                static owner => owner.Value.File),
-            schemaIndex.Dependencies.ToImmutableDictionary(),
+            schemaIndex.Schemas,
+            schemaIndex.Owners,
+            schemaIndex.Dependencies,
             diagnostics,
             canRender: !hasErrors);
     }
@@ -122,20 +120,17 @@ internal sealed class AvroProject : IEquatable<AvroProject>
                     continue;
                 }
 
-                if (schemaIndex.Schemas.ContainsKey(name))
+                if (!schemaIndex.Schemas.TryAdd(name, declaration))
                 {
                     if (duplicateResolution is DuplicateResolution.Error)
                         schemaIndex.Diagnostics.Add(DuplicateDiagnostic(declaration));
                     continue;
                 }
 
-                schemaIndex.Schemas.Add(name, declaration);
                 schemaIndex.Owners.Add(name, new SchemaOwner(file, fileIndex));
                 schemaIndex.Dependencies.Add(
                     name,
-                    file.Dependencies.TryGetValue(name, out var schemaDependencies)
-                        ? schemaDependencies
-                        : []);
+                    file.Dependencies.GetValueOrDefault(name, []));
             }
         }
 
@@ -175,7 +170,7 @@ internal sealed class AvroProject : IEquatable<AvroProject>
                         return false;
 
                     return owner.FileIndex == fileIndex ||
-                           !importResolution.ImportedFileIndexes.Contains(owner.FileIndex);
+                           !importResolution.Contains(owner.FileIndex);
                 })
                 .OrderBy(static reference => reference.FullName, StringComparer.Ordinal)
                 .ToImmutableArray();
@@ -201,7 +196,7 @@ internal sealed class AvroProject : IEquatable<AvroProject>
         var emittedSchemas = file.Declarations
             .Where(declaration =>
                 _owners.TryGetValue(declaration.SchemaName, out var owner) &&
-                ReferenceEquals(owner, file) &&
+                ReferenceEquals(owner.File, file) &&
                 EmitsSource(declaration))
             .ToImmutableArray();
         var closure = GetDependencyClosure(emittedSchemas.Select(static schema => schema.SchemaName));
@@ -210,7 +205,7 @@ internal sealed class AvroProject : IEquatable<AvroProject>
             _options.LanguageFeatures,
             _options.AccessModifier);
         var contributingFiles = closure
-            .Select(name => _owners[name])
+            .Select(name => _owners[name].File)
             .Distinct()
             .OrderBy(static owner => owner.File.SourceText.Path, StringComparer.Ordinal)
             .ToImmutableArray();
@@ -226,9 +221,8 @@ internal sealed class AvroProject : IEquatable<AvroProject>
     {
         var visited = new HashSet<SchemaName>();
         var pending = new Stack<SchemaName>(roots);
-        while (pending.Count > 0)
+        while (pending.TryPop(out var schema))
         {
-            var schema = pending.Pop();
             if (!visited.Add(schema))
                 continue;
 

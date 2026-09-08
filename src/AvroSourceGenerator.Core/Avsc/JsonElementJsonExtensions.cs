@@ -55,16 +55,22 @@ internal static class JsonElementJsonExtensions
             return json.GetBoolean();
         }
 
-        public JsonElement.ArrayEnumerator GetRequiredArray(string propertyName)
+        public JsonElement.ArrayEnumerator GetRequiredArray(string propertyName) => schema.GetRequiredArray(propertyName, out _);
+
+        public JsonElement.ArrayEnumerator GetRequiredArray(string propertyName, out int length)
         {
             var json = schema.GetRequiredProperty(propertyName);
             if (json.ValueKind is not JsonValueKind.Array)
                 throw new InvalidSchemaException($"'{propertyName}' property must be an array (found '{json}') in schema: {schema.GetRawText()}");
+            length = json.GetArrayLength();
             return json.EnumerateArray();
         }
 
-        public JsonElement.ArrayEnumerator? GetNullableArray(string propertyName)
+        public JsonElement.ArrayEnumerator? GetNullableArray(string propertyName) => schema.GetNullableArray(propertyName, out _);
+
+        public JsonElement.ArrayEnumerator? GetNullableArray(string propertyName, out int length)
         {
+            length = 0;
             var maybeJson = schema.GetNullableProperty(propertyName);
             if (maybeJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }) return null;
 
@@ -72,6 +78,7 @@ internal static class JsonElementJsonExtensions
             if (json.ValueKind is not JsonValueKind.Array)
                 throw new InvalidSchemaException($"'{propertyName}' property must be an array (found '{json}') in schema: {schema.GetRawText()}");
 
+            length = json.GetArrayLength();
             return json.EnumerateArray();
         }
 

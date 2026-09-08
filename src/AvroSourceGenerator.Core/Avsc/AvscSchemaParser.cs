@@ -175,11 +175,12 @@ public static class AvscSchemaParser
 
         private ImmutableArray<Field> Fields(JsonElement schema, SchemaName containingSchemaName)
         {
-            var fields = ImmutableArray.CreateBuilder<Field>();
-            foreach (var field in schema.GetRequiredArray(AvroJsonKeys.Fields))
+            var items = schema.GetRequiredArray(AvroJsonKeys.Fields, out var count);
+            var fields = ImmutableArray.CreateBuilder<Field>(count);
+            foreach (var field in items)
                 fields.Add(context.Field(field, containingSchemaName));
 
-            return fields.ToImmutable();
+            return fields.MoveToImmutable();
         }
 
         private Field Field(JsonElement field, SchemaName containingSchemaName)
@@ -202,10 +203,10 @@ public static class AvscSchemaParser
 
         private UnionSchema Union(JsonElement schema, string? containingNamespace)
         {
-            var builder = ImmutableArray.CreateBuilder<AvroSchema>();
+            var builder = ImmutableArray.CreateBuilder<AvroSchema>(schema.GetArrayLength());
             foreach (var innerSchema in schema.EnumerateArray())
                 builder.Add(context.Schema(innerSchema, containingNamespace));
-            var schemas = builder.ToImmutable();
+            var schemas = builder.MoveToImmutable();
 
             return UnionSchema.Create(schemas, context.Options.UseNullableReferenceTypes);
         }
@@ -216,7 +217,8 @@ public static class AvscSchemaParser
             using (context.EnterRecursionScope(schemaName))
             {
                 var documentation = schema.GetDocumentation();
-                var types = context.ProtocolTypes(schema.GetRequiredArray(AvroJsonKeys.Types), schemaName.Namespace);
+                var typeItems = schema.GetRequiredArray(AvroJsonKeys.Types, out var typeCount);
+                var types = context.ProtocolTypes(typeItems, typeCount, schemaName.Namespace);
                 var messages = context.ProtocolMessages(schema.GetRequiredObject(AvroJsonKeys.Messages), schemaName.Namespace);
                 var properties = schema.GetProtocolProperties();
 
@@ -228,13 +230,13 @@ public static class AvscSchemaParser
             }
         }
 
-        private ImmutableArray<NamedSchema> ProtocolTypes(JsonElement.ArrayEnumerator schemas, string? containingNamespace)
+        private ImmutableArray<NamedSchema> ProtocolTypes(JsonElement.ArrayEnumerator schemas, int count, string? containingNamespace)
         {
-            var types = ImmutableArray.CreateBuilder<NamedSchema>();
+            var types = ImmutableArray.CreateBuilder<NamedSchema>(count);
             foreach (var type in schemas)
                 types.Add(context.NamedSchema(type, containingNamespace));
 
-            return types.ToImmutable();
+            return types.MoveToImmutable();
         }
 
         private NamedSchema NamedSchema(JsonElement schema, string? containingNamespace)
@@ -256,7 +258,7 @@ public static class AvscSchemaParser
             var protocolMessages = ImmutableArray.CreateBuilder<ProtocolMessage>();
             foreach (var message in messages)
                 protocolMessages.Add(context.Message(message, containingNamespace));
-            return protocolMessages.ToImmutable();
+            return protocolMessages.DrainToImmutable();
         }
 
         private ProtocolMessage Message(JsonProperty message, string? containingNamespace)
@@ -265,7 +267,8 @@ public static class AvscSchemaParser
             var documentation = message.Value.GetDocumentation();
             var requestParameters = context.ProtocolRequestParameters(message.Value, containingNamespace);
             var response = context.ProtocolResponse(message.Value.GetRequiredProperty(AvroJsonKeys.Response), containingNamespace);
-            var errors = context.ProtocolErrors(message.Value.GetNullableArray(AvroJsonKeys.Errors), containingNamespace);
+            var errorItems = message.Value.GetNullableArray(AvroJsonKeys.Errors, out var errorCount);
+            var errors = context.ProtocolErrors(errorItems, errorCount, containingNamespace);
             var oneWay = message.Value.GetNullableBoolean(AvroJsonKeys.OneWay);
             if (oneWay is true && (response.Type.Type is not SchemaType.Null || errors.Length > 0))
             {
@@ -277,11 +280,12 @@ public static class AvscSchemaParser
 
         private ImmutableArray<ProtocolRequestParameter> ProtocolRequestParameters(JsonElement schema, string? containingNamespace)
         {
-            var fields = ImmutableArray.CreateBuilder<ProtocolRequestParameter>();
-            foreach (var parameter in schema.GetRequiredArray(AvroJsonKeys.Request))
+            var parameters = schema.GetRequiredArray(AvroJsonKeys.Request, out var count);
+            var fields = ImmutableArray.CreateBuilder<ProtocolRequestParameter>(count);
+            foreach (var parameter in parameters)
                 fields.Add(context.ProtocolRequestParameter(parameter, containingNamespace));
 
-            return fields.ToImmutable();
+            return fields.MoveToImmutable();
         }
 
         private ProtocolRequestParameter ProtocolRequestParameter(JsonElement parameter, string? containingNamespace)
@@ -306,20 +310,20 @@ public static class AvscSchemaParser
             return new ProtocolResponse(type, underlyingType);
         }
 
-        private ImmutableArray<AvroSchema> ProtocolErrors(JsonElement.ArrayEnumerator? errors, string? containingNamespace)
+        private ImmutableArray<AvroSchema> ProtocolErrors(JsonElement.ArrayEnumerator? errors, int count, string? containingNamespace)
         {
             if (errors is null)
             {
                 return [];
             }
 
-            var builder = ImmutableArray.CreateBuilder<AvroSchema>();
+            var builder = ImmutableArray.CreateBuilder<AvroSchema>(count);
             foreach (var error in errors.Value)
             {
                 builder.Add(context.Schema(error, containingNamespace));
             }
 
-            return builder.ToImmutable();
+            return builder.MoveToImmutable();
         }
     }
 }

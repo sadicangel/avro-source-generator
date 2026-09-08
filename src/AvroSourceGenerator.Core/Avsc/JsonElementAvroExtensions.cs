@@ -27,7 +27,7 @@ internal static class JsonElementAvroExtensions
             if (string.IsNullOrWhiteSpace(property))
                 throw new InvalidSchemaException($"'{propertyName}' property must be a non-empty, non-whitespace string (found '{schema.GetNullableProperty(propertyName)}') in schema: {schema.GetRawText()}");
 
-            if (property.IndexOf("..", StringComparison.Ordinal) >= 0)
+            if (property.Contains("..", StringComparison.Ordinal))
                 throw new InvalidSchemaException($"Property '{propertyName}' has an invalid format: 'consecutive dots are not allowed in names or namespaces' in schema: {schema.GetRawText()}");
 
             var name = property;

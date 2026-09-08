@@ -17,13 +17,15 @@ public sealed record class Field(
 {
     public ImmutableArray<AvroSchema> PossibleTypes => Type is UnionSchema union ? union.Schemas : [Type];
 
-    public bool AllowsNull => PossibleTypes.Any(static schema => schema.Type is SchemaType.Null);
+    public bool AllowsNull => Type is UnionSchema union
+        ? union.Schemas.Any(static schema => schema.Type is SchemaType.Null)
+        : Type.Type is SchemaType.Null;
 
     public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();
         // TODO: Is it worth to store the schema name?
-        writer.WriteString(AvroJsonKeys.Name, Name is ['@', ..] ? Name[1..] : Name);
+        writer.WriteString(AvroJsonKeys.Name, Name.AsSpan(Name is ['@', ..] ? 1 : 0));
         writer.WritePropertyName(AvroJsonKeys.Type);
         Type.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         if (Documentation is not null)

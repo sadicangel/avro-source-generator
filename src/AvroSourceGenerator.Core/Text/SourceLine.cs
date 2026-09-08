@@ -4,5 +4,7 @@ public readonly record struct SourceLine(SourceSpan SourceSpan, SourceSpan Sourc
 {
     public SourceText SourceText => SourceSpan.SourceText;
 
+    public int Length => SourceSpan.Length;
+
     public override string ToString() => SourceSpan.ToString();
 }

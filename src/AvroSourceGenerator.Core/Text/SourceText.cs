@@ -2,8 +2,9 @@
 
 namespace AvroSourceGenerator.Text;
 
-public readonly record struct SourceText(string Path, string Text) : IEquatable<SourceText>
+public sealed record class SourceText(string Path, string Text) : IEquatable<SourceText>
 {
+    // TODO: Replace literals with constants for file extensions and do a project wide replace.
     public SourceType Type =>
         Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase) ? SourceType.Avsc :
         Path.EndsWith(".avpr", StringComparison.OrdinalIgnoreCase) ? SourceType.Avpr :
@@ -12,11 +13,29 @@ public readonly record struct SourceText(string Path, string Text) : IEquatable<
 
     public bool IsEmpty => string.IsNullOrWhiteSpace(Text);
 
-    private readonly Lazy<ImmutableArray<SourceLine>> _lines = new(() => ParseLines(Text, Path));
+    public int Length => Text.Length;
 
-    public ImmutableArray<SourceLine> Lines => _lines.Value;
+    public ImmutableArray<SourceLine> Lines
+    {
+        get
+        {
+            if (field.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref field, ParseLines(Text, Path));
+            return field;
+        }
+    }
 
     public SourceSpan GetSpan(int offset, int length) => new(this, offset, length);
+
+    public int GetOffset(int lineIndex, int columnIndex)
+    {
+        if (lineIndex < 0 || lineIndex >= Lines.Length)
+            throw new ArgumentOutOfRangeException(nameof(lineIndex));
+        var line = Lines[lineIndex];
+        if (columnIndex < 0 || columnIndex > line.Length)
+            throw new ArgumentOutOfRangeException(nameof(columnIndex));
+        return line.SourceSpan.Offset + columnIndex;
+    }
 
     public int GetLineIndex(int offset)
     {
@@ -40,7 +59,7 @@ public readonly record struct SourceText(string Path, string Text) : IEquatable<
         return lower - 1;
     }
 
-    public bool Equals(SourceText other) => Path == other.Path && Text == other.Text;
+    public bool Equals(SourceText? other) => other is not null && Path == other.Path && Text == other.Text;
 
     public override int GetHashCode() => HashCode.Combine(Path, Text);
 

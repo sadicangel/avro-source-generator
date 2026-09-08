@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -7,6 +7,39 @@ namespace AvroSourceGenerator.Tests;
 
 public sealed class CachingTests
 {
+    [Fact]
+    public void Access_modifier_change_only_invalidates_rendering()
+    {
+        var files = ImmutableArray.Create(ProjectFile.Schema(Record("Shared", "")));
+        var initialConfig = new ProjectConfig
+        {
+            LanguageVersion = LanguageVersion.CSharp10,
+            GlobalOptions = { ["AvroSourceGeneratorAccessModifier"] = "public" }
+        };
+        var input = GeneratorInput.Create(files, [], initialConfig);
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+
+        var changedConfig = new ProjectConfig
+        {
+            LanguageVersion = LanguageVersion.CSharp10,
+            GlobalOptions = { ["AvroSourceGeneratorAccessModifier"] = "internal" }
+        };
+        var changedInput = GeneratorInput.Create(files, [], changedConfig);
+        driver = driver.WithUpdatedAnalyzerConfigOptions(changedInput.OptionsProvider)
+            .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var result = driver.GetRunResult();
+        var tracked = StepTracking.GetTrackedSteps(result);
+
+        foreach (var stage in new[] { "AvroFile", "SymbolTable", "LinkedAvroFile", "BoundAvroFile", "AvroCompilation" })
+            Assert.All(
+                tracked[stage].SelectMany(step => step.Outputs),
+                output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
+        Assert.Equal(1, CountModified(tracked, "RenderableAvroFile"));
+        Assert.Equal(1, CountModified(tracked, "RenderedFile"));
+        AssertSuccessfulGeneration(result, 1);
+        Assert.Contains("internal", result.Results.Single().GeneratedSources.Single().SourceText.ToString());
+    }
+
     [Fact]
     public void Independent_schema_content_edit_reuses_unchanged_bound_files() =>
         AssertCurrentInvalidationBaseline(IncrementalScenario.IndependentContent());
@@ -41,8 +74,11 @@ public sealed class CachingTests
                 """,
                 "schemas/consumer.avdl"),
             ProjectFile.Schema(Record("Unrelated", ""), "schemas/unrelated.avsc"));
-        var config = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
-        config.ReferenceResolution = "Strict";
+        var config = new ProjectConfig
+        {
+            LanguageVersion = LanguageVersion.CSharp10,
+            ReferenceResolution = "Strict"
+        };
         var input = GeneratorInput.Create(files, [], config);
         var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         var changed = new ChangedAdditionalText(
@@ -175,8 +211,11 @@ public sealed class CachingTests
 
     private static void AssertCurrentInvalidationBaseline(IncrementalScenario scenario, string? avroLibrary = null)
     {
-        var projectConfig = new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 };
-        projectConfig.ReferenceResolution = scenario.ReferenceResolution;
+        var projectConfig = new ProjectConfig
+        {
+            LanguageVersion = LanguageVersion.CSharp10,
+            ReferenceResolution = scenario.ReferenceResolution
+        };
         projectConfig.AvroLibrary = avroLibrary ?? projectConfig.AvroLibrary;
 
         var input = GeneratorInput.Create(scenario.Files, [], projectConfig);
@@ -218,7 +257,7 @@ public sealed class CachingTests
             trackedSteps["BoundAvroFiles"].SelectMany(step => step.Outputs),
             output => output.Reason == IncrementalStepRunReason.Modified);
         Assert.Contains(
-            trackedSteps["AvroProject"].SelectMany(step => step.Outputs),
+            trackedSteps["AvroCompilation"].SelectMany(step => step.Outputs),
             output => output.Reason == IncrementalStepRunReason.Modified);
 
         AssertRenderFanout(trackedSteps, scenario.ExpectedRenderedFileInvalidations, scenario.ExpectedSourceCount);
@@ -246,7 +285,7 @@ public sealed class CachingTests
             static output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
         Assert.Equal(0, CountModified(trackedSteps, "BoundAvroFile"));
         Assert.Contains(
-            trackedSteps["AvroProject"].SelectMany(static step => step.Outputs),
+            trackedSteps["AvroCompilation"].SelectMany(static step => step.Outputs),
             static output => output.Reason is IncrementalStepRunReason.Modified);
     }
 

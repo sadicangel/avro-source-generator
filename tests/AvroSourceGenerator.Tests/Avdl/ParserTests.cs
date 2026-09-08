@@ -1,9 +1,9 @@
-﻿using AvroSourceGenerator.Avdl.Diagnostics;
-using AvroSourceGenerator.Avdl.Syntax;
+﻿using AvroSourceGenerator.Avdl.Syntax;
 using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Directives;
 using AvroSourceGenerator.Avdl.Syntax.Types;
+using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.Tests.Avdl;
 
@@ -412,7 +412,7 @@ public sealed class ParserTests
     {
         var tree = ParseTree("$ record User { string name; }");
 
-        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.InvalidCharacter);
+        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.InvalidCharacter);
     }
 
     [Fact]
@@ -421,7 +421,7 @@ public sealed class ParserTests
         const string text = "record User { string name }";
         var tree = ParseTree(text);
 
-        var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.UnexpectedToken);
+        var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.UnexpectedToken);
         Assert.Equal(text.IndexOf('}'), diagnostic.SourceSpan.Offset);
         Assert.Equal(1, diagnostic.SourceSpan.Length);
     }
@@ -435,7 +435,7 @@ public sealed class ParserTests
         var field = Assert.Single(record.Fields, field => field.Name.FullName == "name");
 
         Assert.Equal(SyntaxKind.StringType, field.Type.SyntaxKind);
-        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.UnexpectedToken);
+        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.UnexpectedToken);
     }
 
     [Fact]
@@ -444,7 +444,7 @@ public sealed class ParserTests
         const string text = "record User { , }";
         var tree = ParseTree(text);
 
-        var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.UnexpectedToken);
+        var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.UnexpectedToken);
         Assert.Equal(text.IndexOf(','), diagnostic.SourceSpan.Offset);
     }
 
@@ -468,7 +468,7 @@ public sealed class ParserTests
 
         var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
         var field = Assert.Single(record.Fields);
-        var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.UnexpectedToken);
+        var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.UnexpectedToken);
 
         Assert.Equal("name", field.Name.FullName);
         Assert.Equal(";", field.SemicolonToken.SourceSpan.ToString());
@@ -480,7 +480,7 @@ public sealed class ParserTests
     {
         var tree = ParseTree("record User { string name = ; }");
 
-        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.UnexpectedJsonValue);
+        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.UnexpectedJsonValue);
     }
 
     [Fact]
@@ -516,8 +516,8 @@ public sealed class ParserTests
             }
             """);
 
-        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.MisplacedAnnotation && diagnostic.SourceSpan.ToString() == "@");
-        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == SyntaxDiagnosticCode.MisplacedDocumentation && diagnostic.SourceSpan.ToString() == " Import doc ");
+        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.MisplacedAnnotation && diagnostic.SourceSpan.ToString() == "@");
+        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.MisplacedDocumentation && diagnostic.SourceSpan.ToString() == " Import doc ");
 
         var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
         Assert.Empty(Assert.IsType<RecordDeclarationSyntax>(Assert.Single(protocol.Types)).Annotations);

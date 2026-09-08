@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.Loader;
 using Microsoft.CodeAnalysis;
@@ -10,7 +9,7 @@ namespace AvroSourceGenerator.Benchmarks;
 
 internal sealed class BenchmarkEnvironment : IDisposable
 {
-    private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.CSharp12);
+    private static readonly CSharpParseOptions s_parseOptions = new CSharpParseOptions(LanguageVersion.CSharp12);
 
     private readonly BenchmarkScenario _scenario;
     private readonly CSharpCompilation _compilation;
@@ -87,8 +86,7 @@ internal sealed class BenchmarkEnvironment : IDisposable
     {
         if (_scenario.ChangeScenario == IncrementalChangeScenario.ReferencedSchemaContent)
         {
-            throw new InvalidOperationException(
-                "The last GA baseline does not support Deferred cross-file references. Use ValidateCurrentIncrementalRun instead.");
+            throw new InvalidOperationException("The last GA baseline does not support Deferred cross-file references. Use ValidateCurrentIncrementalRun instead.");
         }
 
         var lastGa = Validate(RunIncrementalLastGa(), "last GA incremental run");
@@ -139,16 +137,14 @@ internal sealed class BenchmarkEnvironment : IDisposable
 
         if (errors.Length != 0)
         {
-            throw new InvalidOperationException(
-                $"The {version} generator reported errors:{Environment.NewLine}{string.Join(Environment.NewLine, errors)}");
+            throw new InvalidOperationException($"The {version} generator reported errors:{Environment.NewLine}{string.Join(Environment.NewLine, errors)}");
         }
 
         var generatorResult = result.Results.Single();
         var generatedSourceCount = generatorResult.GeneratedSources.Length;
         if (generatedSourceCount != _scenario.SchemaCount)
         {
-            throw new InvalidOperationException(
-                $"The {version} generator produced {generatedSourceCount} sources; expected {_scenario.SchemaCount}.");
+            throw new InvalidOperationException($"The {version} generator produced {generatedSourceCount} sources; expected {_scenario.SchemaCount}.");
         }
 
         return new ValidationResult(generatedSourceCount);
@@ -158,8 +154,7 @@ internal sealed class BenchmarkEnvironment : IDisposable
     {
         if (lastGa.GeneratedSourceCount != current.GeneratedSourceCount)
         {
-            throw new InvalidOperationException(
-                $"The versions produced different source counts: GA={lastGa.GeneratedSourceCount}, current={current.GeneratedSourceCount}.");
+            throw new InvalidOperationException($"The versions produced different source counts: GA={lastGa.GeneratedSourceCount}, current={current.GeneratedSourceCount}.");
         }
     }
 
@@ -214,24 +209,16 @@ internal sealed class LoadedGenerator : IDisposable
     }
 }
 
-internal sealed class GeneratorLoadContext : AssemblyLoadContext
+internal sealed class GeneratorLoadContext(string name, string componentAssemblyPath) : AssemblyLoadContext(name, isCollectible: true)
 {
-    private readonly string _assemblyDirectory;
-    private readonly AssemblyDependencyResolver _resolver;
-
-    public GeneratorLoadContext(string name, string componentAssemblyPath)
-        : base(name, isCollectible: true)
-    {
-        _assemblyDirectory = Path.GetDirectoryName(componentAssemblyPath)!;
-        _resolver = new AssemblyDependencyResolver(componentAssemblyPath);
-    }
+    private readonly string _assemblyDirectory = Path.GetDirectoryName(componentAssemblyPath)!;
+    private readonly AssemblyDependencyResolver _resolver = new AssemblyDependencyResolver(componentAssemblyPath);
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {
         if (IsSharedAssembly(assemblyName.Name))
         {
-            return Default.Assemblies.FirstOrDefault(
-                assembly => string.Equals(assembly.GetName().Name, assemblyName.Name, StringComparison.Ordinal));
+            return Default.Assemblies.FirstOrDefault(assembly => string.Equals(assembly.GetName().Name, assemblyName.Name, StringComparison.Ordinal));
         }
 
         var resolvedPath = _resolver.ResolveAssemblyToPath(assemblyName);

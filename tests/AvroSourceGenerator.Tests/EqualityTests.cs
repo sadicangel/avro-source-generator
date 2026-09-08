@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Inputs;
+using AvroSourceGenerator.Extensions;
 using Microsoft.CodeAnalysis.Text;
 using Soenneker.Utils.AutoBogus;
 using Soenneker.Utils.AutoBogus.Context;
@@ -11,14 +10,14 @@ namespace AvroSourceGenerator.Tests;
 
 public class EqualityTests
 {
-    private static Type CompilationInfoType =>
-        field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.CompilationInfo", throwOnError: true)!;
+    private static Type CompilationEnvironmentType =>
+        field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.CompilationEnvironment", throwOnError: true)!;
 
-    private static Type CSharpProjectOptionsType =>
-        field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.CSharpProjectOptions", throwOnError: true)!;
+    private static Type ProjectPropertiesType =>
+        field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.ProjectProperties", throwOnError: true)!;
 
-    private static Type AvroProjectOptionsType =>
-        field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.AvroProjectOptions", throwOnError: true)!;
+    private static Type GeneratorConfigurationType =>
+        field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.GeneratorConfiguration", throwOnError: true)!;
 
     private readonly AutoFaker _faker;
     private readonly int _seed;
@@ -40,28 +39,28 @@ public class EqualityTests
     }
 
     [Fact]
-    public void EnsureCompilationInfoHasValueSemantics()
+    public void EnsureCompilationEnvironmentHasValueSemantics()
     {
-        var a = Generate(CompilationInfoType);
-        var b = Generate(CompilationInfoType);
+        var a = Generate(CompilationEnvironmentType);
+        var b = Generate(CompilationEnvironmentType);
 
         Assert.Equal(a, b);
     }
 
     [Fact]
-    public void EnsureCSharpProjectOptionsHasValueSemantics()
+    public void EnsureProjectPropertiesHasValueSemantics()
     {
-        var a = Generate(CSharpProjectOptionsType);
-        var b = Generate(CSharpProjectOptionsType);
+        var a = Generate(ProjectPropertiesType);
+        var b = Generate(ProjectPropertiesType);
 
         Assert.Equal(a, b);
     }
 
     [Fact]
-    public void EnsureAvroProjectOptionsHasValueSemantics()
+    public void EnsureGeneratorConfigurationHasValueSemantics()
     {
-        var a = Generate(AvroProjectOptionsType);
-        var b = Generate(AvroProjectOptionsType);
+        var a = Generate(GeneratorConfigurationType);
+        var b = Generate(GeneratorConfigurationType);
 
         Assert.Equal(a, b);
     }
@@ -70,13 +69,13 @@ public class EqualityTests
     public void EnsureAvroFileHasValueSemantics()
     {
         var parseOptions = new AvroParseOptions(
-            TargetProfile.Modern,
+            GenerationTarget.Modern,
             UseNullableReferenceTypes: true);
         var source = new global::AvroSourceGenerator.Text.SourceText(
             "schema.avsc",
             TestSchemas.Get("record").ToJsonString());
-        var a = AvroFile.FromInput((source, parseOptions), TestContext.Current.CancellationToken);
-        var b = AvroFile.FromInput((source, parseOptions), TestContext.Current.CancellationToken);
+        var a = AvroFile.Parse((source, parseOptions), TestContext.Current.CancellationToken);
+        var b = AvroFile.Parse((source, parseOptions), TestContext.Current.CancellationToken);
 
         Assert.Equal(a, b);
     }

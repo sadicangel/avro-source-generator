@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
-using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Schemas;
 using Scriban.Functions;
 
@@ -8,26 +8,23 @@ namespace AvroSourceGenerator.Templating;
 
 public static class AvroTemplate
 {
-    internal static ImmutableArray<RenderedSchema> Render(
-        ImmutableArray<TopLevelSchema> schemas,
-        IReadOnlyDictionary<SchemaName, TopLevelSchema> schemasByName,
-        RenderOptions options,
-        CancellationToken cancellationToken)
+    public static ImmutableArray<RenderedSchema> Render(RenderableAvroFile file, CancellationToken cancellationToken = default)
     {
-        var renderer = TemplateRendererPool.Rent(options);
+        var renderer = TemplateRendererPool.Rent(file.Options);
         var completed = false;
         try
         {
-            var renderedSchemas = ImmutableArray.CreateRange(schemas.Select(schema =>
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var schemaJson = options.TargetProfile is TargetProfile.Apache
-                    ? GetSchemaJson(schema, schemasByName, options)
-                    : null;
-                var hintName = $"{schema.SchemaName.FullName}.Avro.g.cs";
-                var sourceText = renderer.Render(schema, schemaJson);
-                return new RenderedSchema(hintName, sourceText);
-            }));
+            var renderedSchemas = ImmutableArray.CreateRange(
+                file.EmittedSchemas.Select(schema =>
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var schemaJson = file.Options.GenerationTarget is GenerationTarget.Apache
+                        ? GetSchemaJson(schema, file.ProjectSchemas, file.Options)
+                        : null;
+                    var hintName = $"{schema.SchemaName.FullName}.Avro.g.cs";
+                    var sourceText = renderer.Render(schema, schemaJson);
+                    return new RenderedSchema(hintName, sourceText);
+                }));
 
             completed = true;
             return renderedSchemas;
@@ -35,7 +32,7 @@ public static class AvroTemplate
         finally
         {
             if (completed)
-                TemplateRendererPool.Return(options, renderer);
+                TemplateRendererPool.Return(file.Options, renderer);
         }
     }
 

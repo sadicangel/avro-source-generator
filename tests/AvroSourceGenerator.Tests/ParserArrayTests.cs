@@ -1,5 +1,4 @@
-using System.Text.Json.Nodes;
-using AvroSourceGenerator.Exceptions;
+﻿using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 
@@ -13,12 +12,17 @@ public sealed class ParserArrayTests
     [InlineData(17)]
     public void Protocol_arrays_preserve_all_items_and_order(int count)
     {
-        var fields = string.Join(",", Enumerable.Range(0, count).Select(i =>
-            $$"""{"name":"field{{i}}","type":["null","string"]}"""));
-        var types = string.Join(",", Enumerable.Range(0, count).Select(i =>
-            $$"""{"type":"error","name":"Error{{i}}","fields":[{{fields}}]}"""));
+        var fields = string.Join(
+            ",",
+            Enumerable.Range(0, count).Select(i =>
+                $$"""{"name":"field{{i}}","type":["null","string"]}"""));
+        var types = string.Join(
+            ",",
+            Enumerable.Range(0, count).Select(i =>
+                $$"""{"type":"error","name":"Error{{i}}","fields":[{{fields}}]}"""));
         var errors = string.Join(",", Enumerable.Range(0, count).Select(i => $"\"Error{i}\""));
-        var parsed = SchemaCompilerTestHelpers.ParseJson($$"""
+        var parsed = SchemaCompilerTestHelpers.ParseJson(
+            $$"""
             {"protocol":"Service","types":[{{types}}],"messages":{
               "call":{"request":[{{fields}}],"response":"null","errors":[{{errors}}]}
             }
@@ -27,13 +31,17 @@ public sealed class ParserArrayTests
 
         var protocol = Assert.IsType<ProtocolSchema>(parsed.Root);
         Assert.Equal(Enumerable.Range(0, count).Select(i => $"Error{i}"), protocol.Types.Select(type => type.SchemaName.Name));
-        Assert.All(protocol.Types, type =>
-            Assert.Equal(count, Assert.IsType<ErrorSchema>(type).Fields.Length));
+        Assert.All(
+            protocol.Types,
+            type =>
+                Assert.Equal(count, Assert.IsType<ErrorSchema>(type).Fields.Length));
         var message = Assert.Single(protocol.Messages);
         Assert.Equal(Enumerable.Range(0, count).Select(i => $"field{i}"), message.RequestParameters.Select(field => field.Name));
         Assert.Equal(count, message.Errors.Length);
-        Assert.All(message.RequestParameters, parameter =>
-            Assert.Equal(2, Assert.IsType<UnionSchema>(parameter.Type).Schemas.Length));
+        Assert.All(
+            message.RequestParameters,
+            parameter =>
+                Assert.Equal(2, Assert.IsType<UnionSchema>(parameter.Type).Schemas.Length));
     }
 
     [Theory]

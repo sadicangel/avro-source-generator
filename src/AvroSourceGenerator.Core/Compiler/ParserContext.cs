@@ -1,11 +1,10 @@
 ﻿using System.Collections.Immutable;
-using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Compiler;
 
-internal readonly struct ParserContext(AvroParseOptions options)
+internal sealed class ParserContext(AvroParseOptions options)
 {
     private readonly List<TopLevelSchema> _declarations = [];
     private readonly Dictionary<SchemaName, int> _declarationIndexes = [];
@@ -95,7 +94,7 @@ internal readonly struct ParserContext(AvroParseOptions options)
                 underlyingType = union.UnderlyingSchema;
                 return union;
 
-            case FixedSchema fixedSchema when Options.TargetProfile is not TargetProfile.Apache:
+            case FixedSchema fixedSchema when Options.GenerationTarget is not GenerationTarget.Apache:
                 remarks = fixedSchema.Documentation;
                 return fieldType;
 

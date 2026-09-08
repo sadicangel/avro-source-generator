@@ -1,5 +1,5 @@
-﻿using AvroSourceGenerator.Avdl.Diagnostics;
-using AvroSourceGenerator.Avdl.Syntax;
+﻿using AvroSourceGenerator.Avdl.Syntax;
+using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.Tests.Avdl;
 
@@ -93,16 +93,16 @@ public sealed class ScannerTests
             "1e",
         };
 
-    public static TheoryData<string, SyntaxDiagnosticCode, int, int> InvalidInputDiagnostics =>
-        new TheoryData<string, SyntaxDiagnosticCode, int, int>
+    public static TheoryData<string, AvroDiagnosticCode, int, int> InvalidInputDiagnostics =>
+        new TheoryData<string, AvroDiagnosticCode, int, int>
         {
-            { "$", SyntaxDiagnosticCode.InvalidCharacter, 0, 1 },
-            { "\"bad\\q\"", SyntaxDiagnosticCode.InvalidEscapeSequence, 0, 7 },
-            { "1e", SyntaxDiagnosticCode.InvalidNumber, 0, 2 },
-            { "\"unterminated", SyntaxDiagnosticCode.UnterminatedString, 0, 13 },
-            { "/** unterminated", SyntaxDiagnosticCode.UnterminatedDocumentation, 0, 16 },
-            { "/* unterminated", SyntaxDiagnosticCode.UnterminatedComment, 0, 15 },
-            { "`unterminated", SyntaxDiagnosticCode.UnterminatedVerbatimIdentifier, 0, 13 },
+            { "$", AvroDiagnosticCode.InvalidCharacter, 0, 1 },
+            { "\"bad\\q\"", AvroDiagnosticCode.InvalidEscapeSequence, 0, 7 },
+            { "1e", AvroDiagnosticCode.InvalidNumber, 0, 2 },
+            { "\"unterminated", AvroDiagnosticCode.UnterminatedString, 0, 13 },
+            { "/** unterminated", AvroDiagnosticCode.UnterminatedDocumentation, 0, 16 },
+            { "/* unterminated", AvroDiagnosticCode.UnterminatedComment, 0, 15 },
+            { "`unterminated", AvroDiagnosticCode.UnterminatedVerbatimIdentifier, 0, 13 },
         };
 
     [Theory]
@@ -266,7 +266,7 @@ public sealed class ScannerTests
 
     [Theory]
     [MemberData(nameof(InvalidInputDiagnostics))]
-    public void Scan_InvalidInput_RecordsDiagnostic(string text, SyntaxDiagnosticCode expectedCode, int expectedOffset, int expectedLength)
+    public void Scan_InvalidInput_RecordsDiagnostic(string text, AvroDiagnosticCode expectedCode, int expectedOffset, int expectedLength)
     {
         var scanner = CreateScanner(text);
 
@@ -305,10 +305,10 @@ public sealed class ScannerTests
     }
 
     [Theory]
-    [InlineData("\"prefix\\u12xz\"", SyntaxDiagnosticCode.InvalidEscapeSequence)]
-    [InlineData("\"prefix\\ntext\\q\"", SyntaxDiagnosticCode.InvalidEscapeSequence)]
-    [InlineData("\"prefix\\ntext", SyntaxDiagnosticCode.UnterminatedString)]
-    public void Scan_malformed_strings_keeps_the_full_diagnostic_span(string text, SyntaxDiagnosticCode code)
+    [InlineData("\"prefix\\u12xz\"", AvroDiagnosticCode.InvalidEscapeSequence)]
+    [InlineData("\"prefix\\ntext\\q\"", AvroDiagnosticCode.InvalidEscapeSequence)]
+    [InlineData("\"prefix\\ntext", AvroDiagnosticCode.UnterminatedString)]
+    public void Scan_malformed_strings_keeps_the_full_diagnostic_span(string text, AvroDiagnosticCode code)
     {
         var scanner = CreateScanner(text);
         _ = scanner.ScanAllTokens().ToArray();

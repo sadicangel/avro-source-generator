@@ -1,5 +1,5 @@
 ﻿using System.Collections.Immutable;
-using AvroSourceGenerator.Avdl.Diagnostics;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
@@ -11,7 +11,7 @@ internal sealed class SyntaxTokenStream
     // This would be more efficient if we want to fail fast on syntax errors and avoid scanning large files.
     private readonly SourceText _sourceText;
     private readonly ImmutableArray<SyntaxToken> _tokens;
-    private readonly List<SyntaxDiagnostic> _diagnostics = [];
+    private readonly List<AvroDiagnostic> _diagnostics = [];
     private bool _lastTokenWasSynthetic = false;
 
     public SyntaxTokenStream(SourceText sourceText)
@@ -28,9 +28,9 @@ internal sealed class SyntaxTokenStream
 
     public bool IsAtEnd => Current.SyntaxKind == SyntaxKind.EofToken;
 
-    public IReadOnlyList<SyntaxDiagnostic> Diagnostics => _diagnostics;
+    public IReadOnlyList<AvroDiagnostic> Diagnostics => _diagnostics;
 
-    public void Report(SyntaxDiagnostic diagnostic) => _diagnostics.Add(diagnostic);
+    public void Report(AvroDiagnostic diagnostic) => _diagnostics.Add(diagnostic);
 
     public SyntaxToken Match(SyntaxKind syntaxKind)
     {
@@ -66,7 +66,7 @@ internal sealed class SyntaxTokenStream
     private void ReportUnexpectedToken(SyntaxKind expectedSyntaxKind, SyntaxToken actual)
     {
         if (!_lastTokenWasSynthetic)
-            _diagnostics.Add(SyntaxDiagnostic.UnexpectedToken(expectedSyntaxKind, actual));
+            _diagnostics.Add(AvroDiagnostic.UnexpectedToken(expectedSyntaxKind, actual));
     }
 
     private bool CanSkipCurrentToMatch(SyntaxKind syntaxKind) =>

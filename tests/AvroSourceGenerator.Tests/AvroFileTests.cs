@@ -1,6 +1,5 @@
 ﻿using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Inputs;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
@@ -185,14 +184,14 @@ public sealed class AvroFileTests
         var file = Parse("schema.avdl", text);
 
         Assert.False(file.IsValid);
-        Assert.Contains(file.Diagnostics, diagnostic => diagnostic.Location.TextSpan.Start == text.IndexOf('$'));
-        Assert.Contains(file.Diagnostics, diagnostic => diagnostic.Location.TextSpan.Start == text.IndexOf('#'));
+        Assert.Contains(file.Diagnostics, diagnostic => diagnostic.SourceSpan.Offset == text.IndexOf('$'));
+        Assert.Contains(file.Diagnostics, diagnostic => diagnostic.SourceSpan.Offset == text.IndexOf('#'));
     }
 
     private static AvroFile Parse(string path, string text) =>
-        AvroFile.FromInput(
+        AvroFile.Parse(
             (new SourceText(path, text), new AvroParseOptions(
-                TargetProfile.Modern,
+                GenerationTarget.Modern,
                 UseNullableReferenceTypes: true)),
             TestContext.Current.CancellationToken);
 }

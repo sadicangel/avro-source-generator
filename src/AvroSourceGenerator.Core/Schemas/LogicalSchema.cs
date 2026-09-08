@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Compiler;
 
 namespace AvroSourceGenerator.Schemas;
 
@@ -16,23 +16,23 @@ public sealed record class LogicalSchema(
         underlyingSchema.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
     }
 
-    public static AvroSchema Create(string logicalType, AvroSchema underlyingSchema, TargetProfile targetProfile)
+    public static AvroSchema Create(string logicalType, AvroSchema underlyingSchema, GenerationTarget generationTarget)
     {
-        return targetProfile switch
+        return generationTarget switch
         {
-            TargetProfile.Apache =>
+            GenerationTarget.Apache =>
                 LogicalSchema.ForApache(logicalType, underlyingSchema),
 
-            TargetProfile.Chr =>
+            GenerationTarget.Chr =>
                 LogicalSchema.ForChr(logicalType, underlyingSchema),
 
-            TargetProfile.Legacy =>
+            GenerationTarget.Legacy =>
                 LogicalSchema.ForLegacy(logicalType, underlyingSchema),
 
-            TargetProfile.Modern =>
+            GenerationTarget.Modern =>
                 LogicalSchema.ForModern(logicalType, underlyingSchema),
 
-            _ => throw new InvalidOperationException($"Unsupported {nameof(TargetProfile)} '{targetProfile}'"),
+            _ => throw new InvalidOperationException($"Unsupported {nameof(GenerationTarget)} '{generationTarget}'"),
         };
     }
 }

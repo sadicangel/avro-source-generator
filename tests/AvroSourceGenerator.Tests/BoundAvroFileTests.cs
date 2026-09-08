@@ -1,6 +1,4 @@
 using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Output;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Tests;
@@ -141,9 +139,9 @@ public sealed class BoundAvroFileTests
         Assert.Same(compiled.Files[1].Dependencies, compiled.BoundFiles[1].Dependencies);
     }
 
-    private static CompiledAvroProject Compile(params (string Path, string Text)[] sources) =>
-        SchemaCompilerTestHelpers.CompileProject(
-            TargetProfile.Modern,
+    private static CompiledAvroSources Compile(params (string Path, string Text)[] sources) =>
+        SchemaCompilerTestHelpers.Compile(
+            GenerationTarget.Modern,
             ReferenceResolution.Deferred,
             DuplicateResolution.Error,
             sources);

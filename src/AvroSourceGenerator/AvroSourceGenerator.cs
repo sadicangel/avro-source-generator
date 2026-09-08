@@ -3,8 +3,7 @@ using System.Text;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
-using AvroSourceGenerator.Inputs;
-using AvroSourceGenerator.Output;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Templating;
 using AvroSourceGenerator.Text;
 using Microsoft.CodeAnalysis;
@@ -16,21 +15,27 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var csharpProjectOptionsProvider = context.AnalyzerConfigOptionsProvider
-            .Select(CSharpProjectOptions.FromOptions)
-            .WithTrackingName(TrackingNames.ProjectSettings);
+        var projectPropertiesProvider = context.AnalyzerConfigOptionsProvider
+            .Select(ProjectProperties.FromAnalyzerOptions)
+            .WithTrackingName(TrackingNames.ProjectProperties);
 
-        var compilationInfoProvider = context.CompilationProvider
-            .Select(CompilationInfo.FromCompilation)
-            .WithTrackingName(TrackingNames.CompilationInfo);
+        var compilationEnvironmentProvider = context.CompilationProvider
+            .Select(CompilationEnvironment.FromCompilation)
+            .WithTrackingName(TrackingNames.CompilationEnvironment);
 
-        var avroProjectOptionsProvider = csharpProjectOptionsProvider.Combine(compilationInfoProvider)
-            .Select(AvroProjectOptions.FromEnvironment)
-            .WithTrackingName(TrackingNames.AvroProjectOptions);
+        var generatorConfigurationProvider = projectPropertiesProvider.Combine(compilationEnvironmentProvider)
+            .Select(GeneratorConfiguration.Resolve)
+            .WithTrackingName(TrackingNames.GeneratorConfiguration);
 
-        var parseOptionsProvider = avroProjectOptionsProvider
-            .Select(AvroParseOptions.FromAvroProjectOptions)
+        var parseOptionsProvider = generatorConfigurationProvider
+            .Select(AvroParseOptions.FromGeneratorConfiguration)
             .WithTrackingName(TrackingNames.AvroParseOptions);
+
+        var compilationOptionsProvider = generatorConfigurationProvider
+            .Select(AvroCompilationOptions.FromGeneratorConfiguration);
+
+        var renderOptionsProvider = generatorConfigurationProvider
+            .Select(RenderOptions.FromGeneratorConfiguration);
 
         var sourceTextProvider = context.AdditionalTextsProvider
             .Where(SourceText.IsAvroFile)
@@ -38,7 +43,7 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             .WithTrackingName(TrackingNames.SourceText);
 
         var avroFileProvider = sourceTextProvider.Combine(parseOptionsProvider)
-            .Select(AvroFile.FromInput)
+            .Select(AvroFile.Parse)
             .WithTrackingName(TrackingNames.AvroFile);
 
         var avroFilesProvider = avroFileProvider
@@ -50,23 +55,23 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             .WithTrackingName(TrackingNames.SymbolTable);
 
         var linkedAvroFileProvider = avroFileProvider.Combine(symbolTableProvider)
-            .Select(LinkedAvroFile.FromInput)
+            .Select(LinkedAvroFile.Link)
             .WithTrackingName(TrackingNames.LinkedAvroFile);
 
         var boundAvroFileProvider = linkedAvroFileProvider
-            .Select(BoundAvroFile.FromInput)
+            .Select(BoundAvroFile.Bind)
             .WithTrackingName(TrackingNames.BoundAvroFile);
 
         var boundAvroFilesProvider = boundAvroFileProvider
             .Collect()
             .WithTrackingName(TrackingNames.BoundAvroFiles);
 
-        var avroProjectProvider = boundAvroFilesProvider
-            .Combine(avroProjectOptionsProvider)
-            .Select(AvroProject.FromInput)
-            .WithTrackingName(TrackingNames.AvroProject);
+        var avroCompilationProvider = boundAvroFilesProvider
+            .Combine(compilationOptionsProvider)
+            .Select(AvroCompilation.FromInput)
+            .WithTrackingName(TrackingNames.AvroCompilation);
 
-        var renderableAvroFileProvider = boundAvroFileProvider.Combine(avroProjectProvider)
+        var renderableAvroFileProvider = boundAvroFileProvider.Combine(avroCompilationProvider).Combine(renderOptionsProvider)
             .Select(RenderableAvroFile.FromInput)
             .WithTrackingName(TrackingNames.RenderableAvroFile);
 
@@ -74,15 +79,22 @@ public sealed class AvroSourceGenerator : IIncrementalGenerator
             .Select(AvroTemplate.Render)
             .WithTrackingName(TrackingNames.RenderedFile);
 
-        context.RegisterImplementationSourceOutput(avroProjectProvider, EmitDiagnostics);
+        context.RegisterImplementationSourceOutput(generatorConfigurationProvider, EmitDiagnostics);
+        context.RegisterImplementationSourceOutput(avroCompilationProvider, EmitDiagnostics);
         context.RegisterImplementationSourceOutput(renderedFileProvider, EmitSchemas);
     }
 
-    private static void EmitDiagnostics(SourceProductionContext context, AvroProject project)
+    private static void EmitDiagnostics(SourceProductionContext context, GeneratorConfiguration configuration) =>
+        EmitDiagnostics(context, configuration.Diagnostics);
+
+    private static void EmitDiagnostics(SourceProductionContext context, AvroCompilation compilation) =>
+        EmitDiagnostics(context, compilation.Diagnostics);
+
+    private static void EmitDiagnostics(SourceProductionContext context, ImmutableArray<AvroDiagnostic> diagnostics)
     {
-        foreach (var diagnostic in project.Diagnostics)
+        foreach (var diagnostic in diagnostics)
         {
-            context.ReportDiagnostic(diagnostic);
+            context.ReportDiagnostic(diagnostic.ToDiagnostic());
         }
     }
 

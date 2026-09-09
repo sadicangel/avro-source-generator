@@ -4,6 +4,6 @@
     {{ include 'field' field: field }}
     {{~ end ~}}
 }
-{{ if TargetProfile == 'Apache' }}
+{{ if GenerationTarget == 'Apache' }}
 {{ include 'apache.error' schema: $.schema }}
 {{- end ~}}

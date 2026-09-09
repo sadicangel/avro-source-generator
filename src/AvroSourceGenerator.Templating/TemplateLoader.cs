@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Reflection;
+﻿using System.Reflection;
 using Scriban;
 using Scriban.Parsing;
 using Scriban.Runtime;
@@ -8,14 +7,17 @@ namespace AvroSourceGenerator.Templating;
 
 internal sealed class TemplateLoader(RenderOptions options) : ITemplateLoader
 {
-    private static readonly ImmutableDictionary<string, string> s_templatePaths = BuildTemplatePaths();
-    private static readonly ImmutableArray<string> s_dynamicTemplateNames = ["apache.put", "fixed"];
-
-    private readonly ImmutableDictionary<string, string> _templatePaths = s_templatePaths
-        .SetItems(s_dynamicTemplateNames.ToDictionary(name => name, name => GetDynamicTemplatePath(name, options)));
+    private static readonly Dictionary<string, string> s_templatePaths = BuildTemplatePaths();
 
     public string GetPath(TemplateContext context, SourceSpan callerSpan, string templateName) =>
-        _templatePaths[templateName];
+        templateName switch
+        {
+            "apache.put" when !options.UseInitOnlyProperties => s_templatePaths["apache.put_mutable"],
+            "apache.put" when !options.UseUnsafeAccessors => s_templatePaths["apache.put_immutable_reflection"],
+            "apache.put" => s_templatePaths["apache.put_immutable_unsafe"],
+            "fixed" => s_templatePaths["apache.fixed"],
+            _ => s_templatePaths[templateName],
+        };
 
     public string Load(TemplateContext context, SourceSpan callerSpan, string templatePath)
     {
@@ -26,24 +28,15 @@ internal sealed class TemplateLoader(RenderOptions options) : ITemplateLoader
         return reader.ReadToEnd();
     }
 
-    private static ImmutableDictionary<string, string> BuildTemplatePaths()
+    private static Dictionary<string, string> BuildTemplatePaths()
     {
         const string TemplateNamespace = "AvroSourceGenerator.Templating.Templates";
         const string TemplateExtension = ".sbncs";
         return Assembly.GetExecutingAssembly().GetManifestResourceNames()
             .Where(name => name.StartsWith(TemplateNamespace) && name.EndsWith(TemplateExtension))
-            .ToImmutableDictionary(GetTemplateName);
+            .ToDictionary(GetTemplateName);
 
         static string GetTemplateName(string templatePath) =>
-           templatePath.AsSpan()[(TemplateNamespace.Length + 1)..^TemplateExtension.Length].ToString();
+            templatePath.AsSpan()[(TemplateNamespace.Length + 1)..^TemplateExtension.Length].ToString();
     }
-
-    private static string GetDynamicTemplatePath(string templateName, RenderOptions options) => templateName switch
-    {
-        "apache.put" when !options.UseInitOnlyProperties => s_templatePaths["apache.put_mutable"],
-        "apache.put" when !options.UseUnsafeAccessors => s_templatePaths["apache.put_immutable_reflection"],
-        "apache.put" => s_templatePaths["apache.put_immutable_unsafe"],
-        "fixed" => s_templatePaths["apache.fixed"],
-        _ => throw new InvalidOperationException($"Template '{templateName}' is not supported."),
-    };
 }

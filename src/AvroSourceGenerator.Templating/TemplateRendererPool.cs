@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using AvroSourceGenerator.Configuration;
 using Scriban;
 using Scriban.Syntax;
 

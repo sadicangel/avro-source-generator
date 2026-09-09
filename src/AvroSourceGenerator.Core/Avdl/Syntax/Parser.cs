@@ -1,9 +1,9 @@
 ﻿using System.Collections.Immutable;
-using AvroSourceGenerator.Avdl.Diagnostics;
 using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Directives;
 using AvroSourceGenerator.Avdl.Syntax.Types;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
@@ -13,7 +13,7 @@ public sealed class Parser(SourceText sourceText)
     private readonly SyntaxTokenStream _stream = new(sourceText);
     private readonly List<IAnnotationSyntax> _annotations = [];
     private readonly List<DocumentationSyntax> _documentation = [];
-    private readonly List<SyntaxDiagnostic> _diagnostics = [];
+    private readonly List<AvroDiagnostic> _diagnostics = [];
 
     public static SyntaxTree Parse(SourceText sourceText) => new Parser(sourceText).Parse();
 
@@ -143,9 +143,9 @@ public sealed class Parser(SourceText sourceText)
     private void ReportAndClearMisplacedMetadata(string target)
     {
         foreach (var documentation in _documentation)
-            _diagnostics.Add(SyntaxDiagnostic.MisplacedDocumentation(documentation.DocumentationTrivia.SourceSpan, target));
+            _diagnostics.Add(AvroDiagnostic.MisplacedDocumentation(documentation.DocumentationTrivia.SourceSpan, target));
         foreach (var annotation in _annotations)
-            _diagnostics.Add(SyntaxDiagnostic.MisplacedAnnotation(GetAnnotationSpan(annotation), GetAnnotationName(annotation), target));
+            _diagnostics.Add(AvroDiagnostic.MisplacedAnnotation(GetAnnotationSpan(annotation), GetAnnotationName(annotation), target));
 
         _documentation.Clear();
         _annotations.Clear();

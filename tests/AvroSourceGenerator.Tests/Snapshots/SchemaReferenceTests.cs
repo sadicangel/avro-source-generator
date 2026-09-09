@@ -48,7 +48,7 @@ public sealed class SchemaReferenceTests
             """
             {
                 "type": "record",
-                "name": "MissingReference",
+                "name": "MissingReferences",
                 "doc": "This record contains a field that references a type that is not defined in the schema.",
                 "fields": [
                     {

@@ -1,8 +1,8 @@
-﻿using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Compiler;
 
 namespace AvroSourceGenerator.Templating;
 
-public readonly record struct RenderOptions(TargetProfile TargetProfile, LanguageFeatures LanguageFeatures, AccessModifier AccessModifier)
+public readonly record struct RenderOptions(GenerationTarget GenerationTarget, LanguageFeatures LanguageFeatures, AccessModifier AccessModifier)
 {
     public bool UseNullableReferenceTypes => (LanguageFeatures & LanguageFeatures.NullableReferenceTypes) != 0;
     public bool UseRecords => (LanguageFeatures & LanguageFeatures.Records) != 0;
@@ -15,6 +15,6 @@ public readonly record struct RenderOptions(TargetProfile TargetProfile, Languag
     public string FieldValueExpression => UseNullableReferenceTypes ? "fieldValue!" : "fieldValue";
     public string Setter => UseInitOnlyProperties ? "init" : "set";
     public string Record => UseRecords ? "record" : "class";
-    public string Fixed => TargetProfile == TargetProfile.Apache ? "class" : Record;
-    public string Error => TargetProfile == TargetProfile.Apache ? "class" : Record;
+    public string Fixed => GenerationTarget == GenerationTarget.Apache ? "class" : Record;
+    public string Error => GenerationTarget == GenerationTarget.Apache ? "class" : Record;
 }

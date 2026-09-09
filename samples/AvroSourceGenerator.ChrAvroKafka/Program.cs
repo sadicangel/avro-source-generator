@@ -1,4 +1,4 @@
-using AvroSourceGenerator.ChrAvroKafka;
+﻿using AvroSourceGenerator.ChrAvroKafka;
 using Confluent.Kafka;
 
 const string topicName = "transactions";
@@ -37,8 +37,7 @@ if (deliveryResult.Status != PersistenceStatus.Persisted)
 }
 
 var registeredSchema = await registry.GetLatestSchemaAsync(valueSubject);
-Console.WriteLine(
-    $"Registered subject '{valueSubject}' at version {registeredSchema.Version} with schema id {registeredSchema.Id}.");
+Console.WriteLine($"Registered subject '{valueSubject}' at version {registeredSchema.Version} with schema id {registeredSchema.Id}.");
 
 Console.WriteLine("Creating consumer...");
 using var consumer = fixture.CreateConsumer<TransactionEvent>(registry);
@@ -98,14 +97,12 @@ static void AssertEquivalent(TransactionEvent expected, TransactionEvent actual)
 
     if (!string.Equals(expected.Currency, actual.Currency, StringComparison.Ordinal))
     {
-        throw new InvalidOperationException(
-            $"Currency mismatch: expected '{expected.Currency}', got '{actual.Currency}'.");
+        throw new InvalidOperationException($"Currency mismatch: expected '{expected.Currency}', got '{actual.Currency}'.");
     }
 
     if (expected.Timestamp != actual.Timestamp)
     {
-        throw new InvalidOperationException(
-            $"Timestamp mismatch: expected {expected.Timestamp:o}, got {actual.Timestamp:o}.");
+        throw new InvalidOperationException($"Timestamp mismatch: expected {expected.Timestamp:o}, got {actual.Timestamp:o}.");
     }
 
     if (expected.Status != actual.Status)
@@ -115,14 +112,12 @@ static void AssertEquivalent(TransactionEvent expected, TransactionEvent actual)
 
     if (!string.Equals(expected.RecipientId, actual.RecipientId, StringComparison.Ordinal))
     {
-        throw new InvalidOperationException(
-            $"RecipientId mismatch: expected '{expected.RecipientId}', got '{actual.RecipientId}'.");
+        throw new InvalidOperationException($"RecipientId mismatch: expected '{expected.RecipientId}', got '{actual.RecipientId}'.");
     }
 
     if (!string.Equals(expected.LegacyId, actual.LegacyId, StringComparison.Ordinal))
     {
-        throw new InvalidOperationException(
-            $"LegacyId mismatch: expected '{expected.LegacyId}', got '{actual.LegacyId}'.");
+        throw new InvalidOperationException($"LegacyId mismatch: expected '{expected.LegacyId}', got '{actual.LegacyId}'.");
     }
 
     if (!expected.Signature.SequenceEqual(actual.Signature))
@@ -132,8 +127,7 @@ static void AssertEquivalent(TransactionEvent expected, TransactionEvent actual)
 
     if (expected.Metadata.Count != actual.Metadata.Count)
     {
-        throw new InvalidOperationException(
-            $"Metadata count mismatch: expected {expected.Metadata.Count}, got {actual.Metadata.Count}.");
+        throw new InvalidOperationException($"Metadata count mismatch: expected {expected.Metadata.Count}, got {actual.Metadata.Count}.");
     }
 
     foreach (var (key, value) in expected.Metadata)
@@ -145,8 +139,7 @@ static void AssertEquivalent(TransactionEvent expected, TransactionEvent actual)
 
         if (!string.Equals(value, actualValue, StringComparison.Ordinal))
         {
-            throw new InvalidOperationException(
-                $"Metadata mismatch for '{key}': expected '{value}', got '{actualValue}'.");
+            throw new InvalidOperationException($"Metadata mismatch for '{key}': expected '{value}', got '{actualValue}'.");
         }
     }
 }

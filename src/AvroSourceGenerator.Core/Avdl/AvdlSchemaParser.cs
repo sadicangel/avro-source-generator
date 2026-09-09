@@ -6,7 +6,6 @@ using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Types;
 using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
@@ -131,7 +130,7 @@ public static class AvdlSchemaParser
                 .ToImmutableSortedDictionary(a => a.AnnotationName.FullName, a => a.JsonValue.ToJsonElement());
             var underlyingSchema = context.Type(syntax.Type, containingNamespace, properties, defaultJson);
             return logicalTypeName is not null
-                ? LogicalSchema.Create(logicalTypeName, underlyingSchema, context.Options.TargetProfile)
+                ? LogicalSchema.Create(logicalTypeName, underlyingSchema, context.Options.GenerationTarget)
                 : underlyingSchema;
         }
 
@@ -194,10 +193,10 @@ public static class AvdlSchemaParser
                     : throw new InvalidSourceException("Fixed size must be a positive integer.", syntax.SizeLiteralToken.SourceSpan);
                 var properties = syntax.GetSchemaProperties();
 
-                var fixedSchema = context.Options.TargetProfile switch
+                var fixedSchema = context.Options.GenerationTarget switch
                 {
                     // Only Apache.Avro needs a custom type for fixed, others use byte[].
-                    TargetProfile.Apache => new FixedSchema(schemaName, documentation, aliases, size, properties),
+                    GenerationTarget.Apache => new FixedSchema(schemaName, documentation, aliases, size, properties),
                     _ => FixedSchema.CreateAsByteArray(schemaName, documentation, aliases, size, properties),
                 };
                 context.Declare(fixedSchema);
@@ -292,7 +291,7 @@ public static class AvdlSchemaParser
                     .Add("precision", JsonSerializer.SerializeToElement(precision))
                     .Add("scale", JsonSerializer.SerializeToElement(scale));
                 var bytes = AvroSchema.Bytes with { Properties = properties };
-                return LogicalSchema.Create(LogicalTypeNames.Decimal, bytes, context.Options.TargetProfile);
+                return LogicalSchema.Create(LogicalTypeNames.Decimal, bytes, context.Options.GenerationTarget);
             }
 
             if (syntax is not LogicalTypeSyntax logical)
@@ -302,11 +301,11 @@ public static class AvdlSchemaParser
 
             return logical.LogicalTypeNameKeyword.SyntaxKind switch
             {
-                SyntaxKind.DateKeyword => LogicalSchema.Create(LogicalTypeNames.Date, AvroSchema.Int, context.Options.TargetProfile),
-                SyntaxKind.TimeMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimeMillis, AvroSchema.Int, context.Options.TargetProfile),
-                SyntaxKind.TimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimestampMillis, AvroSchema.Long, context.Options.TargetProfile),
-                SyntaxKind.LocalTimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.LocalTimestampMillis, AvroSchema.Long, context.Options.TargetProfile),
-                SyntaxKind.UuidKeyword => LogicalSchema.Create(LogicalTypeNames.Uuid, AvroSchema.String, context.Options.TargetProfile),
+                SyntaxKind.DateKeyword => LogicalSchema.Create(LogicalTypeNames.Date, AvroSchema.Int, context.Options.GenerationTarget),
+                SyntaxKind.TimeMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimeMillis, AvroSchema.Int, context.Options.GenerationTarget),
+                SyntaxKind.TimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimestampMillis, AvroSchema.Long, context.Options.GenerationTarget),
+                SyntaxKind.LocalTimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.LocalTimestampMillis, AvroSchema.Long, context.Options.GenerationTarget),
+                SyntaxKind.UuidKeyword => LogicalSchema.Create(LogicalTypeNames.Uuid, AvroSchema.String, context.Options.GenerationTarget),
                 _ => throw new InvalidSourceException($"Invalid logical type syntax: {syntax.SyntaxKind}", logical.LogicalTypeNameKeyword.SourceSpan)
             };
         }

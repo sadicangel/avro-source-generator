@@ -1,4 +1,4 @@
-using AvroSourceGenerator.Configuration;
+using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 
@@ -9,7 +9,7 @@ public sealed class BoundReferenceTypeTests
     [Fact]
     public void Non_apache_fixed_reference_maps_to_byte_array()
     {
-        var compiled = CompileFixedReference(TargetProfile.Modern);
+        var compiled = CompileFixedReference(GenerationTarget.Modern);
         var reference = GetConsumerReference(compiled);
 
         Assert.Equal(AvroSchema.Bytes.CSharpName, reference.CSharpName);
@@ -19,7 +19,7 @@ public sealed class BoundReferenceTypeTests
     [Fact]
     public void Apache_fixed_reference_maps_to_declared_type()
     {
-        var compiled = CompileFixedReference(TargetProfile.Apache);
+        var compiled = CompileFixedReference(GenerationTarget.Apache);
         var reference = GetConsumerReference(compiled);
 
         Assert.Equal(CSharpName.FromSchemaName(Name("Hash")), reference.CSharpName);
@@ -29,8 +29,8 @@ public sealed class BoundReferenceTypeTests
     [Fact]
     public void Nullable_union_uses_bound_reference_csharp_name()
     {
-        var compiled = SchemaCompilerTestHelpers.CompileProject(
-            TargetProfile.Modern,
+        var compiled = SchemaCompilerTestHelpers.Compile(
+            GenerationTarget.Modern,
             ReferenceResolution.Deferred,
             DuplicateResolution.Error,
             ("target.avsc", Record("Target")),
@@ -53,8 +53,8 @@ public sealed class BoundReferenceTypeTests
     [Fact]
     public void Protocol_parameters_and_responses_are_bound_references()
     {
-        var compiled = SchemaCompilerTestHelpers.CompileProject(
-            TargetProfile.Modern,
+        var compiled = SchemaCompilerTestHelpers.Compile(
+            GenerationTarget.Modern,
             ReferenceResolution.Strict,
             DuplicateResolution.Error,
             ("service.avpr", """
@@ -82,9 +82,9 @@ public sealed class BoundReferenceTypeTests
         Assert.Equal(CSharpName.FromSchemaName(Name("Response")), response.CSharpName);
     }
 
-    private static CompiledAvroProject CompileFixedReference(TargetProfile targetProfile) =>
-        SchemaCompilerTestHelpers.CompileProject(
-            targetProfile,
+    private static CompiledAvroSources CompileFixedReference(GenerationTarget generationTarget) =>
+        SchemaCompilerTestHelpers.Compile(
+            generationTarget,
             ReferenceResolution.Deferred,
             DuplicateResolution.Error,
             ("hash.avsc", """
@@ -99,7 +99,7 @@ public sealed class BoundReferenceTypeTests
                 }
                 """));
 
-    private static AvroSchemaReference GetConsumerReference(CompiledAvroProject compiled)
+    private static AvroSchemaReference GetConsumerReference(CompiledAvroSources compiled)
     {
         var consumer = Assert.IsType<RecordSchema>(compiled.BoundFiles[1].Declarations.Single());
         return Assert.IsType<AvroSchemaReference>(Assert.Single(consumer.Fields).Type);

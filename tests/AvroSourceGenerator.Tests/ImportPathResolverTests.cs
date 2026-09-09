@@ -1,4 +1,4 @@
-using AvroSourceGenerator.Output;
+using AvroSourceGenerator.Compiler;
 
 namespace AvroSourceGenerator.Tests;
 

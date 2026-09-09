@@ -1,26 +1,18 @@
-using System.Collections.Immutable;
-using AvroSourceGenerator.Avdl.Diagnostics;
+﻿using System.Collections.Immutable;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Exceptions;
 
-public sealed class InvalidSourceException : Exception
+public sealed class InvalidSourceException(ImmutableArray<AvroDiagnostic> diagnostics) : Exception(GetMessage(diagnostics))
 {
     public InvalidSourceException(string message, SourceSpan sourceSpan)
-        : this([new SyntaxDiagnostic(SyntaxDiagnosticCode.InvalidSource, sourceSpan, message)])
-    {
-    }
+        : this([AvroDiagnostic.InvalidSource(sourceSpan, message)]) { }
 
-    public InvalidSourceException(ImmutableArray<SyntaxDiagnostic> diagnostics)
-        : base(GetMessage(diagnostics))
-    {
-        Diagnostics = diagnostics;
-    }
+    public ImmutableArray<AvroDiagnostic> Diagnostics { get; } = diagnostics;
 
-    public ImmutableArray<SyntaxDiagnostic> Diagnostics { get; }
-
-    private static string GetMessage(ImmutableArray<SyntaxDiagnostic> diagnostics) =>
+    private static string GetMessage(ImmutableArray<AvroDiagnostic> diagnostics) =>
         diagnostics.IsEmpty
             ? throw new ArgumentException("At least one syntax diagnostic is required.", nameof(diagnostics))
-            : diagnostics[0].Message;
+            : diagnostics[0].GetMessage();
 }

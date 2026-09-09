@@ -6,7 +6,7 @@ internal sealed class TemplateScriptObject : BuiltinFunctions
 {
     public TemplateScriptObject(RenderOptions options)
     {
-        SetValue("TargetProfile", options.TargetProfile, readOnly: true);
+        SetValue("GenerationTarget", options.GenerationTarget, readOnly: true);
         SetValue("AccessModifier", options.AccessModifier.Keyword, readOnly: true);
         SetValue("Record", options.Record, readOnly: true);
         SetValue("Error", options.Error, readOnly: true);

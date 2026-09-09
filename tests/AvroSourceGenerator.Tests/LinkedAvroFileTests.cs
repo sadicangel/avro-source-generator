@@ -1,6 +1,5 @@
 ﻿using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Inputs;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
@@ -16,7 +15,7 @@ public sealed class LinkedAvroFileTests
         var consumer = Parse("consumer.avsc", Record("Consumer", "Shared", "Missing"));
         var symbols = SymbolTable.FromFiles([shared, unrelated, consumer], TestContext.Current.CancellationToken);
 
-        var linked = LinkedAvroFile.FromInput((consumer, symbols), TestContext.Current.CancellationToken);
+        var linked = LinkedAvroFile.Link((consumer, symbols), TestContext.Current.CancellationToken);
 
         Assert.Equal(
             [Name("Missing"), Name("Shared")],
@@ -30,10 +29,10 @@ public sealed class LinkedAvroFileTests
     {
         var shared = Parse("shared.avsc", Record("Shared"));
         var consumer = Parse("consumer.avsc", Record("Consumer", "Shared"));
-        var first = LinkedAvroFile.FromInput(
+        var first = LinkedAvroFile.Link(
             (consumer, SymbolTable.FromFiles([shared, consumer], TestContext.Current.CancellationToken)),
             TestContext.Current.CancellationToken);
-        var second = LinkedAvroFile.FromInput(
+        var second = LinkedAvroFile.Link(
             (consumer, SymbolTable.FromFiles(
                 [shared, Parse("unrelated.avsc", Record("Unrelated")), consumer],
                 TestContext.Current.CancellationToken)),
@@ -64,7 +63,7 @@ public sealed class LinkedAvroFileTests
             """);
         var symbols = SymbolTable.FromFiles([file], TestContext.Current.CancellationToken);
 
-        var linked = LinkedAvroFile.FromInput((file, symbols), TestContext.Current.CancellationToken);
+        var linked = LinkedAvroFile.Link((file, symbols), TestContext.Current.CancellationToken);
 
         Assert.Equal(
             CSharpName.FromSchemaName(Name("Later")),
@@ -103,9 +102,9 @@ public sealed class LinkedAvroFileTests
     }
 
     private static AvroFile Parse(string path, string text) =>
-        AvroFile.FromInput(
+        AvroFile.Parse(
             (new SourceText(path, text), new AvroParseOptions(
-                TargetProfile.Modern,
+                GenerationTarget.Modern,
                 UseNullableReferenceTypes: true)),
             TestContext.Current.CancellationToken);
 }

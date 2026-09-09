@@ -1,5 +1,5 @@
-using System.Text.Json.Nodes;
-using AvroSourceGenerator.Avdl.Diagnostics;
+﻿using System.Text.Json.Nodes;
+using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
 
@@ -26,7 +26,7 @@ internal readonly ref struct JsonParser(SyntaxTokenStream stream)
     private JsonNode? ParseUnexpected()
     {
         var token = stream.Current;
-        stream.Report(SyntaxDiagnostic.UnexpectedJsonValue(token));
+        stream.Report(AvroDiagnostic.UnexpectedJsonValue(token));
         if (!stream.IsAtEnd)
             _ = stream.Next();
 

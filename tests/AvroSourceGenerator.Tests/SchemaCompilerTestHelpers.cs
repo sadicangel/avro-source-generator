@@ -3,8 +3,6 @@ using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Configuration;
-using AvroSourceGenerator.Inputs;
-using AvroSourceGenerator.Output;
 using AvroSourceGenerator.Templating;
 using AvroSourceGenerator.Text;
 
@@ -14,63 +12,63 @@ internal static class SchemaCompilerTestHelpers
 {
     public static ParseResult ParseJson(
         string json,
-        TargetProfile targetProfile = TargetProfile.Modern,
+        GenerationTarget generationTarget = GenerationTarget.Modern,
         bool useNullableReferenceTypes = true) =>
         AvscSchemaParser.Parse(
             new SourceText("test.avsc", json),
-            new AvroParseOptions(targetProfile, useNullableReferenceTypes));
+            new AvroParseOptions(generationTarget, useNullableReferenceTypes));
 
     public static ParseResult ParseSource(
         string source,
-        TargetProfile targetProfile = TargetProfile.Modern,
+        GenerationTarget generationTarget = GenerationTarget.Modern,
         bool useNullableReferenceTypes = true) =>
         AvdlSchemaParser.Parse(
             new SourceText("test.avdl", source),
-            new AvroParseOptions(targetProfile, useNullableReferenceTypes));
+            new AvroParseOptions(generationTarget, useNullableReferenceTypes));
 
-    public static AvroProject Bind(
+    public static AvroCompilation Bind(
         ReferenceResolution referenceResolution,
         DuplicateResolution duplicateResolution,
         params (string Path, string Text)[] sources) =>
-        CompileProject(TargetProfile.Modern, referenceResolution, duplicateResolution, sources).Project;
+        Compile(GenerationTarget.Modern, referenceResolution, duplicateResolution, sources).Compilation;
 
-    public static CompiledAvroProject CompileProject(
-        TargetProfile targetProfile,
+    public static CompiledAvroSources Compile(
+        GenerationTarget generationTarget,
         ReferenceResolution referenceResolution,
         DuplicateResolution duplicateResolution,
         params (string Path, string Text)[] sources)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var options = new AvroProjectOptions(
-            targetProfile,
+        var configuration = new GeneratorConfiguration(
+            generationTarget,
             LanguageFeatures.Latest,
             AccessModifier.Public,
             referenceResolution,
             duplicateResolution,
             Diagnostics: []);
         var files = sources
-            .Select(source => AvroFile.FromInput(
-                (new SourceText(source.Path, source.Text), new AvroParseOptions(
-                    options.TargetProfile,
-                    options.LanguageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes))),
+            .Select(source => AvroFile.Parse(
+                new SourceText(source.Path, source.Text), new AvroParseOptions(
+                    configuration.GenerationTarget,
+                    configuration.LanguageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes)),
                 cancellationToken))
             .ToImmutableArray();
         var symbolTable = SymbolTable.FromFiles(files, cancellationToken);
         var boundFiles = files
-            .Select(file => LinkedAvroFile.FromInput((file, symbolTable), cancellationToken))
-            .Select(file => BoundAvroFile.FromInput(file, cancellationToken))
+            .Select(file => LinkedAvroFile.Link(file, symbolTable, cancellationToken))
+            .Select(file => BoundAvroFile.Bind(file, cancellationToken))
             .ToImmutableArray();
-        var project = AvroProject.FromInput((boundFiles, options), cancellationToken);
+        var compilation = AvroCompilation.Create(boundFiles, new AvroCompilationOptions(referenceResolution, duplicateResolution), cancellationToken);
         var renderableFiles = boundFiles
-            .Select(project.CreateRenderableFile)
+            .Select(file => RenderableAvroFile.Create(file, compilation, new RenderOptions(generationTarget, configuration.LanguageFeatures, configuration.AccessModifier), cancellationToken))
             .ToImmutableArray();
-        return new CompiledAvroProject(files, symbolTable, boundFiles, project, renderableFiles);
+        return new CompiledAvroSources(files, symbolTable, boundFiles, compilation, renderableFiles);
     }
 }
 
-internal readonly record struct CompiledAvroProject(
+internal readonly record struct CompiledAvroSources(
     ImmutableArray<AvroFile> Files,
     SymbolTable SymbolTable,
     ImmutableArray<BoundAvroFile> BoundFiles,
-    AvroProject Project,
+    AvroCompilation Compilation,
     ImmutableArray<RenderableAvroFile> RenderableFiles);

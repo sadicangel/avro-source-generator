@@ -1,4 +1,4 @@
 {{ AccessModifier }} partial interface {{ $.schema.CSharpName.Name }};
-{{ if TargetProfile == 'Chr' }}
+{{ if GenerationTarget == 'Chr' }}
 {{ include 'chr.variant' schema: $.schema }}
 {{- end ~}}

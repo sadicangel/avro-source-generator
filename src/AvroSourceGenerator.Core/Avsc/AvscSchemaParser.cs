@@ -1,7 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
@@ -79,7 +78,7 @@ public static class AvscSchemaParser
 
             if (schema.GetLogicalType() is { } logicalType)
             {
-                return LogicalSchema.Create(logicalType, underlyingSchema, context.Options.TargetProfile);
+                return LogicalSchema.Create(logicalType, underlyingSchema, context.Options.GenerationTarget);
             }
 
             return underlyingSchema;
@@ -130,10 +129,10 @@ public static class AvscSchemaParser
                 var size = schema.GetFixedSize();
                 var properties = schema.GetSchemaProperties();
 
-                var fixedSchema = context.Options.TargetProfile switch
+                var fixedSchema = context.Options.GenerationTarget switch
                 {
                     // Only Apache.Avro needs a custom type for fixed, others use byte[].
-                    TargetProfile.Apache => new FixedSchema(schemaName, documentation, aliases, size, properties),
+                    GenerationTarget.Apache => new FixedSchema(schemaName, documentation, aliases, size, properties),
                     _ => FixedSchema.CreateAsByteArray(schemaName, documentation, aliases, size, properties),
                 };
                 context.Declare(fixedSchema);

@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Tests;
@@ -10,7 +9,7 @@ public sealed class ParserContextTests
     [Fact]
     public void References_use_the_latest_declaration_and_keep_declaration_order()
     {
-        var context = new ParserContext(new AvroParseOptions(TargetProfile.Modern, true));
+        var context = new ParserContext(new AvroParseOptions(GenerationTarget.Modern, true));
         var first = Record("Shared") with { CSharpName = new CSharpName("First") };
         var latest = Record("Shared") with { CSharpName = new CSharpName("Latest") };
         context.Declare(first);
@@ -29,7 +28,7 @@ public sealed class ParserContextTests
     [InlineData(true)]
     public void Variant_replacement_preserves_the_latest_duplicate(bool replaceLatest)
     {
-        var context = new ParserContext(new AvroParseOptions(TargetProfile.Modern, true));
+        var context = new ParserContext(new AvroParseOptions(GenerationTarget.Modern, true));
         var first = Record("Shared") with { CSharpName = new CSharpName("First") };
         var latest = Record("Shared") with { CSharpName = new CSharpName("Latest") };
         var other = Record("Other");
@@ -52,7 +51,7 @@ public sealed class ParserContextTests
     [Fact]
     public void Recursive_references_record_dependencies_without_external_references()
     {
-        var context = new ParserContext(new AvroParseOptions(TargetProfile.Modern, true));
+        var context = new ParserContext(new AvroParseOptions(GenerationTarget.Modern, true));
         var record = Record("Node");
         using (context.EnterRecursionScope(record.SchemaName))
         {

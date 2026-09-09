@@ -1,5 +1,4 @@
 using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Tests;
@@ -9,8 +8,8 @@ public sealed class SchemaReferenceBindingTests
     [Fact]
     public void Named_use_remains_a_reference_with_the_bound_csharp_name()
     {
-        var compiled = SchemaCompilerTestHelpers.CompileProject(
-            TargetProfile.Modern,
+        var compiled = SchemaCompilerTestHelpers.Compile(
+            GenerationTarget.Modern,
             ReferenceResolution.Deferred,
             DuplicateResolution.Error,
             ("hash.avsc", """

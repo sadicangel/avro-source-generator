@@ -14,6 +14,6 @@
         {{- end -}});
     {{~ end ~}}
 }
-{{ if TargetProfile == 'Apache' }}
+{{ if GenerationTarget == 'Apache' }}
 {{ include 'apache.protocol' schema: $.schema }}
 {{- end ~}}

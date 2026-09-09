@@ -1,11 +1,11 @@
-﻿using AvroSourceGenerator.Avdl.Diagnostics;
+﻿using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
 
 internal static class SyntaxTriviaScanner
 {
-    public static int Skip(SourceText sourceText, int offset, List<SyntaxDiagnostic> diagnostics)
+    public static int Skip(SourceText sourceText, int offset, List<AvroDiagnostic> diagnostics)
     {
         var sourceCode = sourceText.Text.AsSpan(offset);
         var totalSkipped = 0;
@@ -38,7 +38,7 @@ internal static class SyntaxTriviaScanner
         return length;
     }
 
-    private static int SkipMultiLineComment(SourceText sourceText, int offset, ReadOnlySpan<char> sourceCode, List<SyntaxDiagnostic> diagnostics)
+    private static int SkipMultiLineComment(SourceText sourceText, int offset, ReadOnlySpan<char> sourceCode, List<AvroDiagnostic> diagnostics)
     {
         var done = false;
         var terminated = false;
@@ -64,7 +64,7 @@ internal static class SyntaxTriviaScanner
         }
 
         if (!terminated)
-            diagnostics.Add(SyntaxDiagnostic.UnterminatedComment(new SourceSpan(sourceText, offset, length)));
+            diagnostics.Add(AvroDiagnostic.UnterminatedComment(new SourceSpan(sourceText, offset, length)));
 
         return length;
     }

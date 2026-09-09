@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Configuration;
+﻿using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Templating;
 
 namespace AvroSourceGenerator.Tests;
@@ -21,7 +21,7 @@ public sealed class RenderOptionsTests
         string fieldValueExpression,
         string setter)
     {
-        var options = new RenderOptions(TargetProfile.Modern, languageFeatures, AccessModifier.Public);
+        var options = new RenderOptions(GenerationTarget.Modern, languageFeatures, AccessModifier.Public);
 
         Assert.Equal(objectType, options.ObjectType);
         Assert.Equal(fieldValueExpression, options.FieldValueExpression);

@@ -14,12 +14,10 @@ internal sealed class ImportResolver(
     private readonly HashSet<int> _visiting = [];
     private readonly List<int> _stack = [];
     private readonly HashSet<int> _cycleFiles = [];
-    private readonly HashSet<string> _reportedCycles = new HashSet<string>(StringComparer.Ordinal);
+    private readonly HashSet<string> _reportedCycles = new(StringComparer.Ordinal);
+    private readonly List<AvroDiagnostic> _diagnostics = [];
 
-    private readonly ImmutableArray<AvroDiagnostic>.Builder _diagnostics =
-        ImmutableArray.CreateBuilder<AvroDiagnostic>();
-
-    public ImmutableArray<AvroDiagnostic> Diagnostics => _diagnostics.ToImmutable();
+    public IEnumerable<AvroDiagnostic> Diagnostics => _diagnostics;
 
     public ImportResolution Resolve(int fileIndex)
     {
@@ -76,6 +74,13 @@ internal sealed class ImportResolver(
             }
 
             var importedFile = files[importedFileIndex];
+            // A failed parse is the actionable error; its missing target shape is secondary.
+            if (!importedFile.File.IsValid)
+            {
+                isValid = false;
+                continue;
+            }
+
             if (!IsCompatibleTarget(import.Kind, importedFile))
             {
                 isValid = false;
@@ -144,6 +149,6 @@ internal readonly struct ImportResolution(bool isValid, HashSet<int> importedFil
     public bool Contains(int fileIndex) => importedFileIndexes.Contains(fileIndex);
     public IEnumerable<int> ImportedFileIndexes => importedFileIndexes;
 
-    public static readonly ImportResolution Empty = new ImportResolution(true, []);
-    public static readonly ImportResolution Invalid = new ImportResolution(false, []);
+    public static readonly ImportResolution Empty = new(true, []);
+    public static readonly ImportResolution Invalid = new(false, []);
 }

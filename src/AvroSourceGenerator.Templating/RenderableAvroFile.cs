@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Frozen;
+using System.Collections.Immutable;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Schemas;
 
@@ -6,7 +7,7 @@ namespace AvroSourceGenerator.Templating;
 
 public sealed class RenderableAvroFile(
     ImmutableArray<TopLevelSchema> emittedSchemas,
-    IReadOnlyDictionary<SchemaName, TopLevelSchema> projectSchemas,
+    FrozenDictionary<SchemaName, TopLevelSchema> projectSchemas,
     ImmutableArray<BoundAvroFile> contributingFiles,
     RenderOptions options)
     : IEquatable<RenderableAvroFile>
@@ -15,7 +16,7 @@ public sealed class RenderableAvroFile(
 
     public ImmutableArray<TopLevelSchema> EmittedSchemas { get; } = emittedSchemas;
 
-    public IReadOnlyDictionary<SchemaName, TopLevelSchema> ProjectSchemas { get; } = projectSchemas;
+    public FrozenDictionary<SchemaName, TopLevelSchema> ProjectSchemas { get; } = projectSchemas;
 
     public RenderOptions Options { get; } = options;
 
@@ -53,7 +54,7 @@ public sealed class RenderableAvroFile(
         return true;
     }
 
-    public static RenderableAvroFile Invalid() => new RenderableAvroFile([], new Dictionary<SchemaName, TopLevelSchema>(), [], default);
+    public static RenderableAvroFile Invalid() => new RenderableAvroFile([], FrozenDictionary<SchemaName, TopLevelSchema>.Empty, [], default);
 
     public static RenderableAvroFile Create(BoundAvroFile file, AvroCompilation compilation, RenderOptions options, CancellationToken cancellationToken = default)
     {

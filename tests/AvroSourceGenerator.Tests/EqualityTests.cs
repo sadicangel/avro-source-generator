@@ -28,6 +28,7 @@ public class EqualityTests
             .WithOverride(new JsonElementOverride())
             .WithOverride(new TextSpanOverride())
             .WithOverride(new LinePositionSpanOverride())
+            .WithOverride(new DiagnosticArrayOverride())
             .WithOverride(new ObjectArrayOverride()));
         _seed = _faker.Generate<int>();
     }
@@ -114,4 +115,16 @@ file sealed class ObjectArrayOverride : AutoFakerOverride<object?[]?>
 
     public override void Generate(AutoFakerOverrideContext context) =>
         context.Instance = (object?[])[context.Faker.Hacker.Noun()];
+}
+
+file sealed class DiagnosticArrayOverride : AutoFakerOverride<System.Collections.Immutable.ImmutableArray<global::AvroSourceGenerator.Diagnostics.AvroDiagnostic>>
+{
+    public override bool Preinitialize => false;
+
+    public override void Generate(AutoFakerOverrideContext context) =>
+        context.Instance = System.Collections.Immutable.ImmutableArray.Create(
+            new global::AvroSourceGenerator.Diagnostics.AvroDiagnostic(
+                global::AvroSourceGenerator.Diagnostics.AvroDiagnosticCode.InvalidSource,
+                global::AvroSourceGenerator.Text.SourceSpan.None,
+                "invalid"));
 }

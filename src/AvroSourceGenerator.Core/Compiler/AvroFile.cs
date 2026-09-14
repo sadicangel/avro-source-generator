@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using AvroSourceGenerator.Avdl;
@@ -12,12 +13,12 @@ namespace AvroSourceGenerator.Compiler;
 
 public sealed class AvroFile : IEquatable<AvroFile>
 {
-    private AvroFile(
+    internal AvroFile(
         SourceText sourceText,
         AvroSchema? rootSchema,
         ImmutableArray<TopLevelSchema> declarations,
         ImmutableArray<SchemaName> references,
-        IReadOnlyDictionary<SchemaName, ImmutableArray<SchemaName>> dependencies,
+        FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> dependencies,
         ImmutableArray<AvroImport> imports,
         ImmutableArray<AvroDiagnostic> diagnostics,
         AvroParseOptions parseOptions)
@@ -40,7 +41,7 @@ public sealed class AvroFile : IEquatable<AvroFile>
 
     public ImmutableArray<SchemaName> References { get; }
 
-    public IReadOnlyDictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies { get; }
+    public FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies { get; }
 
     public ImmutableArray<AvroImport> Imports { get; }
 
@@ -54,7 +55,7 @@ public sealed class AvroFile : IEquatable<AvroFile>
     public bool Equals(AvroFile? other) =>
         ReferenceEquals(this, other) ||
         other is not null &&
-        SourceText == other.SourceText &&
+        SourceText.Equals(other.SourceText) &&
         ParseOptions == other.ParseOptions;
 
     public override bool Equals(object? obj) => obj is AvroFile other && Equals(other);
@@ -64,6 +65,11 @@ public sealed class AvroFile : IEquatable<AvroFile>
     public static AvroFile Parse(SourceText sourceText, AvroParseOptions parseOptions, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        if (!sourceText.Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase)
+            && !sourceText.Path.EndsWith(".avpr", StringComparison.OrdinalIgnoreCase)
+            && !sourceText.Path.EndsWith(".avdl", StringComparison.OrdinalIgnoreCase))
+            return Invalid(sourceText, AvroDiagnostic.InvalidSource(SourceSpan.FromSourceText(sourceText), "Unsupported Avro file type."), parseOptions);
 
         if (string.IsNullOrWhiteSpace(sourceText.Text))
         {
@@ -76,24 +82,13 @@ public sealed class AvroFile : IEquatable<AvroFile>
 
         try
         {
-            var (rootSchema, declarations, references, dependencies, imports) = sourceText.Type switch
+            return sourceText.Type switch
             {
-                // TODO: We can now make these return AvroFile directly since we added it now belongs to this project.
                 SourceType.Avsc => AvscSchemaParser.Parse(sourceText, parseOptions),
                 SourceType.Avpr => AvscSchemaParser.Parse(sourceText, parseOptions),
                 SourceType.Avdl => AvdlSchemaParser.Parse(sourceText, parseOptions),
                 _ => throw new InvalidOperationException("Unreachable: Unsupported Avro file type."),
             };
-
-            return new AvroFile(
-                sourceText,
-                rootSchema,
-                declarations,
-                references,
-                dependencies,
-                imports,
-                [],
-                parseOptions);
         }
         catch (JsonException ex)
         {
@@ -120,5 +115,5 @@ public sealed class AvroFile : IEquatable<AvroFile>
     private static AvroFile Invalid(SourceText source, AvroDiagnostic diagnostic, AvroParseOptions parseOptions) =>
         Invalid(source, [diagnostic], parseOptions);
 
-    private static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) => new AvroFile(sourceText, null, [], [], ImmutableDictionary<SchemaName, ImmutableArray<SchemaName>>.Empty, [], diagnostics, parseOptions);
+    private static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) => new(sourceText, null, [], [], [], [], diagnostics, parseOptions);
 }

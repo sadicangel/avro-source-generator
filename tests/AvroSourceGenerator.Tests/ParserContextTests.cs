@@ -1,6 +1,7 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Tests;
 
@@ -18,7 +19,7 @@ public sealed class ParserContextTests
         var reference = context.Reference(new SchemaName("Shared"), "Example");
 
         Assert.Equal(latest.CSharpName, reference.CSharpName);
-        var result = context.Complete(latest);
+        var result = context.Complete(Source, latest, []);
         Assert.Equal([first, latest], result.Declarations);
         Assert.Empty(result.References);
     }
@@ -40,7 +41,7 @@ public sealed class ParserContextTests
 
         context.ResolveFieldType(union, "Choice", new SchemaName("Container", "Example"), out _, out _);
 
-        var result = context.Complete(union);
+        var result = context.Complete(Source, union, []);
         var updated = Assert.IsType<RecordSchema>(result.Declarations[replaceLatest ? 1 : 0]);
         Assert.NotNull(updated.InheritsFrom);
         Assert.NotSame(replaced, updated);
@@ -59,11 +60,13 @@ public sealed class ParserContextTests
             context.Declare(record);
         }
 
-        var result = context.Complete(record);
+        var result = context.Complete(Source, record, []);
         Assert.Empty(result.References);
         Assert.Equal([record.SchemaName], result.Dependencies[record.SchemaName]);
     }
 
     private static RecordSchema Record(string name) =>
         new(new SchemaName(name, "Example"), null, [], [], ImmutableSortedDictionary<string, System.Text.Json.JsonElement>.Empty);
+
+    private static SourceText Source { get; } = new("test.avsc", "{}");
 }

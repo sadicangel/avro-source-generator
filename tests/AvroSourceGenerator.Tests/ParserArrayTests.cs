@@ -29,7 +29,7 @@ public sealed class ParserArrayTests
             }
             """);
 
-        var protocol = Assert.IsType<ProtocolSchema>(parsed.Root);
+        var protocol = Assert.IsType<ProtocolSchema>(parsed.RootSchema);
         Assert.Equal(Enumerable.Range(0, count).Select(i => $"Error{i}"), protocol.Types.Select(type => type.SchemaName.Name));
         Assert.All(
             protocol.Types,

@@ -2,8 +2,21 @@
 
 namespace AvroSourceGenerator.Text;
 
-public sealed record class SourceText(string Path, string Text) : IEquatable<SourceText>
+public sealed class SourceText : IEquatable<SourceText>
 {
+    private readonly Lazy<ImmutableArray<SourceLine>> _lines;
+
+    public SourceText(string path, string text)
+    {
+        Path = path;
+        Text = text;
+        _lines = new Lazy<ImmutableArray<SourceLine>>(() => ParseLines(this));
+    }
+
+    public string Path { get; }
+
+    public string Text { get; }
+
     // TODO: Replace literals with constants for file extensions and do a project wide replace.
     public SourceType Type =>
         Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase) ? SourceType.Avsc :
@@ -15,15 +28,7 @@ public sealed record class SourceText(string Path, string Text) : IEquatable<Sou
 
     public int Length => Text.Length;
 
-    public ImmutableArray<SourceLine> Lines
-    {
-        get
-        {
-            if (field.IsDefault)
-                ImmutableInterlocked.InterlockedInitialize(ref field, ParseLines(Text, Path));
-            return field;
-        }
-    }
+    public ImmutableArray<SourceLine> Lines => _lines.Value;
 
     public SourceSpan GetSpan(int offset, int length) => new(this, offset, length);
 
@@ -61,11 +66,17 @@ public sealed record class SourceText(string Path, string Text) : IEquatable<Sou
 
     public bool Equals(SourceText? other) => other is not null && Path == other.Path && Text == other.Text;
 
+    public override bool Equals(object? obj) => obj is SourceText other && Equals(other);
+
+    public static bool operator ==(SourceText? left, SourceText? right) => Equals(left, right);
+
+    public static bool operator !=(SourceText? left, SourceText? right) => !Equals(left, right);
+
     public override int GetHashCode() => HashCode.Combine(Path, Text);
 
-    private static ImmutableArray<SourceLine> ParseLines(string text, string path)
+    private static ImmutableArray<SourceLine> ParseLines(SourceText sourceText)
     {
-        var sourceText = new SourceText(path, text);
+        var text = sourceText.Text;
         var lines = ImmutableArray.CreateBuilder<SourceLine>();
 
         var position = 0;

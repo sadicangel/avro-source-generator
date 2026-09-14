@@ -1,43 +1,48 @@
-﻿using AvroSourceGenerator.Schemas;
+﻿using System.Collections.Frozen;
+using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Compiler;
 
 public sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>
 {
-    private readonly Dictionary<SchemaName, CSharpName?> _references;
-    private readonly int _hashCode;
+    private readonly Lazy<int> _hashCode;
 
-    private LinkedAvroFile(AvroFile file, Dictionary<SchemaName, CSharpName?> references)
+    private LinkedAvroFile(AvroFile file, FrozenDictionary<SchemaName, CSharpName?> references)
     {
         File = file;
-        _references = references;
+        References = references;
 
-        var hash = new HashCode();
-        hash.Add(File);
-        foreach (var reference in _references.OrderBy(static reference => reference.Key.FullName, StringComparer.Ordinal))
-        {
-            hash.Add(reference.Key);
-            hash.Add(reference.Value);
-        }
-        _hashCode = hash.ToHashCode();
+        _hashCode = new Lazy<int>(ComputeHashCode);
     }
 
     public AvroFile File { get; }
 
-    public IReadOnlyDictionary<SchemaName, CSharpName?> References => _references;
+    public FrozenDictionary<SchemaName, CSharpName?> References { get; }
 
     public bool Equals(LinkedAvroFile? other) =>
         ReferenceEquals(this, other) ||
         other is not null &&
         File.Equals(other.File) &&
-        _references.Count == other._references.Count &&
-        _references.All(reference =>
-            other._references.TryGetValue(reference.Key, out var csharpName) &&
+        References.Count == other.References.Count &&
+        References.All(reference =>
+            other.References.TryGetValue(reference.Key, out var csharpName) &&
             reference.Value == csharpName);
 
-    public override bool Equals(object? obj) => obj is LinkedAvroFile other && Equals(other);
+    public override bool Equals(object? obj) => Equals(obj as LinkedAvroFile);
 
-    public override int GetHashCode() => _hashCode;
+    public override int GetHashCode() => _hashCode.Value;
+
+    private int ComputeHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(File);
+        foreach (var reference in References.OrderBy(static reference => reference.Key.FullName, StringComparer.Ordinal))
+        {
+            hash.Add(reference.Key);
+            hash.Add(reference.Value);
+        }
+        return hash.ToHashCode();
+    }
 
     public static LinkedAvroFile Link(AvroFile file, SymbolTable symbolTable, CancellationToken cancellationToken)
     {
@@ -53,6 +58,6 @@ public sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>
                     : null);
         }
 
-        return new LinkedAvroFile(file, references);
+        return new LinkedAvroFile(file, references.ToFrozenDictionary());
     }
 }

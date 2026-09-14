@@ -10,7 +10,7 @@ namespace AvroSourceGenerator.Tests;
 
 internal static class SchemaCompilerTestHelpers
 {
-    public static ParseResult ParseJson(
+    public static AvroFile ParseJson(
         string json,
         GenerationTarget generationTarget = GenerationTarget.Modern,
         bool useNullableReferenceTypes = true) =>
@@ -18,7 +18,7 @@ internal static class SchemaCompilerTestHelpers
             new SourceText("test.avsc", json),
             new AvroParseOptions(generationTarget, useNullableReferenceTypes));
 
-    public static ParseResult ParseSource(
+    public static AvroFile ParseSource(
         string source,
         GenerationTarget generationTarget = GenerationTarget.Modern,
         bool useNullableReferenceTypes = true) =>

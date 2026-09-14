@@ -1,26 +1,47 @@
-﻿using AvroSourceGenerator.Avdl.Syntax;
+﻿using System.Collections.Immutable;
+using AvroSourceGenerator.Avdl.Syntax;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Diagnostics;
 
-public readonly record struct AvroDiagnostic(AvroDiagnosticCode Code, SourceSpan SourceSpan, params object?[]? Arguments) : IEquatable<AvroDiagnostic>
+public sealed class AvroDiagnostic : IEquatable<AvroDiagnostic>
 {
+    public AvroDiagnostic(
+        AvroDiagnosticCode code,
+        SourceSpan sourceSpan,
+        params ImmutableArray<object?> arguments)
+    {
+        Code = code;
+        SourceSpan = sourceSpan;
+        Arguments = arguments;
+    }
+
+    public AvroDiagnosticCode Code { get; }
+    public SourceSpan SourceSpan { get; }
+    public ImmutableArray<object?> Arguments { get; }
+
     public AvroDiagnosticSeverity Severity => Code.Severity;
 
-    public string GetMessage() => string.Format(Code.MessageTemplate, Arguments ?? []);
+    public string GetMessage() => string.Format(Code.MessageTemplate, Arguments.ToArray());
 
     public override string ToString() => GetMessage();
 
-    public bool Equals(AvroDiagnostic other) => Code == other.Code && SourceSpan.Equals(other.SourceSpan)
-        && (Arguments ?? []).SequenceEqual(other.Arguments ?? []);
+    public bool Equals(AvroDiagnostic? other) => other is not null && Code == other.Code && SourceSpan.Equals(other.SourceSpan)
+        && Arguments.SequenceEqual(other.Arguments);
+
+    public override bool Equals(object? obj) => obj is AvroDiagnostic other && Equals(other);
+
+    public static bool operator ==(AvroDiagnostic? left, AvroDiagnostic? right) => Equals(left, right);
+
+    public static bool operator !=(AvroDiagnostic? left, AvroDiagnostic? right) => !Equals(left, right);
 
     public override int GetHashCode()
     {
         var hash = new HashCode();
         hash.Add(Code);
         hash.Add(SourceSpan);
-        foreach (var argument in Arguments ?? []) hash.Add(argument);
+        foreach (var argument in Arguments) hash.Add(argument);
         return hash.ToHashCode();
     }
 }

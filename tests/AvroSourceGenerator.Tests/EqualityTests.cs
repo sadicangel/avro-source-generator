@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
 using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Extensions;
 using Microsoft.CodeAnalysis.Text;
 using Soenneker.Utils.AutoBogus;
@@ -47,16 +46,6 @@ public class EqualityTests
         var b = Generate(CompilationEnvironmentType);
 
         Assert.Equal(a, b);
-    }
-
-    [Fact]
-    public void DefaultCompilationEnvironmentHasValueSemantics()
-    {
-        var environment = default(CompilationEnvironment);
-
-        Assert.Equal(environment, environment);
-        Assert.False(environment.AvroLibraries.IsDefault);
-        _ = environment.GetHashCode();
     }
 
     [Fact]

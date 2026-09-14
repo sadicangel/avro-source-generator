@@ -9,7 +9,7 @@ internal static class RoslynDiagnosticExtensions
     public static Diagnostic ToDiagnostic(this AvroDiagnostic diagnostic)
     {
         var descriptor = DiagnosticDescriptors.Get(diagnostic.Code);
-        return Diagnostic.Create(descriptor, diagnostic.SourceSpan.ToLocation(), diagnostic.Arguments);
+        return Diagnostic.Create(descriptor, diagnostic.SourceSpan.ToLocation(), diagnostic.Arguments.ToArray());
     }
 
     public static Location ToLocation(this SourceSpan span)

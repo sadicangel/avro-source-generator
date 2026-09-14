@@ -1,6 +1,8 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Frozen;
+using System.Collections.Immutable;
 using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
@@ -105,12 +107,15 @@ internal sealed class ParserContext(AvroParseOptions options)
 
     public RecursionScope EnterRecursionScope(SchemaName schemaName) => new(_recursionStack, schemaName);
 
-    public ParseResult Complete(AvroSchema root, ImmutableArray<AvroImport> imports = default) => new(
+    public AvroFile Complete(SourceText sourceText, AvroSchema root, ImmutableArray<AvroImport> imports) => new(
+        sourceText,
         root,
         [.. _declarations],
         [.. _references.OrderBy(static reference => reference.FullName, StringComparer.Ordinal)],
         GetDependencies(),
-        imports.IsDefault ? [] : imports);
+        imports,
+        [],
+        Options);
 
     private void AddDependency(SchemaName schema, SchemaName dependsOn)
     {
@@ -119,7 +124,7 @@ internal sealed class ParserContext(AvroParseOptions options)
         dependencies.Add(dependsOn);
     }
 
-    private Dictionary<SchemaName, ImmutableArray<SchemaName>> GetDependencies()
+    private FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> GetDependencies()
     {
         var dependencies = new Dictionary<SchemaName, ImmutableArray<SchemaName>>(_dependencies.Count);
         foreach (var dependency in _dependencies)
@@ -128,7 +133,7 @@ internal sealed class ParserContext(AvroParseOptions options)
                 dependency.Key,
                 [.. dependency.Value.OrderBy(static name => name.FullName, StringComparer.Ordinal)]);
         }
-        return dependencies;
+        return dependencies.ToFrozenDictionary();
     }
 
     private void ReplaceDeclarations(

@@ -17,9 +17,9 @@ namespace AvroSourceGenerator.Avdl;
 // TODO:
 // We currently throw exceptions for invalid schemas.
 // We should consider returning diagnostics instead, maybe sharing the same diagnostic model as Avsc.
-public static class AvdlSchemaParser
+internal static class AvdlSchemaParser
 {
-    public static ParseResult Parse(SourceText source, AvroParseOptions options)
+    public static AvroFile Parse(SourceText source, AvroParseOptions options)
     {
         var parser = new ParserContext(options);
         var syntaxTree = Parser.Parse(source);
@@ -27,9 +27,10 @@ public static class AvdlSchemaParser
             throw new InvalidSourceException(syntaxTree.Diagnostics);
 
         var imports = syntaxTree.Document.ImportDirectives
-            .Concat(syntaxTree.Document.Declarations
-                .OfType<ProtocolDeclarationSyntax>()
-                .SelectMany(static protocol => protocol.Imports))
+            .Concat(
+                syntaxTree.Document.Declarations
+                    .OfType<ProtocolDeclarationSyntax>()
+                    .SelectMany(static protocol => protocol.Imports))
             .Select(static import => new AvroImport(
                 import.ImportTypeKeyword.SyntaxKind switch
                 {
@@ -49,7 +50,7 @@ public static class AvdlSchemaParser
             throw new InvalidSourceException("At least a named schema must be present in source.", sourceSpan);
         }
 
-        return parser.Complete(root, imports);
+        return parser.Complete(source, root, imports);
     }
 
     extension(ParserContext context)

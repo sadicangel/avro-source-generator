@@ -12,9 +12,9 @@ namespace AvroSourceGenerator.Avsc;
 // TODO:
 // We currently throw exceptions for invalid schemas. We should consider
 // returning diagnostics instead, maybe sharing the same diagnostic model as Avdl.
-public static class AvscSchemaParser
+internal static class AvscSchemaParser
 {
-    public static ParseResult Parse(SourceText source, AvroParseOptions options)
+    public static AvroFile Parse(SourceText source, AvroParseOptions options)
     {
         using var schema = JsonDocument.Parse(source.Text);
         var context = new ParserContext(options);
@@ -24,7 +24,7 @@ public static class AvscSchemaParser
             throw new InvalidSchemaException($"At least a named schema must be present in schema: {source.Text}");
         }
 
-        return context.Complete(root);
+        return context.Complete(source, root, []);
     }
 
     extension(ParserContext context)

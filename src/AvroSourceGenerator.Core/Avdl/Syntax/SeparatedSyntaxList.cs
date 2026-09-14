@@ -2,9 +2,15 @@
 
 namespace AvroSourceGenerator.Avdl.Syntax;
 
-public readonly record struct SeparatedSyntaxList<T>(ImmutableArray<ISyntaxNode> SyntaxNodes)
+public readonly record struct SeparatedSyntaxList<T>
     : IEquatable<SeparatedSyntaxList<T>>, IReadOnlyList<T> where T : ISyntaxNode
 {
+    private readonly ImmutableArray<ISyntaxNode> _syntaxNodes;
+
+    public SeparatedSyntaxList(ImmutableArray<ISyntaxNode> syntaxNodes) => _syntaxNodes = syntaxNodes;
+
+    public ImmutableArray<ISyntaxNode> SyntaxNodes => _syntaxNodes.IsDefault ? [] : _syntaxNodes;
+
     public int Count { get => (SyntaxNodes.Length + 1) / 2; }
 
     public T this[int index] => (T)SyntaxNodes[index * 2];
@@ -28,4 +34,6 @@ public readonly record struct SeparatedSyntaxList<T>(ImmutableArray<ISyntaxNode>
             hash.Add(node);
         return hash.ToHashCode();
     }
+
+    public void Deconstruct(out ImmutableArray<ISyntaxNode> syntaxNodes) => syntaxNodes = SyntaxNodes;
 }

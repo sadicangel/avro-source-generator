@@ -1,4 +1,4 @@
-using System.Text.Encodings.Web;
+﻿using System.Text.Encodings.Web;
 using System.Text.Json;
 using AvroSourceGenerator.Schemas;
 
@@ -18,7 +18,7 @@ public sealed class SchemaSerializationTests
             ]}
             """;
         var parsed = SchemaCompilerTestHelpers.ParseJson(source);
-        var record = Assert.IsType<RecordSchema>(parsed.Root);
+        var record = Assert.IsType<RecordSchema>(parsed.RootSchema);
         Assert.Equal("@class", record.Fields[0].Name);
 
         var json = record.ToJsonString(parsed.Declarations.ToDictionary(schema => schema.SchemaName),

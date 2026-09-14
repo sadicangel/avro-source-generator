@@ -4,16 +4,28 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace AvroSourceGenerator.Configuration;
 
-internal readonly record struct CompilationEnvironment(ImmutableArray<AvroLibraryReference> AvroLibraries, LanguageVersion LanguageVersion)
+internal readonly record struct CompilationEnvironment
 {
+    private readonly ImmutableArray<AvroLibraryReference> _avroLibraries;
+
+    public CompilationEnvironment(ImmutableArray<AvroLibraryReference> avroLibraries, LanguageVersion languageVersion)
+    {
+        _avroLibraries = avroLibraries;
+        LanguageVersion = languageVersion;
+    }
+
+    public ImmutableArray<AvroLibraryReference> AvroLibraries => _avroLibraries.IsDefault ? [] : _avroLibraries;
+
+    public LanguageVersion LanguageVersion { get; }
+
     public bool Equals(CompilationEnvironment other) =>
-        LanguageVersion == other.LanguageVersion && AvroLibraries.OrderBy(x => x).SequenceEqual(other.AvroLibraries.OrderBy(x => x));
+        LanguageVersion == other.LanguageVersion && AvroLibraries.SequenceEqual(other.AvroLibraries);
 
     public override int GetHashCode()
     {
         var hash = new HashCode();
         hash.Add(LanguageVersion);
-        foreach (var library in AvroLibraries.OrderBy(x => x))
+        foreach (var library in AvroLibraries)
         {
             hash.Add(library);
         }
@@ -27,6 +39,7 @@ internal readonly record struct CompilationEnvironment(ImmutableArray<AvroLibrar
 
         var csharpCompilation = (CSharpCompilation)compilation;
 
+        // Keep canonical order: Apache, then Chr. Equality and hashing rely on it.
         var avroLibraries = ImmutableArray.CreateBuilder<AvroLibraryReference>();
 
         if (csharpCompilation.GetTypeByMetadataName("Avro.Specific.ISpecificRecord") is not null)

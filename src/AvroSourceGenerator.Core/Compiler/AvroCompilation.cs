@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Frozen;
+using System.Collections.Immutable;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
@@ -7,47 +8,51 @@ namespace AvroSourceGenerator.Compiler;
 
 public sealed class AvroCompilation : IEquatable<AvroCompilation>
 {
-    private readonly ImmutableArray<BoundAvroFile> _files;
-    private readonly AvroCompilationOptions _options;
-    private readonly Dictionary<SchemaName, TopLevelSchema> _schemas;
-    private readonly Dictionary<SchemaName, SchemaOwner> _owners;
-    private readonly Dictionary<SchemaName, ImmutableArray<SchemaName>> _dependencies;
+    private readonly Lazy<int> _hashCode;
+    private readonly FrozenDictionary<SchemaName, SchemaOwner> _owners;
+    private readonly FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> _dependencies;
 
     private AvroCompilation(
         ImmutableArray<BoundAvroFile> files,
         AvroCompilationOptions options,
-        Dictionary<SchemaName, TopLevelSchema> schemas,
-        Dictionary<SchemaName, SchemaOwner> owners,
-        Dictionary<SchemaName, ImmutableArray<SchemaName>> dependencies,
+        FrozenDictionary<SchemaName, TopLevelSchema> schemas,
+        FrozenDictionary<SchemaName, SchemaOwner> owners,
+        FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> dependencies,
         ImmutableArray<AvroDiagnostic> diagnostics,
         bool isValid)
     {
-        _files = files;
-        _options = options;
-        _schemas = schemas;
+        Files = files;
+        _hashCode = new Lazy<int>(ComputeHashCode);
+        Options = options;
+        Schemas = schemas;
         _owners = owners;
         _dependencies = dependencies;
         Diagnostics = diagnostics;
         IsValid = isValid;
     }
 
-    public ImmutableArray<BoundAvroFile> Files => _files;
-    public IReadOnlyDictionary<SchemaName, TopLevelSchema> Schemas => _schemas;
-    public AvroCompilationOptions Options => _options;
+    public ImmutableArray<BoundAvroFile> Files { get; }
+
+    public FrozenDictionary<SchemaName, TopLevelSchema> Schemas { get; }
+
+    public AvroCompilationOptions Options { get; }
+
     public ImmutableArray<AvroDiagnostic> Diagnostics { get; }
 
     public bool IsValid { get; }
 
     public bool Equals(AvroCompilation? other) =>
-        ReferenceEquals(this, other) || (other is not null && _options == other._options && _files.SequenceEqual(other._files));
+        ReferenceEquals(this, other) || (other is not null && Options == other.Options && Files.SequenceEqual(other.Files));
 
     public override bool Equals(object? obj) => obj is AvroCompilation other && Equals(other);
 
-    public override int GetHashCode()
+    public override int GetHashCode() => _hashCode.Value;
+
+    private int ComputeHashCode()
     {
         var hash = new HashCode();
-        hash.Add(_options);
-        foreach (var file in _files)
+        hash.Add(Options);
+        foreach (var file in Files)
             hash.Add(file);
         return hash.ToHashCode();
     }
@@ -73,9 +78,9 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         return new AvroCompilation(
             files,
             options,
-            schemaIndex.Schemas,
-            schemaIndex.Owners,
-            schemaIndex.Dependencies,
+            schemaIndex.Schemas.ToFrozenDictionary(),
+            schemaIndex.Owners.ToFrozenDictionary(),
+            schemaIndex.Dependencies.ToFrozenDictionary(),
             diagnostics,
             isValid: !diagnostics.HasErrors);
     }
@@ -111,9 +116,7 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
                 }
 
                 schemaIndex.Owners.Add(name, new SchemaOwner(file, fileIndex));
-                schemaIndex.Dependencies.Add(
-                    name,
-                    file.Dependencies.GetValueOrDefault(name, []));
+                schemaIndex.Dependencies.Add(name, file.Dependencies.GetValueOrDefault(name, []));
             }
         }
 
@@ -131,6 +134,10 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         foreach (var (fileIndex, file) in files.Index())
         {
             cancellationToken.ThrowIfCancellationRequested();
+            // Invalid sources already carry primary diagnostics and have no linkable declarations.
+            if (!file.File.IsValid)
+                continue;
+
             var importResolution = ImportResolution.Empty;
             if (!file.File.Imports.IsEmpty)
             {
@@ -146,12 +153,15 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
             var missingReferences = file.References.Keys
                 .Where(reference =>
                 {
+                    // The reference was not declared in any file.
                     if (!schemaIndex.Owners.TryGetValue(reference, out var owner))
                         return true;
 
+                    // Since the reference was declared, and we're not using strict resolution, the reference is valid as long as it's declared anywhere.
                     if (referenceResolution is not ReferenceResolution.Strict)
                         return false;
 
+                    // The reference is a forward reference, or the reference was declared in a file that is not explicitly imported by the current file.
                     return owner.FileIndex == fileIndex || !importResolution.Contains(owner.FileIndex);
                 })
                 .OrderBy(static reference => reference.FullName, StringComparer.Ordinal)
@@ -167,7 +177,6 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         return diagnostics.ToImmutable();
     }
 
-    /// <summary>Returns declarations owned by the supplied instance from <see cref="Files"/>.</summary>
     public ImmutableArray<TopLevelSchema> GetOwnedDeclarations(BoundAvroFile file, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -181,7 +190,6 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         return declarations.DrainToImmutable();
     }
 
-    /// <summary>Returns the distinct transitive owners of the supplied schemas, ordered by file path.</summary>
     public ImmutableArray<BoundAvroFile> GetContributingFiles(IEnumerable<SchemaName> roots, CancellationToken cancellationToken = default) =>
     [
         .. GetDependencyClosure(roots, cancellationToken)
@@ -198,7 +206,7 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         while (pending.TryPop(out var schema))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (!_schemas.ContainsKey(schema) || !visited.Add(schema))
+            if (!Schemas.ContainsKey(schema) || !visited.Add(schema))
                 continue;
 
             if (!_dependencies.TryGetValue(schema, out var dependencies))
@@ -206,7 +214,7 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
             for (var index = dependencies.Length - 1; index >= 0; index--)
             {
                 var dependency = dependencies[index];
-                if (_schemas.ContainsKey(dependency))
+                if (Schemas.ContainsKey(dependency))
                     pending.Push(dependency);
             }
         }
@@ -222,7 +230,7 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
 
         public Dictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies { get; } = [];
 
-        public Dictionary<string, int> FileIndexes { get; } = new Dictionary<string, int>(StringComparer.Ordinal);
+        public Dictionary<string, int> FileIndexes { get; } = new(StringComparer.Ordinal);
 
         public ImmutableArray<AvroDiagnostic>.Builder Diagnostics { get; } =
             ImmutableArray.CreateBuilder<AvroDiagnostic>();

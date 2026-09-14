@@ -6,6 +6,48 @@ namespace AvroSourceGenerator.Tests;
 
 public sealed class AvroCompilationTests
 {
+    [Theory]
+    [InlineData("schema.txt", "{}")]
+    [InlineData("schema", "{}")]
+    [InlineData("schema.bin", "")]
+    public void Core_pipeline_reports_unsupported_extensions(string path, string text)
+    {
+        var compilation = AvroCompiler.Compile(
+            [new global::AvroSourceGenerator.Text.SourceText(path, text)],
+            new AvroParseOptions(GenerationTarget.Modern, true), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(AvroDiagnosticCode.InvalidSource, Assert.Single(compilation.Diagnostics).Code);
+        Assert.False(compilation.IsValid);
+    }
+
+    [Theory]
+    [InlineData(ReferenceResolution.Strict)]
+    [InlineData(ReferenceResolution.Deferred)]
+    public void Invalid_transitive_imports_preserve_independent_errors(ReferenceResolution resolution)
+    {
+        var compiled = Compile(resolution, DuplicateResolution.Error,
+            ("root.avdl", """
+                namespace GraphTests;
+                import idl "middle.avdl";
+                schema Root;
+                record Root { Missing missing; }
+                """),
+            ("middle.avdl", """
+                namespace GraphTests;
+                import schema "broken.avsc";
+                import schema "absent.avsc";
+                schema Middle;
+                record Middle { Missing missing; }
+                """),
+            ("broken.avsc", "{"),
+            ("independent.avsc", Record("Independent", Field("Other", "Other"))));
+        var diagnostics = compiled.Compilation.Diagnostics;
+        Assert.Equal(3, diagnostics.Length);
+        Assert.Single(diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.InvalidJson);
+        Assert.Contains(diagnostics, diagnostic =>
+            diagnostic.Code == AvroDiagnosticCode.InvalidImport && diagnostic.GetMessage().Contains("absent.avsc"));
+        Assert.Contains(diagnostics, diagnostic =>
+            diagnostic.Code == AvroDiagnosticCode.MissingReferences && diagnostic.SourceSpan.SourceText.Path == "independent.avsc");
+    }
     [Fact]
     public void Repeated_diamond_imports_reuse_completed_closures()
     {

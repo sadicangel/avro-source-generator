@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Frozen;
 using System.Collections.Immutable;
 using AvroSourceGenerator.Schemas;
 
@@ -6,19 +7,13 @@ namespace AvroSourceGenerator.Compiler;
 
 public sealed class SymbolTable : IEquatable<SymbolTable>, IReadOnlyDictionary<SchemaName, CSharpName>
 {
-    private readonly Dictionary<SchemaName, CSharpName> _symbols;
-    private readonly int _hashCode;
+    private readonly FrozenDictionary<SchemaName, CSharpName> _symbols;
+    private readonly Lazy<int> _hashCode;
 
-    private SymbolTable(Dictionary<SchemaName, CSharpName> symbols)
+    private SymbolTable(FrozenDictionary<SchemaName, CSharpName> symbols)
     {
         _symbols = symbols;
-        var hash = new HashCode();
-        foreach (var (key, value) in symbols.OrderBy(static x => x.Key.FullName, StringComparer.Ordinal))
-        {
-            hash.Add(key);
-            hash.Add(value);
-        }
-        _hashCode = hash.ToHashCode();
+        _hashCode = new Lazy<int>(ComputeHashCode);
     }
 
     public IEnumerable<SchemaName> Keys => _symbols.Keys;
@@ -35,7 +30,18 @@ public sealed class SymbolTable : IEquatable<SymbolTable>, IReadOnlyDictionary<S
 
     public override bool Equals(object? obj) => obj is SymbolTable other && Equals(other);
 
-    public override int GetHashCode() => _hashCode;
+    public override int GetHashCode() => _hashCode.Value;
+
+    private int ComputeHashCode()
+    {
+        var hash = new HashCode();
+        foreach (var (key, value) in _symbols.OrderBy(static x => x.Key.FullName, StringComparer.Ordinal))
+        {
+            hash.Add(key);
+            hash.Add(value);
+        }
+        return hash.ToHashCode();
+    }
 
     public bool ContainsKey(SchemaName key) => _symbols.ContainsKey(key);
     public bool TryGetValue(SchemaName key, out CSharpName value) => _symbols.TryGetValue(key, out value);
@@ -59,6 +65,6 @@ public sealed class SymbolTable : IEquatable<SymbolTable>, IReadOnlyDictionary<S
             }
         }
 
-        return new SymbolTable(symbols);
+        return new SymbolTable(symbols.ToFrozenDictionary());
     }
 }

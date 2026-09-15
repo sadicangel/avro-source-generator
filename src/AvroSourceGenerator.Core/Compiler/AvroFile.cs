@@ -1,11 +1,9 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Diagnostics;
-using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
@@ -17,7 +15,9 @@ public sealed class AvroFile : IEquatable<AvroFile>
         SourceText sourceText,
         AvroSchema? rootSchema,
         ImmutableArray<TopLevelSchema> declarations,
+        ImmutableArray<SourceSpan> declarationSpans,
         ImmutableArray<SchemaName> references,
+        FrozenDictionary<SchemaName, ImmutableArray<SourceSpan>> referenceSpans,
         FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> dependencies,
         ImmutableArray<AvroImport> imports,
         ImmutableArray<AvroDiagnostic> diagnostics,
@@ -26,12 +26,17 @@ public sealed class AvroFile : IEquatable<AvroFile>
         SourceText = sourceText;
         RootSchema = rootSchema;
         Declarations = declarations;
+        DeclarationSpans = declarationSpans;
         References = references;
+        ReferenceSpans = referenceSpans;
         Dependencies = dependencies;
         Imports = imports;
         Diagnostics = diagnostics;
         ParseOptions = parseOptions;
     }
+
+    internal ImmutableArray<SourceSpan> DeclarationSpans { get; }
+    internal FrozenDictionary<SchemaName, ImmutableArray<SourceSpan>> ReferenceSpans { get; }
 
     public SourceText SourceText { get; }
 
@@ -80,40 +85,17 @@ public sealed class AvroFile : IEquatable<AvroFile>
                 parseOptions);
         }
 
-        try
+        return sourceText.Type switch
         {
-            return sourceText.Type switch
-            {
-                SourceType.Avsc => AvscSchemaParser.Parse(sourceText, parseOptions),
-                SourceType.Avpr => AvscSchemaParser.Parse(sourceText, parseOptions),
-                SourceType.Avdl => AvdlSchemaParser.Parse(sourceText, parseOptions),
-                _ => throw new InvalidOperationException("Unreachable: Unsupported Avro file type."),
-            };
-        }
-        catch (JsonException ex)
-        {
-            return Invalid(sourceText, AvroDiagnostic.InvalidJson(SourceSpan.FromException(sourceText, ex), ex.Message), parseOptions);
-        }
-        catch (InvalidSourceException ex)
-        {
-            return Invalid(sourceText, ex.Diagnostics, parseOptions);
-        }
-        catch (InvalidSchemaException ex)
-        {
-            return Invalid(sourceText, AvroDiagnostic.InvalidSchema(sourceText.GetSpan(0, sourceText.Length), ex.Message), parseOptions);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            return Invalid(sourceText, AvroDiagnostic.UnknownError(SourceSpan.FromSourceText(sourceText), ex.Message), parseOptions);
-        }
+            SourceType.Avsc or SourceType.Avpr => AvscSchemaParser.Parse(sourceText, parseOptions),
+            SourceType.Avdl => AvdlSchemaParser.Parse(sourceText, parseOptions),
+            _ => throw new InvalidOperationException("Unreachable: Unsupported Avro file type."),
+        };
     }
 
-    private static AvroFile Invalid(SourceText source, AvroDiagnostic diagnostic, AvroParseOptions parseOptions) =>
+    internal static AvroFile Invalid(SourceText source, AvroDiagnostic diagnostic, AvroParseOptions parseOptions) =>
         Invalid(source, [diagnostic], parseOptions);
 
-    private static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) => new(sourceText, null, [], [], [], [], diagnostics, parseOptions);
+    internal static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) =>
+        new(sourceText, null, [], [], [], [], [], [], diagnostics, parseOptions);
 }

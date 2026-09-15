@@ -78,25 +78,17 @@ internal static class JsonElementAvroExtensions
         }
 
 
-        public ImmutableSortedDictionary<string, JsonElement> GetSchemaProperties()
+        public ImmutableSortedDictionary<string, JsonElement> GetSchemaProperties() => schema.GetProperties(ReservedSchemaProperties.IsReserved);
+
+        public ImmutableSortedDictionary<string, JsonElement> GetProtocolProperties() => schema.GetProperties(ReservedProtocolProperties.IsReserved);
+
+        private ImmutableSortedDictionary<string, JsonElement> GetProperties(Func<string, bool> isReserved)
         {
             var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
-            foreach (var property in schema.EnumerateObject()
-                .Where(property => !ReservedSchemaProperties.IsReserved(property.Name)))
+            foreach (var property in schema.EnumerateObject())
             {
-                properties.Add(property.Name, property.Value.Clone());
-            }
-
-            return properties.ToImmutable();
-        }
-
-        public ImmutableSortedDictionary<string, JsonElement> GetProtocolProperties()
-        {
-            var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
-            foreach (var property in schema.EnumerateObject()
-                .Where(property => !ReservedProtocolProperties.IsReserved(property.Name)))
-            {
-                properties.Add(property.Name, property.Value.Clone());
+                if (!isReserved(property.Name))
+                    properties[property.Name] = property.Value.Clone();
             }
 
             return properties.ToImmutable();

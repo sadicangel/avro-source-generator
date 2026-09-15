@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
@@ -9,17 +10,30 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avsc;
 
-// TODO:
-// We currently throw exceptions for invalid schemas. We should consider
-// returning diagnostics instead, maybe sharing the same diagnostic model as Avdl.
 internal static class AvscSchemaParser
 {
     public static AvroFile Parse(SourceText source, AvroParseOptions options)
     {
+        try
+        {
+            return ParseCore(source, options);
+        }
+        catch (JsonException ex)
+        {
+            return AvroFile.Invalid(source, AvroDiagnostic.InvalidJson(SourceSpan.FromException(source, ex), ex.Message), options);
+        }
+        catch (InvalidSchemaException ex)
+        {
+            return AvroFile.Invalid(source, AvroDiagnostic.InvalidSchema(SourceSpan.FromSourceText(source), ex.Message), options);
+        }
+    }
+
+    private static AvroFile ParseCore(SourceText source, AvroParseOptions options)
+    {
         using var schema = JsonDocument.Parse(source.Text);
         var context = new ParserContext(options);
         var root = context.Schema(schema.RootElement, containingNamespace: null);
-        if (root is not AvroSchemaReference && !root.ContainsTopLevelSchema())
+        if (!root.ContainsTopLevelSchema())
         {
             throw new InvalidSchemaException($"At least a named schema must be present in schema: {source.Text}");
         }
@@ -42,7 +56,7 @@ internal static class AvscSchemaParser
 
         private AvroSchema Named(SchemaName schemaName, string? containingNamespace)
         {
-            return context.Reference(schemaName, containingNamespace);
+            return context.Reference(schemaName, containingNamespace, SourceSpan.None);
         }
 
         private AvroSchema Complex(JsonElement schema, string? containingNamespace)
@@ -114,7 +128,7 @@ internal static class AvscSchemaParser
                 var properties = schema.GetSchemaProperties();
 
                 var enumSchema = new EnumSchema(schemaName, documentation, aliases, symbols, @default, properties);
-                context.Declare(enumSchema);
+                context.Declare(enumSchema, SourceSpan.None);
                 return enumSchema;
             }
         }
@@ -135,7 +149,7 @@ internal static class AvscSchemaParser
                     GenerationTarget.Apache => new FixedSchema(schemaName, documentation, aliases, size, properties),
                     _ => FixedSchema.CreateAsByteArray(schemaName, documentation, aliases, size, properties),
                 };
-                context.Declare(fixedSchema);
+                context.Declare(fixedSchema, SourceSpan.None);
                 return fixedSchema;
             }
         }
@@ -151,7 +165,7 @@ internal static class AvscSchemaParser
                 var properties = schema.GetSchemaProperties();
 
                 var errorSchema = new ErrorSchema(schemaName, documentation, aliases, fields, properties);
-                context.Declare(errorSchema);
+                context.Declare(errorSchema, SourceSpan.None);
                 return errorSchema;
             }
         }
@@ -167,7 +181,7 @@ internal static class AvscSchemaParser
                 var properties = schema.GetSchemaProperties();
 
                 var recordSchema = new RecordSchema(schemaName, documentation, aliases, fields, properties);
-                context.Declare(recordSchema);
+                context.Declare(recordSchema, SourceSpan.None);
                 return recordSchema;
             }
         }
@@ -223,7 +237,7 @@ internal static class AvscSchemaParser
 
                 var protocolSchema = new ProtocolSchema(schemaName, documentation, types, messages, properties);
 
-                context.Declare(protocolSchema);
+                context.Declare(protocolSchema, SourceSpan.None);
 
                 return protocolSchema;
             }

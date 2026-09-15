@@ -99,19 +99,20 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
             schemaIndex.FileIndexes.TryAdd(filePath, fileIndex);
 
             localNames.Clear();
-            foreach (var declaration in file.Declarations)
+            foreach (var (declarationIndex, declaration) in file.Declarations.Index())
             {
+                var declarationSpan = GetDeclarationSpan(file.File, declarationIndex);
                 var name = declaration.SchemaName;
                 if (!localNames.Add(name))
                 {
-                    schemaIndex.Diagnostics.Add(AvroDiagnostic.DuplicateSchema(SourceSpan.None, declaration.CSharpName.ToString(includeGlobalPrefix: false)));
+                    schemaIndex.Diagnostics.Add(AvroDiagnostic.DuplicateSchema(declarationSpan, declaration.CSharpName.ToString(includeGlobalPrefix: false)));
                     continue;
                 }
 
                 if (!schemaIndex.Schemas.TryAdd(name, declaration))
                 {
                     if (duplicateResolution is DuplicateResolution.Error)
-                        schemaIndex.Diagnostics.Add(AvroDiagnostic.DuplicateSchema(SourceSpan.None, declaration.CSharpName.ToString(includeGlobalPrefix: false)));
+                        schemaIndex.Diagnostics.Add(AvroDiagnostic.DuplicateSchema(declarationSpan, declaration.CSharpName.ToString(includeGlobalPrefix: false)));
                     continue;
                 }
 
@@ -122,6 +123,11 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
 
         return schemaIndex;
     }
+
+    private static SourceSpan GetDeclarationSpan(AvroFile file, int declarationIndex) =>
+        declarationIndex < file.DeclarationSpans.Length
+            ? file.DeclarationSpans[declarationIndex]
+            : SourceSpan.None;
 
     private static ImmutableArray<AvroDiagnostic> ValidateReferences(
         ImmutableArray<BoundAvroFile> files,
@@ -168,7 +174,13 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
                 .ToImmutableArray();
 
             if (!missingReferences.IsEmpty)
-                diagnostics.Add(AvroDiagnostic.MissingReferences(SourceSpan.FromSourceText(file.File.SourceText), missingReferences));
+                diagnostics.Add(
+                    AvroDiagnostic.MissingReferences(
+                        missingReferences.SelectMany(name => file.File.ReferenceSpans.GetValueOrDefault(name, []))
+                            .OrderBy(span => span.Offset)
+                            .DefaultIfEmpty(SourceSpan.FromSourceText(file.File.SourceText))
+                            .First(),
+                        missingReferences));
         }
 
         if (importResolver is not null)

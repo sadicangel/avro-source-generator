@@ -6,6 +6,7 @@ using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Types;
 using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
@@ -14,17 +15,44 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avdl;
 
-// TODO:
-// We currently throw exceptions for invalid schemas.
-// We should consider returning diagnostics instead, maybe sharing the same diagnostic model as Avsc.
 internal static class AvdlSchemaParser
 {
     public static AvroFile Parse(SourceText source, AvroParseOptions options)
     {
-        var parser = new ParserContext(options);
         var syntaxTree = Parser.Parse(source);
         if (!syntaxTree.Diagnostics.IsEmpty)
-            throw new InvalidSourceException(syntaxTree.Diagnostics);
+            return AvroFile.Invalid(source, syntaxTree.Diagnostics, options);
+
+        try
+        {
+            return ParseCore(syntaxTree, options);
+        }
+        catch (InvalidSourceException ex)
+        {
+            return AvroFile.Invalid(source, ex.Diagnostics, options);
+        }
+        catch (InvalidSchemaException ex)
+        {
+            return AvroFile.Invalid(
+                source,
+                AvroDiagnostic.InvalidSchema(SourceSpan.FromSourceText(source), ex.Message),
+                options);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Some AVDL value conversions still use framework exceptions. Keep the
+            // established diagnostic until those validations are made explicit.
+            return AvroFile.Invalid(
+                source,
+                AvroDiagnostic.UnknownError(SourceSpan.FromSourceText(source), ex.Message),
+                options);
+        }
+    }
+
+    private static AvroFile ParseCore(SyntaxTree syntaxTree, AvroParseOptions options)
+    {
+        var source = syntaxTree.SourceText;
+        var parser = new ParserContext(options);
 
         var imports = syntaxTree.Document.ImportDirectives
             .Concat(
@@ -39,14 +67,15 @@ internal static class AvdlSchemaParser
                     SyntaxKind.SchemaKeyword => AvroImportKind.Schema,
                     _ => throw new InvalidOperationException("Unreachable: Unsupported Avro import kind."),
                 },
-                import.ImportPathLiteralToken.Value as string ?? string.Empty))
+                import.ImportPathLiteralToken.Value as string ?? string.Empty,
+                import.ImportPathLiteralToken.SourceSpan))
             .ToImmutableArray();
         var root = parser.Document(syntaxTree);
-        if (imports.IsEmpty && root is not AvroSchemaReference && !root.ContainsTopLevelSchema())
+        if (imports.IsEmpty && !root.ContainsTopLevelSchema())
         {
             var sourceSpan = syntaxTree.Document.SchemaDirective?.MainSchemaType is { } mainSchemaType
-                ? GetSourceSpan(mainSchemaType)
-                : GetSourceSpan(syntaxTree);
+                ? mainSchemaType.GetSourceSpan()
+                : syntaxTree.Document.GetSourceSpan();
             throw new InvalidSourceException("At least a named schema must be present in source.", sourceSpan);
         }
 
@@ -65,7 +94,7 @@ internal static class AvdlSchemaParser
             {
                 if (document.Declarations is not [ProtocolDeclarationSyntax protocol])
                 {
-                    throw new InvalidSourceException("Avro IDL files must contain a main schema directive or a single protocol declaration.", GetSourceSpan(syntaxTree));
+                    throw new InvalidSourceException("Avro IDL files must contain a main schema directive or a single protocol declaration.", syntaxTree.Document.GetSourceSpan());
                 }
 
                 return context.Protocol(protocol, containingNamespace);
@@ -75,7 +104,7 @@ internal static class AvdlSchemaParser
             {
                 if (declaration is not ISchemaDeclarationSyntax schemaDeclaration)
                 {
-                    throw new InvalidSourceException($"Invalid declaration in Avro IDL file: {declaration.SyntaxKind}", GetSourceSpan(declaration));
+                    throw new InvalidSourceException($"Invalid declaration in Avro IDL file: {declaration.SyntaxKind}", declaration.GetSourceSpan());
                 }
 
                 context.Schema(schemaDeclaration, containingNamespace);
@@ -98,17 +127,12 @@ internal static class AvdlSchemaParser
                 ArrayTypeSyntax type => context.Array(type, containingNamespace, properties),
                 ILogicalTypeSyntax type => context.Logical(type, containingNamespace),
                 MapTypeSyntax type => context.Map(type, containingNamespace, properties),
-                NamedTypeSyntax type => context.Named(type.Name.FullName.ToSchemaName(), containingNamespace),
+                NamedTypeSyntax type => context.Reference(type.Name.FullName.ToSchemaName(), containingNamespace, type.Name.GetSourceSpan()),
                 OptionalTypeSyntax type => context.Optional(type, containingNamespace, defaultJson),
                 PrimitiveTypeSyntax type => context.Primitive(type, containingNamespace, properties),
                 UnionTypeSyntax type => context.Union(type, containingNamespace),
-                _ => throw new InvalidSourceException($"Invalid type syntax: {syntax.SyntaxKind}", GetSourceSpan(syntax)),
+                _ => throw new InvalidSourceException($"Invalid type syntax: {syntax.SyntaxKind}", syntax.GetSourceSpan()),
             };
-        }
-
-        private AvroSchema Named(SchemaName schemaName, string? containingNamespace)
-        {
-            return context.Reference(schemaName, containingNamespace);
         }
 
         private NamedSchema Schema(ISchemaDeclarationSyntax declaration, string? containingNamespace)
@@ -119,16 +143,14 @@ internal static class AvdlSchemaParser
                 ErrorDeclarationSyntax syntax => context.Error(syntax, containingNamespace),
                 FixedDeclarationSyntax syntax => context.Fixed(syntax, containingNamespace),
                 RecordDeclarationSyntax syntax => context.Record(syntax, containingNamespace),
-                _ => throw new InvalidSourceException($"Invalid declaration: {declaration.SyntaxKind}", GetSourceSpan(declaration))
+                _ => throw new InvalidSourceException($"Invalid declaration: {declaration.SyntaxKind}", declaration.GetSourceSpan())
             };
         }
 
         private AvroSchema Annotated(AnnotatedTypeSyntax syntax, string? containingNamespace, JsonElement? defaultJson)
         {
             var logicalTypeName = syntax.Annotations.OfType<LogicalTypeAnnotationSyntax>().LastOrDefault()?.LogicalTypeName;
-            var properties = syntax.Annotations.OfType<CustomAnnotationSyntax>()
-                .Where(a => !ReservedSchemaProperties.IsReserved(a.AnnotationName.FullName))
-                .ToImmutableSortedDictionary(a => a.AnnotationName.FullName, a => a.JsonValue.ToJsonElement());
+            var properties = syntax.Annotations.GetProperties(ReservedSchemaProperties.IsReserved);
             var underlyingSchema = context.Type(syntax.Type, containingNamespace, properties, defaultJson);
             return logicalTypeName is not null
                 ? LogicalSchema.Create(logicalTypeName, underlyingSchema, context.Options.GenerationTarget)
@@ -177,7 +199,7 @@ internal static class AvdlSchemaParser
                 var properties = syntax.GetSchemaProperties();
 
                 var enumSchema = new EnumSchema(schemaName, documentation, aliases, symbols, @default, properties);
-                context.Declare(enumSchema);
+                context.Declare(enumSchema, syntax.GetSourceSpan());
                 return enumSchema;
             }
         }
@@ -200,7 +222,7 @@ internal static class AvdlSchemaParser
                     GenerationTarget.Apache => new FixedSchema(schemaName, documentation, aliases, size, properties),
                     _ => FixedSchema.CreateAsByteArray(schemaName, documentation, aliases, size, properties),
                 };
-                context.Declare(fixedSchema);
+                context.Declare(fixedSchema, syntax.GetSourceSpan());
                 return fixedSchema;
             }
         }
@@ -216,7 +238,7 @@ internal static class AvdlSchemaParser
                 var properties = syntax.GetSchemaProperties();
 
                 var errorSchema = new ErrorSchema(schemaName, documentation, aliases, fields, properties);
-                context.Declare(errorSchema);
+                context.Declare(errorSchema, syntax.GetSourceSpan());
                 return errorSchema;
             }
         }
@@ -232,7 +254,7 @@ internal static class AvdlSchemaParser
                 var properties = syntax.GetSchemaProperties();
 
                 var recordSchema = new RecordSchema(schemaName, documentation, aliases, fields, properties);
-                context.Declare(recordSchema);
+                context.Declare(recordSchema, syntax.GetSourceSpan());
                 return recordSchema;
             }
         }
@@ -297,7 +319,7 @@ internal static class AvdlSchemaParser
 
             if (syntax is not LogicalTypeSyntax logical)
             {
-                throw new InvalidSourceException($"Invalid logical type syntax: {syntax.SyntaxKind}", GetSourceSpan(syntax));
+                throw new InvalidSourceException($"Invalid logical type syntax: {syntax.SyntaxKind}", syntax.GetSourceSpan());
             }
 
             return logical.LogicalTypeNameKeyword.SyntaxKind switch
@@ -323,7 +345,7 @@ internal static class AvdlSchemaParser
 
                 var protocolSchema = new ProtocolSchema(schemaName, documentation, types, messages, properties);
 
-                context.Declare(protocolSchema);
+                context.Declare(protocolSchema, syntax.GetSourceSpan());
 
                 return protocolSchema;
             }
@@ -409,37 +431,4 @@ internal static class AvdlSchemaParser
         }
     }
 
-    private static SourceSpan GetSourceSpan(SyntaxTree syntaxTree)
-    {
-        return TryGetFirstSourceSpan(syntaxTree.Document, out var sourceSpan)
-            ? sourceSpan
-            : syntaxTree.SourceText.GetSpan(0, syntaxTree.SourceText.Text.Length);
-    }
-
-    private static SourceSpan GetSourceSpan(ISyntaxNode syntax)
-    {
-        return TryGetFirstSourceSpan(syntax, out var sourceSpan)
-            ? sourceSpan
-            : throw new InvalidOperationException($"Syntax node '{syntax.SyntaxKind}' has no source span.");
-    }
-
-    private static bool TryGetFirstSourceSpan(ISyntaxNode syntax, out SourceSpan sourceSpan)
-    {
-        if (syntax is SyntaxToken token)
-        {
-            sourceSpan = token.SourceSpan;
-            return true;
-        }
-
-        foreach (var child in syntax.Children())
-        {
-            if (TryGetFirstSourceSpan(child, out sourceSpan))
-            {
-                return true;
-            }
-        }
-
-        sourceSpan = default;
-        return false;
-    }
 }

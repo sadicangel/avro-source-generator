@@ -14,10 +14,15 @@ internal sealed class ParserContext(AvroParseOptions options)
     private readonly Dictionary<SchemaName, HashSet<SchemaName>> _dependencies = [];
     private readonly List<SchemaName> _recursionStack = [];
 
+    // Provenance belongs to occurrences in a file, never to semantic schema equality.
+    private readonly List<SourceSpan> _declarationSpans = [];
+    private readonly Dictionary<SchemaName, List<SourceSpan>> _referenceSpans = [];
+
     public AvroParseOptions Options { get; } = options;
 
-    public void Declare(TopLevelSchema schema)
+    public void Declare(TopLevelSchema schema, SourceSpan sourceSpan)
     {
+        _declarationSpans.Add(sourceSpan);
         _declarationIndexes[schema.SchemaName] = _declarations.Count;
         _declarations.Add(schema);
 
@@ -35,7 +40,7 @@ internal sealed class ParserContext(AvroParseOptions options)
         }
     }
 
-    public AvroSchema Reference(SchemaName schemaName, string? containingNamespace)
+    public AvroSchema Reference(SchemaName schemaName, string? containingNamespace, SourceSpan sourceSpan)
     {
         switch (schemaName.FullName)
         {
@@ -50,6 +55,12 @@ internal sealed class ParserContext(AvroParseOptions options)
         }
 
         schemaName = schemaName.ResolveIn(containingNamespace);
+        if (!sourceSpan.IsNone)
+        {
+            if (!_referenceSpans.TryGetValue(schemaName, out var spans))
+                _referenceSpans[schemaName] = spans = [];
+            spans.Add(sourceSpan);
+        }
         if (_recursionStack is [.., var containingSchema])
             AddDependency(containingSchema, schemaName);
 
@@ -87,7 +98,7 @@ internal sealed class ParserContext(AvroParseOptions options)
                     ReplaceDeclarations(union.Schemas, inheritedSchemas);
 
                     var variant = new VariantSchema(variantName, inheritedSchemas);
-                    Declare(variant);
+                    Declare(variant, SourceSpan.None);
 
                     remarks = variant.Documentation;
                     union = union.WithVariant(variant);
@@ -111,7 +122,11 @@ internal sealed class ParserContext(AvroParseOptions options)
         sourceText,
         root,
         [.. _declarations],
+        [.. _declarationSpans],
         [.. _references.OrderBy(static reference => reference.FullName, StringComparer.Ordinal)],
+        _referenceSpans.ToFrozenDictionary(
+            pair => pair.Key,
+            pair => pair.Value.OrderBy(span => span.Offset).ToImmutableArray()),
         GetDependencies(),
         imports,
         [],

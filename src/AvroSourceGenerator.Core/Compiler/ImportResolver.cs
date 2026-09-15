@@ -19,7 +19,9 @@ internal sealed class ImportResolver(
 
     public IEnumerable<AvroDiagnostic> Diagnostics => _diagnostics;
 
-    public ImportResolution Resolve(int fileIndex)
+    public ImportResolution Resolve(int fileIndex) => Resolve(fileIndex, SourceSpan.None);
+
+    private ImportResolution Resolve(int fileIndex, SourceSpan incomingImportSpan)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (_resolutions.TryGetValue(fileIndex, out var existing))
@@ -42,7 +44,10 @@ internal sealed class ImportResolver(
                 var displayPaths = cycle
                     .Append(fileIndex)
                     .Select(index => files[index].File.SourceText.Path);
-                _diagnostics.Add(AvroDiagnostic.InvalidImport(SourceSpan.FromSourceText(files[_stack[^1]].File.SourceText), $"Import cycle detected: {string.Join(" -> ", displayPaths)}."));
+                _diagnostics.Add(
+                    AvroDiagnostic.InvalidImport(
+                        incomingImportSpan,
+                        $"Import cycle detected: {string.Join(" -> ", displayPaths)}."));
             }
 
             foreach (var cycleFileIndex in cycle)
@@ -57,11 +62,12 @@ internal sealed class ImportResolver(
         foreach (var import in file.File.Imports)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var importSpan = import.SourceSpan;
             var expectedExtension = GetExpectedExtension(import.Kind);
             if (!import.Path.EndsWith(expectedExtension, StringComparison.OrdinalIgnoreCase))
             {
                 isValid = false;
-                _diagnostics.Add(AvroDiagnostic.InvalidImport(SourceSpan.FromSourceText(file.File.SourceText), $"Import kind '{GetImportKindName(import.Kind)}' requires a '{expectedExtension}' target, but '{import.Path}' was specified."));
+                _diagnostics.Add(AvroDiagnostic.InvalidImport(importSpan, $"Import kind '{GetImportKindName(import.Kind)}' requires a '{expectedExtension}' target, but '{import.Path}' was specified."));
                 continue;
             }
 
@@ -69,7 +75,7 @@ internal sealed class ImportResolver(
             if (!fileIndexes.TryGetValue(importedPath, out var importedFileIndex))
             {
                 isValid = false;
-                _diagnostics.Add(AvroDiagnostic.InvalidImport(SourceSpan.FromSourceText(file.File.SourceText), $"Path '{import.Path}' does not match an Avro AdditionalFile."));
+                _diagnostics.Add(AvroDiagnostic.InvalidImport(importSpan, $"Path '{import.Path}' does not match an Avro AdditionalFile."));
                 continue;
             }
 
@@ -84,14 +90,14 @@ internal sealed class ImportResolver(
             if (!IsCompatibleTarget(import.Kind, importedFile))
             {
                 isValid = false;
-                _diagnostics.Add(AvroDiagnostic.InvalidImport(SourceSpan.FromSourceText(file.File.SourceText), $"Path '{import.Path}' is not a valid {GetImportKindName(import.Kind)} target."));
+                _diagnostics.Add(AvroDiagnostic.InvalidImport(importSpan, $"Path '{import.Path}' is not a valid {GetImportKindName(import.Kind)} target."));
                 continue;
             }
 
             if (!importedFileIndexes.Add(importedFileIndex))
                 continue;
 
-            var importedResolution = Resolve(importedFileIndex);
+            var importedResolution = Resolve(importedFileIndex, importSpan);
             importedFileIndexes.UnionWith(importedResolution.ImportedFileIndexes);
             if (!importedResolution.IsValid)
                 isValid = false;

@@ -31,13 +31,23 @@ internal static class SyntaxAvroExtensions
 
         public ImmutableArray<string> GetAliases() => syntax.Annotations.OfType<AliasesAnnotationSyntax>().LastOrDefault()?.Aliases ?? [];
 
-        public ImmutableSortedDictionary<string, JsonElement> GetSchemaProperties() => syntax.GetProperties(ReservedSchemaProperties.IsReserved);
+        public ImmutableSortedDictionary<string, JsonElement> GetSchemaProperties() => syntax.Annotations.GetProperties(ReservedSchemaProperties.IsReserved);
 
-        public ImmutableSortedDictionary<string, JsonElement> GetProtocolProperties() => syntax.GetProperties(ReservedProtocolProperties.IsReserved);
+        public ImmutableSortedDictionary<string, JsonElement> GetProtocolProperties() => syntax.Annotations.GetProperties(ReservedProtocolProperties.IsReserved);
+    }
 
-        private ImmutableSortedDictionary<string, JsonElement> GetProperties(Func<string, bool> isReserved) => syntax.Annotations.OfType<CustomAnnotationSyntax>()
-            .Where(a => !isReserved(a.AnnotationName.FullName))
-            .ToImmutableSortedDictionary(a => a.AnnotationName.FullName, a => a.JsonValue.ToJsonElement());
+    extension(IEnumerable<IAnnotationSyntax> annotations)
+    {
+        public ImmutableSortedDictionary<string, JsonElement> GetProperties(Func<string, bool> isReserved)
+        {
+            var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
+            foreach (var annotation in annotations.OfType<CustomAnnotationSyntax>())
+            {
+                if (!isReserved(annotation.AnnotationName.FullName))
+                    properties[annotation.AnnotationName.FullName] = annotation.JsonValue.ToJsonElement();
+            }
+            return properties.ToImmutable();
+        }
     }
 
     extension(JsonValueSyntax syntax)

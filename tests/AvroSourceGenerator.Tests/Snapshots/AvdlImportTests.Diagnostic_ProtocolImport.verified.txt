@@ -1,5 +1,5 @@
 ﻿{
-  Location: hbZLgMCOL8DyJ_VK6KfKhulyZhA.avdl: (0,0)-(3,1),
+  Location: hbZLgMCOL8DyJ_VK6KfKhulyZhA.avdl: (1,15)-(1,28),
   Message: The Avro import is invalid: Path 'common.avdl' does not match an Avro AdditionalFile.,
   Severity: Error,
   Descriptor: {

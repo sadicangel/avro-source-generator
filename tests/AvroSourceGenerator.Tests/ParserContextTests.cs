@@ -13,10 +13,10 @@ public sealed class ParserContextTests
         var context = new ParserContext(new AvroParseOptions(GenerationTarget.Modern, true));
         var first = Record("Shared") with { CSharpName = new CSharpName("First") };
         var latest = Record("Shared") with { CSharpName = new CSharpName("Latest") };
-        context.Declare(first);
-        context.Declare(latest);
+        context.Declare(first, SourceSpan.None);
+        context.Declare(latest, SourceSpan.None);
 
-        var reference = context.Reference(new SchemaName("Shared"), "Example");
+        var reference = context.Reference(new SchemaName("Shared"), "Example", SourceSpan.None);
 
         Assert.Equal(latest.CSharpName, reference.CSharpName);
         var result = context.Complete(Source, latest, []);
@@ -33,9 +33,9 @@ public sealed class ParserContextTests
         var first = Record("Shared") with { CSharpName = new CSharpName("First") };
         var latest = Record("Shared") with { CSharpName = new CSharpName("Latest") };
         var other = Record("Other");
-        context.Declare(first);
-        context.Declare(latest);
-        context.Declare(other);
+        context.Declare(first, SourceSpan.None);
+        context.Declare(latest, SourceSpan.None);
+        context.Declare(other, SourceSpan.None);
         var replaced = replaceLatest ? latest : first;
         var union = UnionSchema.Create([replaced, other], true);
 
@@ -45,7 +45,7 @@ public sealed class ParserContextTests
         var updated = Assert.IsType<RecordSchema>(result.Declarations[replaceLatest ? 1 : 0]);
         Assert.NotNull(updated.InheritsFrom);
         Assert.NotSame(replaced, updated);
-        Assert.Equal(latest.CSharpName, context.Reference(new SchemaName("Shared"), "Example").CSharpName);
+        Assert.Equal(latest.CSharpName, context.Reference(new SchemaName("Shared"), "Example", SourceSpan.None).CSharpName);
         Assert.Same(replaceLatest ? first : latest, result.Declarations[replaceLatest ? 0 : 1]);
     }
 
@@ -56,8 +56,8 @@ public sealed class ParserContextTests
         var record = Record("Node");
         using (context.EnterRecursionScope(record.SchemaName))
         {
-            Assert.Equal(record.SchemaName, context.Reference(new SchemaName("Node"), "Example").SchemaName);
-            context.Declare(record);
+            Assert.Equal(record.SchemaName, context.Reference(new SchemaName("Node"), "Example", SourceSpan.None).SchemaName);
+            context.Declare(record, SourceSpan.None);
         }
 
         var result = context.Complete(Source, record, []);

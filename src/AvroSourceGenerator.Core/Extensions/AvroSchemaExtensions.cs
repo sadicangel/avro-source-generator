@@ -11,7 +11,7 @@ internal static class AvroSchemaExtensions
         {
             return schema switch
             {
-                TopLevelSchema => true,
+                TopLevelSchema or AvroSchemaReference => true,
                 ArraySchema array => array.ItemSchema.ContainsTopLevelSchema(),
                 MapSchema map => map.ValueSchema.ContainsTopLevelSchema(),
                 UnionSchema union => union.Schemas.Any(ContainsTopLevelSchema),

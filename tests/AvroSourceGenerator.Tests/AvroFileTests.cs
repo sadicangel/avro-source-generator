@@ -135,6 +135,19 @@ public sealed class AvroFileTests
         Assert.Empty(file.Declarations);
     }
 
+    [Theory]
+    [InlineData("{ \"type\": \"array\", \"items\": \"Example.External\" }")]
+    [InlineData("{ \"type\": \"map\", \"values\": \"Example.External\" }")]
+    [InlineData("[\"null\", \"Example.External\"]")]
+    public void Symbolic_nested_root_is_valid(string schema)
+    {
+        var file = Parse("schema.avsc", schema);
+
+        Assert.True(file.IsValid);
+        Assert.Equal([new SchemaName("External", "Example")], file.References);
+        Assert.Empty(file.Declarations);
+    }
+
     [Fact]
     public void Avdl_root_directive_resolves_after_declarations()
     {
@@ -154,6 +167,25 @@ public sealed class AvroFileTests
         Assert.Equal(new SchemaName("Message", "Example"), file.RootSchema!.SchemaName);
     }
 
+    [Theory]
+    [InlineData("array<Message>")]
+    [InlineData("map<Message>")]
+    [InlineData("union { null, Message }")]
+    [InlineData("Message?")]
+    public void Avdl_nested_root_reference_resolves_after_declarations(string rootType)
+    {
+        var file = Parse(
+            "schema.avdl",
+            $$"""
+            namespace Example;
+            schema {{rootType}};
+            record Message { }
+            """);
+
+        Assert.True(file.IsValid);
+        Assert.Empty(file.References);
+    }
+
     [Fact]
     public void Avdl_imports_preserve_kind_and_path()
     {
@@ -169,11 +201,11 @@ public sealed class AvroFileTests
         Assert.True(file.IsValid);
         Assert.Equal(
             [
-                new AvroImport(AvroImportKind.Idl, "common.avdl"),
-                new AvroImport(AvroImportKind.Protocol, "common.avpr"),
-                new AvroImport(AvroImportKind.Schema, "common.avsc"),
+                (AvroImportKind.Idl, "common.avdl"),
+                (AvroImportKind.Protocol, "common.avpr"),
+                (AvroImportKind.Schema, "common.avsc"),
             ],
-            file.Imports);
+            file.Imports.Select(import => (import.Kind, import.Path)));
     }
 
     [Fact]

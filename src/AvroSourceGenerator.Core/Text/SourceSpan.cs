@@ -22,6 +22,8 @@ public readonly record struct SourceSpan
 
     public bool IsNone => SourceText is null;
 
+    public bool IsNoneOrEmpty => IsNone || SourceText.IsEmpty;
+
     public SourceSpan(SourceText SourceText, int Offset) : this(SourceText, Offset, (SourceText ?? throw new ArgumentNullException(nameof(SourceText))).Length - Offset) { }
 
     public override string ToString() => SourceText?.Text.AsSpan(Offset, Length).ToString() ?? string.Empty;

@@ -1,10 +1,11 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
-public sealed class BoundAvroFile : IEquatable<BoundAvroFile>
+public sealed class BoundAvroFile : IEquatable<BoundAvroFile>, ISourceFile
 {
     private readonly LinkedAvroFile _linkedFile;
 
@@ -16,6 +17,12 @@ public sealed class BoundAvroFile : IEquatable<BoundAvroFile>
     }
 
     public AvroFile File => _linkedFile.File;
+
+    public SourceText Text => File.Text;
+
+    public SourcePath Path => File.Path;
+
+    public bool IsValid => File.IsValid;
 
     public AvroSchema? RootSchema { get; }
 

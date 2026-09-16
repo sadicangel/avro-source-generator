@@ -1,9 +1,10 @@
 ﻿using System.Collections.Frozen;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
-public sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>
+public sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>, ISourceFile
 {
     private readonly Lazy<int> _hashCode;
 
@@ -16,6 +17,12 @@ public sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>
     }
 
     public AvroFile File { get; }
+
+    public SourceText Text => File.Text;
+
+    public SourcePath Path => File.Path;
+
+    public bool IsValid => File.IsValid;
 
     public FrozenDictionary<SchemaName, CSharpName?> References { get; }
 

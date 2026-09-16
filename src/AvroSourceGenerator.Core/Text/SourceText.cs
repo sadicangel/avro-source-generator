@@ -8,29 +8,22 @@ public sealed class SourceText : IEquatable<SourceText>
 
     public SourceText(string path, string text)
     {
-        Path = path;
+        Path = new SourcePath(path);
         Text = text;
         _lines = new Lazy<ImmutableArray<SourceLine>>(() => ParseLines(this));
     }
 
-    public string Path { get; }
+    public SourcePath Path { get; }
 
     public string Text { get; }
 
-    // TODO: Replace literals with constants for file extensions and do a project wide replace.
-    public SourceType Type =>
-        Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase) ? SourceType.Avsc :
-        Path.EndsWith(".avpr", StringComparison.OrdinalIgnoreCase) ? SourceType.Avpr :
-        Path.EndsWith(".avdl", StringComparison.OrdinalIgnoreCase) ? SourceType.Avdl :
-        throw new InvalidOperationException("Unreachable: Unsupported Avro file type.");
-
-    public bool IsEmpty => string.IsNullOrWhiteSpace(Text);
+    public bool IsEmpty => Path.IsEmpty || string.IsNullOrWhiteSpace(Text);
 
     public int Length => Text.Length;
 
     public ImmutableArray<SourceLine> Lines => _lines.Value;
 
-    public SourceSpan GetSpan(int offset, int length) => new(this, offset, length);
+    public SourceSpan GetSpan(int offset, int length) => new SourceSpan(this, offset, length);
 
     public int GetOffset(int lineIndex, int columnIndex)
     {

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Text;
 
@@ -54,6 +55,22 @@ public sealed class AvroDiagnosticTests
     }
 
     [Fact]
+    public void None_or_empty_distinguishes_absent_spans_from_empty_source_text()
+    {
+        var emptyText = new SourceText("empty.avsc", "");
+        var emptyPath = new SourceText("", "content");
+
+        Assert.True(emptyText.IsEmpty);
+        Assert.True(emptyPath.IsEmpty);
+        Assert.True(SourceSpan.None.IsNone);
+        Assert.True(SourceSpan.None.IsNoneOrEmpty);
+        Assert.False(SourceSpan.FromSourceText(emptyText).IsNone);
+        Assert.True(SourceSpan.FromSourceText(emptyText).IsNoneOrEmpty);
+        Assert.False(SourceSpan.FromSourceText(emptyPath).IsNone);
+        Assert.True(SourceSpan.FromSourceText(emptyPath).IsNoneOrEmpty);
+    }
+
+    [Fact]
     public void Lines_belong_to_the_original_source()
     {
         var source = new SourceText("test.avsc", "é\r\n😀\n");
@@ -96,6 +113,22 @@ public sealed class AvroDiagnosticTests
         Assert.Equal(3, source.GetOffset(1, 0));
         Assert.False(source.Equals(null));
         Assert.Equal(source.Text, SourceSpan.FromSourceText(source).ToString());
+    }
+
+    [Fact]
+    public void Source_file_span_uses_the_file_text()
+    {
+        var file = AvroFile.Parse(
+            new SourceText("test.avsc", "abc"),
+            new AvroParseOptions(),
+            TestContext.Current.CancellationToken);
+
+        ISourceFile sourceFile = file;
+        var span = SourceSpan.FromSourceFile(sourceFile, 1, 1);
+
+        Assert.Equal(file.Text, span.SourceText);
+        Assert.Equal(file.Path, span.SourceText.Path);
+        Assert.Equal("b", span.ToString());
     }
 
     [Fact]

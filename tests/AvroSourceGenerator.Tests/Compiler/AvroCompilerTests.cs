@@ -42,7 +42,24 @@ public sealed class AvroCompilerTests
         Assert.Single(compiled.GetOwnedDeclarations(compiled.Files[0], token));
         Assert.Equal(
             ["consumer.avdl", "shared.avsc"],
-            compiled.GetContributingFiles([new SchemaName("Consumer")], token).Select(file => file.File.SourceText.Path));
+            compiled.GetContributingFiles([new SchemaName("Consumer")], token).Select(file => file.Path.OriginalPath));
+    }
+
+    [Fact]
+    public void Compiler_file_stages_expose_the_same_source_file()
+    {
+        var source = new SourceText("record.avsc", """{"type":"record","name":"Record","fields":[]}""");
+        var token = TestContext.Current.CancellationToken;
+        var parsed = AvroFile.Parse(source, ParseOptions, token);
+        var linked = LinkedAvroFile.Link(parsed, SymbolTable.FromFiles([parsed], token), token);
+        var bound = BoundAvroFile.Bind(linked, token);
+
+        Assert.All<ISourceFile>([parsed, linked, bound], file =>
+        {
+            Assert.Same(source, file.Text);
+            Assert.Equal(source.Path, file.Path);
+            Assert.True(file.IsValid);
+        });
     }
 
     [Theory]
@@ -102,7 +119,26 @@ public sealed class AvroCompilerTests
         Assert.True(project.IsValid);
         Assert.Equal(
             ["base.avdl", "left.avdl", "right.avdl", "top.avdl"],
-            project.GetContributingFiles([new SchemaName("Top")], TestContext.Current.CancellationToken).Select(file => file.File.SourceText.Path));
+            project.GetContributingFiles([new SchemaName("Top")], TestContext.Current.CancellationToken).Select(file => file.Path.OriginalPath));
+    }
+
+    [Fact]
+    public void Contributing_files_are_ordered_by_canonical_path()
+    {
+        var project = AvroCompiler.Compile(
+            [
+                new SourceText("root.avsc", """{"type":"record","name":"Root","fields":[{"name":"a","type":"A"},{"name":"b","type":"B"}]}"""),
+                new SourceText("z/../a.avsc", """{"type":"record","name":"A","fields":[]}"""),
+                new SourceText("b.avsc", """{"type":"record","name":"B","fields":[]}""")
+            ],
+            ParseOptions,
+            new AvroCompilationOptions(ReferenceResolution.Deferred),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(project.IsValid);
+        Assert.Equal(
+            ["z/../a.avsc", "b.avsc", "root.avsc"],
+            project.GetContributingFiles([new SchemaName("Root")], TestContext.Current.CancellationToken).Select(file => file.Path.OriginalPath));
     }
 
     [Fact]

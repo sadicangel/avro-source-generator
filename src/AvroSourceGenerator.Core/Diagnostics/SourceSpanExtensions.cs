@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
+using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Diagnostics;
@@ -10,6 +11,12 @@ public static class SourceSpanExtensions
     {
         public static SourceSpan FromSourceText(SourceText sourceText, int offset = 0, int length = -1) =>
             new SourceSpan(sourceText, offset, length == -1 ? sourceText.Length - offset : length);
+
+        public static SourceSpan FromSourceFile(ISourceFile sourceFile, int offset = 0, int length = -1)
+        {
+            ArgumentNullException.ThrowIfNull(sourceFile);
+            return SourceSpan.FromSourceText(sourceFile.Text, offset, length);
+        }
 
         public static SourceSpan FromException(SourceText sourceText, JsonException exception)
         {

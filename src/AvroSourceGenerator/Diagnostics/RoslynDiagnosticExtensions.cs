@@ -14,7 +14,7 @@ internal static class RoslynDiagnosticExtensions
 
     public static Location ToLocation(this SourceSpan span)
     {
-        if (span.IsNone || string.IsNullOrWhiteSpace(span.SourceText.Path)) return Location.None;
+        if (span.IsNone || span.SourceText.Path.IsEmpty) return Location.None;
         var text = span.SourceText;
         var startLine = text.GetLineIndex(span.Offset);
         var endLine = text.GetLineIndex(span.Offset + span.Length);

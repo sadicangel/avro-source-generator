@@ -7,7 +7,7 @@ namespace AvroSourceGenerator.Compiler;
 
 internal sealed class ImportResolver(
     ImmutableArray<BoundAvroFile> files,
-    IReadOnlyDictionary<string, int> fileIndexes,
+    IReadOnlyDictionary<SourcePath, int> fileIndexes,
     CancellationToken cancellationToken)
 {
     private readonly Dictionary<int, ImportResolution> _resolutions = [];
@@ -21,6 +21,16 @@ internal sealed class ImportResolver(
 
     public ImportResolution Resolve(int fileIndex) => Resolve(fileIndex, SourceSpan.None);
 
+    private readonly struct Cycle(int[] indices)
+    {
+        public IEnumerable<int> Indices => indices;
+
+        public string Key { get; } = string.Join(",", indices.OrderBy(static index => index));
+
+        public string GetPath(ImmutableArray<BoundAvroFile> files) =>
+            string.Join(" -> ", indices.Append(indices[0]).Select(index => files[index].Path.ToString()));
+    }
+
     private ImportResolution Resolve(int fileIndex, SourceSpan incomingImportSpan)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -29,35 +39,28 @@ internal sealed class ImportResolver(
 
         var file = files[fileIndex];
         if (file.File.Imports.IsEmpty)
-            return file.File.IsValid ? ImportResolution.Empty : ImportResolution.Invalid;
+            return file.IsValid ? ImportResolution.Empty : ImportResolution.Invalid;
 
         if (!_visiting.Add(fileIndex))
         {
             var cycleStart = _stack.IndexOf(fileIndex);
-            var cycle = _stack.Skip(cycleStart).ToArray();
-            var cycleKey = string.Join(
-                "\0",
-                cycle.Select(index => files[index].File.SourceText.Path)
-                    .OrderBy(static path => path, StringComparer.Ordinal));
-            if (_reportedCycles.Add(cycleKey))
+            var cycle = new Cycle(_stack.Skip(cycleStart).ToArray());
+            if (_reportedCycles.Add(cycle.Key))
             {
-                var displayPaths = cycle
-                    .Append(fileIndex)
-                    .Select(index => files[index].File.SourceText.Path);
                 _diagnostics.Add(
                     AvroDiagnostic.InvalidImport(
                         incomingImportSpan,
-                        $"Import cycle detected: {string.Join(" -> ", displayPaths)}."));
+                        $"Import cycle detected: {cycle.GetPath(files)}."));
             }
 
-            foreach (var cycleFileIndex in cycle)
+            foreach (var cycleFileIndex in cycle.Indices)
                 _cycleFiles.Add(cycleFileIndex);
 
             return ImportResolution.Invalid;
         }
 
         _stack.Add(fileIndex);
-        var isValid = file.File.IsValid;
+        var isValid = file.IsValid;
         var importedFileIndexes = new HashSet<int>();
         foreach (var import in file.File.Imports)
         {
@@ -71,7 +74,7 @@ internal sealed class ImportResolver(
                 continue;
             }
 
-            var importedPath = ImportPathResolver.Resolve(file.File.SourceText.Path, import.Path);
+            var importedPath = file.Path.Resolve(import.Path);
             if (!fileIndexes.TryGetValue(importedPath, out var importedFileIndex))
             {
                 isValid = false;
@@ -81,7 +84,7 @@ internal sealed class ImportResolver(
 
             var importedFile = files[importedFileIndex];
             // A failed parse is the actionable error; its missing target shape is secondary.
-            if (!importedFile.File.IsValid)
+            if (!importedFile.IsValid)
             {
                 isValid = false;
                 continue;
@@ -115,17 +118,20 @@ internal sealed class ImportResolver(
 
     private static bool IsCompatibleTarget(AvroImportKind kind, BoundAvroFile file)
     {
-        if (!file.File.IsValid)
+        if (!file.IsValid)
             return true;
+
+        if (!file.Path.TryGetSourceType(out var sourceType))
+            return false;
 
         return kind switch
         {
-            AvroImportKind.Idl => file.File.SourceText.Type is SourceType.Avdl,
+            AvroImportKind.Idl => sourceType is SourceType.Avdl,
             AvroImportKind.Protocol =>
-                file.File.SourceText.Type is SourceType.Avpr &&
+                sourceType is SourceType.Avpr &&
                 file.RootSchema is ProtocolSchema,
             AvroImportKind.Schema =>
-                file.File.SourceText.Type is SourceType.Avsc &&
+                sourceType is SourceType.Avsc &&
                 file.RootSchema is not ProtocolSchema,
             _ => false,
         };

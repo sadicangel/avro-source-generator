@@ -267,7 +267,7 @@ internal static class AvdlSchemaParser
 
         private Field Field(FieldDeclarationSyntax syntax, SchemaName containingSchemaName)
         {
-            var name = syntax.Name.FullName.ToValidName();
+            var name = new FieldName(syntax.Name.FullName);
             var defaultJson = syntax.DefaultValueClause?.JsonValue.ToOptionalJsonElement();
             var type = context.Type(syntax.Type, containingSchemaName.Namespace, defaultJson: defaultJson);
             type = context.ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var remarks);

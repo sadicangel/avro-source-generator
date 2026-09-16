@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace AvroSourceGenerator.Schemas;
 
 public sealed record class Field(
-    string Name,
+    FieldName Name,
     AvroSchema Type,
     AvroSchema UnderlyingType,
     string? Documentation,
@@ -24,8 +24,7 @@ public sealed record class Field(
     public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();
-        // TODO: Is it worth to store the schema name?
-        writer.WriteString(AvroJsonKeys.Name, Name.AsSpan(Name is ['@', ..] ? 1 : 0));
+        writer.WriteString(AvroJsonKeys.Name, Name.SchemaName);
         writer.WritePropertyName(AvroJsonKeys.Type);
         Type.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         if (Documentation is not null)

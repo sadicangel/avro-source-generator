@@ -202,7 +202,7 @@ internal static class AvscSchemaParser
 
         private Field Field(JsonElement field, SchemaName containingSchemaName)
         {
-            var name = field.GetRequiredString(AvroJsonKeys.Name).ToValidName();
+            var name = new FieldName(field.GetRequiredString(AvroJsonKeys.Name));
             var type = context.Schema(field.GetRequiredProperty(AvroJsonKeys.Type), containingSchemaName.Namespace);
             type = context.ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var remarks);
 

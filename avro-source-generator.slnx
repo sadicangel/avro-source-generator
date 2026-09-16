@@ -8,6 +8,7 @@
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
+    <File Path="AGENTS.md" />
     <File Path="AvroSourceGenerator.props" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />

@@ -83,7 +83,7 @@ internal sealed class ParserContext(AvroParseOptions options, CancellationToken 
 
     public AvroSchema ResolveFieldType(
         AvroSchema fieldType,
-        string fieldName,
+        FieldName fieldName,
         SchemaName containingSchemaName,
         out AvroSchema underlyingType,
         out string? remarks)

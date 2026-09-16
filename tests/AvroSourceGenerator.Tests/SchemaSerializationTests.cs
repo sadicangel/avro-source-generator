@@ -13,22 +13,28 @@ public sealed class SchemaSerializationTests
     {
         const string source = """
             {"type":"record","name":"Example","doc":"Olá 世界 😀","fields":[
-              {"name":"class","type":"string","default":"ação 😀"},
+              {"name":"class","type":"string","default":"acção 😀"},
               {"name":"ordinary","type":"int"}
             ]}
             """;
         var parsed = SchemaCompilerTestHelpers.ParseJson(source);
         var record = Assert.IsType<RecordSchema>(parsed.RootSchema);
-        Assert.Equal("@class", record.Fields[0].Name);
+        Assert.Equal("class", record.Fields[0].Name.SchemaName);
+        Assert.Equal("@class", record.Fields[0].Name.CSharpName);
 
-        var json = record.ToJsonString(parsed.Declarations.ToDictionary(schema => schema.SchemaName),
-            new JsonWriterOptions { Indented = indented, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+        var json = record.ToJsonString(
+            parsed.Declarations.ToDictionary(schema => schema.SchemaName),
+            new JsonWriterOptions
+            {
+                Indented = indented,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            });
 
         using var document = JsonDocument.Parse(json);
         Assert.Equal("Olá 世界 😀", document.RootElement.GetProperty("doc").GetString());
         var fields = document.RootElement.GetProperty("fields");
         Assert.Equal("class", fields[0].GetProperty("name").GetString());
-        Assert.Equal("ação 😀", fields[0].GetProperty("default").GetString());
+        Assert.Equal("acção 😀", fields[0].GetProperty("default").GetString());
         Assert.Equal("ordinary", fields[1].GetProperty("name").GetString());
         Assert.DoesNotContain('\0', json);
     }

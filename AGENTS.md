@@ -28,6 +28,7 @@ The solution uses the SDK selected by `global.json`. Source projects target `net
 - Imports resolve only among supplied sources and relative to the importing file. Do not add implicit filesystem reads.
 - Keep public API changes source-compatible when practical. Update API and regression coverage when public behavior changes.
 - Do not include agent or AI attribution in branches, commits, PR titles, or PR descriptions.
+- Do not prefix branches.
 
 ## Compiler safety
 

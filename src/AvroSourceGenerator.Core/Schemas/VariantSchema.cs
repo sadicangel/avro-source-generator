@@ -12,15 +12,29 @@ public sealed record class VariantSchema(
         GetDefaultDocumentation(DerivedSchemas),
         ImmutableSortedDictionary<string, JsonElement>.Empty)
 {
-    public VariantSchema(string fieldName, SchemaName containingSchemaName, ImmutableArray<AvroSchema> derivedSchemas)
+    public VariantSchema(FieldName fieldName, SchemaName containingSchemaName, ImmutableArray<AvroSchema> derivedSchemas)
         : this(GetSchemaName(containingSchemaName, fieldName), derivedSchemas) { }
 
-    internal static SchemaName GetSchemaName(SchemaName containingSchemaName, string fieldName)
+    internal static SchemaName GetSchemaName(SchemaName containingSchemaName, FieldName fieldName)
     {
-        char[] name = ['I', .. containingSchemaName.Name.AsSpan(), .. fieldName.AsSpan(), 'V', 'a', 'r', 'i', 'a', 'n', 't'];
-        name[containingSchemaName.Name.Length + 1] = char.ToUpperInvariant(fieldName[0]);
+        var length = 1 + containingSchemaName.Name.Length + fieldName.SchemaName.Length + 7;
+        var name = string.Create(
+            length,
+            (fieldName.SchemaName, containingSchemaName.Name),
+            static (span, state) =>
+            {
+                var (fieldName, containingSchemaName) = state;
+                span[0] = 'I';
+                span = span[1..];
+                containingSchemaName.AsSpan().CopyTo(span);
+                span = span[containingSchemaName.Length..];
+                fieldName.AsSpan().CopyTo(span);
+                span[0] = char.ToUpperInvariant(span[0]);
+                span = span[fieldName.Length..];
+                "Variant".AsSpan().CopyTo(span);
+            });
 
-        return new SchemaName(new string(name), containingSchemaName.Namespace);
+        return new SchemaName(name, containingSchemaName.Namespace);
     }
 
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace) { }

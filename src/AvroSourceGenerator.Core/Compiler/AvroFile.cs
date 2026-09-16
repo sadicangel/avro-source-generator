@@ -9,7 +9,7 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
-public sealed class AvroFile : IEquatable<AvroFile>
+public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
 {
     internal AvroFile(
         SourceText sourceText,
@@ -23,7 +23,7 @@ public sealed class AvroFile : IEquatable<AvroFile>
         ImmutableArray<AvroDiagnostic> diagnostics,
         AvroParseOptions parseOptions)
     {
-        SourceText = sourceText;
+        Text = sourceText;
         RootSchema = rootSchema;
         Declarations = declarations;
         DeclarationSpans = declarationSpans;
@@ -38,7 +38,9 @@ public sealed class AvroFile : IEquatable<AvroFile>
     internal ImmutableArray<SourceSpan> DeclarationSpans { get; }
     internal FrozenDictionary<SchemaName, ImmutableArray<SourceSpan>> ReferenceSpans { get; }
 
-    public SourceText SourceText { get; }
+    public SourceText Text { get; }
+
+    public SourcePath Path => Text.Path;
 
     public AvroSchema? RootSchema { get; }
 
@@ -60,20 +62,18 @@ public sealed class AvroFile : IEquatable<AvroFile>
     public bool Equals(AvroFile? other) =>
         ReferenceEquals(this, other) ||
         other is not null &&
-        SourceText.Equals(other.SourceText) &&
+        Text == other.Text &&
         ParseOptions == other.ParseOptions;
 
     public override bool Equals(object? obj) => obj is AvroFile other && Equals(other);
 
-    public override int GetHashCode() => HashCode.Combine(SourceText, ParseOptions);
+    public override int GetHashCode() => HashCode.Combine(Text, ParseOptions);
 
     public static AvroFile Parse(SourceText sourceText, AvroParseOptions parseOptions, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (!sourceText.Path.EndsWith(".avsc", StringComparison.OrdinalIgnoreCase)
-            && !sourceText.Path.EndsWith(".avpr", StringComparison.OrdinalIgnoreCase)
-            && !sourceText.Path.EndsWith(".avdl", StringComparison.OrdinalIgnoreCase))
+        if (!sourceText.Path.TryGetSourceType(out var sourceType))
             return Invalid(sourceText, AvroDiagnostic.InvalidSource(SourceSpan.FromSourceText(sourceText), "Unsupported Avro file type."), parseOptions);
 
         if (string.IsNullOrWhiteSpace(sourceText.Text))
@@ -85,16 +85,13 @@ public sealed class AvroFile : IEquatable<AvroFile>
                 parseOptions);
         }
 
-        return sourceText.Type switch
-        {
-            SourceType.Avsc or SourceType.Avpr => AvscSchemaParser.Parse(sourceText, parseOptions, cancellationToken),
-            SourceType.Avdl => AvdlSchemaParser.Parse(sourceText, parseOptions, cancellationToken),
-            _ => throw new InvalidOperationException("Unreachable: Unsupported Avro file type."),
-        };
+        return sourceType is SourceType.Avdl
+            ? AvdlSchemaParser.Parse(sourceText, parseOptions, cancellationToken)
+            : AvscSchemaParser.Parse(sourceText, parseOptions, cancellationToken);
     }
 
     internal static AvroFile Invalid(SourceText source, AvroDiagnostic diagnostic, AvroParseOptions parseOptions) =>
         Invalid(source, [diagnostic], parseOptions);
 
-    internal static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) => new AvroFile(sourceText, null, [], [], [], [], [], [], diagnostics, parseOptions);
+    internal static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) => new(sourceText, null, [], [], [], [], [], [], diagnostics, parseOptions);
 }

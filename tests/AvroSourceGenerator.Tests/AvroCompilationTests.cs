@@ -53,7 +53,7 @@ public sealed class AvroCompilationTests
         Assert.Contains(
             diagnostics,
             diagnostic =>
-                diagnostic.Code == AvroDiagnosticCode.MissingReferences && diagnostic.SourceSpan.SourceText.Path == "independent.avsc");
+                diagnostic.Code == AvroDiagnosticCode.MissingReferences && diagnostic.SourceSpan.SourceText.Path.OriginalPath == "independent.avsc");
     }
 
     [Fact]
@@ -414,6 +414,137 @@ public sealed class AvroCompilationTests
 
         Assert.Equal(["AVROSG1001"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
+    }
+
+    [Fact]
+    public void Strict_import_uses_canonical_windows_path_identity()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            (@"C:\Project\idl\consumer.avdl", """
+                namespace GraphTests;
+                import schema "../schemas/./common.avsc";
+                schema Consumer;
+                record Consumer { Common common; }
+                """),
+            ("C:/Project/schemas/common.avsc", Record("Common")));
+
+        Assert.Empty(compiled.Compilation.Diagnostics);
+        Assert.True(compiled.Compilation.IsValid);
+    }
+
+    [Fact]
+    public void Strict_import_uses_canonical_unix_path_identity()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("/project/idl/./consumer.avdl", """
+                namespace GraphTests;
+                import schema "../schemas\\common.avsc";
+                schema Consumer;
+                record Consumer { Common common; }
+                """),
+            ("/project/schemas/common.avsc", Record("Common")));
+
+        Assert.Empty(compiled.Compilation.Diagnostics);
+        Assert.True(compiled.Compilation.IsValid);
+    }
+
+    [Fact]
+    public void Import_lookup_uses_host_platform_case_behavior()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("/project/consumer.avdl", """
+                namespace GraphTests;
+                import schema "common.avsc";
+                schema Consumer;
+                record Consumer { Common common; }
+                """),
+            ("/project/Common.avsc", Record("Common")));
+
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Empty(compiled.Compilation.Diagnostics);
+            Assert.True(compiled.Compilation.IsValid);
+        }
+        else
+        {
+            var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);
+            Assert.Equal(AvroDiagnosticCode.InvalidImport, diagnostic.Code);
+        }
+    }
+
+    [Fact]
+    public void Canonical_duplicate_source_paths_are_invalid_and_preserve_display_paths()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Deferred,
+            DuplicateResolution.Error,
+            (@"schemas\.\common.avsc", Record("First")),
+            ("schemas/common.avsc", Record("Second")));
+
+        var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.InvalidSource, diagnostic.Code);
+        Assert.Equal("schemas/common.avsc", diagnostic.SourceSpan.SourceText.Path.OriginalPath);
+        Assert.Contains(@"schemas\.\common.avsc", diagnostic.GetMessage());
+        Assert.Contains("schemas/common.avsc", diagnostic.GetMessage());
+    }
+
+    [Fact]
+    public void Duplicate_source_paths_use_host_platform_case_behavior()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Deferred,
+            DuplicateResolution.Error,
+            (@"C:\Project\common.avsc", Record("First")),
+            ("c:/project/COMMON.avsc", Record("Second")));
+
+        if (OperatingSystem.IsWindows())
+            Assert.Equal(AvroDiagnosticCode.InvalidSource, Assert.Single(compiled.Compilation.Diagnostics).Code);
+        else
+            Assert.Empty(compiled.Compilation.Diagnostics);
+    }
+
+    [Fact]
+    public void Unix_rooted_source_paths_use_host_platform_case_behavior()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Deferred,
+            DuplicateResolution.Error,
+            ("/project/common.avsc", Record("First")),
+            ("/project/Common.avsc", Record("Second")));
+
+        if (OperatingSystem.IsWindows())
+            Assert.Equal(AvroDiagnosticCode.InvalidSource, Assert.Single(compiled.Compilation.Diagnostics).Code);
+        else
+            Assert.Empty(compiled.Compilation.Diagnostics);
+    }
+
+    [Fact]
+    public void Cycle_detection_uses_canonical_windows_path_identity()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            (@"C:\Project\a.avdl", """
+                import idl ".\\sub\\..\\B.avdl";
+                schema A;
+                record A { }
+                """),
+            ("C:/Project/B.avdl", """
+                import idl "./a.avdl";
+                schema B;
+                record B { }
+                """));
+
+        var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.InvalidImport, diagnostic.Code);
+        Assert.Contains(@"C:\Project\a.avdl", diagnostic.GetMessage());
+        Assert.Contains("C:/Project/B.avdl", diagnostic.GetMessage());
     }
 
     [Fact]

@@ -95,13 +95,22 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         foreach (var (fileIndex, file) in files.Index())
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var filePath = file.File.SourceText.Path;
-            schemaIndex.FileIndexes.TryAdd(filePath, fileIndex);
+            var filePath = file.Path;
+            if (!schemaIndex.FileIndexes.TryAdd(filePath, fileIndex))
+            {
+                var originalFile = files[schemaIndex.FileIndexes[filePath]];
+                schemaIndex.DuplicateFileIndexes.Add(fileIndex);
+                schemaIndex.Diagnostics.Add(
+                    AvroDiagnostic.InvalidSource(
+                        SourceSpan.FromSourceFile(file),
+                        $"Source path '{file.Path.OriginalPath}' duplicates '{originalFile.Path.OriginalPath}' after canonicalization."));
+                continue;
+            }
 
             localNames.Clear();
             foreach (var (declarationIndex, declaration) in file.Declarations.Index())
             {
-                var declarationSpan = GetDeclarationSpan(file.File, declarationIndex);
+                var declarationSpan = GetDeclarationSpan(file, declarationIndex);
                 var name = declaration.SchemaName;
                 if (!localNames.Add(name))
                 {
@@ -124,9 +133,9 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         return schemaIndex;
     }
 
-    private static SourceSpan GetDeclarationSpan(AvroFile file, int declarationIndex) =>
-        declarationIndex < file.DeclarationSpans.Length
-            ? file.DeclarationSpans[declarationIndex]
+    private static SourceSpan GetDeclarationSpan(BoundAvroFile file, int declarationIndex) =>
+        declarationIndex < file.File.DeclarationSpans.Length
+            ? file.File.DeclarationSpans[declarationIndex]
             : SourceSpan.None;
 
     private static ImmutableArray<AvroDiagnostic> ValidateReferences(
@@ -141,7 +150,7 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         {
             cancellationToken.ThrowIfCancellationRequested();
             // Invalid sources already carry primary diagnostics and have no linkable declarations.
-            if (!file.File.IsValid)
+            if (!file.IsValid || schemaIndex.DuplicateFileIndexes.Contains(fileIndex))
                 continue;
 
             var importResolution = ImportResolution.Empty;
@@ -163,7 +172,7 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
                     if (!schemaIndex.Owners.TryGetValue(reference, out var owner))
                         return true;
 
-                    // Since the reference was declared, and we're not using strict resolution, the reference is valid as long as it's declared anywhere.
+                    // We're not using strict resolution, the reference is valid as long as it's declared anywhere.
                     if (referenceResolution is not ReferenceResolution.Strict)
                         return false;
 
@@ -178,7 +187,7 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
                     AvroDiagnostic.MissingReferences(
                         missingReferences.SelectMany(name => file.File.ReferenceSpans.GetValueOrDefault(name, []))
                             .OrderBy(span => span.Offset)
-                            .DefaultIfEmpty(SourceSpan.FromSourceText(file.File.SourceText))
+                            .DefaultIfEmpty(SourceSpan.FromSourceFile(file))
                             .First(),
                         missingReferences));
         }
@@ -207,7 +216,7 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         .. GetDependencyClosure(roots, cancellationToken)
             .Select(name => _owners[name].File)
             .Distinct()
-            .OrderBy(static file => file.File.SourceText.Path, StringComparer.Ordinal)
+            .OrderBy(static file => file.Path)
     ];
 
     private HashSet<SchemaName> GetDependencyClosure(IEnumerable<SchemaName> roots, CancellationToken cancellationToken)
@@ -242,7 +251,9 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
 
         public Dictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies { get; } = [];
 
-        public Dictionary<string, int> FileIndexes { get; } = new(StringComparer.Ordinal);
+        public Dictionary<SourcePath, int> FileIndexes { get; } = [];
+
+        public HashSet<int> DuplicateFileIndexes { get; } = [];
 
         public ImmutableArray<AvroDiagnostic>.Builder Diagnostics { get; } =
             ImmutableArray.CreateBuilder<AvroDiagnostic>();

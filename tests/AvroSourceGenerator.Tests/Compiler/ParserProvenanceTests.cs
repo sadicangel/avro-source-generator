@@ -1,4 +1,4 @@
-using AvroSourceGenerator.Avdl;
+﻿using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Avdl.Syntax;
 using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Compiler;
@@ -87,7 +87,7 @@ public sealed class ParserProvenanceTests
     {
         var diagnostic = Assert.Single(Bind(("a.avdl", "schema R; record R {}"),
             ("b.avdl", "schema R; record R {}")).Diagnostics);
-        Assert.Equal("b.avdl", diagnostic.SourceSpan.SourceText.Path);
+        Assert.Equal("b.avdl", diagnostic.SourceSpan.SourceText.Path.OriginalPath);
         Assert.Equal("record R {}", diagnostic.SourceSpan.ToString());
     }
 
@@ -119,7 +119,7 @@ public sealed class ParserProvenanceTests
         var diagnostic = Assert.Single(Bind(
             ("a.avdl", "import idl \"b.avdl\"; schema A; record A {}"),
             ("b.avdl", "import idl \"a.avdl\"; schema B; record B {}")).Diagnostics);
-        Assert.Equal("b.avdl", diagnostic.SourceSpan.SourceText.Path);
+        Assert.Equal("b.avdl", diagnostic.SourceSpan.SourceText.Path.OriginalPath);
         Assert.Equal("\"a.avdl\"", diagnostic.SourceSpan.ToString());
         Assert.Contains("a.avdl -> b.avdl -> a.avdl", diagnostic.GetMessage());
     }

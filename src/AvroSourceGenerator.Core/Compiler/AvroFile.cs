@@ -87,8 +87,8 @@ public sealed class AvroFile : IEquatable<AvroFile>
 
         return sourceText.Type switch
         {
-            SourceType.Avsc or SourceType.Avpr => AvscSchemaParser.Parse(sourceText, parseOptions),
-            SourceType.Avdl => AvdlSchemaParser.Parse(sourceText, parseOptions),
+            SourceType.Avsc or SourceType.Avpr => AvscSchemaParser.Parse(sourceText, parseOptions, cancellationToken),
+            SourceType.Avdl => AvdlSchemaParser.Parse(sourceText, parseOptions, cancellationToken),
             _ => throw new InvalidOperationException("Unreachable: Unsupported Avro file type."),
         };
     }
@@ -96,6 +96,5 @@ public sealed class AvroFile : IEquatable<AvroFile>
     internal static AvroFile Invalid(SourceText source, AvroDiagnostic diagnostic, AvroParseOptions parseOptions) =>
         Invalid(source, [diagnostic], parseOptions);
 
-    internal static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) =>
-        new(sourceText, null, [], [], [], [], [], [], diagnostics, parseOptions);
+    internal static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) => new AvroFile(sourceText, null, [], [], [], [], [], [], diagnostics, parseOptions);
 }

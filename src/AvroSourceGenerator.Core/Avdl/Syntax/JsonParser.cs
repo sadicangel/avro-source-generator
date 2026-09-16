@@ -3,12 +3,14 @@ using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
 
-internal readonly ref struct JsonParser(SyntaxTokenStream stream)
+internal readonly ref struct JsonParser(SyntaxTokenStream stream, CancellationToken cancellationToken)
 {
-    public static JsonNode? Parse(SyntaxTokenStream stream) => new JsonParser(stream).ParseJson();
+    public static JsonNode? Parse(SyntaxTokenStream stream, CancellationToken cancellationToken) =>
+        new JsonParser(stream, cancellationToken).ParseJson();
 
     private JsonNode? ParseJson()
     {
+        cancellationToken.ThrowIfCancellationRequested();
         return stream.Current.SyntaxKind switch
         {
             SyntaxKind.NullKeyword => ParseNull(),
@@ -77,6 +79,7 @@ internal readonly ref struct JsonParser(SyntaxTokenStream stream)
         var array = new JsonArray();
         while (stream is { IsAtEnd: false, Current.SyntaxKind: not SyntaxKind.BracketCloseToken })
         {
+            cancellationToken.ThrowIfCancellationRequested();
             array.Add(ParseJson());
             if (stream.Current.SyntaxKind is not SyntaxKind.CommaToken)
                 break;
@@ -95,6 +98,7 @@ internal readonly ref struct JsonParser(SyntaxTokenStream stream)
         var @object = new JsonObject();
         while (stream is { IsAtEnd: false, Current.SyntaxKind: not SyntaxKind.BraceCloseToken })
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var propertyName = stream.Current.SyntaxKind is SyntaxKind.StringLiteralToken
                 ? stream.Match(SyntaxKind.StringLiteralToken)
                 : stream.Match(SyntaxKind.IdentifierToken);

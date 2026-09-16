@@ -117,14 +117,14 @@ file sealed class ObjectArrayOverride : AutoFakerOverride<object?[]?>
         context.Instance = (object?[])[context.Faker.Hacker.Noun()];
 }
 
-file sealed class DiagnosticArrayOverride : AutoFakerOverride<System.Collections.Immutable.ImmutableArray<global::AvroSourceGenerator.Diagnostics.AvroDiagnostic>>
+file sealed class DiagnosticArrayOverride : AutoFakerOverride<System.Collections.Immutable.ImmutableArray<Diagnostics.AvroDiagnostic>>
 {
     public override bool Preinitialize => false;
 
     public override void Generate(AutoFakerOverrideContext context) =>
         context.Instance = System.Collections.Immutable.ImmutableArray.Create(
-            new global::AvroSourceGenerator.Diagnostics.AvroDiagnostic(
-                global::AvroSourceGenerator.Diagnostics.AvroDiagnosticCode.InvalidSource,
-                global::AvroSourceGenerator.Text.SourceSpan.None,
+            new Diagnostics.AvroDiagnostic(
+                Diagnostics.AvroDiagnosticCode.InvalidSource,
+                Text.SourceSpan.None,
                 "invalid"));
 }

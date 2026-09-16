@@ -8,17 +8,18 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
 
-public sealed class Parser(SourceText sourceText)
+public sealed class Parser(SourceText sourceText, CancellationToken cancellationToken)
 {
-    private readonly SyntaxTokenStream _stream = new(sourceText);
+    private readonly SyntaxTokenStream _stream = new(sourceText, cancellationToken);
     private readonly List<IAnnotationSyntax> _annotations = [];
     private readonly List<DocumentationSyntax> _documentation = [];
     private readonly List<AvroDiagnostic> _diagnostics = [];
 
-    public static SyntaxTree Parse(SourceText sourceText) => new Parser(sourceText).Parse();
+    public static SyntaxTree Parse(SourceText sourceText, CancellationToken cancellationToken) => new Parser(sourceText, cancellationToken).Parse();
 
     public SyntaxTree Parse()
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var document = ParseDocument();
 
         return new SyntaxTree(sourceText, document, [.. _stream.Diagnostics.Concat(_diagnostics)]);
@@ -197,7 +198,7 @@ public sealed class Parser(SourceText sourceText)
     private JsonValueSyntax ParseJsonValue()
     {
         var index = _stream.Position;
-        var json = JsonParser.Parse(_stream);
+        var json = JsonParser.Parse(_stream, cancellationToken);
         var count = _stream.Position - index;
         return new JsonValueSyntax(new SyntaxList<SyntaxToken>([.. _stream.GetTokens(index, count)]), json);
     }

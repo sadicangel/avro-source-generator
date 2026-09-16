@@ -11,7 +11,7 @@ public sealed record class OrderAnnotationSyntax(
     public SyntaxKind SyntaxKind => SyntaxKind.OrderAnnotation;
 
     // TODO: We probably want to validate that only 'ascending', 'descending' and 'ignore' are allowed.
-    public string Order => field ??= JsonValue.JsonNode?.GetValue<string>() ?? "ignore";
+    public string Order => field ??= JsonValue.GetRequiredString("Order annotation value");
 
     public IEnumerable<ISyntaxNode> Children()
     {

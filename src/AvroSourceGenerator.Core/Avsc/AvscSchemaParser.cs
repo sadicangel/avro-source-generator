@@ -12,11 +12,12 @@ namespace AvroSourceGenerator.Avsc;
 
 internal static class AvscSchemaParser
 {
-    public static AvroFile Parse(SourceText source, AvroParseOptions options)
+    public static AvroFile Parse(SourceText source, AvroParseOptions options, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            return ParseCore(source, options);
+            return ParseCore(source, options, cancellationToken);
         }
         catch (JsonException ex)
         {
@@ -28,10 +29,12 @@ internal static class AvscSchemaParser
         }
     }
 
-    private static AvroFile ParseCore(SourceText source, AvroParseOptions options)
+    private static AvroFile ParseCore(SourceText source, AvroParseOptions options, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         using var schema = JsonDocument.Parse(source.Text);
-        var context = new ParserContext(options);
+        cancellationToken.ThrowIfCancellationRequested();
+        var context = new ParserContext(options, cancellationToken);
         var root = context.Schema(schema.RootElement, containingNamespace: null);
         if (!root.ContainsTopLevelSchema())
         {
@@ -45,6 +48,7 @@ internal static class AvscSchemaParser
     {
         private AvroSchema Schema(JsonElement schema, string? containingNamespace)
         {
+            context.ThrowIfCancellationRequested();
             return schema.ValueKind switch
             {
                 JsonValueKind.String => context.Named(schema.ToRequiredString().ToSchemaName(), containingNamespace),
@@ -190,7 +194,7 @@ internal static class AvscSchemaParser
         {
             var items = schema.GetRequiredArray(AvroJsonKeys.Fields, out var count);
             var fields = ImmutableArray.CreateBuilder<Field>(count);
-            foreach (var field in items)
+            foreach (var field in items.WithCancellation(context.CancellationToken))
                 fields.Add(context.Field(field, containingSchemaName));
 
             return fields.MoveToImmutable();
@@ -217,7 +221,7 @@ internal static class AvscSchemaParser
         private UnionSchema Union(JsonElement schema, string? containingNamespace)
         {
             var builder = ImmutableArray.CreateBuilder<AvroSchema>(schema.GetArrayLength());
-            foreach (var innerSchema in schema.EnumerateArray())
+            foreach (var innerSchema in schema.EnumerateArray().WithCancellation(context.CancellationToken))
                 builder.Add(context.Schema(innerSchema, containingNamespace));
             var schemas = builder.MoveToImmutable();
 
@@ -246,7 +250,7 @@ internal static class AvscSchemaParser
         private ImmutableArray<NamedSchema> ProtocolTypes(JsonElement.ArrayEnumerator schemas, int count, string? containingNamespace)
         {
             var types = ImmutableArray.CreateBuilder<NamedSchema>(count);
-            foreach (var type in schemas)
+            foreach (var type in schemas.WithCancellation(context.CancellationToken))
                 types.Add(context.NamedSchema(type, containingNamespace));
 
             return types.MoveToImmutable();
@@ -269,13 +273,14 @@ internal static class AvscSchemaParser
         private ImmutableArray<ProtocolMessage> ProtocolMessages(JsonElement.ObjectEnumerator messages, string? containingNamespace)
         {
             var protocolMessages = ImmutableArray.CreateBuilder<ProtocolMessage>();
-            foreach (var message in messages)
+            foreach (var message in messages.WithCancellation(context.CancellationToken))
                 protocolMessages.Add(context.Message(message, containingNamespace));
             return protocolMessages.DrainToImmutable();
         }
 
         private ProtocolMessage Message(JsonProperty message, string? containingNamespace)
         {
+            context.ThrowIfCancellationRequested();
             var methodName = message.Name.ToValidName();
             var documentation = message.Value.GetDocumentation();
             var requestParameters = context.ProtocolRequestParameters(message.Value, containingNamespace);
@@ -295,7 +300,7 @@ internal static class AvscSchemaParser
         {
             var parameters = schema.GetRequiredArray(AvroJsonKeys.Request, out var count);
             var fields = ImmutableArray.CreateBuilder<ProtocolRequestParameter>(count);
-            foreach (var parameter in parameters)
+            foreach (var parameter in parameters.WithCancellation(context.CancellationToken))
                 fields.Add(context.ProtocolRequestParameter(parameter, containingNamespace));
 
             return fields.MoveToImmutable();
@@ -331,7 +336,7 @@ internal static class AvscSchemaParser
             }
 
             var builder = ImmutableArray.CreateBuilder<AvroSchema>(count);
-            foreach (var error in errors.Value)
+            foreach (var error in errors.Value.WithCancellation(context.CancellationToken))
             {
                 builder.Add(context.Schema(error, containingNamespace));
             }

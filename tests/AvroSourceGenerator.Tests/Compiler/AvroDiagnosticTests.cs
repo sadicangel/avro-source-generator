@@ -1,7 +1,8 @@
-﻿using System.Text.Json;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Text;
+
 namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class AvroDiagnosticTests
@@ -56,10 +57,7 @@ public sealed class AvroDiagnosticTests
     public void Lines_belong_to_the_original_source()
     {
         var source = new SourceText("test.avsc", "é\r\n😀\n");
-        Assert.All(source.Lines, line =>
-        {
-            Assert.Same(source, line.SourceSpan.SourceText);
-        });
+        Assert.All(source.Lines, line => Assert.Same(source, line.SourceSpan.SourceText));
         Assert.Equal(source.Lines, source.Lines);
     }
 

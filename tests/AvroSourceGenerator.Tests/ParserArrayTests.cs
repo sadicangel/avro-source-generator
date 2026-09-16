@@ -1,5 +1,4 @@
-﻿using AvroSourceGenerator.Exceptions;
-using AvroSourceGenerator.Protocols;
+﻿using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Tests;

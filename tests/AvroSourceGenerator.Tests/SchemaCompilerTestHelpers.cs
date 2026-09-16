@@ -16,7 +16,8 @@ internal static class SchemaCompilerTestHelpers
         bool useNullableReferenceTypes = true) =>
         AvscSchemaParser.Parse(
             new SourceText("test.avsc", json),
-            new AvroParseOptions(generationTarget, useNullableReferenceTypes));
+            new AvroParseOptions(generationTarget, useNullableReferenceTypes),
+            TestContext.Current.CancellationToken);
 
     public static AvroFile ParseSource(
         string source,
@@ -24,7 +25,8 @@ internal static class SchemaCompilerTestHelpers
         bool useNullableReferenceTypes = true) =>
         AvdlSchemaParser.Parse(
             new SourceText("test.avdl", source),
-            new AvroParseOptions(generationTarget, useNullableReferenceTypes));
+            new AvroParseOptions(generationTarget, useNullableReferenceTypes),
+            TestContext.Current.CancellationToken);
 
     public static AvroCompilation Bind(
         ReferenceResolution referenceResolution,

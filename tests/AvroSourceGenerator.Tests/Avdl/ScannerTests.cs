@@ -6,7 +6,7 @@ namespace AvroSourceGenerator.Tests.Avdl;
 public sealed class ScannerTests
 {
     public static TheoryData<string, SyntaxKind> Punctuation =>
-        new TheoryData<string, SyntaxKind>
+        new()
         {
             { "{", SyntaxKind.BraceOpenToken },
             { "}", SyntaxKind.BraceCloseToken },
@@ -26,7 +26,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string, SyntaxKind> Keywords =>
-        new TheoryData<string, SyntaxKind>
+        new()
         {
             { "true", SyntaxKind.TrueKeyword },
             { "false", SyntaxKind.FalseKeyword },
@@ -63,7 +63,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string, object> IntegerLiterals =>
-        new TheoryData<string, object>
+        new()
         {
             { "0", 0 },
             { "42", 42 },
@@ -72,7 +72,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string, double> FloatLiterals =>
-        new TheoryData<string, double>
+        new()
         {
             { "0.5", 0.5D },
             { ".5", 0.5D },
@@ -83,7 +83,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string> InvalidInputs =>
-        new TheoryData<string>
+        new()
         {
             "$",
             "\"unterminated",
@@ -94,7 +94,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string, AvroDiagnosticCode, int, int> InvalidInputDiagnostics =>
-        new TheoryData<string, AvroDiagnosticCode, int, int>
+        new()
         {
             { "$", AvroDiagnosticCode.InvalidCharacter, 0, 1 },
             { "\"bad\\q\"", AvroDiagnosticCode.InvalidEscapeSequence, 0, 7 },
@@ -318,5 +318,5 @@ public sealed class ScannerTests
         Assert.Equal(text.Length, diagnostic.SourceSpan.Length);
     }
 
-    private static Scanner CreateScanner(string text) => new Scanner(AvdlTestHelpers.SourceText(text));
+    private static Scanner CreateScanner(string text) => new(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
 }

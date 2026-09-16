@@ -12,7 +12,9 @@ public sealed record class AliasesAnnotationSyntax(
 {
     public SyntaxKind SyntaxKind => SyntaxKind.AliasesAnnotation;
 
-    public ImmutableArray<string> Aliases => !field.IsDefault ? field : field = JsonValue.JsonNode?.AsArray().GetValues<string>().ToImmutableArray() ?? [];
+    public ImmutableArray<string> Aliases => !field.IsDefault
+        ? field
+        : field = JsonValue.GetRequiredStringArray("Aliases annotation value");
 
     public IEnumerable<ISyntaxNode> Children()
     {

@@ -10,14 +10,17 @@ internal sealed class SyntaxTokenStream
     // We can probably make this lazy and only scan tokens as we need them instead of scanning the entire file upfront.
     // This would be more efficient if we want to fail fast on syntax errors and avoid scanning large files.
     private readonly SourceText _sourceText;
+    private readonly CancellationToken _cancellationToken;
     private readonly ImmutableArray<SyntaxToken> _tokens;
     private readonly List<AvroDiagnostic> _diagnostics = [];
     private bool _lastTokenWasSynthetic = false;
 
-    public SyntaxTokenStream(SourceText sourceText)
+    public SyntaxTokenStream(SourceText sourceText, CancellationToken cancellationToken)
     {
         _sourceText = sourceText;
-        var scanner = new Scanner(sourceText);
+        _cancellationToken = cancellationToken;
+        cancellationToken.ThrowIfCancellationRequested();
+        var scanner = new Scanner(sourceText, cancellationToken);
         _tokens = [.. scanner.ScanAllTokens()];
         _diagnostics.AddRange(scanner.Diagnostics);
     }
@@ -34,6 +37,7 @@ internal sealed class SyntaxTokenStream
 
     public SyntaxToken Match(SyntaxKind syntaxKind)
     {
+        _cancellationToken.ThrowIfCancellationRequested();
         // Skip documentation trivia if we're not trying to match it. This allows us to ignore documentation comments in 
         // places where they are not expected without causing syntax errors, while still allowing us to capture them when we do want them.1
         while (syntaxKind != SyntaxKind.DocumentationTrivia && Current.SyntaxKind == SyntaxKind.DocumentationTrivia)
@@ -97,6 +101,7 @@ internal sealed class SyntaxTokenStream
 
     public SyntaxToken Next()
     {
+        _cancellationToken.ThrowIfCancellationRequested();
         var token = Position < _tokens.Length ? _tokens[Position++] : _tokens[^1];
         _lastTokenWasSynthetic = false;
         return token;
@@ -107,6 +112,7 @@ internal sealed class SyntaxTokenStream
         if (count == -1) count = _tokens.Length - index;
         for (var i = index; i < index + count && i < _tokens.Length; i++)
         {
+            _cancellationToken.ThrowIfCancellationRequested();
             yield return _tokens[i];
         }
     }

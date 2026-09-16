@@ -10,7 +10,7 @@ public sealed record class NamespaceAnnotationSyntax(
 {
     public SyntaxKind SyntaxKind => SyntaxKind.NamespaceAnnotation;
 
-    public string Namespace => field ??= JsonValue.JsonNode?.AsValue().GetValue<string>() ?? string.Empty;
+    public string Namespace => field ??= JsonValue.GetRequiredString("Namespace annotation value");
 
     public IEnumerable<ISyntaxNode> Children()
     {

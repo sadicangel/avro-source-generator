@@ -5,8 +5,10 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
 
-public sealed class Scanner(SourceText sourceText)
+public sealed class Scanner(SourceText sourceText, CancellationToken cancellationToken)
 {
+    private const int CancellationCheckInterval = 1024;
+
     private readonly List<SyntaxToken> _badTokens = [];
     private readonly List<AvroDiagnostic> _diagnostics = [];
     private int _position = 0;
@@ -22,6 +24,7 @@ public sealed class Scanner(SourceText sourceText)
     {
         while (true)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var token = Scan();
             yield return token;
             if (token.SyntaxKind == SyntaxKind.EofToken)
@@ -31,9 +34,11 @@ public sealed class Scanner(SourceText sourceText)
 
     public SyntaxToken Scan()
     {
+        cancellationToken.ThrowIfCancellationRequested();
         while (true)
         {
-            _position += SyntaxTriviaScanner.Skip(sourceText, _position, _diagnostics);
+            cancellationToken.ThrowIfCancellationRequested();
+            _position += SyntaxTriviaScanner.Skip(sourceText, _position, _diagnostics, cancellationToken);
             var syntaxToken = _previousSyntaxToken = ScanAny();
             _position += syntaxToken.SourceSpan.Length;
 
@@ -136,6 +141,9 @@ public sealed class Scanner(SourceText sourceText)
         var length = 0;
         while (true)
         {
+            if (length % CancellationCheckInterval == 0)
+                cancellationToken.ThrowIfCancellationRequested();
+
             switch (CurrentSpan[length..])
             {
                 case [] or ['\0', ..]:
@@ -163,6 +171,9 @@ public sealed class Scanner(SourceText sourceText)
         var length = 1;
         while (true)
         {
+            if (length % CancellationCheckInterval == 0)
+                cancellationToken.ThrowIfCancellationRequested();
+
             char escaped;
             var escapeWidth = 2;
             switch (CurrentSpan[length..])
@@ -244,6 +255,8 @@ public sealed class Scanner(SourceText sourceText)
         var wholeDigitsStart = length;
         while (length < CurrentSpan.Length && IsAsciiDigit(CurrentSpan[length]))
         {
+            if (length % CancellationCheckInterval == 0)
+                cancellationToken.ThrowIfCancellationRequested();
             ++length;
         }
 
@@ -255,6 +268,8 @@ public sealed class Scanner(SourceText sourceText)
             var fractionDigitsStart = length;
             while (length < CurrentSpan.Length && IsAsciiDigit(CurrentSpan[length]))
             {
+                if (length % CancellationCheckInterval == 0)
+                    cancellationToken.ThrowIfCancellationRequested();
                 ++length;
             }
 
@@ -275,6 +290,8 @@ public sealed class Scanner(SourceText sourceText)
             var exponentDigitsStart = length;
             while (length < CurrentSpan.Length && IsAsciiDigit(CurrentSpan[length]))
             {
+                if (length % CancellationCheckInterval == 0)
+                    cancellationToken.ThrowIfCancellationRequested();
                 ++length;
             }
 
@@ -324,6 +341,9 @@ public sealed class Scanner(SourceText sourceText)
         var length = Math.Min(start, CurrentSpan.Length);
         while (length < CurrentSpan.Length)
         {
+            if (length % CancellationCheckInterval == 0)
+                cancellationToken.ThrowIfCancellationRequested();
+
             switch (CurrentSpan[length])
             {
                 case '"':
@@ -387,11 +407,13 @@ public sealed class Scanner(SourceText sourceText)
         return new SyntaxToken(kind, new SourceSpan(sourceText, start, length), value);
     }
 
-    private static int GetIdentifierLength(ReadOnlySpan<char> chars, bool allowDash)
+    private int GetIdentifierLength(ReadOnlySpan<char> chars, bool allowDash)
     {
         var length = 0;
         while (length < chars.Length && IsValid(chars[length], allowDash))
         {
+            if (length % CancellationCheckInterval == 0)
+                cancellationToken.ThrowIfCancellationRequested();
             length++;
         }
 

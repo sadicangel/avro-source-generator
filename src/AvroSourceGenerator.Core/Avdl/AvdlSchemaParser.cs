@@ -17,15 +17,16 @@ namespace AvroSourceGenerator.Avdl;
 
 internal static class AvdlSchemaParser
 {
-    public static AvroFile Parse(SourceText source, AvroParseOptions options)
+    public static AvroFile Parse(SourceText source, AvroParseOptions options, CancellationToken cancellationToken)
     {
-        var syntaxTree = Parser.Parse(source);
+        cancellationToken.ThrowIfCancellationRequested();
+        var syntaxTree = Parser.Parse(source, cancellationToken);
         if (!syntaxTree.Diagnostics.IsEmpty)
             return AvroFile.Invalid(source, syntaxTree.Diagnostics, options);
 
         try
         {
-            return ParseCore(syntaxTree, options);
+            return ParseCore(syntaxTree, options, cancellationToken);
         }
         catch (InvalidSourceException ex)
         {
@@ -38,27 +39,20 @@ internal static class AvdlSchemaParser
                 AvroDiagnostic.InvalidSchema(SourceSpan.FromSourceText(source), ex.Message),
                 options);
         }
-        catch (InvalidOperationException ex)
-        {
-            // Some AVDL value conversions still use framework exceptions. Keep the
-            // established diagnostic until those validations are made explicit.
-            return AvroFile.Invalid(
-                source,
-                AvroDiagnostic.UnknownError(SourceSpan.FromSourceText(source), ex.Message),
-                options);
-        }
     }
 
-    private static AvroFile ParseCore(SyntaxTree syntaxTree, AvroParseOptions options)
+    private static AvroFile ParseCore(SyntaxTree syntaxTree, AvroParseOptions options, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var source = syntaxTree.SourceText;
-        var parser = new ParserContext(options);
+        var parser = new ParserContext(options, cancellationToken);
 
         var imports = syntaxTree.Document.ImportDirectives
             .Concat(
                 syntaxTree.Document.Declarations
                     .OfType<ProtocolDeclarationSyntax>()
                     .SelectMany(static protocol => protocol.Imports))
+            .WithCancellation(cancellationToken)
             .Select(static import => new AvroImport(
                 import.ImportTypeKeyword.SyntaxKind switch
                 {
@@ -86,6 +80,7 @@ internal static class AvdlSchemaParser
     {
         private AvroSchema Document(SyntaxTree syntaxTree)
         {
+            context.ThrowIfCancellationRequested();
             var document = syntaxTree.Document;
             var containingNamespace = document.NamespaceDirective?.NamespaceName.FullName;
             var mainSchema = document.SchemaDirective?.MainSchemaType;
@@ -100,7 +95,7 @@ internal static class AvdlSchemaParser
                 return context.Protocol(protocol, containingNamespace);
             }
 
-            foreach (var declaration in document.Declarations)
+            foreach (var declaration in document.Declarations.WithCancellation(context.CancellationToken))
             {
                 if (declaration is not ISchemaDeclarationSyntax schemaDeclaration)
                 {
@@ -119,6 +114,7 @@ internal static class AvdlSchemaParser
             ImmutableSortedDictionary<string, JsonElement>? properties = null,
             JsonElement? defaultJson = null)
         {
+            context.ThrowIfCancellationRequested();
             properties ??= ImmutableSortedDictionary<string, JsonElement>.Empty;
 
             return syntax switch
@@ -149,7 +145,9 @@ internal static class AvdlSchemaParser
 
         private AvroSchema Annotated(AnnotatedTypeSyntax syntax, string? containingNamespace, JsonElement? defaultJson)
         {
-            var logicalTypeName = syntax.Annotations.OfType<LogicalTypeAnnotationSyntax>().LastOrDefault()?.LogicalTypeName;
+            var logicalTypeName = syntax.Annotations.OfType<LogicalTypeAnnotationSyntax>().LastOrDefault() is { } annotation
+                ? annotation.JsonValue.GetRequiredString("Logical type annotation value")
+                : null;
             var properties = syntax.Annotations.GetProperties(ReservedSchemaProperties.IsReserved);
             var underlyingSchema = context.Type(syntax.Type, containingNamespace, properties, defaultJson);
             return logicalTypeName is not null
@@ -195,7 +193,7 @@ internal static class AvdlSchemaParser
                 var documentation = syntax.GetDocumentation();
                 var aliases = syntax.GetAliases();
                 var symbols = syntax.Symbols.Select(s => s.FullName).ToImmutableArray();
-                var @default = syntax.DefaultValue?.JsonValue.ToOptionalString();
+                var @default = syntax.DefaultValue?.JsonValue.ToOptionalString("Enum default value");
                 var properties = syntax.GetSchemaProperties();
 
                 var enumSchema = new EnumSchema(schemaName, documentation, aliases, symbols, @default, properties);
@@ -262,7 +260,7 @@ internal static class AvdlSchemaParser
         private ImmutableArray<Field> Fields(SyntaxList<FieldDeclarationSyntax> syntaxList, SchemaName containingSchemaName)
         {
             var fields = ImmutableArray.CreateBuilder<Field>(syntaxList.Count);
-            foreach (var syntax in syntaxList)
+            foreach (var syntax in syntaxList.WithCancellation(context.CancellationToken))
                 fields.Add(context.Field(syntax, containingSchemaName));
             return fields.MoveToImmutable();
         }
@@ -277,7 +275,9 @@ internal static class AvdlSchemaParser
             var documentation = syntax.GetDocumentation();
             var aliases = syntax.GetAliases();
             var @default = type.GetValue(defaultJson);
-            var order = syntax.Annotations.OfType<OrderAnnotationSyntax>().LastOrDefault()?.Order;
+            var order = syntax.Annotations.OfType<OrderAnnotationSyntax>().LastOrDefault() is { } orderAnnotation
+                ? orderAnnotation.JsonValue.GetRequiredString("Order annotation value")
+                : null;
             var properties = syntax.GetSchemaProperties();
 
             return new Field(name, type, underlyingType, documentation, aliases, defaultJson, @default, order, properties, remarks);
@@ -295,7 +295,7 @@ internal static class AvdlSchemaParser
         private UnionSchema Union(UnionTypeSyntax syntax, string? containingNamespace)
         {
             var builder = ImmutableArray.CreateBuilder<AvroSchema>(syntax.Types.Count);
-            foreach (var typeSyntax in syntax.Types)
+            foreach (var typeSyntax in syntax.Types.WithCancellation(context.CancellationToken))
                 builder.Add(context.Type(typeSyntax, containingNamespace));
             var schemas = builder.MoveToImmutable();
 
@@ -354,7 +354,7 @@ internal static class AvdlSchemaParser
         private ImmutableArray<NamedSchema> ProtocolTypes(SyntaxList<ISchemaDeclarationSyntax> syntaxList, string? containingNamespace)
         {
             var types = ImmutableArray.CreateBuilder<NamedSchema>(syntaxList.Count);
-            foreach (var type in syntaxList)
+            foreach (var type in syntaxList.WithCancellation(context.CancellationToken))
                 types.Add(context.Schema(type, containingNamespace));
 
             return types.MoveToImmutable();
@@ -363,7 +363,7 @@ internal static class AvdlSchemaParser
         private ImmutableArray<ProtocolMessage> ProtocolMessages(SyntaxList<MessageDeclarationSyntax> syntaxList, string? containingNamespace)
         {
             var protocolMessages = ImmutableArray.CreateBuilder<ProtocolMessage>(syntaxList.Count);
-            foreach (var syntax in syntaxList)
+            foreach (var syntax in syntaxList.WithCancellation(context.CancellationToken))
                 protocolMessages.Add(context.Message(syntax, containingNamespace));
             return protocolMessages.MoveToImmutable();
         }
@@ -387,7 +387,7 @@ internal static class AvdlSchemaParser
         private ImmutableArray<ProtocolRequestParameter> ProtocolRequestParameters(SeparatedSyntaxList<ParameterDeclarationSyntax> syntaxList, string? containingNamespace)
         {
             var fields = ImmutableArray.CreateBuilder<ProtocolRequestParameter>(syntaxList.Count);
-            foreach (var syntax in syntaxList)
+            foreach (var syntax in syntaxList.WithCancellation(context.CancellationToken))
                 fields.Add(context.ProtocolRequestParameter(syntax, containingNamespace));
 
             return fields.MoveToImmutable();
@@ -421,7 +421,7 @@ internal static class AvdlSchemaParser
             }
 
             var builder = ImmutableArray.CreateBuilder<AvroSchema>(syntax.Errors.Count);
-            foreach (var errorSyntax in syntax.Errors)
+            foreach (var errorSyntax in syntax.Errors.WithCancellation(context.CancellationToken))
             {
                 // TODO: Do we need to validate that this is an error schema?
                 builder.Add(context.Type(errorSyntax, containingNamespace));
@@ -430,5 +430,4 @@ internal static class AvdlSchemaParser
             return builder.MoveToImmutable();
         }
     }
-
 }

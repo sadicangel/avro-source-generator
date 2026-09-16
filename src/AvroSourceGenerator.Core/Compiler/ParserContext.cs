@@ -1,12 +1,13 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
 using AvroSourceGenerator.Exceptions;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
-internal sealed class ParserContext(AvroParseOptions options)
+internal sealed class ParserContext(AvroParseOptions options, CancellationToken cancellationToken)
 {
     private readonly List<TopLevelSchema> _declarations = [];
     private readonly Dictionary<SchemaName, int> _declarationIndexes = [];
@@ -20,8 +21,13 @@ internal sealed class ParserContext(AvroParseOptions options)
 
     public AvroParseOptions Options { get; } = options;
 
+    public CancellationToken CancellationToken { get; } = cancellationToken;
+
+    public void ThrowIfCancellationRequested() => CancellationToken.ThrowIfCancellationRequested();
+
     public void Declare(TopLevelSchema schema, SourceSpan sourceSpan)
     {
+        CancellationToken.ThrowIfCancellationRequested();
         _declarationSpans.Add(sourceSpan);
         _declarationIndexes[schema.SchemaName] = _declarations.Count;
         _declarations.Add(schema);
@@ -42,6 +48,7 @@ internal sealed class ParserContext(AvroParseOptions options)
 
     public AvroSchema Reference(SchemaName schemaName, string? containingNamespace, SourceSpan sourceSpan)
     {
+        CancellationToken.ThrowIfCancellationRequested();
         switch (schemaName.FullName)
         {
             case AvroTypeNames.Null: return AvroSchema.Object;
@@ -81,6 +88,7 @@ internal sealed class ParserContext(AvroParseOptions options)
         out AvroSchema underlyingType,
         out string? remarks)
     {
+        CancellationToken.ThrowIfCancellationRequested();
         underlyingType = fieldType;
         remarks = null;
 
@@ -118,19 +126,23 @@ internal sealed class ParserContext(AvroParseOptions options)
 
     public RecursionScope EnterRecursionScope(SchemaName schemaName) => new(_recursionStack, schemaName);
 
-    public AvroFile Complete(SourceText sourceText, AvroSchema root, ImmutableArray<AvroImport> imports) => new(
-        sourceText,
-        root,
-        [.. _declarations],
-        [.. _declarationSpans],
-        [.. _references.OrderBy(static reference => reference.FullName, StringComparer.Ordinal)],
-        _referenceSpans.ToFrozenDictionary(
-            pair => pair.Key,
-            pair => pair.Value.OrderBy(span => span.Offset).ToImmutableArray()),
-        GetDependencies(),
-        imports,
-        [],
-        Options);
+    public AvroFile Complete(SourceText sourceText, AvroSchema root, ImmutableArray<AvroImport> imports)
+    {
+        CancellationToken.ThrowIfCancellationRequested();
+        return new AvroFile(
+            sourceText,
+            root,
+            [.. _declarations],
+            [.. _declarationSpans],
+            [.. _references.WithCancellation(CancellationToken).OrderBy(static reference => reference.FullName, StringComparer.Ordinal)],
+            _referenceSpans.WithCancellation(CancellationToken).ToFrozenDictionary(
+                pair => pair.Key,
+                pair => pair.Value.WithCancellation(CancellationToken).OrderBy(span => span.Offset).ToImmutableArray()),
+            GetDependencies(),
+            imports,
+            [],
+            Options);
+    }
 
     private void AddDependency(SchemaName schema, SchemaName dependsOn)
     {
@@ -142,11 +154,11 @@ internal sealed class ParserContext(AvroParseOptions options)
     private FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> GetDependencies()
     {
         var dependencies = new Dictionary<SchemaName, ImmutableArray<SchemaName>>(_dependencies.Count);
-        foreach (var dependency in _dependencies)
+        foreach (var dependency in _dependencies.WithCancellation(CancellationToken))
         {
             dependencies.Add(
                 dependency.Key,
-                [.. dependency.Value.OrderBy(static name => name.FullName, StringComparer.Ordinal)]);
+                [.. dependency.Value.WithCancellation(CancellationToken).OrderBy(static name => name.FullName, StringComparer.Ordinal)]);
         }
         return dependencies.ToFrozenDictionary();
     }
@@ -157,11 +169,13 @@ internal sealed class ParserContext(AvroParseOptions options)
     {
         for (var schemaIndex = 0; schemaIndex < schemas.Length; schemaIndex++)
         {
+            CancellationToken.ThrowIfCancellationRequested();
             if (ReferenceEquals(schemas[schemaIndex], replacements[schemaIndex]))
                 continue;
 
             for (var declarationIndex = 0; declarationIndex < _declarations.Count; declarationIndex++)
             {
+                CancellationToken.ThrowIfCancellationRequested();
                 if (ReferenceEquals(_declarations[declarationIndex], schemas[schemaIndex]))
                 {
                     _declarations[declarationIndex] = (TopLevelSchema)replacements[schemaIndex];

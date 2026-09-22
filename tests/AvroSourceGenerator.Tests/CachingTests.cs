@@ -8,6 +8,32 @@ namespace AvroSourceGenerator.Tests;
 public sealed class CachingTests
 {
     [Fact]
+    public void Avdl_diagnostics_are_cached_and_refresh_after_an_edit()
+    {
+        var files = ImmutableArray.Create(ProjectFile.Source("schema F; fixed F(0); fixed G(0);", "schemas/invalid.avdl"));
+        var input = GeneratorInput.Create(files, [], new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 });
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var initial = driver.GetRunResult();
+        var diagnostics = initial.Diagnostics.Where(diagnostic => diagnostic.Id == "AVROSG4005").ToArray();
+        Assert.Equal(2, diagnostics.Length);
+        Assert.All(initial.Results, result => Assert.Null(result.Exception));
+
+        driver = driver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var cached = driver.GetRunResult();
+        Assert.Equal(diagnostics, cached.Diagnostics.Where(diagnostic => diagnostic.Id == "AVROSG4005"));
+        var tracked = StepTracking.GetTrackedSteps(cached);
+        Assert.All(tracked["AvroFile"].SelectMany(step => step.Outputs), output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
+
+        driver = driver.ReplaceAdditionalText(input.AdditionalTexts[0], new ChangedAdditionalText(input.AdditionalTexts[0].Path, "schema F; fixed F(1); fixed G(0);"))
+            .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var changed = driver.GetRunResult();
+        var remaining = Assert.Single(changed.Diagnostics, diagnostic => diagnostic.Id == "AVROSG4005");
+        Assert.Equal(diagnostics[1].Location.SourceSpan, remaining.Location.SourceSpan);
+        Assert.Equal(1, CountModified(StepTracking.GetTrackedSteps(changed), "AvroFile"));
+        Assert.All(changed.Results, result => Assert.Null(result.Exception));
+    }
+
+    [Fact]
     public void Access_modifier_change_only_invalidates_rendering()
     {
         var files = ImmutableArray.Create(ProjectFile.Schema(Record("Shared", "")));

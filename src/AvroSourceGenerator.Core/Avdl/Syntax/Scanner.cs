@@ -313,7 +313,7 @@ public sealed class Scanner(SourceText sourceText, CancellationToken cancellatio
         if (isFloat)
         {
             syntaxKind = SyntaxKind.FloatLiteralToken;
-            if (!double.TryParse(CurrentSpan[..length].ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var @float))
+            if (!double.TryParse(CurrentSpan[..length].ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var @float) || double.IsInfinity(@float) || double.IsNaN(@float))
             {
                 var sourceSpan = new SourceSpan(sourceText, _position, length);
                 return CreateInvalidToken(sourceSpan, AvroDiagnostic.InvalidNumber(sourceSpan));

@@ -105,7 +105,7 @@ internal readonly ref struct JsonParser(SyntaxTokenStream stream, CancellationTo
             _ = stream.Match(SyntaxKind.ColonToken);
             var propertyValue = ParseJson();
 
-            @object.Add((string?)propertyName.Value ?? propertyName.ValueText, propertyValue);
+            @object[(string?)propertyName.Value ?? propertyName.ValueText] = propertyValue;
             if (stream.Current.SyntaxKind is not SyntaxKind.CommaToken)
                 break;
 

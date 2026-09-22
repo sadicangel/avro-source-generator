@@ -126,7 +126,7 @@ public sealed class ParserTests
         Assert.Equal("Kind", enumDeclaration.Name.Identifier.SourceSpan.ToString());
         Assert.Equal(" Kind doc ", Assert.Single(enumDeclaration.Documentation).DocumentationTrivia.SourceSpan.ToString());
         var aliases = Assert.IsType<AliasesAnnotationSyntax>(Assert.Single(enumDeclaration.Annotations));
-        Assert.Equal(["OldKind", "OlderKind"], aliases.Aliases);
+        Assert.Equal(["OldKind", "OlderKind"], aliases.JsonValue.JsonNode!.AsArray().Select(static value => value!.GetValue<string>()));
         Assert.Equal(2, Assert.IsType<JsonArray>(aliases.JsonValue.JsonNode).Count);
         Assert.Equal(2, enumDeclaration.Symbols.Count);
         Assert.Equal("A", enumDeclaration.DefaultValue!.JsonValue.JsonNode?.GetValue<string>());
@@ -147,7 +147,7 @@ public sealed class ParserTests
         Assert.Equal(SyntaxKind.StringType, nameField.Type.SyntaxKind);
         Assert.Equal("name", nameField.Name.Identifier.SourceSpan.ToString());
         var order = Assert.IsType<OrderAnnotationSyntax>(Assert.Single(nameField.Annotations));
-        Assert.Equal("ignore", order.Order);
+        Assert.Equal("ignore", order.JsonValue.JsonNode!.GetValue<string>());
         Assert.Equal("Ada", nameField.DefaultValueClause!.JsonValue.JsonNode?.GetValue<string>());
 
         var resultCodeField = recordDeclaration.Fields[1];
@@ -192,7 +192,7 @@ public sealed class ParserTests
         var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(unit.Declarations));
         Assert.Equal("Service", protocol.Name.Identifier.SourceSpan.ToString());
         var namespaceAnnotation = Assert.IsType<NamespaceAnnotationSyntax>(Assert.Single(protocol.Annotations));
-        Assert.Equal("example", namespaceAnnotation.Namespace);
+        Assert.Equal("example", namespaceAnnotation.JsonValue.JsonNode!.GetValue<string>());
         Assert.Empty(protocol.Imports);
         Assert.Equal(4, protocol.Types.Count);
         Assert.Equal(2, protocol.Messages.Count);
@@ -274,7 +274,6 @@ public sealed class ParserTests
         var idType = Assert.IsType<AnnotatedTypeSyntax>(id.Type);
         var uuid = Assert.IsType<LogicalTypeAnnotationSyntax>(Assert.Single(idType.Annotations));
         Assert.Equal("logicalType", uuid.AnnotationName.FullName);
-        Assert.Equal("uuid", uuid.LogicalTypeName);
         Assert.Equal("uuid", uuid.JsonValue.JsonNode!.GetValue<string>());
         Assert.Equal(SyntaxKind.StringType, idType.Type.SyntaxKind);
 
@@ -282,7 +281,7 @@ public sealed class ParserTests
         Assert.Empty(createdAt.Annotations);
         var createdAtType = Assert.IsType<AnnotatedTypeSyntax>(createdAt.Type);
         var timestampMillis = Assert.IsType<LogicalTypeAnnotationSyntax>(Assert.Single(createdAtType.Annotations));
-        Assert.Equal("timestamp-millis", timestampMillis.LogicalTypeName);
+        Assert.Equal("timestamp-millis", timestampMillis.JsonValue.JsonNode!.GetValue<string>());
         Assert.Equal(SyntaxKind.LongType, createdAtType.Type.SyntaxKind);
     }
 

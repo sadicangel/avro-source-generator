@@ -59,8 +59,10 @@ public sealed class OptionalPropertyTests
         Assert.Equal("2", protocol.Properties["custom"].GetRawText());
     }
 
-    private static AvroFile Parse(string text) => AvscParser.Parse(new SourceText("test.avsc", text),
-        new AvroParseOptions(GenerationTarget.Modern, true), TestContext.Current.CancellationToken);
+    private static AvroFile Parse(string text) => AvscParser.ParseFile(
+        new SourceText("test.avsc", text),
+        new AvroParseOptions(GenerationTarget.Modern, true),
+        TestContext.Current.CancellationToken);
 
     [Fact]
     public void Only_selected_message_values_are_semantically_validated()

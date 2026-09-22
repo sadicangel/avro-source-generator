@@ -42,7 +42,7 @@ public sealed class JsonReaderTests
     [InlineData("{\"type\":\"record\",\"name\":\"R\",\"fields\":false,")]
     public void Malformed_documents_return_only_invalid_json(string text)
     {
-        var file = AvscParser.Parse(new SourceText("test.avsc", text), new AvroParseOptions(), TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(new SourceText("test.avsc", text), new AvroParseOptions(), TestContext.Current.CancellationToken);
         Assert.False(file.IsValid);
         Assert.Equal(AvroDiagnosticCode.InvalidJson, Assert.Single(file.Diagnostics).Code);
     }
@@ -51,7 +51,7 @@ public sealed class JsonReaderTests
     public void Malformed_unicode_json_uses_absolute_utf16_location()
     {
         const string text = "{\r\n\"é😀\":0,\"bad\":!\r\n}";
-        var file = AvscParser.Parse(new SourceText("test.avsc", text), new AvroParseOptions(), TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(new SourceText("test.avsc", text), new AvroParseOptions(), TestContext.Current.CancellationToken);
         var diagnostic = Assert.Single(file.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.InvalidJson, diagnostic.Code);
         Assert.Equal(text.IndexOf('!'), diagnostic.SourceSpan.Offset);
@@ -61,7 +61,7 @@ public sealed class JsonReaderTests
     public void Default_depth_limit_is_preserved()
     {
         var text = new string('[', 65) + "0" + new string(']', 65);
-        var file = AvscParser.Parse(new SourceText("test.avsc", text), new AvroParseOptions(), TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(new SourceText("test.avsc", text), new AvroParseOptions(), TestContext.Current.CancellationToken);
         Assert.Equal(AvroDiagnosticCode.InvalidJson, Assert.Single(file.Diagnostics).Code);
     }
 

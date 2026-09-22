@@ -1,5 +1,5 @@
 ﻿using System.Collections.Immutable;
-using AvroSourceGenerator.Avsc;
+using AvroSourceGenerator.Avsc.Syntax;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
@@ -8,7 +8,7 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Tests.Avsc;
 
-public sealed class AvscSchemaParserLocationTests
+public sealed class AvscParserLocationTests
 {
     [Theory]
     [InlineData(GenerationTarget.Apache, false)]
@@ -36,7 +36,7 @@ public sealed class AvscSchemaParserLocationTests
         var source = new SourceText("test.avsc", text);
         var options = new AvroParseOptions(target, nullableReferences);
 
-        var actual = AvscSchemaParser.Parse(source, options, TestContext.Current.CancellationToken);
+        var actual = AvscParser.ParseFile(source, options, TestContext.Current.CancellationToken);
 
         Assert.True(actual.IsValid, string.Join("; ", actual.Diagnostics));
         var actualSchemas = actual.Declarations.ToDictionary(static schema => schema.SchemaName);
@@ -53,7 +53,7 @@ public sealed class AvscSchemaParserLocationTests
         const string text = """{"protocol":"P","types":0,"messages":{"a":{"request":false,"response":"Missing"},"b":{"request":{},"response":"null"}}}""";
         var source = new SourceText("test.avpr", text);
 
-        var file = AvscSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
 
         Assert.False(file.IsValid);
         Assert.NotNull(file.RootSchema);
@@ -80,7 +80,7 @@ public sealed class AvscSchemaParserLocationTests
     {
         var source = new SourceText("test.avpr", text);
 
-        var file = AvscSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
 
         var diagnostic = Assert.Single(file.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.MissingSchemaProperty, diagnostic.Code);
@@ -93,7 +93,7 @@ public sealed class AvscSchemaParserLocationTests
     public void Invalid_recovered_files_do_not_bind_or_render_or_add_missing_reference_diagnostics()
     {
         const string text = """{"protocol":"P","types":0,"messages":{"m":{"request":false,"response":"Missing"}}}""";
-        var file = AvscSchemaParser.Parse(new SourceText("test.avpr", text), Options, TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(new SourceText("test.avpr", text), Options, TestContext.Current.CancellationToken);
         var files = ImmutableArray.Create(file);
         var symbols = SymbolTable.FromFiles(files, TestContext.Current.CancellationToken);
         var bound = BoundAvroFile.Bind(
@@ -122,7 +122,7 @@ public sealed class AvscSchemaParserLocationTests
         const string text = """{"type":"record","name":"R","fields":[{"name":"value","type":"Other"}]}""";
         var source = new SourceText("test.avsc", text);
 
-        var file = AvscSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
 
         Assert.Equal(text, Assert.Single(file.DeclarationSpans).ToString());
         Assert.Equal("\"Other\"", Assert.Single(file.ReferenceSpans[new SchemaName("Other")]).ToString());
@@ -134,7 +134,7 @@ public sealed class AvscSchemaParserLocationTests
         const string text = """{"type":"record","name":"R","fields":[],"fields":false}""";
         var source = new SourceText("test.avsc", text);
 
-        var file = AvscSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
 
         var diagnostic = Assert.Single(file.Diagnostics);
         var offset = text.LastIndexOf("false", StringComparison.Ordinal);
@@ -151,7 +151,7 @@ public sealed class AvscSchemaParserLocationTests
         cancellation.Cancel();
 
         Assert.Throws<OperationCanceledException>(() =>
-            AvscSchemaParser.Parse(new SourceText("test.avsc", "{}"), Options, cancellation.Token));
+            AvscParser.ParseFile(new SourceText("test.avsc", "{}"), Options, cancellation.Token));
     }
 
     private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, true);

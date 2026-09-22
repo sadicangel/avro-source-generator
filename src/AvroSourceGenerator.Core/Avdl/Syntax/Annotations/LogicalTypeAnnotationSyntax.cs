@@ -10,8 +10,6 @@ public sealed record class LogicalTypeAnnotationSyntax(
 {
     public SyntaxKind SyntaxKind => SyntaxKind.LogicalTypeAnnotation;
 
-    public string LogicalTypeName => field ??= JsonValue.GetRequiredString("Logical type annotation value");
-
     public IEnumerable<ISyntaxNode> Children()
     {
         yield return AtSignToken;

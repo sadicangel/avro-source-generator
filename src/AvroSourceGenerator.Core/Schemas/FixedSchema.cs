@@ -11,19 +11,6 @@ public sealed record class FixedSchema(
     ImmutableSortedDictionary<string, JsonElement> Properties)
     : NamedSchema(SchemaType.Fixed, SchemaName, Documentation, Aliases, Properties)
 {
-    public static FixedSchema CreateAsByteArray(
-        SchemaName schemaName,
-        string? documentation,
-        ImmutableArray<string> aliases,
-        int size,
-        ImmutableSortedDictionary<string, JsonElement> properties)
-    {
-        return new FixedSchema(schemaName, documentation, aliases, size, properties)
-        {
-            CSharpName = Bytes.CSharpName,
-        };
-    }
-
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         if (!writtenSchemas.Add(SchemaName))

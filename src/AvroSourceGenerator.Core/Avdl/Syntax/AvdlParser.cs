@@ -3,26 +3,28 @@ using AvroSourceGenerator.Avdl.Syntax.Annotations;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Directives;
 using AvroSourceGenerator.Avdl.Syntax.Types;
+using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avdl.Syntax;
 
-public sealed class Parser(SourceText sourceText, CancellationToken cancellationToken)
+public sealed partial class AvdlParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken)
+    : ParserBase(options, cancellationToken)
 {
     private readonly SyntaxTokenStream _stream = new(sourceText, cancellationToken);
     private readonly List<IAnnotationSyntax> _annotations = [];
     private readonly List<DocumentationSyntax> _documentation = [];
-    private readonly List<AvroDiagnostic> _diagnostics = [];
+    public AvdlParser(SourceText sourceText, CancellationToken cancellationToken) : this(sourceText, default, cancellationToken) { }
 
-    public static SyntaxTree Parse(SourceText sourceText, CancellationToken cancellationToken) => new Parser(sourceText, cancellationToken).Parse();
+    public static SyntaxTree Parse(SourceText sourceText, CancellationToken cancellationToken) => new AvdlParser(sourceText, cancellationToken).Parse();
 
     public SyntaxTree Parse()
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        CancellationToken.ThrowIfCancellationRequested();
         var document = ParseDocument();
 
-        return new SyntaxTree(sourceText, document, [.. _stream.Diagnostics.Concat(_diagnostics)]);
+        return new SyntaxTree(sourceText, document, [.. _stream.Diagnostics.Concat(Diagnostics)]);
     }
 
     private DocumentSyntax ParseDocument()
@@ -144,9 +146,9 @@ public sealed class Parser(SourceText sourceText, CancellationToken cancellation
     private void ReportAndClearMisplacedMetadata(string target)
     {
         foreach (var documentation in _documentation)
-            _diagnostics.Add(AvroDiagnostic.MisplacedDocumentation(documentation.DocumentationTrivia.SourceSpan, target));
+            Report(AvroDiagnostic.MisplacedDocumentation(documentation.DocumentationTrivia.SourceSpan, target));
         foreach (var annotation in _annotations)
-            _diagnostics.Add(AvroDiagnostic.MisplacedAnnotation(GetAnnotationSpan(annotation), GetAnnotationName(annotation), target));
+            Report(AvroDiagnostic.MisplacedAnnotation(GetAnnotationSpan(annotation), GetAnnotationName(annotation), target));
 
         _documentation.Clear();
         _annotations.Clear();
@@ -198,7 +200,7 @@ public sealed class Parser(SourceText sourceText, CancellationToken cancellation
     private JsonValueSyntax ParseJsonValue()
     {
         var index = _stream.Position;
-        var json = JsonParser.Parse(_stream, cancellationToken);
+        var json = JsonParser.Parse(_stream, CancellationToken);
         var count = _stream.Position - index;
         return new JsonValueSyntax(new SyntaxList<SyntaxToken>([.. _stream.GetTokens(index, count)]), json);
     }

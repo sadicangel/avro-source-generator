@@ -26,7 +26,7 @@ public sealed class ParserCancellationTests
         var token = CreateCancelledToken();
 
         Assert.Throws<OperationCanceledException>(() =>
-            Parser.Parse(new SourceText("test.avdl", "schema R; record R {}"), token));
+            AvdlParser.Parse(new SourceText("test.avdl", "schema R; record R {}"), token));
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public sealed class ParserCancellationTests
         text.Append(" }");
 
         Assert.Throws<OperationCanceledException>(() =>
-            Parser.Parse(new SourceText("large.avdl", text.ToString()), CreateCancelledToken()));
+            AvdlParser.Parse(new SourceText("large.avdl", text.ToString()), CreateCancelledToken()));
     }
 
     [Fact]

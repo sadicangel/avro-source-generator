@@ -69,7 +69,7 @@ public sealed record class UnionSchema(
             // "null" | T2
             [{ Type: SchemaType.Null }, { Type: not SchemaType.Null } t2] => t2,
             // T1 | T2 | ... | Tn
-            _ => Object,
+            _ => Null,
         };
 
         while (underlyingSchema is UnionSchema { Schemas: var unionSchemas })

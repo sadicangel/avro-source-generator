@@ -1,4 +1,5 @@
 ﻿{
+  Location: tmnltCk6NCew4wkJzi1dZ455VJk.avsc: (7,20)-(12,13),
   Message: Multiple Avro schema files would generate the same type 'RecordNamespace.Record'. By default this is treated as an error to avoid ambiguous code generation. You can allow one schema to be chosen arbitrarily by setting <AvroSourceGeneratorDuplicateResolution>Ignore</AvroSourceGeneratorDuplicateResolution> in the project file.,
   Severity: Error,
   Descriptor: {

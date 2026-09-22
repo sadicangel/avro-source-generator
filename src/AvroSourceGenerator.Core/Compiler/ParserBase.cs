@@ -1,5 +1,6 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
@@ -7,51 +8,53 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
-internal sealed class ParserContext(AvroParseOptions options, CancellationToken cancellationToken)
+public abstract class ParserBase(AvroParseOptions options, CancellationToken cancellationToken)
 {
-    private readonly List<TopLevelSchema> _declarations = [];
-    private readonly Dictionary<SchemaName, int> _declarationIndexes = [];
-    private readonly HashSet<SchemaName> _references = [];
-    private readonly Dictionary<SchemaName, HashSet<SchemaName>> _dependencies = [];
-    private readonly List<SchemaName> _recursionStack = [];
+    protected List<TopLevelSchema> Declarations => field ??= [];
+    private Dictionary<SchemaName, int> DeclarationIndexes => field ??= [];
+    protected HashSet<SchemaName> References => field ??= [];
+    private Dictionary<SchemaName, HashSet<SchemaName>> Dependencies => field ??= [];
+    private List<SchemaName> RecursionStack => field ??= [];
 
     // Provenance belongs to occurrences in a file, never to semantic schema equality.
-    private readonly List<SourceSpan> _declarationSpans = [];
-    private readonly Dictionary<SchemaName, List<SourceSpan>> _referenceSpans = [];
+    protected List<SourceSpan> DeclarationSpans => field ??= [];
+    protected Dictionary<SchemaName, List<SourceSpan>> ReferenceSpans => field ??= [];
 
-    public AvroParseOptions Options { get; } = options;
+    protected AvroParseOptions Options { get; } = options;
 
-    public CancellationToken CancellationToken { get; } = cancellationToken;
+    protected readonly List<AvroDiagnostic> Diagnostics = [];
 
-    public void ThrowIfCancellationRequested() => CancellationToken.ThrowIfCancellationRequested();
+    protected CancellationToken CancellationToken { get; } = cancellationToken;
 
-    public void Declare(TopLevelSchema schema, SourceSpan sourceSpan)
+    protected void ThrowIfCancellationRequested() => CancellationToken.ThrowIfCancellationRequested();
+
+    protected void Declare(TopLevelSchema schema, SourceSpan sourceSpan)
     {
         CancellationToken.ThrowIfCancellationRequested();
-        _declarationSpans.Add(sourceSpan);
-        _declarationIndexes[schema.SchemaName] = _declarations.Count;
-        _declarations.Add(schema);
+        DeclarationSpans.Add(sourceSpan);
+        DeclarationIndexes[schema.SchemaName] = Declarations.Count;
+        Declarations.Add(schema);
 
-        if (_recursionStack.Count == 0)
+        if (RecursionStack.Count == 0)
             return;
 
-        var current = _recursionStack[^1];
+        var current = RecursionStack[^1];
         if (current != schema.SchemaName)
         {
             AddDependency(current, schema.SchemaName);
         }
-        else if (_recursionStack.Count > 1)
+        else if (RecursionStack.Count > 1)
         {
-            AddDependency(_recursionStack[^2], schema.SchemaName);
+            AddDependency(RecursionStack[^2], schema.SchemaName);
         }
     }
 
-    public AvroSchema Reference(SchemaName schemaName, string? containingNamespace, SourceSpan sourceSpan)
+    protected AvroSchema Reference(SchemaName schemaName, string? containingNamespace, SourceSpan sourceSpan)
     {
         CancellationToken.ThrowIfCancellationRequested();
         switch (schemaName.FullName)
         {
-            case AvroTypeNames.Null: return AvroSchema.Object;
+            case AvroTypeNames.Null: return AvroSchema.Null;
             case AvroTypeNames.Boolean: return AvroSchema.Boolean;
             case AvroTypeNames.Int: return AvroSchema.Int;
             case AvroTypeNames.Long: return AvroSchema.Long;
@@ -64,24 +67,24 @@ internal sealed class ParserContext(AvroParseOptions options, CancellationToken 
         schemaName = schemaName.ResolveIn(containingNamespace);
         if (!sourceSpan.IsNone)
         {
-            if (!_referenceSpans.TryGetValue(schemaName, out var spans))
-                _referenceSpans[schemaName] = spans = [];
+            if (!ReferenceSpans.TryGetValue(schemaName, out var spans))
+                ReferenceSpans[schemaName] = spans = [];
             spans.Add(sourceSpan);
         }
-        if (_recursionStack is [.., var containingSchema])
+        if (RecursionStack is [.., var containingSchema])
             AddDependency(containingSchema, schemaName);
 
-        if (_declarationIndexes.TryGetValue(schemaName, out var index))
-            return new AvroSchemaReference(schemaName, _declarations[index].CSharpName);
+        if (DeclarationIndexes.TryGetValue(schemaName, out var index))
+            return new AvroSchemaReference(schemaName, Declarations[index].CSharpName);
 
-        if (_recursionStack.Contains(schemaName))
+        if (RecursionStack.Contains(schemaName))
             return new AvroSchemaReference(schemaName);
 
-        _references.Add(schemaName);
+        References.Add(schemaName);
         return new AvroSchemaReference(schemaName);
     }
 
-    public AvroSchema ResolveFieldType(
+    protected AvroSchema ResolveFieldType(
         AvroSchema fieldType,
         FieldName fieldName,
         SchemaName containingSchemaName,
@@ -98,11 +101,13 @@ internal sealed class ParserContext(AvroParseOptions options, CancellationToken 
                 if (union.SupportsVariant())
                 {
                     var variantName = VariantSchema.GetSchemaName(containingSchemaName, fieldName);
-                    var inheritedSchemas = union.Schemas
-                        .Select(schema => schema is RecordSchema record
-                            ? record with { InheritsFrom = CSharpName.FromSchemaName(variantName) }
-                            : schema)
-                        .ToImmutableArray();
+                    var inherited = ImmutableArray.CreateBuilder<AvroSchema>(union.Schemas.Length);
+                    foreach (var schema in union.Schemas.WithCancellation(CancellationToken))
+                        inherited.Add(
+                            schema is RecordSchema record
+                                ? record with { InheritsFrom = CSharpName.FromSchemaName(variantName) }
+                                : schema);
+                    var inheritedSchemas = inherited.MoveToImmutable();
                     ReplaceDeclarations(union.Schemas, inheritedSchemas);
 
                     var variant = new VariantSchema(variantName, inheritedSchemas);
@@ -124,37 +129,48 @@ internal sealed class ParserContext(AvroParseOptions options, CancellationToken 
         }
     }
 
-    public RecursionScope EnterRecursionScope(SchemaName schemaName) => new(_recursionStack, schemaName);
+    protected RecursionScope EnterRecursionScope(SchemaName schemaName) => new(RecursionStack, schemaName);
 
-    public AvroFile Complete(SourceText sourceText, AvroSchema root, ImmutableArray<AvroImport> imports)
+    protected bool TryEnterRecursionScope(SchemaName schemaName, out RecursionScope scope)
     {
         CancellationToken.ThrowIfCancellationRequested();
-        return new AvroFile(
-            sourceText,
-            root,
-            [.. _declarations],
-            [.. _declarationSpans],
-            [.. _references.WithCancellation(CancellationToken).OrderBy(static reference => reference.FullName, StringComparer.Ordinal)],
-            _referenceSpans.WithCancellation(CancellationToken).ToFrozenDictionary(
-                pair => pair.Key,
-                pair => pair.Value.WithCancellation(CancellationToken).OrderBy(span => span.Offset).ToImmutableArray()),
-            GetDependencies(),
-            imports,
-            [],
-            Options);
+        if (RecursionStack.Contains(schemaName))
+        {
+            scope = default;
+            return false;
+        }
+        scope = new RecursionScope(RecursionStack, schemaName);
+        return true;
+    }
+
+    protected void Report(AvroDiagnostic diagnostic)
+    {
+        CancellationToken.ThrowIfCancellationRequested();
+        Diagnostics.Add(diagnostic);
+    }
+
+    protected ImmutableArray<SchemaName> GetReferences() =>
+        [.. References.WithCancellation(CancellationToken).OrderBy(static reference => reference.FullName, StringComparer.Ordinal)];
+
+    protected FrozenDictionary<SchemaName, ImmutableArray<SourceSpan>> GetReferenceSpans()
+    {
+        var references = new Dictionary<SchemaName, ImmutableArray<SourceSpan>>(ReferenceSpans.Count);
+        foreach (var pair in ReferenceSpans.WithCancellation(CancellationToken))
+            references.Add(pair.Key, [.. pair.Value.WithCancellation(CancellationToken).OrderBy(static span => span.Offset)]);
+        return references.ToFrozenDictionary();
     }
 
     private void AddDependency(SchemaName schema, SchemaName dependsOn)
     {
-        if (!_dependencies.TryGetValue(schema, out var dependencies))
-            _dependencies.Add(schema, dependencies = []);
+        if (!Dependencies.TryGetValue(schema, out var dependencies))
+            Dependencies.Add(schema, dependencies = []);
         dependencies.Add(dependsOn);
     }
 
-    private FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> GetDependencies()
+    protected FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> GetDependencies()
     {
-        var dependencies = new Dictionary<SchemaName, ImmutableArray<SchemaName>>(_dependencies.Count);
-        foreach (var dependency in _dependencies.WithCancellation(CancellationToken))
+        var dependencies = new Dictionary<SchemaName, ImmutableArray<SchemaName>>(Dependencies.Count);
+        foreach (var dependency in Dependencies.WithCancellation(CancellationToken))
         {
             dependencies.Add(
                 dependency.Key,
@@ -173,19 +189,19 @@ internal sealed class ParserContext(AvroParseOptions options, CancellationToken 
             if (ReferenceEquals(schemas[schemaIndex], replacements[schemaIndex]))
                 continue;
 
-            for (var declarationIndex = 0; declarationIndex < _declarations.Count; declarationIndex++)
+            for (var declarationIndex = 0; declarationIndex < Declarations.Count; declarationIndex++)
             {
                 CancellationToken.ThrowIfCancellationRequested();
-                if (ReferenceEquals(_declarations[declarationIndex], schemas[schemaIndex]))
+                if (ReferenceEquals(Declarations[declarationIndex], schemas[schemaIndex]))
                 {
-                    _declarations[declarationIndex] = (TopLevelSchema)replacements[schemaIndex];
+                    Declarations[declarationIndex] = (TopLevelSchema)replacements[schemaIndex];
                     break;
                 }
             }
         }
     }
 
-    internal readonly ref struct RecursionScope
+    protected readonly ref struct RecursionScope
     {
         private readonly List<SchemaName> _recursionStack;
         private readonly SchemaName _schemaName;

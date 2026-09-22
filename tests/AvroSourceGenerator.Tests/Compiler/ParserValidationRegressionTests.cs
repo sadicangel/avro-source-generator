@@ -10,7 +10,7 @@ namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class ParserValidationRegressionTests
 {
-    private static readonly AvroParseOptions Options = new(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions Options = new AvroParseOptions(GenerationTarget.Modern, true);
 
     [Theory]
     [InlineData("1")]
@@ -24,7 +24,7 @@ public sealed class ParserValidationRegressionTests
         var file = AvdlSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
         var diagnostic = Assert.Single(file.Diagnostics);
-        var expectedSpan = source.GetSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
+        var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
         Assert.Equal(AvroDiagnosticCode.InvalidSource, diagnostic.Code);
         Assert.Equal(expectedSpan, diagnostic.SourceSpan);
         Assert.Equal(
@@ -44,7 +44,7 @@ public sealed class ParserValidationRegressionTests
         var file = AvdlSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
         var diagnostic = Assert.Single(file.Diagnostics);
-        var expectedSpan = source.GetSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
+        var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
         Assert.Equal(AvroDiagnosticCode.InvalidSource, diagnostic.Code);
         Assert.Equal(expectedSpan, diagnostic.SourceSpan);
         Assert.Equal(AvroDiagnostic.InvalidSource(expectedSpan, message).GetMessage(), diagnostic.GetMessage());

@@ -1,25 +1,14 @@
 ﻿using System.Collections.Immutable;
-using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Diagnostics;
 
-public sealed class AvroDiagnostic : IEquatable<AvroDiagnostic>
+public sealed class AvroDiagnostic(AvroDiagnosticCode code, SourceSpan sourceSpan, params ImmutableArray<object?> arguments)
+    : IEquatable<AvroDiagnostic>
 {
-    public AvroDiagnostic(
-        AvroDiagnosticCode code,
-        SourceSpan sourceSpan,
-        params ImmutableArray<object?> arguments)
-    {
-        Code = code;
-        SourceSpan = sourceSpan;
-        Arguments = arguments;
-    }
-
-    public AvroDiagnosticCode Code { get; }
-    public SourceSpan SourceSpan { get; }
-    public ImmutableArray<object?> Arguments { get; }
+    public AvroDiagnosticCode Code { get; } = code;
+    public SourceSpan SourceSpan { get; } = sourceSpan;
+    public ImmutableArray<object?> Arguments { get; } = arguments;
 
     public AvroDiagnosticSeverity Severity => Code.Severity;
 
@@ -43,49 +32,5 @@ public sealed class AvroDiagnostic : IEquatable<AvroDiagnostic>
         hash.Add(SourceSpan);
         foreach (var argument in Arguments) hash.Add(argument);
         return hash.ToHashCode();
-    }
-}
-
-internal static class AvroDiagnosticFactoryExtensions
-{
-    private static string? GetDisplayText(SyntaxKind syntaxKind) => SyntaxFacts.GetDisplayText(syntaxKind) ?? syntaxKind.ToString();
-
-    extension(AvroDiagnostic)
-    {
-        public static AvroDiagnostic InvalidCharacter(SourceSpan sourceSpan) => new AvroDiagnostic(AvroDiagnosticCode.InvalidCharacter, sourceSpan, sourceSpan.ToString());
-
-        public static AvroDiagnostic InvalidEscapeSequence(SourceSpan sourceSpan) => new AvroDiagnostic(AvroDiagnosticCode.InvalidEscapeSequence, sourceSpan, sourceSpan.ToString());
-
-        public static AvroDiagnostic InvalidNumber(SourceSpan sourceSpan) => new AvroDiagnostic(AvroDiagnosticCode.InvalidNumber, sourceSpan, sourceSpan.ToString());
-
-        public static AvroDiagnostic UnterminatedDocumentation(SourceSpan sourceSpan) => new AvroDiagnostic(AvroDiagnosticCode.UnterminatedDocumentation, sourceSpan);
-
-        public static AvroDiagnostic UnterminatedComment(SourceSpan sourceSpan) => new AvroDiagnostic(AvroDiagnosticCode.UnterminatedComment, sourceSpan);
-
-        public static AvroDiagnostic UnterminatedString(SourceSpan sourceSpan) => new AvroDiagnostic(AvroDiagnosticCode.UnterminatedString, sourceSpan);
-
-        public static AvroDiagnostic UnterminatedVerbatimIdentifier(SourceSpan sourceSpan) => new AvroDiagnostic(AvroDiagnosticCode.UnterminatedVerbatimIdentifier, sourceSpan);
-
-        public static AvroDiagnostic UnexpectedToken(SyntaxKind expected, SyntaxToken actual) => new AvroDiagnostic(AvroDiagnosticCode.UnexpectedToken, actual.SourceSpan, SyntaxFacts.GetDisplayText(actual.SyntaxKind) ?? actual.ValueText, GetDisplayText(expected));
-
-        public static AvroDiagnostic UnexpectedJsonValue(SyntaxToken actual) => new AvroDiagnostic(AvroDiagnosticCode.UnexpectedJsonValue, actual.SourceSpan, actual.ValueText);
-
-        public static AvroDiagnostic MisplacedAnnotation(SourceSpan sourceSpan, string annotationName, string target) => new AvroDiagnostic(AvroDiagnosticCode.MisplacedAnnotation, sourceSpan, annotationName, target);
-
-        public static AvroDiagnostic MisplacedDocumentation(SourceSpan sourceSpan, string target) => new AvroDiagnostic(AvroDiagnosticCode.MisplacedDocumentation, sourceSpan, target);
-
-        public static AvroDiagnostic InvalidSource(SourceSpan sourceSpan, string message) => new AvroDiagnostic(AvroDiagnosticCode.InvalidSource, sourceSpan, message);
-
-        public static AvroDiagnostic InvalidSchema(SourceSpan sourceSpan, string message) => new AvroDiagnostic(AvroDiagnosticCode.InvalidSchema, sourceSpan, message);
-
-        public static AvroDiagnostic InvalidJson(SourceSpan sourceSpan, string message) => new AvroDiagnostic(AvroDiagnosticCode.InvalidJson, sourceSpan, message);
-
-        public static AvroDiagnostic UnknownError(SourceSpan sourceSpan, string message) => new AvroDiagnostic(AvroDiagnosticCode.UnknownError, sourceSpan, message);
-
-        public static AvroDiagnostic DuplicateSchema(SourceSpan sourceSpan, string typeName) => new AvroDiagnostic(AvroDiagnosticCode.DuplicateSchema, sourceSpan, typeName);
-
-        public static AvroDiagnostic MissingReferences(SourceSpan sourceSpan, IReadOnlyCollection<SchemaName> references) => new AvroDiagnostic(AvroDiagnosticCode.MissingReferences, sourceSpan, string.Join(", ", references.Select(static name => name.FullName)));
-
-        public static AvroDiagnostic InvalidImport(SourceSpan sourceSpan, string message) => new AvroDiagnostic(AvroDiagnosticCode.InvalidImport, sourceSpan, message);
     }
 }

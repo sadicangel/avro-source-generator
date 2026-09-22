@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace AvroSourceGenerator.Tests.Snapshots;
 
@@ -15,11 +15,11 @@ public sealed class CsprojReferenceResolutionTests
 
     [Fact]
     public Task Diagnostic_Strict() => Snapshot.Diagnostic(
-        [
-            ProjectFile.Schema(OrderSchema),
-            ProjectFile.Schema(CustomerSchema),
-            ProjectFile.Schema(OrderLineSchema),
-        ]);
+    [
+        ProjectFile.Schema(OrderSchema),
+        ProjectFile.Schema(CustomerSchema),
+        ProjectFile.Schema(OrderLineSchema),
+    ]);
 
     [Fact]
     public Task Diagnostic_Deferred_MissingReference() => Snapshot.Diagnostic(

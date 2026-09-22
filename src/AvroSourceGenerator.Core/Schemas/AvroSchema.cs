@@ -27,7 +27,7 @@ public abstract record class AvroSchema(
 
     public abstract void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace);
 
-    public static readonly PrimitiveSchema Object = new(SchemaType.Null, new CSharpName("object"), new SchemaName(AvroTypeNames.Null));
+    public static readonly PrimitiveSchema Null = new(SchemaType.Null, new CSharpName("object"), new SchemaName(AvroTypeNames.Null));
     public static readonly PrimitiveSchema Boolean = new(SchemaType.Boolean, new CSharpName("bool"), new SchemaName(AvroTypeNames.Boolean));
     public static readonly PrimitiveSchema Int = new(SchemaType.Int, new CSharpName("int"), new SchemaName(AvroTypeNames.Int));
     public static readonly PrimitiveSchema Long = new(SchemaType.Long, new CSharpName("long"), new SchemaName(AvroTypeNames.Long));

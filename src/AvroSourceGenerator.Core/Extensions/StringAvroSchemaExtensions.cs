@@ -9,12 +9,10 @@ internal static class StringAvroSchemaExtensions
     {
         public SchemaName ToSchemaName(string? containingNamespace = null)
         {
-            _ = name.TrySplitQualifiedName(out name, out var @namespace);
-
-            if (string.IsNullOrWhiteSpace(name) || @namespace is "")
+            name.TrySplitQualifiedName(out var localName, out var @namespace);
+            if (string.IsNullOrWhiteSpace(localName) || @namespace is "")
                 throw new InvalidSchemaException("Argument has an invalid name format: 'cannot start or end with a dot'");
-
-            return new SchemaName(name, @namespace ?? containingNamespace);
+            return new SchemaName(localName, @namespace ?? containingNamespace);
         }
     }
 

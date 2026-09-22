@@ -1,6 +1,5 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Diagnostics;
@@ -13,7 +12,7 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
 {
     internal AvroFile(
         SourceText sourceText,
-        AvroSchema? rootSchema,
+        AvroSchema rootSchema,
         ImmutableArray<TopLevelSchema> declarations,
         ImmutableArray<SourceSpan> declarationSpans,
         ImmutableArray<SchemaName> references,
@@ -42,7 +41,7 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
 
     public SourcePath Path => Text.Path;
 
-    public AvroSchema? RootSchema { get; }
+    public AvroSchema RootSchema { get; }
 
     public ImmutableArray<TopLevelSchema> Declarations { get; }
 
@@ -54,8 +53,7 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
 
     public ImmutableArray<AvroDiagnostic> Diagnostics { get; }
 
-    [MemberNotNullWhen(true, nameof(RootSchema))]
-    public bool IsValid => RootSchema is not null && !Diagnostics.HasErrors;
+    public bool IsValid => !Diagnostics.HasErrors;
 
     public AvroParseOptions ParseOptions { get; }
 
@@ -93,5 +91,5 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
     internal static AvroFile Invalid(SourceText source, AvroDiagnostic diagnostic, AvroParseOptions parseOptions) =>
         Invalid(source, [diagnostic], parseOptions);
 
-    internal static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) => new(sourceText, null, [], [], [], [], [], [], diagnostics, parseOptions);
+    internal static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) => new(sourceText, AvroSchema.Null, [], [], [], [], [], [], diagnostics, parseOptions);
 }

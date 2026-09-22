@@ -15,7 +15,7 @@ internal sealed record GeneratorConfiguration(
     DuplicateResolution DuplicateResolution,
     ImmutableArray<AvroDiagnostic> Diagnostics)
 {
-    public bool IsValid => !Diagnostics.HasErrors;
+    public bool IsValid => !Diagnostics.Any(static diagnostic => diagnostic.Severity == AvroDiagnosticSeverity.Error);
 
     public bool Equals(GeneratorConfiguration? other) =>
         other is not null &&

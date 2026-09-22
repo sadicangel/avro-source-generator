@@ -38,7 +38,7 @@ internal sealed class SyntaxTokenStream
     public SyntaxToken Match(SyntaxKind syntaxKind)
     {
         _cancellationToken.ThrowIfCancellationRequested();
-        // Skip documentation trivia if we're not trying to match it. This allows us to ignore documentation comments in 
+        // Skip documentation trivia if we're not trying to match it. This allows us to ignore documentation comments in
         // places where they are not expected without causing syntax errors, while still allowing us to capture them when we do want them.1
         while (syntaxKind != SyntaxKind.DocumentationTrivia && Current.SyntaxKind == SyntaxKind.DocumentationTrivia)
         {
@@ -67,6 +67,11 @@ internal sealed class SyntaxTokenStream
         return new SyntaxToken(expectedSyntaxKind, new SourceSpan(_sourceText, Current.SourceSpan.Offset, 0));
     }
 
+    // TODO:
+    // This should be on the parser - and probably Match and CreateSynthetic as well.
+    // The token stream should not be responsible for reporting diagnostics, it should just provide the tokens.
+    // The parser should be responsible for reporting diagnostics when it encounters unexpected tokens.
+    // So it should have Peek and Next - which might make it a candidate for being a struct.
     private void ReportUnexpectedToken(SyntaxKind expectedSyntaxKind, SyntaxToken actual)
     {
         if (!_lastTokenWasSynthetic)

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.Text;
 
@@ -23,7 +24,11 @@ public sealed class SourceText : IEquatable<SourceText>
 
     public ImmutableArray<SourceLine> Lines => _lines.Value;
 
-    public SourceSpan GetSpan(int offset, int length) => new SourceSpan(this, offset, length);
+    public SourceSpan GetSourceSpan(int offset, int length) => SourceSpan.FromSourceText(this, offset, length);
+
+    public SourceSpan GetSourceSpan(int offset) => SourceSpan.FromSourceText(this, offset);
+
+    public SourceSpan GetSourceSpan() => SourceSpan.FromSourceText(this);
 
     public int GetOffset(int lineIndex, int columnIndex)
     {
@@ -89,14 +94,14 @@ public sealed class SourceText : IEquatable<SourceText>
             }
             else
             {
-                lines.Add(new SourceLine(sourceText.GetSpan(lineStart, position - lineStart), sourceText.GetSpan(lineStart, position - lineStart + lineBreakWidth)));
+                lines.Add(new SourceLine(sourceText.GetSourceSpan(lineStart, position - lineStart), sourceText.GetSourceSpan(lineStart, position - lineStart + lineBreakWidth)));
                 position += lineBreakWidth;
                 lineStart = position;
             }
         }
 
         if (position >= lineStart)
-            lines.Add(new SourceLine(sourceText.GetSpan(lineStart, position - lineStart), sourceText.GetSpan(lineStart, position - lineStart)));
+            lines.Add(new SourceLine(sourceText.GetSourceSpan(lineStart, position - lineStart), sourceText.GetSourceSpan(lineStart, position - lineStart)));
 
         return lines.DrainToImmutable();
     }

@@ -10,7 +10,7 @@ namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class ParserProvenanceTests
 {
-    private static readonly AvroParseOptions Options = new(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions Options = new AvroParseOptions(GenerationTarget.Modern, true);
 
     [Fact]
     public void Imports_require_source_spans_and_preserve_duplicate_occurrences()
@@ -48,10 +48,10 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Syntax_nodes_return_the_union_of_their_token_spans_or_none()
     {
-        Assert.True(Parser.Parse(new SourceText("empty.avdl", ""), TestContext.Current.CancellationToken).Document.GetSourceSpan().IsNone);
+        Assert.True(AvdlParser.Parse(new SourceText("empty.avdl", ""), TestContext.Current.CancellationToken).Document.GetSourceSpan().IsNone);
 
         const string text = "/** documentation */ record R {}";
-        var declaration = Assert.Single(Parser.Parse(new SourceText("test.avdl", text), TestContext.Current.CancellationToken).Document.Declarations);
+        var declaration = Assert.Single(AvdlParser.Parse(new SourceText("test.avdl", text), TestContext.Current.CancellationToken).Document.Declarations);
         Assert.Equal("record R {}", declaration.GetSourceSpan().ToString());
     }
 
@@ -85,8 +85,10 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Cross_file_duplicate_points_to_the_later_file()
     {
-        var diagnostic = Assert.Single(Bind(("a.avdl", "schema R; record R {}"),
-            ("b.avdl", "schema R; record R {}")).Diagnostics);
+        var diagnostic = Assert.Single(
+            Bind(
+                ("a.avdl", "schema R; record R {}"),
+                ("b.avdl", "schema R; record R {}")).Diagnostics);
         Assert.Equal("b.avdl", diagnostic.SourceSpan.SourceText.Path.OriginalPath);
         Assert.Equal("record R {}", diagnostic.SourceSpan.ToString());
     }
@@ -116,9 +118,10 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Cycle_points_to_the_closing_import_edge()
     {
-        var diagnostic = Assert.Single(Bind(
-            ("a.avdl", "import idl \"b.avdl\"; schema A; record A {}"),
-            ("b.avdl", "import idl \"a.avdl\"; schema B; record B {}")).Diagnostics);
+        var diagnostic = Assert.Single(
+            Bind(
+                ("a.avdl", "import idl \"b.avdl\"; schema A; record A {}"),
+                ("b.avdl", "import idl \"a.avdl\"; schema B; record B {}")).Diagnostics);
         Assert.Equal("b.avdl", diagnostic.SourceSpan.SourceText.Path.OriginalPath);
         Assert.Equal("\"a.avdl\"", diagnostic.SourceSpan.ToString());
         Assert.Contains("a.avdl -> b.avdl -> a.avdl", diagnostic.GetMessage());
@@ -144,15 +147,16 @@ public sealed class ParserProvenanceTests
 
     [Theory]
     [InlineData("test.avsc", "{\"type\":\"record\",\"name\":\"R\",\"fields\":null}", "'fields' property must be an array (found '') in schema: ")]
-    [InlineData("test.avpr", "{\"protocol\":\"P\",\"types\":null}", "'types' property must be an array (found '') in schema: ")]
-    public void Json_validation_returns_existing_whole_file_diagnostics(string path, string text, string message)
+    [InlineData("test.avpr", "{\"protocol\":\"P\",\"types\":null,\"messages\":{}}", "'types' property must be an array (found '') in schema: ")]
+    public void Json_validation_returns_precise_value_diagnostics(string path, string text, string message)
     {
         var source = new SourceText(path, text);
         var result = AvscSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         var diagnostic = Assert.Single(result.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.InvalidSchema, diagnostic.Code);
-        Assert.Equal(source.GetSpan(0, text.Length), diagnostic.SourceSpan);
+        var offset = text.IndexOf("null", StringComparison.Ordinal);
+        Assert.Equal(source.GetSourceSpan(offset, "null".Length), diagnostic.SourceSpan);
         Assert.Equal("The schema defined in the JSON is invalid: " + message + text, diagnostic.GetMessage());
     }
 

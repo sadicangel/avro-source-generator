@@ -542,7 +542,7 @@ public sealed class ParserTests
         Assert.Equal(logicalTypeKeyword, logicalType.LogicalTypeNameKeyword.SyntaxKind);
     }
 
-    private static DocumentSyntax Parse(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken).Document;
+    private static DocumentSyntax Parse(string text) => AvdlParser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken).Document;
 
-    private static SyntaxTree ParseTree(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
+    private static SyntaxTree ParseTree(string text) => AvdlParser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
 }

@@ -26,7 +26,9 @@ public readonly record struct SourceSpan
 
     public SourceSpan(SourceText SourceText, int Offset) : this(SourceText, Offset, (SourceText ?? throw new ArgumentNullException(nameof(SourceText))).Length - Offset) { }
 
-    public override string ToString() => SourceText?.Text.AsSpan(Offset, Length).ToString() ?? string.Empty;
+    public override string ToString() => AsSpan().ToString();
+
+    public ReadOnlySpan<char> AsSpan() => SourceText is not null ? SourceText.Text.AsSpan(Offset, Length) : ReadOnlySpan<char>.Empty;
 
     public bool Equals(SourceSpan other) => Equals(SourceText, other.SourceText) && Offset == other.Offset && Length == other.Length;
 

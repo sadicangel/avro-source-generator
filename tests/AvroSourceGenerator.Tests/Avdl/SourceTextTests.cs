@@ -50,7 +50,7 @@ public sealed class SourceTextTests
     {
         var sourceText = new SourceText("test.avdl", "namespace example;");
 
-        var span = sourceText.GetSpan(10, 7);
+        var span = sourceText.GetSourceSpan(10, 7);
 
         Assert.Equal(sourceText, span.SourceText);
         Assert.Equal(10, span.Offset);

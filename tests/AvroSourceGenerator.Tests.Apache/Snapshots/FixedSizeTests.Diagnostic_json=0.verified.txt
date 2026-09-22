@@ -1,18 +1,12 @@
 ﻿{
   Location: ouA0qw3GciiaET79ooXrHNB3LsI.avsc: (4,10)-(4,11),
-  Message:
-The schema defined in the JSON is invalid: 'size' property must be a positive integer (found '0') in schema: {
-  "type": "fixed",
-  "namespace": "SchemaNamespace",
-  "name": "Fixed",
-  "size": 0
-},
+  Message: Property 'size' must be a positive integer, but '0' was found.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG0002,
-    Title: Invalid Schema,
-    Description: The JSON parsed, but the Avro schema is not valid according to the Avro specification (e.g., duplicate field names, invalid union members, unresolved references, etc.).,
-    MessageFormat: The schema defined in the JSON is invalid: {0},
+    Id: AVROSG2009,
+    Title: Invalid Fixed Size,
+    Description: A fixed schema size is not a positive 32-bit integer. Set size to the number of bytes in each fixed value.,
+    MessageFormat: Property 'size' must be a positive integer, but '{0}' was found.,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

@@ -1,18 +1,12 @@
 ﻿{
   Location: Wnd12asJuQwa-U42fasy0agmQm8.avsc: (4,12)-(4,16),
-  Message:
-The schema defined in the JSON is invalid: 'fields' property must be an array (found '') in schema: {
-  "type": "record",
-  "namespace": "SchemaNamespace",
-  "name": "Record",
-  "fields": null
-},
+  Message: Property 'fields' must be an array, but '' was found.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG0002,
-    Title: Invalid Schema,
-    Description: The JSON parsed, but the Avro schema is not valid according to the Avro specification (e.g., duplicate field names, invalid union members, unresolved references, etc.).,
-    MessageFormat: The schema defined in the JSON is invalid: {0},
+    Id: AVROSG2005,
+    Title: Invalid Array Property,
+    Description: A property that requires a JSON array has a value of another kind. Replace it with an array of expected elements.,
+    MessageFormat: Property '{0}' must be an array, but '{1}' was found.,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

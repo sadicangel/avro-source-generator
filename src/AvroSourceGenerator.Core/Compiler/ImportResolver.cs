@@ -48,9 +48,7 @@ internal sealed class ImportResolver(
             if (_reportedCycles.Add(cycle.Key))
             {
                 _diagnostics.Add(
-                    AvroDiagnostic.InvalidImport(
-                        incomingImportSpan,
-                        $"Import cycle detected: {cycle.GetPath(files)}."));
+                    AvroDiagnostic.ImportCycle(incomingImportSpan, cycle.GetPath(files)));
             }
 
             foreach (var cycleFileIndex in cycle.Indices)
@@ -70,7 +68,7 @@ internal sealed class ImportResolver(
             if (!import.Path.EndsWith(expectedExtension, StringComparison.OrdinalIgnoreCase))
             {
                 isValid = false;
-                _diagnostics.Add(AvroDiagnostic.InvalidImport(importSpan, $"Import kind '{GetImportKindName(import.Kind)}' requires a '{expectedExtension}' target, but '{import.Path}' was specified."));
+                _diagnostics.Add(AvroDiagnostic.InvalidImportFileExtension(importSpan, GetImportKindName(import.Kind), expectedExtension, import.Path));
                 continue;
             }
 
@@ -78,7 +76,7 @@ internal sealed class ImportResolver(
             if (!fileIndexes.TryGetValue(importedPath, out var importedFileIndex))
             {
                 isValid = false;
-                _diagnostics.Add(AvroDiagnostic.InvalidImport(importSpan, $"Path '{import.Path}' does not match an Avro AdditionalFile."));
+                _diagnostics.Add(AvroDiagnostic.MissingImport(importSpan, import.Path));
                 continue;
             }
 
@@ -93,7 +91,7 @@ internal sealed class ImportResolver(
             if (!IsCompatibleTarget(import.Kind, importedFile))
             {
                 isValid = false;
-                _diagnostics.Add(AvroDiagnostic.InvalidImport(importSpan, $"Path '{import.Path}' is not a valid {GetImportKindName(import.Kind)} target."));
+                _diagnostics.Add(AvroDiagnostic.InvalidImportTarget(importSpan, import.Path, GetImportKindName(import.Kind)));
                 continue;
             }
 

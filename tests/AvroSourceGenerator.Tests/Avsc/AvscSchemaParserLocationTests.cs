@@ -64,12 +64,12 @@ public sealed class AvscSchemaParserLocationTests
                 diagnostic,
                 source,
                 "0",
-                $"'types' property must be an array (found '0') in schema: {text}"),
+                "Property 'types' must be an array, but '0' was found."),
             diagnostic => AssertDiagnostic(
                 diagnostic,
                 source,
                 "false",
-                "'request' property must be an array (found 'False') in schema: {\"request\":false,\"response\":\"Missing\"}"));
+                "Property 'request' must be an array, but 'False' was found."));
     }
 
     [Theory]
@@ -83,8 +83,8 @@ public sealed class AvscSchemaParserLocationTests
         var file = AvscSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
         var diagnostic = Assert.Single(file.Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.InvalidSchema, diagnostic.Code);
-        Assert.Contains($"'{propertyName}' property is required", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Equal(AvroDiagnosticCode.MissingSchemaProperty, diagnostic.Code);
+        Assert.Equal($"Required property '{propertyName}' is missing.", diagnostic.GetMessage());
         Assert.StartsWith("{", diagnostic.SourceSpan.ToString(), StringComparison.Ordinal);
         Assert.EndsWith("}", diagnostic.SourceSpan.ToString(), StringComparison.Ordinal);
     }
@@ -140,9 +140,7 @@ public sealed class AvscSchemaParserLocationTests
         var offset = text.LastIndexOf("false", StringComparison.Ordinal);
         Assert.Equal(source.GetSourceSpan(offset, "false".Length), diagnostic.SourceSpan);
         Assert.Equal(
-            AvroDiagnostic.InvalidSchema(
-                diagnostic.SourceSpan,
-                $"'fields' property must be an array (found 'False') in schema: {text}").GetMessage(),
+            "Property 'fields' must be an array, but 'False' was found.",
             diagnostic.GetMessage());
     }
 
@@ -161,8 +159,8 @@ public sealed class AvscSchemaParserLocationTests
     private static void AssertDiagnostic(AvroDiagnostic diagnostic, SourceText source, string value, string message)
     {
         var offset = source.Text.IndexOf(value, StringComparison.Ordinal);
-        Assert.Equal(AvroDiagnosticCode.InvalidSchema, diagnostic.Code);
+        Assert.Equal(AvroDiagnosticCode.InvalidArrayProperty, diagnostic.Code);
         Assert.Equal(source.GetSourceSpan(offset, value.Length), diagnostic.SourceSpan);
-        Assert.Equal(AvroDiagnostic.InvalidSchema(diagnostic.SourceSpan, message).GetMessage(), diagnostic.GetMessage());
+        Assert.Equal(message, diagnostic.GetMessage());
     }
 }

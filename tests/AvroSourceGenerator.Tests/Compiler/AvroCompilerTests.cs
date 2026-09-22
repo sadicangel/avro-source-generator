@@ -63,10 +63,10 @@ public sealed class AvroCompilerTests
     }
 
     [Theory]
-    [InlineData("empty.avdl", "", AvroDiagnosticCode.InvalidJson)]
-    [InlineData("blank.avsc", " \r\n ", AvroDiagnosticCode.InvalidJson)]
+    [InlineData("empty.avdl", "", AvroDiagnosticCode.EmptySource)]
+    [InlineData("blank.avsc", " \r\n ", AvroDiagnosticCode.EmptySource)]
     [InlineData("invalid.avsc", "{", AvroDiagnosticCode.InvalidJson)]
-    [InlineData("invalid.avsc", "{}", AvroDiagnosticCode.InvalidSchema)]
+    [InlineData("invalid.avsc", "{}", AvroDiagnosticCode.MissingSchemaProperty)]
     [InlineData("invalid.avdl", "$", AvroDiagnosticCode.InvalidCharacter)]
     public void Invalid_files_return_core_diagnostics(string path, string text, AvroDiagnosticCode expected)
     {
@@ -152,7 +152,7 @@ public sealed class AvroCompilerTests
             ParseOptions,
             cancellationToken: TestContext.Current.CancellationToken);
         Assert.False(project.IsValid);
-        Assert.Equal(AvroDiagnosticCode.InvalidImport, Assert.Single(project.Diagnostics).Code);
+        Assert.Equal(AvroDiagnosticCode.ImportCycle, Assert.Single(project.Diagnostics).Code);
     }
 
     [Fact]

@@ -124,7 +124,7 @@ file sealed class DiagnosticArrayOverride : AutoFakerOverride<System.Collections
     public override void Generate(AutoFakerOverrideContext context) =>
         context.Instance = System.Collections.Immutable.ImmutableArray.Create(
             new Diagnostics.AvroDiagnostic(
-                Diagnostics.AvroDiagnosticCode.InvalidSource,
+                Diagnostics.AvroDiagnosticCode.InvalidIdlDeclaration,
                 Text.SourceSpan.None,
                 "invalid"));
 }

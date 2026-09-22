@@ -40,9 +40,9 @@ public sealed class ParserProvenanceTests
         const string text = "protocol P { record P {} }";
         var file = AvdlSchemaParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
         var diagnostic = Assert.Single(file.Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.InvalidSchema, diagnostic.Code);
+        Assert.Equal(AvroDiagnosticCode.InvalidSchemaValue, diagnostic.Code);
         Assert.Equal(text, diagnostic.SourceSpan.ToString());
-        Assert.Equal("The schema defined in the JSON is invalid: Recursive schema definition detected for schema 'P'.", diagnostic.GetMessage());
+        Assert.Equal("Invalid Avro schema value 'Recursive schema definition detected for schema 'P'.'.", diagnostic.GetMessage());
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public sealed class ParserProvenanceTests
     public void Import_failures_point_to_the_literal(string text, string literal)
     {
         var diagnostic = Assert.Single(Bind(("test.avdl", text)).Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.InvalidImport, diagnostic.Code);
+        Assert.Contains(diagnostic.Code, new[] { AvroDiagnosticCode.MissingImport, AvroDiagnosticCode.InvalidImportFileExtension });
         Assert.Equal(literal, diagnostic.SourceSpan.ToString());
         Assert.Equal(text.IndexOf(literal, StringComparison.Ordinal), diagnostic.SourceSpan.Offset);
     }
@@ -146,18 +146,18 @@ public sealed class ParserProvenanceTests
     }
 
     [Theory]
-    [InlineData("test.avsc", "{\"type\":\"record\",\"name\":\"R\",\"fields\":null}", "'fields' property must be an array (found '') in schema: ")]
-    [InlineData("test.avpr", "{\"protocol\":\"P\",\"types\":null,\"messages\":{}}", "'types' property must be an array (found '') in schema: ")]
-    public void Json_validation_returns_precise_value_diagnostics(string path, string text, string message)
+    [InlineData("test.avsc", "{\"type\":\"record\",\"name\":\"R\",\"fields\":null}")]
+    [InlineData("test.avpr", "{\"protocol\":\"P\",\"types\":null,\"messages\":{}}")]
+    public void Json_validation_returns_precise_value_diagnostics(string path, string text)
     {
         var source = new SourceText(path, text);
         var result = AvscSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.InvalidSchema, diagnostic.Code);
+        Assert.Equal(AvroDiagnosticCode.InvalidArrayProperty, diagnostic.Code);
         var offset = text.IndexOf("null", StringComparison.Ordinal);
         Assert.Equal(source.GetSourceSpan(offset, "null".Length), diagnostic.SourceSpan);
-        Assert.Equal("The schema defined in the JSON is invalid: " + message + text, diagnostic.GetMessage());
+        Assert.Contains("must be an array", diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     private static AvroCompilation Bind(params (string Path, string Text)[] sources) =>

@@ -1,12 +1,12 @@
 ﻿{
   Location: hbZLgMCOL8DyJ_VK6KfKhulyZhA.avdl: (1,15)-(1,28),
-  Message: The Avro import is invalid: Path 'common.avdl' does not match an Avro AdditionalFile.,
+  Message: Import path 'common.avdl' does not match an Avro AdditionalFile.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG1001,
-    Title: Invalid Avro import,
-    Description: An Avro IDL import path could not be resolved to a compatible AdditionalFile.,
-    MessageFormat: The Avro import is invalid: {0},
+    Id: AVROSG5002,
+    Title: Missing Import,
+    Description: An Avro IDL import path does not match a supplied AdditionalFile relative to the importing file.,
+    MessageFormat: Import path '{0}' does not match an Avro AdditionalFile.,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

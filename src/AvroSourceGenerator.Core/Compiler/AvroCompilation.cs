@@ -101,9 +101,10 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
                 var originalFile = files[schemaIndex.FileIndexes[filePath]];
                 schemaIndex.DuplicateFileIndexes.Add(fileIndex);
                 schemaIndex.Diagnostics.Add(
-                    AvroDiagnostic.InvalidSource(
+                    AvroDiagnostic.DuplicateSourcePath(
                         SourceSpan.FromSourceFile(file),
-                        $"Source path '{file.Path.OriginalPath}' duplicates '{originalFile.Path.OriginalPath}' after canonicalization."));
+                        file.Path.OriginalPath,
+                        originalFile.Path.OriginalPath));
                 continue;
             }
 

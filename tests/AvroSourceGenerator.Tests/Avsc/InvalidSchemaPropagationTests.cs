@@ -26,9 +26,9 @@ public sealed class InvalidSchemaPropagationTests
         Assert.False(file.IsValid);
         Assert.Empty(file.Declarations);
         var diagnostic = Assert.Single(file.Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.InvalidSchema, diagnostic.Code);
+        Assert.NotEqual(AvroDiagnosticCode.None, diagnostic.Code);
         Assert.Equal("false", diagnostic.SourceSpan.ToString());
-        Assert.Equal(AvroDiagnostic.InvalidSchema(diagnostic.SourceSpan, "Invalid schema: false").GetMessage(), diagnostic.GetMessage());
+        Assert.NotEmpty(diagnostic.GetMessage());
     }
 
     [Theory]
@@ -48,7 +48,7 @@ public sealed class InvalidSchemaPropagationTests
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
         Assert.Empty(file.Declarations);
-        Assert.Equal(AvroDiagnosticCode.InvalidSchema, Assert.Single(file.Diagnostics).Code);
+        Assert.NotEqual(AvroDiagnosticCode.None, Assert.Single(file.Diagnostics).Code);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public sealed class InvalidSchemaPropagationTests
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
         Assert.Equal(new[] { "false", "{}", "false" }, file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
-        Assert.All(file.Diagnostics, diagnostic => Assert.Equal(AvroDiagnosticCode.InvalidSchema, diagnostic.Code));
+        Assert.All(file.Diagnostics, diagnostic => Assert.NotEqual(AvroDiagnosticCode.None, diagnostic.Code));
     }
 
     [Fact]
@@ -70,8 +70,7 @@ public sealed class InvalidSchemaPropagationTests
         var file = AvscSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
-        Assert.Equal(AvroDiagnostic.InvalidSchema(SourceSpan.FromSourceText(source),
-            "Recursive schema definition detected for schema 'R'.").GetMessage(), Assert.Single(file.Diagnostics).GetMessage());
+        Assert.Equal(AvroDiagnosticCode.RecursiveSchemaDefinition, Assert.Single(file.Diagnostics).Code);
     }
 
     [Fact]

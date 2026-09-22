@@ -38,7 +38,7 @@ public sealed class GeneratorConfigurationEqualityTests
         Assert.NotEqual(a, Options([first, other]));
     }
 
-    private static AvroDiagnostic Diagnostic(string id, string argument) => new AvroDiagnostic(id == "TEST0001" ? AvroDiagnosticCode.InvalidSchema : AvroDiagnosticCode.InvalidJson, Text.SourceSpan.None, argument);
+    private static AvroDiagnostic Diagnostic(string id, string argument) => new AvroDiagnostic(id == "TEST0001" ? AvroDiagnosticCode.InvalidSchemaValue : AvroDiagnosticCode.InvalidJson, Text.SourceSpan.None, argument);
 
     private static GeneratorConfiguration Options(ImmutableArray<AvroDiagnostic> diagnostics) => new GeneratorConfiguration(GenerationTarget.Modern, LanguageFeatures.Latest, AccessModifier.Public, ReferenceResolution.Strict, DuplicateResolution.Error, diagnostics);
 }

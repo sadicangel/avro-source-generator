@@ -1,12 +1,12 @@
 ﻿{
   Location: r11mbMxk38LLcw6NaqQZHEqTW1U.avsc: (0,0)-(0,8),
-  Message: The schema defined in the JSON is invalid: At least a named schema must be present in schema: "string",
+  Message: A named schema or protocol is required.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG0002,
-    Title: Invalid Schema,
-    Description: The JSON parsed, but the Avro schema is not valid according to the Avro specification (e.g., duplicate field names, invalid union members, unresolved references, etc.).,
-    MessageFormat: The schema defined in the JSON is invalid: {0},
+    Id: AVROSG2000,
+    Title: Missing Root Schema,
+    Description: The input contains no named schema or protocol that can serve as a root declaration.,
+    MessageFormat: A named schema or protocol is required.,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

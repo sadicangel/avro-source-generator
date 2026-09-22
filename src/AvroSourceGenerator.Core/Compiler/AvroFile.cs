@@ -72,14 +72,13 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
         cancellationToken.ThrowIfCancellationRequested();
 
         if (!sourceText.Path.TryGetSourceType(out var sourceType))
-            return Invalid(sourceText, AvroDiagnostic.InvalidSource(SourceSpan.FromSourceText(sourceText), "Unsupported Avro file type."), parseOptions);
+            return Invalid(sourceText, AvroDiagnostic.UnsupportedSourceType(SourceSpan.FromSourceText(sourceText)), parseOptions);
 
         if (string.IsNullOrWhiteSpace(sourceText.Text))
         {
             return Invalid(
                 sourceText,
-                // TODO: This should be a different diagnostic, since this can be any Avro file type, not just JSON.
-                AvroDiagnostic.InvalidJson(SourceSpan.FromSourceText(sourceText), "The file is empty."),
+                AvroDiagnostic.EmptySource(SourceSpan.FromSourceText(sourceText)),
                 parseOptions);
         }
 

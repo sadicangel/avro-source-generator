@@ -52,6 +52,15 @@ public sealed class AvscParser(SourceText sourceText, AvroParseOptions options, 
         return Option.None<string>();
     }
 
+    private Option<string> GetRequiredAvroName(JsonPropertySyntax property)
+    {
+        var name = GetRequiredString(property);
+        if (!name.TryGetValue(out var value)) return Option.None<string>();
+        if (IsValidName(value)) return value;
+        Report(AvroDiagnostic.InvalidAvroName(property));
+        return Option.None<string>();
+    }
+
     private static Option<string?> GetNullableString(JsonPropertySyntax property, AvscParser parser) => parser.GetNullableString(property);
 
     private Option<string?> GetNullableString(JsonPropertySyntax property)
@@ -163,11 +172,18 @@ public sealed class AvscParser(SourceText sourceText, AvroParseOptions options, 
             return Option.None<ImmutableArray<string>>();
 
         var builder = ImmutableArray.CreateBuilder<string>(items.Length);
-        foreach (var @string in items.Select(item => (item as JsonValueSyntax)?.AsString()))
+        foreach (var item in items)
         {
+            var @string = (item as JsonValueSyntax)?.AsString();
             if (string.IsNullOrWhiteSpace(@string))
             {
                 Report(AvroDiagnostic.InvalidStringArray(property));
+                return Option.None<ImmutableArray<string>>();
+            }
+
+            if (normalize && !IsValidName(@string))
+            {
+                Report(AvroDiagnostic.InvalidAvroName(item));
                 return Option.None<ImmutableArray<string>>();
             }
 
@@ -185,9 +201,12 @@ public sealed class AvscParser(SourceText sourceText, AvroParseOptions options, 
         if (string.IsNullOrWhiteSpace(qualifiedName))
             return Invalid<SchemaName>(AvroDiagnostic.InvalidJsonString(syntax));
 
-        _ = qualifiedName!.TrySplitQualifiedName(out var localName, out var @namespace);
-        if (string.IsNullOrWhiteSpace(localName) || @namespace is "")
-            return Invalid<SchemaName>(AvroDiagnostic.InvalidSchemaNameLeadingOrTrailingDot(syntax));
+        if (!IsValidQualifiedName(qualifiedName!))
+            return Invalid<SchemaName>(AvroDiagnostic.InvalidAvroName(syntax));
+
+        _ = qualifiedName.TrySplitQualifiedName(out var localName, out var @namespace);
+        if (!IsValidName(localName) || (@namespace is not null && !IsValidNamespace(@namespace)))
+            return Invalid<SchemaName>(AvroDiagnostic.InvalidAvroName(syntax));
 
         return new SchemaName(localName, @namespace ?? containingNamespace);
     }
@@ -202,9 +221,9 @@ public sealed class AvscParser(SourceText sourceText, AvroParseOptions options, 
                 (Parser: this, Property: property),
                 static (qualifiedName, state) =>
                 {
-                    if (qualifiedName.Contains("..", StringComparison.Ordinal))
+                    if (!IsValidQualifiedName(qualifiedName))
                     {
-                        state.Parser.Report(AvroDiagnostic.InvalidSchemaNameConsecutiveDots(state.Property));
+                        state.Parser.Report(AvroDiagnostic.InvalidAvroName(state.Property));
                         return Option.None<(string LocalName, string? Namespace)>();
                     }
 
@@ -218,9 +237,9 @@ public sealed class AvscParser(SourceText sourceText, AvroParseOptions options, 
 
                     @namespace = namespaceResult.Value;
 
-                    if (string.IsNullOrWhiteSpace(localName) || @namespace is "")
+                    if (!IsValidName(localName) || (@namespace is not null && !IsValidNamespace(@namespace)))
                     {
-                        state.Parser.Report(AvroDiagnostic.InvalidSchemaNameLeadingOrTrailingDot(state.Property));
+                        state.Parser.Report(AvroDiagnostic.InvalidAvroName(state.Property));
                         return Option.None<(string LocalName, string? Namespace)>();
                     }
 
@@ -228,6 +247,14 @@ public sealed class AvscParser(SourceText sourceText, AvroParseOptions options, 
                 })
             .Then(containingNamespace, static ((string LocalName, string? Namespace) name, string? containingNamespace) => new SchemaName(name.LocalName, name.Namespace ?? containingNamespace));
     }
+
+    private static bool IsValidNamespace(string value) => value.Length == 0 || value.Split('.').All(IsValidName);
+
+    private static bool IsValidQualifiedName(string value) => value.Split('.').All(IsValidName);
+
+    private static bool IsValidName(string? value) => !string.IsNullOrEmpty(value) &&
+        (char.IsAsciiLetter(value[0]) || value[0] is '_') &&
+        value.All(static character => char.IsAsciiLetterOrDigit(character) || character is '_');
 
     public static AvroFile Parse(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken) =>
         new AvscParser(sourceText, options, cancellationToken).Parse();
@@ -507,7 +534,7 @@ public sealed class AvscParser(SourceText sourceText, AvroParseOptions options, 
 
     private Option<Field> Field(JsonObjectSyntax syntax, SchemaName containingSchemaName)
     {
-        if (!GetRequiredProperty(syntax, AvroJsonKeys.Name).Then(this, GetRequiredString).Then(static name => new FieldName(name)).TryGetValue(out var fieldName))
+        if (!GetRequiredProperty(syntax, AvroJsonKeys.Name).Then(this, static (property, parser) => parser.GetRequiredAvroName(property)).Then(static name => new FieldName(name)).TryGetValue(out var fieldName))
             return Option.None<Field>();
 
         var fieldType = GetRequiredProperty(syntax, AvroJsonKeys.Type).Then((this, containingSchemaName.Namespace), Schema);
@@ -652,7 +679,7 @@ public sealed class AvscParser(SourceText sourceText, AvroParseOptions options, 
 
     private Option<ProtocolRequestParameter> ProtocolRequestParameter(JsonObjectSyntax syntax, string? containingNamespace)
     {
-        var name = GetRequiredProperty(syntax, AvroJsonKeys.Name).Then(this, GetRequiredString);
+        var name = GetRequiredProperty(syntax, AvroJsonKeys.Name).Then(this, static (property, parser) => parser.GetRequiredAvroName(property));
         var type = GetRequiredProperty(syntax, AvroJsonKeys.Type).Then((Parser: this, ContainingNamespace: containingNamespace), Schema);
         var documentation = GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
         var defaultJson = GetDefaultJson(syntax);

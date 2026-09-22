@@ -1,18 +1,12 @@
 ﻿{
   Location: Rg4EJjldOW_WhMkpk7ej6m7m4yg.avsc: (3,10)-(3,14),
-  Message:
-The schema defined in the JSON is invalid: 'name' property must be a non-empty, non-whitespace string (found '') in schema: {
-  "type": "record",
-  "namespace": "SchemaNamespace",
-  "name": null,
-  "fields": []
-},
+  Message: Property 'name' must be a non-empty string, but '' was found.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG0002,
-    Title: Invalid Schema,
-    Description: The JSON parsed, but the Avro schema is not valid according to the Avro specification (e.g., duplicate field names, invalid union members, unresolved references, etc.).,
-    MessageFormat: The schema defined in the JSON is invalid: {0},
+    Id: AVROSG2004,
+    Title: Invalid String Property,
+    Description: A property that requires a string has a value of the wrong kind or an empty required value. Supply an appropriate string.,
+    MessageFormat: Property '{0}' must be {1}, but '{2}' was found.,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

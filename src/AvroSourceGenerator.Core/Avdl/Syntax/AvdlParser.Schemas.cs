@@ -36,10 +36,7 @@ public sealed partial class AvdlParser
         }
         catch (InvalidSchemaException ex)
         {
-            return AvroFile.Invalid(
-                source,
-                AvroDiagnostic.InvalidSchema(SourceSpan.FromSourceText(source), ex.Message),
-                Options);
+            return AvroFile.Invalid(source, AvroDiagnostic.InvalidSchemaValue(SourceSpan.FromSourceText(source), ex.Message), Options);
         }
     }
 

@@ -1,12 +1,12 @@
 ﻿{
   Location: gO1rGGsFlD-KhjzpVNTo95EM5WY.avsc: (7,14)-(12,7),
-  Message: Multiple Avro schema files would generate the same type 'Demo.SharedRecord'. By default this is treated as an error to avoid ambiguous code generation. You can allow one schema to be chosen arbitrarily by setting <AvroSourceGeneratorDuplicateResolution>Ignore</AvroSourceGeneratorDuplicateResolution> in the project file.,
+  Message: The type 'Demo.SharedRecord' is declared more than once.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG0005,
-    Title: Duplicate Avro schema detected,
-    Description: Two or more Avro schema input files map to the same generated type. This creates an ambiguous generation result. By default, AvroSourceGenerator fails fast with an error. If you intentionally want to allow duplicates and accept a nondeterministic selection of the generated output, set the MSBuild property <AvroSourceGeneratorDuplicateResolution>Ignore</AvroSourceGeneratorDuplicateResolution>.,
-    MessageFormat: Multiple Avro schema files would generate the same type '{0}'. By default this is treated as an error to avoid ambiguous code generation. You can allow one schema to be chosen arbitrarily by setting <AvroSourceGeneratorDuplicateResolution>Ignore</AvroSourceGeneratorDuplicateResolution> in the project file.,
+    Id: AVROSG0004,
+    Title: Duplicate Schema,
+    Description: Multiple declarations define the same fully qualified schema name. Rename or remove a declaration; only use AvroSourceGeneratorDuplicateResolution=Ignore when an arbitrary winner is acceptable.,
+    MessageFormat: The type '{0}' is declared more than once.,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

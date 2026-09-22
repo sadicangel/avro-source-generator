@@ -1,4 +1,4 @@
-using AvroSourceGenerator.Avdl;
+﻿using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Avsc;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
@@ -25,10 +25,10 @@ public sealed class ParserValidationRegressionTests
 
         var diagnostic = Assert.Single(file.Diagnostics);
         var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
-        Assert.Equal(AvroDiagnosticCode.InvalidSource, diagnostic.Code);
+        Assert.Equal(AvroDiagnosticCode.InvalidIdlDeclaration, diagnostic.Code);
         Assert.Equal(expectedSpan, diagnostic.SourceSpan);
         Assert.Equal(
-            AvroDiagnostic.InvalidSource(expectedSpan, "Enum default value must be a string.").GetMessage(),
+            AvroDiagnostic.InvalidIdlDeclaration(expectedSpan, "Enum default value must be a string.").GetMessage(),
             diagnostic.GetMessage());
     }
 
@@ -45,9 +45,9 @@ public sealed class ParserValidationRegressionTests
 
         var diagnostic = Assert.Single(file.Diagnostics);
         var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
-        Assert.Equal(AvroDiagnosticCode.InvalidSource, diagnostic.Code);
+        Assert.Equal(AvroDiagnosticCode.InvalidIdlDeclaration, diagnostic.Code);
         Assert.Equal(expectedSpan, diagnostic.SourceSpan);
-        Assert.Equal(AvroDiagnostic.InvalidSource(expectedSpan, message).GetMessage(), diagnostic.GetMessage());
+        Assert.Equal(AvroDiagnostic.InvalidIdlDeclaration(expectedSpan, message).GetMessage(), diagnostic.GetMessage());
     }
 
     [Fact]

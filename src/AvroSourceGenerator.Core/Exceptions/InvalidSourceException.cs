@@ -7,7 +7,7 @@ namespace AvroSourceGenerator.Exceptions;
 public sealed class InvalidSourceException(ImmutableArray<AvroDiagnostic> diagnostics) : Exception(GetMessage(diagnostics))
 {
     public InvalidSourceException(string message, SourceSpan sourceSpan)
-        : this([AvroDiagnostic.InvalidSource(sourceSpan, message)]) { }
+        : this([AvroDiagnostic.InvalidIdlDeclaration(sourceSpan, message)]) { }
 
     public ImmutableArray<AvroDiagnostic> Diagnostics { get; } = diagnostics;
 

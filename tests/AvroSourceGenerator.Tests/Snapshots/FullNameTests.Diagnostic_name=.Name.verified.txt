@@ -1,17 +1,12 @@
 ﻿{
   Location: dan-z1P6cJUaNdE9Q0_cGUS5NfI.avsc: (2,10)-(2,17),
-  Message:
-The schema defined in the JSON is invalid: Property 'name' has an invalid format: 'cannot start or end with a dot' in schema: {
-  "type": "record",
-  "name": ".Name",
-  "fields": []
-},
+  Message: '.Name' is not a valid Avro name.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG0002,
-    Title: Invalid Schema,
-    Description: The JSON parsed, but the Avro schema is not valid according to the Avro specification (e.g., duplicate field names, invalid union members, unresolved references, etc.).,
-    MessageFormat: The schema defined in the JSON is invalid: {0},
+    Id: AVROSG2010,
+    Title: Invalid Avro Name,
+    Description: A schema, field, request parameter, namespace component, or enum symbol violates Avro naming rules.,
+    MessageFormat: '{0}' is not a valid Avro name.,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

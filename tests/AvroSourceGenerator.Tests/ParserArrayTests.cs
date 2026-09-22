@@ -51,6 +51,6 @@ public sealed class ParserArrayTests
         var schema = JsonNode.Parse("""{"protocol":"Service","types":[],"messages":{}}""")!;
         schema[property] = JsonNode.Parse(value);
         var diagnostic = Assert.Single(SchemaCompilerTestHelpers.ParseJson(schema.ToJsonString()).Diagnostics);
-        Assert.Contains($"'{property}' property must be an array", diagnostic.GetMessage());
+        Assert.Contains($"Property '{property}' must be an array", diagnostic.GetMessage());
     }
 }

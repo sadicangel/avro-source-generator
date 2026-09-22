@@ -16,7 +16,7 @@ public sealed class AvroCompilationTests
             [new Text.SourceText(path, text)],
             new AvroParseOptions(GenerationTarget.Modern, true),
             cancellationToken: TestContext.Current.CancellationToken);
-        Assert.Equal(AvroDiagnosticCode.InvalidSource, Assert.Single(compilation.Diagnostics).Code);
+        Assert.Equal(AvroDiagnosticCode.UnsupportedSourceType, Assert.Single(compilation.Diagnostics).Code);
         Assert.False(compilation.IsValid);
     }
 
@@ -49,7 +49,7 @@ public sealed class AvroCompilationTests
         Assert.Contains(
             diagnostics,
             diagnostic =>
-                diagnostic.Code == AvroDiagnosticCode.InvalidImport && diagnostic.GetMessage().Contains("absent.avsc"));
+                diagnostic.Code == AvroDiagnosticCode.MissingImport && diagnostic.GetMessage().Contains("absent.avsc"));
         Assert.Contains(
             diagnostics,
             diagnostic =>
@@ -133,7 +133,7 @@ public sealed class AvroCompilationTests
             ("consumer.avsc", Record("Consumer", Field("Missing", "Missing"))));
 
         Assert.False(compiled.Compilation.IsValid);
-        Assert.Equal(["AVROSG0006"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG0005"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.Empty(compiled.RenderableFiles[0].EmittedSchemas);
     }
 
@@ -172,7 +172,7 @@ public sealed class AvroCompilationTests
                 Field("Second", Record("Shared"), rawType: true))));
 
         Assert.False(compiled.Compilation.IsValid);
-        Assert.Equal(["AVROSG0005"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG0004"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
     }
 
     [Fact]
@@ -306,7 +306,7 @@ public sealed class AvroCompilationTests
                 record Consumer { Missing missing; }
                 """));
 
-        Assert.Equal(["AVROSG1001"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG5002"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 
@@ -325,7 +325,7 @@ public sealed class AvroCompilationTests
                 """),
             ("common.avpr", Protocol()));
 
-        Assert.Equal(["AVROSG1001"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG5001"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 
@@ -342,7 +342,7 @@ public sealed class AvroCompilationTests
                 """),
             ("common.avpr", Record("Common")));
 
-        Assert.Equal(["AVROSG1001"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG5003"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 
@@ -360,7 +360,7 @@ public sealed class AvroCompilationTests
                 """),
             ("common.avsc", "not json"));
 
-        Assert.Equal(["AVROSG0001"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG1000"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 
@@ -381,7 +381,7 @@ public sealed class AvroCompilationTests
                 record B { }
                 """));
 
-        Assert.Equal(["AVROSG1001"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG5000"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 
@@ -412,7 +412,7 @@ public sealed class AvroCompilationTests
                 record B { }
                 """));
 
-        Assert.Equal(["AVROSG1001"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG5000"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 
@@ -474,7 +474,7 @@ public sealed class AvroCompilationTests
         else
         {
             var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);
-            Assert.Equal(AvroDiagnosticCode.InvalidImport, diagnostic.Code);
+            Assert.Equal(AvroDiagnosticCode.ImportCycle, diagnostic.Code);
         }
     }
 
@@ -488,7 +488,7 @@ public sealed class AvroCompilationTests
             ("schemas/common.avsc", Record("Second")));
 
         var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.InvalidSource, diagnostic.Code);
+        Assert.Equal(AvroDiagnosticCode.DuplicateSourcePath, diagnostic.Code);
         Assert.Equal("schemas/common.avsc", diagnostic.SourceSpan.SourceText.Path.OriginalPath);
         Assert.Contains(@"schemas\.\common.avsc", diagnostic.GetMessage());
         Assert.Contains("schemas/common.avsc", diagnostic.GetMessage());
@@ -504,7 +504,7 @@ public sealed class AvroCompilationTests
             ("c:/project/COMMON.avsc", Record("Second")));
 
         if (OperatingSystem.IsWindows())
-            Assert.Equal(AvroDiagnosticCode.InvalidSource, Assert.Single(compiled.Compilation.Diagnostics).Code);
+            Assert.Equal(AvroDiagnosticCode.DuplicateSourcePath, Assert.Single(compiled.Compilation.Diagnostics).Code);
         else
             Assert.Empty(compiled.Compilation.Diagnostics);
     }
@@ -519,7 +519,7 @@ public sealed class AvroCompilationTests
             ("/project/Common.avsc", Record("Second")));
 
         if (OperatingSystem.IsWindows())
-            Assert.Equal(AvroDiagnosticCode.InvalidSource, Assert.Single(compiled.Compilation.Diagnostics).Code);
+            Assert.Equal(AvroDiagnosticCode.DuplicateSourcePath, Assert.Single(compiled.Compilation.Diagnostics).Code);
         else
             Assert.Empty(compiled.Compilation.Diagnostics);
     }
@@ -542,7 +542,7 @@ public sealed class AvroCompilationTests
                 """));
 
         var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.InvalidImport, diagnostic.Code);
+        Assert.Equal(AvroDiagnosticCode.ImportCycle, diagnostic.Code);
         Assert.Contains(@"C:\Project\a.avdl", diagnostic.GetMessage());
         Assert.Contains("C:/Project/B.avdl", diagnostic.GetMessage());
     }
@@ -560,7 +560,7 @@ public sealed class AvroCompilationTests
                 record Consumer { Common common; }
                 """));
 
-        Assert.Equal(["AVROSG0006"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG0005"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 
@@ -579,7 +579,7 @@ public sealed class AvroCompilationTests
                 record Consumer { Common common; }
                 """));
 
-        Assert.Equal(["AVROSG0006"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG0005"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 
@@ -616,7 +616,7 @@ public sealed class AvroCompilationTests
                 record Second { }
                 """));
 
-        Assert.Equal(["AVROSG0006"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG0005"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 

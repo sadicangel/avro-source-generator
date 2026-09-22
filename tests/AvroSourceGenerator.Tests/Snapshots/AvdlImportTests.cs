@@ -56,7 +56,7 @@ public sealed class AvdlImportTests
         var output = GeneratorOutput.Create(
             GeneratorInput.Create([ProjectFile.Source(ProtocolImportSource)], Snapshot.References, Snapshot.ProjectConfig));
 
-        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG1001");
+        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG5002");
         Assert.Empty(output.Documents);
     }
 
@@ -97,7 +97,7 @@ public sealed class AvdlImportTests
 
         var output = GenerateDeferred(("consumer.avdl", source));
 
-        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG1001");
+        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG5001");
         Assert.Empty(output.Documents);
     }
 
@@ -106,7 +106,7 @@ public sealed class AvdlImportTests
     {
         var output = GenerateDeferred(("consumer.avdl", ConsumerSource));
 
-        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG1001");
+        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG5002");
         Assert.Empty(output.Documents);
     }
 

@@ -474,7 +474,8 @@ public sealed class AvroCompilationTests
         else
         {
             var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);
-            Assert.Equal(AvroDiagnosticCode.ImportCycle, diagnostic.Code);
+            Assert.Equal(AvroDiagnosticCode.MissingImport, diagnostic.Code);
+            Assert.Contains("common.avsc", diagnostic.GetMessage());
         }
     }
 

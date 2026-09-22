@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace AvroSourceGenerator.Avsc.Syntax;
+namespace AvroSourceGenerator.Compiler;
 
-internal static class Option
+public static class Option
 {
     public static Option<T> None<T>() => Option<T>.CreateNone();
     public static Option<T> Some<T>(T value) => Option<T>.CreateSome(value);
@@ -50,7 +50,7 @@ internal static class Option
         arg1.Then(arg0, static (value, state) => (state.Item1, state.Item2, state.Item3, state.Item4, state.Item5, state.Item6, value));
 }
 
-internal readonly struct Option<TValue>
+public readonly struct Option<TValue>
 {
     private readonly TValue? _value;
 

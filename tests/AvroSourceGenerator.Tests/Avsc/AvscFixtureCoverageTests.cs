@@ -1,9 +1,11 @@
 ﻿using System.Collections.Immutable;
-using AvroSourceGenerator.Avsc;
+using AvroSourceGenerator.Avsc.Syntax;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Templating;
 using AvroSourceGenerator.Text;
+
+namespace AvroSourceGenerator.Tests.Avsc;
 
 public sealed class AvscFixtureCoverageTests
 {
@@ -23,7 +25,7 @@ public sealed class AvscFixtureCoverageTests
         var sources = GetJsonFixtureSources();
         var options = new AvroParseOptions(target, nullableReferences);
         var files = sources
-            .Select(source => AvscSchemaParser.Parse(source, options, TestContext.Current.CancellationToken))
+            .Select(source => AvscParser.ParseFile(source, options, TestContext.Current.CancellationToken))
             .ToImmutableArray();
 
         Assert.All(files, file => Assert.True(file.IsValid, $"{file.Path}: {string.Join("; ", file.Diagnostics)}"));
@@ -49,7 +51,7 @@ public sealed class AvscFixtureCoverageTests
             """;
         var source = new SourceText("test.avpr", text);
 
-        var file = AvscSchemaParser.Parse(source, new AvroParseOptions(GenerationTarget.Modern, true), TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(source, new AvroParseOptions(GenerationTarget.Modern, true), TestContext.Current.CancellationToken);
 
         var protocol = Assert.IsType<ProtocolSchema>(file.RootSchema);
         Assert.Equal("second", Assert.Single(protocol.Messages).Documentation);

@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace AvroSourceGenerator.Avdl.Syntax.Annotations;
+﻿namespace AvroSourceGenerator.Avdl.Syntax.Annotations;
 
 public sealed record class AliasesAnnotationSyntax(
     SyntaxToken AtSignToken,
@@ -11,10 +9,6 @@ public sealed record class AliasesAnnotationSyntax(
     : IAnnotationSyntax
 {
     public SyntaxKind SyntaxKind => SyntaxKind.AliasesAnnotation;
-
-    public ImmutableArray<string> Aliases => !field.IsDefault
-        ? field
-        : field = JsonValue.GetRequiredStringArray("Aliases annotation value");
 
     public IEnumerable<ISyntaxNode> Children()
     {

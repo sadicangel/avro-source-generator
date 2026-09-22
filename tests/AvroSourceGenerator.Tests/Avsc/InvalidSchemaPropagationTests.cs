@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Avsc;
+﻿using AvroSourceGenerator.Avsc.Syntax;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
@@ -20,7 +20,7 @@ public sealed class InvalidSchemaPropagationTests
     public void Invalid_child_stops_parent_construction(string text)
     {
         var source = new SourceText("test.avsc", text);
-        var file = AvscSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
         Assert.False(file.IsValid);
@@ -44,7 +44,7 @@ public sealed class InvalidSchemaPropagationTests
     [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":"null","one-way":0}}}""")]
     public void Invalid_properties_return_the_invalid_sentinel(string text)
     {
-        var file = AvscSchemaParser.Parse(new SourceText("test.avsc", text), Options, TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(new SourceText("test.avsc", text), Options, TestContext.Current.CancellationToken);
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
         Assert.Empty(file.Declarations);
@@ -55,7 +55,7 @@ public sealed class InvalidSchemaPropagationTests
     public void Earlier_recovered_diagnostics_survive_a_later_invalid_child()
     {
         const string text = """{"protocol":"P","types":false,"messages":{"m":{"request":{},"response":false}}}""";
-        var file = AvscSchemaParser.Parse(new SourceText("test.avpr", text), Options, TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(new SourceText("test.avpr", text), Options, TestContext.Current.CancellationToken);
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
         Assert.Equal(new[] { "false", "{}", "false" }, file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
@@ -67,7 +67,7 @@ public sealed class InvalidSchemaPropagationTests
     {
         const string text = """{"type":"record","name":"R","fields":[{"name":"f","type":{"type":"record","name":"R","fields":[]}}]}""";
         var source = new SourceText("test.avsc", text);
-        var file = AvscSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
         Assert.Equal(AvroDiagnosticCode.RecursiveSchemaDefinition, Assert.Single(file.Diagnostics).Code);
@@ -77,7 +77,7 @@ public sealed class InvalidSchemaPropagationTests
     public void Invariant_failures_are_not_converted_to_diagnostics()
     {
         var source = new SourceText("test.avsc", """{"type":"string","logicalType":"uuid"}""");
-        Assert.Throws<InvalidOperationException>(() => AvscSchemaParser.Parse(
+        Assert.Throws<InvalidOperationException>(() => AvscParser.ParseFile(
             source, new AvroParseOptions((GenerationTarget)(-1), true), TestContext.Current.CancellationToken));
     }
 

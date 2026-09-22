@@ -1,6 +1,5 @@
-﻿using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avsc;
+﻿using AvroSourceGenerator.Avdl.Syntax;
+using AvroSourceGenerator.Avsc.Syntax;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
@@ -17,7 +16,7 @@ public sealed class ParserProvenanceTests
     {
         Assert.Throws<ArgumentException>(() => new AvroImport(AvroImportKind.Idl, "a.avdl", SourceSpan.None));
         const string text = "import idl \"a.avdl\"; import idl \"a.avdl\"; schema string;";
-        var file = AvdlSchemaParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        var file = AvdlParser.ParseFile(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid);
         Assert.Equal(2, file.Imports.Length);
         Assert.All(file.Imports, import => Assert.Equal("\"a.avdl\"", import.SourceSpan.ToString()));
@@ -27,22 +26,23 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Provenance_does_not_change_semantic_schema_equality()
     {
-        var first = AvdlSchemaParser.Parse(new SourceText("a.avdl", "schema F; fixed F(4);"), Options, TestContext.Current.CancellationToken);
-        var second = AvdlSchemaParser.Parse(new SourceText("b.avdl", "\n schema F; fixed F(4);"), Options, TestContext.Current.CancellationToken);
+        var first = AvdlParser.ParseFile(new SourceText("a.avdl", "schema F; fixed F(4);"), Options, TestContext.Current.CancellationToken);
+        var second = AvdlParser.ParseFile(new SourceText("b.avdl", "\n schema F; fixed F(4);"), Options, TestContext.Current.CancellationToken);
         Assert.Equal(first.RootSchema, second.RootSchema);
         Assert.Equal(first.Declarations, second.Declarations);
         Assert.NotEqual(first.DeclarationSpans, second.DeclarationSpans);
     }
 
     [Fact]
-    public void Schema_validation_exception_is_returned_at_the_declaration()
+    public void Recursive_definition_diagnostic_points_to_the_nested_name()
     {
         const string text = "protocol P { record P {} }";
-        var file = AvdlSchemaParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        var file = AvdlParser.ParseFile(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
         var diagnostic = Assert.Single(file.Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.InvalidSchemaValue, diagnostic.Code);
-        Assert.Equal(text, diagnostic.SourceSpan.ToString());
-        Assert.Equal("Invalid Avro schema value 'Recursive schema definition detected for schema 'P'.'.", diagnostic.GetMessage());
+        Assert.Equal(AvroDiagnosticCode.RecursiveSchemaDefinition, diagnostic.Code);
+        Assert.Equal("P", diagnostic.SourceSpan.ToString());
+        Assert.Equal(text.LastIndexOf('P'), diagnostic.SourceSpan.Offset);
+        Assert.Equal("Recursive schema definition detected for 'P'.", diagnostic.GetMessage());
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public sealed class ParserProvenanceTests
     [InlineData("protocol P { string call() oneway; }", "oneway")]
     public void Semantic_validation_returns_a_precise_diagnostic(string text, string anchor)
     {
-        var result = AvdlSchemaParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        var result = AvdlParser.ParseFile(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         Assert.Equal(anchor, Assert.Single(result.Diagnostics).SourceSpan.ToString());
     }
@@ -140,7 +140,7 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Syntax_validation_returns_diagnostics()
     {
-        var result = AvdlSchemaParser.Parse(new SourceText("test.avdl", "schema ;"), Options, TestContext.Current.CancellationToken);
+        var result = AvdlParser.ParseFile(new SourceText("test.avdl", "schema ;"), Options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         Assert.NotEmpty(result.Diagnostics);
     }
@@ -151,7 +151,7 @@ public sealed class ParserProvenanceTests
     public void Json_validation_returns_precise_value_diagnostics(string path, string text)
     {
         var source = new SourceText(path, text);
-        var result = AvscSchemaParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var result = AvscParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         var diagnostic = Assert.Single(result.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.InvalidArrayProperty, diagnostic.Code);

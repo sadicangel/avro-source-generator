@@ -12,7 +12,7 @@ public sealed class ParserPipelineTests
     public void Qualified_names_ignore_namespace_properties_and_nested_names_inherit()
     {
         const string text = """{"type":"record","name":"Example.R","namespace":false,"fields":[{"name":"e","type":{"type":"enum","name":"E","symbols":["class"]}},{"name":"r","type":"Example.R"}]}""";
-        var file = AvscParser.Parse(new SourceText("test.avsc", text), Options, TestContext.Current.CancellationToken);
+        var file = AvscParser.ParseFile(new SourceText("test.avsc", text), Options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid);
         var record = Assert.IsType<RecordSchema>(file.RootSchema);
         Assert.Equal(new SchemaName("R", "Example"), record.SchemaName);
@@ -37,5 +37,5 @@ public sealed class ParserPipelineTests
         Assert.Equal("record R { string value; }", Assert.Single(file.DeclarationSpans).ToString());
     }
 
-    private static AvroParseOptions Options => new AvroParseOptions(GenerationTarget.Modern, true);
+    private static AvroParseOptions Options => new(GenerationTarget.Modern, true);
 }

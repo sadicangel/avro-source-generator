@@ -1,7 +1,7 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
-using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Avsc;
+using AvroSourceGenerator.Avdl.Syntax;
+using AvroSourceGenerator.Avsc.Syntax;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
@@ -83,8 +83,8 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
         }
 
         return sourceType is SourceType.Avdl
-            ? AvdlSchemaParser.Parse(sourceText, parseOptions, cancellationToken)
-            : AvscSchemaParser.Parse(sourceText, parseOptions, cancellationToken);
+            ? AvdlParser.ParseFile(sourceText, parseOptions, cancellationToken)
+            : AvscParser.ParseFile(sourceText, parseOptions, cancellationToken);
     }
 
     internal static AvroFile Invalid(SourceText source, AvroDiagnostic diagnostic, AvroParseOptions parseOptions) =>

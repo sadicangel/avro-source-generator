@@ -1,7 +1,6 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
 using AvroSourceGenerator.Diagnostics;
-using AvroSourceGenerator.Exceptions;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
@@ -129,18 +128,12 @@ public abstract class ParserBase(AvroParseOptions options, CancellationToken can
         }
     }
 
-    protected RecursionScope EnterRecursionScope(SchemaName schemaName) => new(RecursionStack, schemaName);
+    protected bool IsInRecursionScope(SchemaName schemaName) => RecursionStack.Contains(schemaName);
 
-    protected bool TryEnterRecursionScope(SchemaName schemaName, out RecursionScope scope)
+    protected RecursionScope EnterRecursionScope(SchemaName schemaName)
     {
         CancellationToken.ThrowIfCancellationRequested();
-        if (RecursionStack.Contains(schemaName))
-        {
-            scope = default;
-            return false;
-        }
-        scope = new RecursionScope(RecursionStack, schemaName);
-        return true;
+        return new RecursionScope(RecursionStack, schemaName);
     }
 
     protected void Report(AvroDiagnostic diagnostic)
@@ -212,7 +205,7 @@ public abstract class ParserBase(AvroParseOptions options, CancellationToken can
             _schemaName = schemaName;
 
             if (_recursionStack.Contains(schemaName))
-                throw new InvalidSchemaException($"Recursive schema definition detected for schema '{schemaName}'.");
+                throw new InvalidOperationException($"Recursive schema definition detected for schema '{schemaName}'.");
 
             _recursionStack.Add(schemaName);
         }

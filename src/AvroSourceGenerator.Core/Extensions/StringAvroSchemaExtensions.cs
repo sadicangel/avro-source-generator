@@ -1,21 +1,7 @@
-﻿using AvroSourceGenerator.Exceptions;
-using AvroSourceGenerator.Schemas;
-
-namespace AvroSourceGenerator.Extensions;
+﻿namespace AvroSourceGenerator.Extensions;
 
 internal static class StringAvroSchemaExtensions
 {
-    extension(string name)
-    {
-        public SchemaName ToSchemaName(string? containingNamespace = null)
-        {
-            name.TrySplitQualifiedName(out var localName, out var @namespace);
-            if (string.IsNullOrWhiteSpace(localName) || @namespace is "")
-                throw new InvalidSchemaException("Argument has an invalid name format: 'cannot start or end with a dot'");
-            return new SchemaName(localName, @namespace ?? containingNamespace);
-        }
-    }
-
     extension(string qualifiedName)
     {
         public bool TrySplitQualifiedName(out string name, out string? @namespace)

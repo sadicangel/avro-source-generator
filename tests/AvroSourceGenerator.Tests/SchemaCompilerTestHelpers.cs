@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
-using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Avsc;
+using AvroSourceGenerator.Avdl.Syntax;
+using AvroSourceGenerator.Avsc.Syntax;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Templating;
@@ -14,7 +14,7 @@ internal static class SchemaCompilerTestHelpers
         string json,
         GenerationTarget generationTarget = GenerationTarget.Modern,
         bool useNullableReferenceTypes = true) =>
-        AvscSchemaParser.Parse(
+        AvscParser.ParseFile(
             new SourceText("test.avsc", json),
             new AvroParseOptions(generationTarget, useNullableReferenceTypes),
             TestContext.Current.CancellationToken);
@@ -23,7 +23,7 @@ internal static class SchemaCompilerTestHelpers
         string source,
         GenerationTarget generationTarget = GenerationTarget.Modern,
         bool useNullableReferenceTypes = true) =>
-        AvdlSchemaParser.Parse(
+        AvdlParser.ParseFile(
             new SourceText("test.avdl", source),
             new AvroParseOptions(generationTarget, useNullableReferenceTypes),
             TestContext.Current.CancellationToken);

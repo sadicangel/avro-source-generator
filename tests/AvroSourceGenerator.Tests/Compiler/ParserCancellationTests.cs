@@ -1,7 +1,6 @@
 ﻿using System.Text;
-using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avsc;
+using AvroSourceGenerator.Avsc.Syntax;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Text;
 
@@ -44,7 +43,7 @@ public sealed class ParserCancellationTests
         var token = CreateCancelledToken();
 
         Assert.Throws<OperationCanceledException>(() =>
-            AvdlSchemaParser.Parse(new SourceText("test.avdl", "schema R; record R {}"), Options, token));
+            AvdlParser.ParseFile(new SourceText("test.avdl", "schema R; record R {}"), Options, token));
     }
 
     [Fact]
@@ -53,7 +52,7 @@ public sealed class ParserCancellationTests
         var token = CreateCancelledToken();
 
         Assert.Throws<OperationCanceledException>(() =>
-            AvscSchemaParser.Parse(new SourceText("test.avsc", "{\"type\":\"record\",\"name\":\"R\",\"fields\":[]}"), Options, token));
+            AvscParser.ParseFile(new SourceText("test.avsc", "{\"type\":\"record\",\"name\":\"R\",\"fields\":[]}"), Options, token));
     }
 
     [Fact]
@@ -94,7 +93,7 @@ public sealed class ParserCancellationTests
         text.Append("]}");
 
         Assert.Throws<OperationCanceledException>(() =>
-            AvscSchemaParser.Parse(new SourceText("large.avsc", text.ToString()), Options, CreateCancelledToken()));
+            AvscParser.ParseFile(new SourceText("large.avsc", text.ToString()), Options, CreateCancelledToken()));
     }
 
     private static CancellationToken CreateCancelledToken()

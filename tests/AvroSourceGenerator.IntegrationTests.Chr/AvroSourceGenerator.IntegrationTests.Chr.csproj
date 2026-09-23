@@ -29,7 +29,8 @@
   <ItemGroup>
     <PackageReference Include="Chr.Avro.Codegen" />
     <PackageReference Include="Chr.Avro.Confluent" />
-    <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" />
+    <!-- Chr.Avro.Confluent 10.13.1 requires Confluent packages >= 2.14.0 and < 2.15.0. -->
+    <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" VersionOverride="2.14.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Testcontainers" />
     <PackageReference Include="xunit.v3" />

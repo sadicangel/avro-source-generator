@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
-using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avsc.Syntax;
+using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Templating;
@@ -13,9 +12,10 @@ internal static class SchemaCompilerTestHelpers
     public static AvroFile ParseJson(
         string json,
         GenerationTarget generationTarget = GenerationTarget.Modern,
-        bool useNullableReferenceTypes = true) =>
-        AvscParser.ParseFile(
-            new SourceText("test.avsc", json),
+        bool useNullableReferenceTypes = true,
+        string extension = ".avsc") =>
+        AvxxParser.Parse(
+            new SourceText("test" + extension, json),
             new AvroParseOptions(generationTarget, useNullableReferenceTypes),
             TestContext.Current.CancellationToken);
 
@@ -23,7 +23,7 @@ internal static class SchemaCompilerTestHelpers
         string source,
         GenerationTarget generationTarget = GenerationTarget.Modern,
         bool useNullableReferenceTypes = true) =>
-        AvdlParser.ParseFile(
+        AvxxParser.Parse(
             new SourceText("test.avdl", source),
             new AvroParseOptions(generationTarget, useNullableReferenceTypes),
             TestContext.Current.CancellationToken);
@@ -50,7 +50,8 @@ internal static class SchemaCompilerTestHelpers
             Diagnostics: []);
         var files = sources
             .Select(source => AvroFile.Parse(
-                new SourceText(source.Path, source.Text), new AvroParseOptions(
+                new SourceText(source.Path, source.Text),
+                new AvroParseOptions(
                     configuration.GenerationTarget,
                     configuration.LanguageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes)),
                 cancellationToken))

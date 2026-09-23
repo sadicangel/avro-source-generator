@@ -1,8 +1,12 @@
-﻿using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avdl.Syntax.Annotations;
+﻿using AvroSourceGenerator.Avdl;
+using AvroSourceGenerator.Avdl.Annotations;
+using AvroSourceGenerator.Avdl.Declarations;
+using AvroSourceGenerator.Avdl.Directives;
+using AvroSourceGenerator.Avdl.Syntax;
 using AvroSourceGenerator.Avdl.Syntax.Declarations;
 using AvroSourceGenerator.Avdl.Syntax.Directives;
 using AvroSourceGenerator.Avdl.Syntax.Types;
+using AvroSourceGenerator.Avdl.Types;
 using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.Tests.Avdl;

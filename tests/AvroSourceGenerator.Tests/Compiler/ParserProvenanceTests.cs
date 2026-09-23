@@ -1,5 +1,4 @@
-﻿using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avsc.Syntax;
+﻿using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
@@ -16,7 +15,7 @@ public sealed class ParserProvenanceTests
     {
         Assert.Throws<ArgumentException>(() => new AvroImport(AvroImportKind.Idl, "a.avdl", SourceSpan.None));
         const string text = "import idl \"a.avdl\"; import idl \"a.avdl\"; schema string;";
-        var file = AvdlParser.ParseFile(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid);
         Assert.Equal(2, file.Imports.Length);
         Assert.All(file.Imports, import => Assert.Equal("\"a.avdl\"", import.SourceSpan.ToString()));
@@ -26,8 +25,8 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Provenance_does_not_change_semantic_schema_equality()
     {
-        var first = AvdlParser.ParseFile(new SourceText("a.avdl", "schema F; fixed F(4);"), Options, TestContext.Current.CancellationToken);
-        var second = AvdlParser.ParseFile(new SourceText("b.avdl", "\n schema F; fixed F(4);"), Options, TestContext.Current.CancellationToken);
+        var first = AvxxParser.Parse(new SourceText("a.avdl", "schema F; fixed F(4);"), Options, TestContext.Current.CancellationToken);
+        var second = AvxxParser.Parse(new SourceText("b.avdl", "\n schema F; fixed F(4);"), Options, TestContext.Current.CancellationToken);
         Assert.Equal(first.RootSchema, second.RootSchema);
         Assert.Equal(first.Declarations, second.Declarations);
         Assert.NotEqual(first.DeclarationSpans, second.DeclarationSpans);
@@ -37,7 +36,7 @@ public sealed class ParserProvenanceTests
     public void Recursive_definition_diagnostic_points_to_the_nested_name()
     {
         const string text = "protocol P { record P {} }";
-        var file = AvdlParser.ParseFile(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
         var diagnostic = Assert.Single(file.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.RecursiveSchemaDefinition, diagnostic.Code);
         Assert.Equal("P", diagnostic.SourceSpan.ToString());
@@ -132,7 +131,7 @@ public sealed class ParserProvenanceTests
     [InlineData("protocol P { string call() oneway; }", "oneway")]
     public void Semantic_validation_returns_a_precise_diagnostic(string text, string anchor)
     {
-        var result = AvdlParser.ParseFile(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        var result = AvxxParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         Assert.Equal(anchor, Assert.Single(result.Diagnostics).SourceSpan.ToString());
     }
@@ -140,7 +139,7 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Syntax_validation_returns_diagnostics()
     {
-        var result = AvdlParser.ParseFile(new SourceText("test.avdl", "schema ;"), Options, TestContext.Current.CancellationToken);
+        var result = AvxxParser.Parse(new SourceText("test.avdl", "schema ;"), Options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         Assert.NotEmpty(result.Diagnostics);
     }
@@ -151,7 +150,7 @@ public sealed class ParserProvenanceTests
     public void Json_validation_returns_precise_value_diagnostics(string path, string text)
     {
         var source = new SourceText(path, text);
-        var result = AvscParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
+        var result = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         var diagnostic = Assert.Single(result.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.InvalidArrayProperty, diagnostic.Code);

@@ -3,7 +3,7 @@
   Message: Property 'size' must be a positive integer, but '0' was found.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2009,
+    Id: AVROSG2011,
     Title: Invalid Fixed Size,
     Description: A fixed schema size is not a positive 32-bit integer. Set size to the number of bytes in each fixed value.,
     MessageFormat: Property 'size' must be a positive integer, but '{0}' was found.,

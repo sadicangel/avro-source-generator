@@ -1,5 +1,5 @@
-using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avsc.Syntax;
+﻿using AvroSourceGenerator.Avdl;
+using AvroSourceGenerator.Avjs;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
@@ -7,8 +7,16 @@ namespace AvroSourceGenerator.Diagnostics;
 
 internal static class AvroDiagnosticExtensions
 {
-    extension(AvroDiagnostic diagnostic) { public bool IsError => diagnostic.Severity is AvroDiagnosticSeverity.Error; }
-    extension(IEnumerable<AvroDiagnostic> diagnostics) { public bool HasErrors => diagnostics.Any(static diagnostic => diagnostic.IsError); }
+    extension(AvroDiagnostic diagnostic)
+    {
+        public bool IsError => diagnostic.Severity is AvroDiagnosticSeverity.Error;
+    }
+
+    extension(IEnumerable<AvroDiagnostic> diagnostics)
+    {
+        public bool HasErrors => diagnostics.Any(static diagnostic => diagnostic.IsError);
+    }
+
     private static string Display(JsonSyntax syntax) => syntax.GetDisplayText();
     private static string? Display(SyntaxKind kind) => SyntaxFacts.GetDisplayText(kind) ?? kind.ToString();
 
@@ -33,6 +41,8 @@ internal static class AvroDiagnosticExtensions
         public static AvroDiagnostic InvalidJson(SourceSpan span, string message) => new(AvroDiagnosticCode.InvalidJson, span, message);
         public static AvroDiagnostic EmptyJson(SourceSpan span) => new(AvroDiagnosticCode.EmptyJson, span);
         public static AvroDiagnostic TrailingJson(SourceSpan span) => new(AvroDiagnosticCode.TrailingJsonContent, span);
+        public static AvroDiagnostic SchemaExpected(SourceSpan span) => new(AvroDiagnosticCode.SchemaExpected, span);
+        public static AvroDiagnostic ProtocolExpected(SourceSpan span) => new(AvroDiagnosticCode.ProtocolExpected, span);
         public static AvroDiagnostic MissingRootSchema(SourceSpan span) => new(AvroDiagnosticCode.MissingRootSchema, span);
         public static AvroDiagnostic RecursiveDefinition(SourceSpan span, SchemaName name) => new(AvroDiagnosticCode.RecursiveSchemaDefinition, span, name.FullName);
         public static AvroDiagnostic InvalidJsonString(JsonSyntax syntax) => new(AvroDiagnosticCode.InvalidStringProperty, syntax.SourceSpan, "value", "a non-empty string", Display(syntax));

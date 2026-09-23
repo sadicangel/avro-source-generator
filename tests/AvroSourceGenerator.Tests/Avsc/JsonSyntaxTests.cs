@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using AvroSourceGenerator.Avsc.Syntax;
+using AvroSourceGenerator.Avjs;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Tests.Avsc;

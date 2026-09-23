@@ -1,5 +1,4 @@
-﻿using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avsc.Syntax;
+﻿using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
@@ -12,7 +11,7 @@ public sealed class ParserPipelineTests
     public void Qualified_names_ignore_namespace_properties_and_nested_names_inherit()
     {
         const string text = """{"type":"record","name":"Example.R","namespace":false,"fields":[{"name":"e","type":{"type":"enum","name":"E","symbols":["class"]}},{"name":"r","type":"Example.R"}]}""";
-        var file = AvscParser.ParseFile(new SourceText("test.avsc", text), Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(new SourceText("test.avsc", text), Options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid);
         var record = Assert.IsType<RecordSchema>(file.RootSchema);
         Assert.Equal(new SchemaName("R", "Example"), record.SchemaName);
@@ -29,7 +28,7 @@ public sealed class ParserPipelineTests
         var syntax = AvdlParser.Parse(source, TestContext.Current.CancellationToken);
         Assert.Empty(syntax.Diagnostics);
         Assert.Single(syntax.Document.Declarations);
-        var file = AvdlParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid);
         var record = Assert.IsType<RecordSchema>(Assert.Single(file.Declarations));
         Assert.Equal(new SchemaName("R", "Example"), record.SchemaName);
@@ -37,5 +36,5 @@ public sealed class ParserPipelineTests
         Assert.Equal("record R { string value; }", Assert.Single(file.DeclarationSpans).ToString());
     }
 
-    private static AvroParseOptions Options => new(GenerationTarget.Modern, true);
+    private static AvroParseOptions Options => new AvroParseOptions(GenerationTarget.Modern, true);
 }

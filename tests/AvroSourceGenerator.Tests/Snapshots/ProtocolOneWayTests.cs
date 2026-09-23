@@ -59,7 +59,7 @@ public sealed class ProtocolOneWayTests
                     }
                 }
             }
-            """);
+            """, extension: ".avpr");
         var schemas = parsed.Declarations.ToDictionary(static schema => schema.SchemaName);
         return (schemas, Assert.IsType<ProtocolSchema>(Assert.Single(parsed.Declarations)));
     }

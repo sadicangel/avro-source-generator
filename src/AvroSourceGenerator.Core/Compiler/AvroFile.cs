@@ -1,7 +1,5 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
-using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avsc.Syntax;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
@@ -67,25 +65,8 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
 
     public override int GetHashCode() => HashCode.Combine(Text, ParseOptions);
 
-    public static AvroFile Parse(SourceText sourceText, AvroParseOptions parseOptions, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (!sourceText.Path.TryGetSourceType(out var sourceType))
-            return Invalid(sourceText, AvroDiagnostic.UnsupportedSourceType(SourceSpan.FromSourceText(sourceText)), parseOptions);
-
-        if (string.IsNullOrWhiteSpace(sourceText.Text))
-        {
-            return Invalid(
-                sourceText,
-                AvroDiagnostic.EmptySource(SourceSpan.FromSourceText(sourceText)),
-                parseOptions);
-        }
-
-        return sourceType is SourceType.Avdl
-            ? AvdlParser.ParseFile(sourceText, parseOptions, cancellationToken)
-            : AvscParser.ParseFile(sourceText, parseOptions, cancellationToken);
-    }
+    public static AvroFile Parse(SourceText sourceText, AvroParseOptions parseOptions, CancellationToken cancellationToken) =>
+        AvxxParser.Parse(sourceText, parseOptions, cancellationToken);
 
     internal static AvroFile Invalid(SourceText source, AvroDiagnostic diagnostic, AvroParseOptions parseOptions) =>
         Invalid(source, [diagnostic], parseOptions);

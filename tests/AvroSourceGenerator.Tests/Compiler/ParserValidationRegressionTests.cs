@@ -1,5 +1,4 @@
-﻿using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avsc.Syntax;
+﻿using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Protocols;
@@ -21,7 +20,7 @@ public sealed class ParserValidationRegressionTests
     {
         var source = new SourceText("test.avdl", $"schema E; enum E {{ A }} = {value};");
 
-        var file = AvdlParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
         var diagnostic = Assert.Single(file.Diagnostics);
         var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
@@ -41,7 +40,7 @@ public sealed class ParserValidationRegressionTests
     {
         var source = new SourceText("test.avdl", text);
 
-        var file = AvdlParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
         var diagnostic = Assert.Single(file.Diagnostics);
         var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
@@ -57,7 +56,7 @@ public sealed class ParserValidationRegressionTests
         var invalidOptions = new AvroParseOptions((GenerationTarget)int.MaxValue, true);
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            AvdlParser.ParseFile(source, invalidOptions, TestContext.Current.CancellationToken));
+            AvxxParser.Parse(source, invalidOptions, TestContext.Current.CancellationToken));
 
         Assert.Contains("Unsupported GenerationTarget", exception.Message, StringComparison.Ordinal);
     }
@@ -67,7 +66,7 @@ public sealed class ParserValidationRegressionTests
     [InlineData("@x(1) @x(2) protocol P {}", "protocol")]
     public void Duplicate_avdl_properties_keep_the_last_value(string text, string schemaType)
     {
-        var file = AvdlParser.ParseFile(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
 
         Assert.True(file.IsValid, string.Join("; ", file.Diagnostics));
         TopLevelSchema schema = schemaType == "protocol"
@@ -79,7 +78,7 @@ public sealed class ParserValidationRegressionTests
     [Fact]
     public void Duplicate_avdl_field_properties_keep_the_last_value()
     {
-        var file = AvdlParser.ParseFile(
+        var file = AvxxParser.Parse(
             new SourceText("test.avdl", "schema R; record R { string @x(1) @x(2) value; }"),
             Options,
             TestContext.Current.CancellationToken);
@@ -93,7 +92,7 @@ public sealed class ParserValidationRegressionTests
     [InlineData("test.avpr", """{"protocol":"P","types":[],"messages":{},"x":1,"x":2}""")]
     public void Duplicate_json_properties_keep_the_last_value(string path, string text)
     {
-        var file = AvscParser.ParseFile(new SourceText(path, text), Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(new SourceText(path, text), Options, TestContext.Current.CancellationToken);
 
         Assert.True(file.IsValid, string.Join("; ", file.Diagnostics));
         Assert.Equal(2, file.RootSchema!.Properties["x"].GetInt32());
@@ -103,7 +102,7 @@ public sealed class ParserValidationRegressionTests
     public void Duplicate_json_field_properties_keep_the_last_value()
     {
         const string text = """{"type":"record","name":"R","fields":[{"name":"f","type":"string","x":1,"x":2}]}""";
-        var file = AvscParser.ParseFile(new SourceText("test.avsc", text), Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(new SourceText("test.avsc", text), Options, TestContext.Current.CancellationToken);
 
         var field = Assert.Single(Assert.IsType<RecordSchema>(file.RootSchema).Fields);
         Assert.Equal(2, field.Properties["x"].GetInt32());

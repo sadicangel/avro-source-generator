@@ -8,7 +8,7 @@ public sealed class DocumentationTests
     {
         var schema = TestSchemas.Get(schemaType).With("doc", doc).ToString();
 
-        return Snapshot.Schema(schema);
+        return schemaType == "protocol" ? Snapshot.Protocol(schema) : Snapshot.Schema(schema);
     }
 
     [Theory]
@@ -17,7 +17,7 @@ public sealed class DocumentationTests
     {
         var schema = TestSchemas.Get(schemaType).With("doc", JsonNode.Parse(json)!).ToString();
 
-        return Snapshot.Diagnostic(ProjectFile.Schema(schema));
+        return Snapshot.Diagnostic(schemaType == "protocol" ? ProjectFile.Protocol(schema) : ProjectFile.Schema(schema));
     }
 
     public static MatrixTheoryData<string, string> ValidDocumentationSchemaPairs() => new([null!, "", "Single line comment", "Multi\nline\ncomment"], ["enum", "error", "record", "protocol"]);

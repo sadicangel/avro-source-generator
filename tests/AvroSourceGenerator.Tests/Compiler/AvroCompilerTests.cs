@@ -66,7 +66,7 @@ public sealed class AvroCompilerTests
     [InlineData("empty.avdl", "", AvroDiagnosticCode.EmptySource)]
     [InlineData("blank.avsc", " \r\n ", AvroDiagnosticCode.EmptySource)]
     [InlineData("invalid.avsc", "{", AvroDiagnosticCode.InvalidJson)]
-    [InlineData("invalid.avsc", "{}", AvroDiagnosticCode.MissingSchemaProperty)]
+    [InlineData("invalid.avsc", "{}", AvroDiagnosticCode.SchemaExpected)]
     [InlineData("invalid.avdl", "$", AvroDiagnosticCode.InvalidCharacter)]
     public void Invalid_files_return_core_diagnostics(string path, string text, AvroDiagnosticCode expected)
     {

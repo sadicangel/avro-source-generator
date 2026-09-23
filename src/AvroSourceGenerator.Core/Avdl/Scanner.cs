@@ -1,0 +1,428 @@
+﻿using System.Globalization;
+using System.Text;
+using AvroSourceGenerator.Diagnostics;
+using AvroSourceGenerator.Text;
+
+namespace AvroSourceGenerator.Avdl;
+
+public sealed class Scanner(SourceText sourceText, CancellationToken cancellationToken)
+{
+    private const int CancellationCheckInterval = 1024;
+
+    private readonly List<SyntaxToken> _badTokens = [];
+    private readonly List<AvroDiagnostic> _diagnostics = [];
+    private int _position = 0;
+    private SyntaxToken? _previousSyntaxToken = null;
+
+    private ReadOnlySpan<char> CurrentSpan => sourceText.Text.AsSpan(_position);
+
+    public IReadOnlyList<SyntaxToken> BadTokens => _badTokens;
+
+    public IReadOnlyList<AvroDiagnostic> Diagnostics => _diagnostics;
+
+    public IEnumerable<SyntaxToken> ScanAllTokens()
+    {
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var token = Scan();
+            yield return token;
+            if (token.SyntaxKind == SyntaxKind.EofToken)
+                break;
+        }
+    }
+
+    public SyntaxToken Scan()
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _position += SyntaxTriviaScanner.Skip(sourceText, _position, _diagnostics, cancellationToken);
+            var syntaxToken = _previousSyntaxToken = ScanAny();
+            _position += syntaxToken.SourceSpan.Length;
+
+            if (syntaxToken.SyntaxKind is not SyntaxKind.InvalidSyntax)
+            {
+                return syntaxToken;
+            }
+
+            _badTokens.Add(syntaxToken);
+        }
+    }
+
+    private SyntaxToken ScanAny()
+    {
+        switch (CurrentSpan)
+        {
+            case ['{', ..]:
+                return new SyntaxToken(SyntaxKind.BraceOpenToken, new SourceSpan(sourceText, _position, 1));
+
+            case ['}', ..]:
+                return new SyntaxToken(SyntaxKind.BraceCloseToken, new SourceSpan(sourceText, _position, 1));
+
+            case ['(', ..]:
+                return new SyntaxToken(SyntaxKind.ParenthesisOpenToken, new SourceSpan(sourceText, _position, 1));
+
+            case [')', ..]:
+                return new SyntaxToken(SyntaxKind.ParenthesisCloseToken, new SourceSpan(sourceText, _position, 1));
+
+            case ['[', ..]:
+                return new SyntaxToken(SyntaxKind.BracketOpenToken, new SourceSpan(sourceText, _position, 1));
+
+            case [']', ..]:
+                return new SyntaxToken(SyntaxKind.BracketCloseToken, new SourceSpan(sourceText, _position, 1));
+
+            case ['<', ..]:
+                return new SyntaxToken(SyntaxKind.LessThanToken, new SourceSpan(sourceText, _position, 1));
+
+            case ['>', ..]:
+                return new SyntaxToken(SyntaxKind.GreaterThanToken, new SourceSpan(sourceText, _position, 1));
+
+            case ['@', ..]:
+                return new SyntaxToken(SyntaxKind.AtSignToken, new SourceSpan(sourceText, _position, 1));
+
+            case [',', ..]:
+                return new SyntaxToken(SyntaxKind.CommaToken, new SourceSpan(sourceText, _position, 1));
+
+            case ['.']:
+            case ['.', not ('0' or '1' or '2' or '3' or '4' or '5' or '6' or '7' or '8' or '9'), ..]:
+                return new SyntaxToken(SyntaxKind.DotToken, new SourceSpan(sourceText, _position, 1));
+
+            case [':', ..]:
+                return new SyntaxToken(SyntaxKind.ColonToken, new SourceSpan(sourceText, _position, 1));
+
+            case [';', ..]:
+                return new SyntaxToken(SyntaxKind.SemicolonToken, new SourceSpan(sourceText, _position, 1));
+
+            case ['=', ..]:
+                return new SyntaxToken(SyntaxKind.EqualsToken, new SourceSpan(sourceText, _position, 1));
+
+            case ['?', ..]:
+                return new SyntaxToken(SyntaxKind.QuestionMarkToken, new SourceSpan(sourceText, _position, 1));
+
+            case ['/', '*', '*', ..]:
+                return ScanDocumentation();
+
+            case ['"', ..]:
+                return ScanString();
+
+            case [var d1, ..] when IsAsciiDigit(d1):
+            case ['.', var d2, ..] when IsAsciiDigit(d2):
+            case ['-', var d3, ..] when IsAsciiDigit(d3):
+            case ['-', '.', var d4, ..] when IsAsciiDigit(d4):
+                return ScanNumber();
+
+            case [var l1, ..] when IsIdentifierStart(l1):
+            case ['`', var l2, ..] when IsIdentifierStart(l2):
+                return ScanIdentifier();
+
+            // Control
+            case []:
+                return new SyntaxToken(SyntaxKind.EofToken, new SourceSpan(sourceText, _position, 0));
+
+            default:
+                var sourceSpan = new SourceSpan(sourceText, _position, 1);
+                return CreateInvalidToken(sourceSpan, AvroDiagnostic.InvalidCharacter(sourceSpan));
+        }
+    }
+
+    private SyntaxToken CreateInvalidToken(SourceSpan sourceSpan, AvroDiagnostic diagnostic)
+    {
+        _diagnostics.Add(diagnostic);
+        return new SyntaxToken(SyntaxKind.InvalidSyntax, sourceSpan);
+    }
+
+    private SyntaxToken ScanDocumentation()
+    {
+        var start = _position;
+        _position += 3; // Skip '/**'.
+
+        var length = 0;
+        while (true)
+        {
+            if (length % CancellationCheckInterval == 0)
+                cancellationToken.ThrowIfCancellationRequested();
+
+            switch (CurrentSpan[length..])
+            {
+                case [] or ['\0', ..]:
+                    var sourceSpan = new SourceSpan(sourceText, start, sourceText.Text.Length - start);
+                    _position = start;
+                    _diagnostics.Add(AvroDiagnostic.UnterminatedDocumentation(sourceSpan));
+                    return new SyntaxToken(SyntaxKind.InvalidSyntax, sourceSpan);
+
+                case ['*', '/', ..]:
+                    var syntaxToken = new SyntaxToken(SyntaxKind.DocumentationTrivia, new SourceSpan(sourceText, _position, length));
+                    _position += 2; // Skip '*/'.
+                    return syntaxToken;
+
+                default:
+                    length++;
+                    break;
+            }
+        }
+    }
+
+    private SyntaxToken ScanString()
+    {
+        StringBuilder? builder = null;
+        var segmentStart = 1;
+        var length = 1;
+        while (true)
+        {
+            if (length % CancellationCheckInterval == 0)
+                cancellationToken.ThrowIfCancellationRequested();
+
+            char escaped;
+            var escapeWidth = 2;
+            switch (CurrentSpan[length..])
+            {
+                case ['\0', ..]:
+                case ['\r', ..]:
+                case ['\n', ..]:
+                case []:
+                    var sourceSpan = new SourceSpan(sourceText, _position, length);
+                    _diagnostics.Add(AvroDiagnostic.UnterminatedString(sourceSpan));
+                    return new SyntaxToken(SyntaxKind.InvalidSyntax, sourceSpan);
+                case ['\\', '"', ..]:
+                    escaped = '"';
+                    break;
+                case ['\\', '\\', ..]:
+                    escaped = '\\';
+                    break;
+                case ['\\', '/', ..]:
+                    escaped = '/';
+                    break;
+                case ['\\', 'b', ..]:
+                    escaped = '\b';
+                    break;
+                case ['\\', 'f', ..]:
+                    escaped = '\f';
+                    break;
+                case ['\\', 'n', ..]:
+                    escaped = '\n';
+                    break;
+                case ['\\', 'r', ..]:
+                    escaped = '\r';
+                    break;
+                case ['\\', 't', ..]:
+                    escaped = '\t';
+                    break;
+                case ['\\', 'u', var h1, var h2, var h3, var h4, ..] when IsHexDigit(h1) && IsHexDigit(h2) && IsHexDigit(h3) && IsHexDigit(h4):
+                    escaped = (char)((HexValue(h1) << 12) + (HexValue(h2) << 8) + (HexValue(h3) << 4) + HexValue(h4));
+                    escapeWidth = 6;
+                    break;
+                case ['\\', ..]:
+                    var invalidEscapeSpan = new SourceSpan(sourceText, _position, GetInvalidStringLength(length + 2));
+                    return CreateInvalidToken(invalidEscapeSpan, AvroDiagnostic.InvalidEscapeSequence(invalidEscapeSpan));
+                case ['"', ..]:
+                    var content = CurrentSpan.Slice(segmentStart, length - segmentStart);
+                    var value = builder is null ? content.ToString() : builder.Append(content).ToString();
+                    return new SyntaxToken(SyntaxKind.StringLiteralToken, new SourceSpan(sourceText, _position, length + 1), value);
+                default:
+                    length++;
+                    continue;
+            }
+
+            builder ??= new StringBuilder();
+            builder.Append(CurrentSpan.Slice(segmentStart, length - segmentStart));
+            builder.Append(escaped);
+            length += escapeWidth;
+            segmentStart = length;
+        }
+    }
+
+    private static bool IsAsciiDigit(char c) => c is >= '0' and <= '9';
+
+    private static bool IsHexDigit(char c) => c is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F';
+
+    private static int HexValue(char c) => c switch
+    {
+        >= '0' and <= '9' => c - '0',
+        >= 'a' and <= 'f' => c - 'a' + 10,
+        _ => c - 'A' + 10,
+    };
+
+    private SyntaxToken ScanNumber()
+    {
+        var length = 0;
+        var isFloat = false;
+
+        if (CurrentSpan[length] is '-')
+            length++;
+
+        var wholeDigitsStart = length;
+        while (length < CurrentSpan.Length && IsAsciiDigit(CurrentSpan[length]))
+        {
+            if (length % CancellationCheckInterval == 0)
+                cancellationToken.ThrowIfCancellationRequested();
+            ++length;
+        }
+
+        var hasWholeDigits = length > wholeDigitsStart;
+        if (length < CurrentSpan.Length && CurrentSpan[length] is '.')
+        {
+            isFloat = true;
+            ++length;
+            var fractionDigitsStart = length;
+            while (length < CurrentSpan.Length && IsAsciiDigit(CurrentSpan[length]))
+            {
+                if (length % CancellationCheckInterval == 0)
+                    cancellationToken.ThrowIfCancellationRequested();
+                ++length;
+            }
+
+            if (!hasWholeDigits && length == fractionDigitsStart)
+            {
+                var sourceSpan = new SourceSpan(sourceText, _position, length);
+                return CreateInvalidToken(sourceSpan, AvroDiagnostic.InvalidNumber(sourceSpan));
+            }
+        }
+
+        if (length < CurrentSpan.Length && CurrentSpan[length] is 'e' or 'E')
+        {
+            isFloat = true;
+            ++length;
+            if (length < CurrentSpan.Length && CurrentSpan[length] is '+' or '-')
+                ++length;
+
+            var exponentDigitsStart = length;
+            while (length < CurrentSpan.Length && IsAsciiDigit(CurrentSpan[length]))
+            {
+                if (length % CancellationCheckInterval == 0)
+                    cancellationToken.ThrowIfCancellationRequested();
+                ++length;
+            }
+
+            if (length == exponentDigitsStart)
+            {
+                var sourceSpan = new SourceSpan(sourceText, _position, length);
+                return CreateInvalidToken(sourceSpan, AvroDiagnostic.InvalidNumber(sourceSpan));
+            }
+        }
+
+        if (!hasWholeDigits && CurrentSpan[0] is not '.')
+        {
+            var sourceSpan = new SourceSpan(sourceText, _position, Math.Max(length, 1));
+            return CreateInvalidToken(sourceSpan, AvroDiagnostic.InvalidNumber(sourceSpan));
+        }
+
+        SyntaxKind syntaxKind;
+        object value;
+        if (isFloat)
+        {
+            syntaxKind = SyntaxKind.FloatLiteralToken;
+            if (!double.TryParse(CurrentSpan[..length].ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var @float) || double.IsInfinity(@float) || double.IsNaN(@float))
+            {
+                var sourceSpan = new SourceSpan(sourceText, _position, length);
+                return CreateInvalidToken(sourceSpan, AvroDiagnostic.InvalidNumber(sourceSpan));
+            }
+
+            value = @float;
+        }
+        else
+        {
+            syntaxKind = SyntaxKind.IntegerLiteralToken;
+            if (!long.TryParse(CurrentSpan[..length].ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var @int))
+            {
+                var sourceSpan = new SourceSpan(sourceText, _position, length);
+                return CreateInvalidToken(sourceSpan, AvroDiagnostic.InvalidNumber(sourceSpan));
+            }
+
+            value = @int is >= int.MinValue and <= int.MaxValue ? (object)(int)@int : @int;
+        }
+
+        return new SyntaxToken(syntaxKind, new SourceSpan(sourceText, _position, length), value);
+    }
+
+    private int GetInvalidStringLength(int start)
+    {
+        var length = Math.Min(start, CurrentSpan.Length);
+        while (length < CurrentSpan.Length)
+        {
+            if (length % CancellationCheckInterval == 0)
+                cancellationToken.ThrowIfCancellationRequested();
+
+            switch (CurrentSpan[length])
+            {
+                case '"':
+                    return length + 1;
+                case '\r':
+                case '\n':
+                case '\0':
+                    return length;
+                default:
+                    length++;
+                    break;
+            }
+        }
+
+        return length;
+    }
+
+    private SyntaxToken ScanIdentifier()
+    {
+        var start = _position;
+        var isVerbatim = CurrentSpan is ['`', ..];
+
+        var identifierSpan = isVerbatim ? CurrentSpan[1..] : CurrentSpan;
+
+        if (identifierSpan.IsEmpty || !IsIdentifierStart(identifierSpan[0]))
+        {
+            var sourceSpan = new SourceSpan(sourceText, start, 1);
+            return CreateInvalidToken(sourceSpan, AvroDiagnostic.InvalidCharacter(sourceSpan));
+        }
+
+        var length = GetIdentifierLength(identifierSpan, _previousSyntaxToken?.SyntaxKind is SyntaxKind.AtSignToken or SyntaxKind.DotToken);
+
+        if (isVerbatim)
+        {
+            if (length >= identifierSpan.Length || identifierSpan[length] is not '`')
+            {
+                var sourceSpan = new SourceSpan(
+                    sourceText,
+                    start,
+                    Math.Min(sourceText.Text.Length - start, length + 1));
+                return CreateInvalidToken(sourceSpan, AvroDiagnostic.UnterminatedVerbatimIdentifier(sourceSpan));
+            }
+
+            return new SyntaxToken(
+                SyntaxKind.IdentifierToken,
+                new SourceSpan(sourceText, start, length + 2),
+                identifierSpan[..length].ToString());
+        }
+
+        var text = identifierSpan[..length];
+        var kind = SyntaxFacts.GetKeywordKind(text);
+
+        object? value = kind switch
+        {
+            SyntaxKind.TrueKeyword => true,
+            SyntaxKind.FalseKeyword => false,
+            SyntaxKind.IdentifierToken => text.ToString(),
+            _ => null,
+        };
+
+        return new SyntaxToken(kind, new SourceSpan(sourceText, start, length), value);
+    }
+
+    private int GetIdentifierLength(ReadOnlySpan<char> chars, bool allowDash)
+    {
+        var length = 0;
+        while (length < chars.Length && IsValid(chars[length], allowDash))
+        {
+            if (length % CancellationCheckInterval == 0)
+                cancellationToken.ThrowIfCancellationRequested();
+            length++;
+        }
+
+        return length;
+
+        static bool IsValid(char c, bool allowDash) => c is '_' || IsAsciiDigit(c) || IsAsciiLetter(c) || (allowDash && c == '-');
+    }
+
+    private static bool IsIdentifierStart(char c) => c is '_' || IsAsciiLetter(c);
+
+    private static bool IsAsciiLetter(char c) => (uint)((c | 0x20) - 'a') <= 'z' - 'a';
+}

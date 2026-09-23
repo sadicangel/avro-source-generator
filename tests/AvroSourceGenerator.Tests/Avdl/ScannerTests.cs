@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Avdl.Syntax;
+﻿using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.Tests.Avdl;
@@ -6,7 +6,7 @@ namespace AvroSourceGenerator.Tests.Avdl;
 public sealed class ScannerTests
 {
     public static TheoryData<string, SyntaxKind> Punctuation =>
-        new()
+        new TheoryData<string, SyntaxKind>
         {
             { "{", SyntaxKind.BraceOpenToken },
             { "}", SyntaxKind.BraceCloseToken },
@@ -26,7 +26,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string, SyntaxKind> Keywords =>
-        new()
+        new TheoryData<string, SyntaxKind>
         {
             { "true", SyntaxKind.TrueKeyword },
             { "false", SyntaxKind.FalseKeyword },
@@ -63,7 +63,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string, object> IntegerLiterals =>
-        new()
+        new TheoryData<string, object>
         {
             { "0", 0 },
             { "42", 42 },
@@ -72,7 +72,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string, double> FloatLiterals =>
-        new()
+        new TheoryData<string, double>
         {
             { "0.5", 0.5D },
             { ".5", 0.5D },
@@ -83,7 +83,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string> InvalidInputs =>
-        new()
+        new TheoryData<string>
         {
             "$",
             "\"unterminated",
@@ -94,7 +94,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string, AvroDiagnosticCode, int, int> InvalidInputDiagnostics =>
-        new()
+        new TheoryData<string, AvroDiagnosticCode, int, int>
         {
             { "$", AvroDiagnosticCode.InvalidCharacter, 0, 1 },
             { "\"bad\\q\"", AvroDiagnosticCode.InvalidEscapeSequence, 0, 7 },
@@ -318,5 +318,5 @@ public sealed class ScannerTests
         Assert.Equal(text.Length, diagnostic.SourceSpan.Length);
     }
 
-    private static Scanner CreateScanner(string text) => new(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
+    private static Scanner CreateScanner(string text) => new Scanner(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
 }

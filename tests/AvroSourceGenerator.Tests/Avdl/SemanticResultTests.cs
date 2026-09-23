@@ -1,5 +1,5 @@
-﻿using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avdl.Syntax.Declarations;
+﻿using AvroSourceGenerator.Avdl;
+using AvroSourceGenerator.Avdl.Declarations;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
@@ -9,7 +9,7 @@ namespace AvroSourceGenerator.Tests.Avdl;
 
 public sealed class SemanticResultTests
 {
-    private static readonly AvroParseOptions Options = new(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions Options = new AvroParseOptions(GenerationTarget.Modern, true);
 
     [Theory]
     [InlineData("record R {}", AvroDiagnosticCode.InvalidIdlDocument)]
@@ -158,7 +158,7 @@ public sealed class SemanticResultTests
         const string text = "schema R; record R { string f } fixed F(0);";
         var source = new SourceText("test.avdl", text);
         var syntax = AvdlParser.Parse(source, TestContext.Current.CancellationToken);
-        var file = AvdlParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
         AssertInvalid(file);
         Assert.Equal(syntax.Diagnostics, file.Diagnostics);
         Assert.DoesNotContain(file.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.InvalidIdlFixedSize);
@@ -168,7 +168,7 @@ public sealed class SemanticResultTests
     public void Static_and_instance_entrypoints_return_the_same_diagnostics()
     {
         var source = new SourceText("test.avdl", "schema R; fixed F(0); record R { @logicalType(1) string f; }");
-        var expected = AvdlParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
+        var expected = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
         var actual = new AvdlParser(source, Options, TestContext.Current.CancellationToken).ParseFile();
         AssertInvalid(actual);
         Assert.Equal(expected.Diagnostics, actual.Diagnostics);
@@ -187,7 +187,7 @@ public sealed class SemanticResultTests
         Assert.Empty(syntax.Diagnostics);
         var recordSyntax = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(syntax.Document.Declarations));
         Assert.Equal(4, recordSyntax.Fields[0].DefaultValueClause!.JsonValue.JsonNode!["x"]!.GetValue<int>());
-        var file = AvdlParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid);
         var record = Assert.IsType<RecordSchema>(Assert.Single(file.Declarations));
         Assert.Equal(2, record.Properties["custom"].GetProperty("x").GetInt32());
@@ -201,7 +201,7 @@ public sealed class SemanticResultTests
     {
         var source = new SourceText("test.avdl", $"schema R; @custom({number}) record R {{ double f = {number}; }}");
         var syntax = AvdlParser.Parse(source, TestContext.Current.CancellationToken);
-        var file = AvdlParser.ParseFile(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
         AssertInvalid(file);
         Assert.Equal(syntax.Diagnostics, file.Diagnostics);
         var numbers = file.Diagnostics.Where(diagnostic => diagnostic.Code == AvroDiagnosticCode.InvalidNumber).ToArray();
@@ -223,12 +223,11 @@ public sealed class SemanticResultTests
     {
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
-        Assert.Throws<OperationCanceledException>(() => AvdlParser.ParseFile(
-            new SourceText("test.avdl", "schema R; record R {}"), Options, cancellation.Token));
+        Assert.Throws<OperationCanceledException>(() => AvxxParser.Parse(new SourceText("test.avdl", "schema R; record R {}"), Options, cancellation.Token));
     }
 
     private static AvroFile Parse(string text) =>
-        AvdlParser.ParseFile(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        AvxxParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
 
     private static void AssertInvalid(AvroFile file)
     {

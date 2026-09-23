@@ -11,6 +11,8 @@ public static class MessageTemplate
     public const string InvalidJson = "Invalid JSON: {0}";
     public const string EmptyJson = "JSON value expected.";
     public const string TrailingJsonContent = "Additional text encountered after the JSON value.";
+    public const string SchemaExpected = "An Avro schema is expected.";
+    public const string ProtocolExpected = "An Avro protocol is expected.";
     public const string MissingRootSchema = "A named schema or protocol is required.";
     public const string InvalidSchemaValue = "Invalid Avro schema value '{0}'.";
     public const string ObjectExpected = "An object is required, but '{0}' was found.";
@@ -63,6 +65,8 @@ public static class MessageTemplate
         AvroDiagnosticCode.InvalidJson => InvalidJson,
         AvroDiagnosticCode.EmptyJson => EmptyJson,
         AvroDiagnosticCode.TrailingJsonContent => TrailingJsonContent,
+        AvroDiagnosticCode.SchemaExpected => SchemaExpected,
+        AvroDiagnosticCode.ProtocolExpected => ProtocolExpected,
         AvroDiagnosticCode.MissingRootSchema => MissingRootSchema,
         AvroDiagnosticCode.InvalidSchemaValue => InvalidSchemaValue,
         AvroDiagnosticCode.ObjectExpected => ObjectExpected,

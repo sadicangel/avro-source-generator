@@ -15,7 +15,7 @@ public sealed class RoslynDiagnosticTests
         {
             var core = new AvroDiagnostic(code, SourceSpan.None, "first", "second", "third");
             var diagnostic = core.ToDiagnostic();
-            Assert.StartsWith("AVROSG", diagnostic.Id);
+            Assert.Equal($"AVROSG{(int)code:D4}", diagnostic.Id);
             Assert.Same(code.ToDiagnosticDescriptor(), diagnostic.Descriptor);
             var field = typeof(DiagnosticDescriptors).GetField(code.ToString(), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             Assert.NotNull(field);

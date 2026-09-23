@@ -1,9 +1,9 @@
 ﻿{
-  Location: Xmdv2bbg7zJ05B4ZpV33DebjZ4I.avsc: (5,9)-(5,11),
+  Location: Xmdv2bbg7zJ05B4ZpV33DebjZ4I.avpr: (5,9)-(5,11),
   Message: Property 'doc' must be a string, but '[]' was found.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2004,
+    Id: AVROSG2006,
     Title: Invalid String Property,
     Description: A property that requires a string has a value of the wrong kind or an empty required value. Supply an appropriate string.,
     MessageFormat: Property '{0}' must be {1}, but '{2}' was found.,

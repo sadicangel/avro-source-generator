@@ -8,7 +8,7 @@ public sealed class NamespaceTests
     {
         var schema = TestSchemas.Get(schemaType).With("namespace", @namespace).ToString();
 
-        return Snapshot.Schema(schema);
+        return schemaType == "protocol" ? Snapshot.Protocol(schema) : Snapshot.Schema(schema);
     }
 
     [Theory]
@@ -17,7 +17,7 @@ public sealed class NamespaceTests
     {
         var schema = TestSchemas.Get(schemaType).With("namespace", JsonNode.Parse(json)!).ToString();
 
-        return Snapshot.Diagnostic(ProjectFile.Schema(schema));
+        return Snapshot.Diagnostic(schemaType == "protocol" ? ProjectFile.Protocol(schema) : ProjectFile.Schema(schema));
     }
 
     public static MatrixTheoryData<string, string> ValidNamespaceSchemaPairs() => new([null!, "", "PascalCase.snake_case.object"], ["enum", "error", "record", "protocol"]);

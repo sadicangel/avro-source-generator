@@ -26,7 +26,7 @@ public sealed class ParserArrayTests
               "call":{"request":[{{fields}}],"response":"null","errors":[{{errors}}]}
             }
             }
-            """);
+            """, extension: ".avpr");
 
         var protocol = Assert.IsType<ProtocolSchema>(parsed.RootSchema);
         Assert.Equal(Enumerable.Range(0, count).Select(i => $"Error{i}"), protocol.Types.Select(type => type.SchemaName.Name));
@@ -50,7 +50,7 @@ public sealed class ParserArrayTests
     {
         var schema = JsonNode.Parse("""{"protocol":"Service","types":[],"messages":{}}""")!;
         schema[property] = JsonNode.Parse(value);
-        var diagnostic = Assert.Single(SchemaCompilerTestHelpers.ParseJson(schema.ToJsonString()).Diagnostics);
+        var diagnostic = Assert.Single(SchemaCompilerTestHelpers.ParseJson(schema.ToJsonString(), extension: ".avpr").Diagnostics);
         Assert.Contains($"Property '{property}' must be an array", diagnostic.GetMessage());
     }
 }

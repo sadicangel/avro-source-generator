@@ -82,7 +82,8 @@ record UserFromIdl {
 ```
 
 > [!NOTE]
-> Avro JSON schema files conventionally use `.avsc`, Avro JSON protocol files use `.avpr`, and Avro IDL files use `.avdl`.
+> The file extension selects the parser: `.avsc` for JSON schemas, `.avpr` for JSON protocols, and `.avdl` for IDL.
+> A protocol supplied as a schema reports `AVROSG2000` (schema expected); a schema supplied as a protocol reports `AVROSG2001` (protocol expected).
 
 > [!NOTE]
 > AVDL imports are resolved relative to the importing file. Every imported `.avdl`, `.avsc`, or `.avpr` file,

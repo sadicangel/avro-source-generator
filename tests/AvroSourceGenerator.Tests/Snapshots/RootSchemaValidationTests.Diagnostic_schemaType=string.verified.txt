@@ -3,7 +3,7 @@
   Message: A named schema or protocol is required.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2000,
+    Id: AVROSG2002,
     Title: Missing Root Schema,
     Description: The input contains no named schema or protocol that can serve as a root declaration.,
     MessageFormat: A named schema or protocol is required.,

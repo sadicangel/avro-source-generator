@@ -3,7 +3,7 @@
   Message: One-way message 'heartbeat' must have a null response and no errors.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2013,
+    Id: AVROSG2015,
     Title: Invalid One Way Message,
     Description: A one-way protocol message has a non-null response or declares errors. It must return null and declare no errors.,
     MessageFormat: One-way message '{0}' must have a null response and no errors.,

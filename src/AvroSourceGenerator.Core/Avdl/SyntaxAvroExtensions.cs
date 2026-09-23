@@ -1,10 +1,10 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
 using System.Text.Json;
-using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avdl.Syntax.Annotations;
-using AvroSourceGenerator.Avdl.Syntax.Declarations;
-using AvroSourceGenerator.Avsc;
+using AvroSourceGenerator.Avdl.Annotations;
+using AvroSourceGenerator.Avdl.Declarations;
+using AvroSourceGenerator.Avjs;
+using AvroSourceGenerator.Protocols;
 
 namespace AvroSourceGenerator.Avdl;
 

@@ -3,7 +3,7 @@
   Message: Property 'symbols' must be an array, but '' was found.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2005,
+    Id: AVROSG2007,
     Title: Invalid Array Property,
     Description: A property that requires a JSON array has a value of another kind. Replace it with an array of expected elements.,
     MessageFormat: Property '{0}' must be an array, but '{1}' was found.,

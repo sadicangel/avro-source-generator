@@ -7,6 +7,33 @@ namespace AvroSourceGenerator.Tests;
 
 public sealed class CachingTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Document_kind_diagnostics_are_cached_and_refresh_after_an_edit(bool protocol)
+    {
+        const string schema = """{"type":"record","name":"R","fields":[]}""";
+        const string service = """{"protocol":"P","types":[],"messages":{}}""";
+        var file = protocol ? ProjectFile.Protocol(service) : ProjectFile.Schema(schema);
+        var input = GeneratorInput.Create([file], [], new ProjectConfig { AvroLibrary = "None", LanguageVersion = LanguageVersion.CSharp10 });
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        Assert.Empty(driver.GetRunResult().Diagnostics);
+        var changedText = new ChangedAdditionalText(input.AdditionalTexts[0].Path, protocol ? schema : service);
+        driver = driver.ReplaceAdditionalText(input.AdditionalTexts[0], changedText)
+            .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var diagnostic = Assert.Single(driver.GetRunResult().Diagnostics);
+        Assert.Equal(protocol ? "AVROSG2001" : "AVROSG2000", diagnostic.Id);
+        Assert.Empty(driver.GetRunResult().GeneratedTrees);
+        driver = driver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        Assert.Equal(diagnostic, Assert.Single(driver.GetRunResult().Diagnostics));
+        var tracked = StepTracking.GetTrackedSteps(driver.GetRunResult());
+        Assert.All(tracked["AvroFile"].SelectMany(step => step.Outputs), output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
+        driver = driver.ReplaceAdditionalText(changedText, input.AdditionalTexts[0])
+            .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        Assert.Empty(driver.GetRunResult().Diagnostics);
+        Assert.All(driver.GetRunResult().Results, result => Assert.Null(result.Exception));
+    }
+
     [Fact]
     public void Avdl_diagnostics_are_cached_and_refresh_after_an_edit()
     {

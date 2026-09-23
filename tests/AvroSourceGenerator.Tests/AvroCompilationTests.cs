@@ -342,7 +342,7 @@ public sealed class AvroCompilationTests
                 """),
             ("common.avpr", Record("Common")));
 
-        Assert.Equal(["AVROSG5003"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG2001"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 

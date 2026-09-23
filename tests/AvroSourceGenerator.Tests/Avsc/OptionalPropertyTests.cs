@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using AvroSourceGenerator.Avsc.Syntax;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Protocols;
@@ -52,15 +51,15 @@ public sealed class OptionalPropertyTests
     public void Duplicate_messages_and_property_lookup_are_last_wins()
     {
         const string text = """{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":"null"},"m":{"request":[],"response":"null"}},"custom":1,"custom":2}""";
-        var file = Parse(text);
+        var file = Parse(text, ".avpr");
         Assert.True(file.IsValid);
         var protocol = Assert.IsType<ProtocolSchema>(file.RootSchema);
         Assert.Single(protocol.Messages);
         Assert.Equal("2", protocol.Properties["custom"].GetRawText());
     }
 
-    private static AvroFile Parse(string text) => AvscParser.ParseFile(
-        new SourceText("test.avsc", text),
+    private static AvroFile Parse(string text, string extension = ".avsc") => AvxxParser.Parse(
+        new SourceText("test" + extension, text),
         new AvroParseOptions(GenerationTarget.Modern, true),
         TestContext.Current.CancellationToken);
 
@@ -68,7 +67,7 @@ public sealed class OptionalPropertyTests
     public void Only_selected_message_values_are_semantically_validated()
     {
         const string text = """{"protocol":"P","types":[],"messages":{"a":{"request":false,"response":"Missing"},"b":{"request":[],"response":"null"},"a":{"request":[],"response":"null"}}}""";
-        var file = Parse(text);
+        var file = Parse(text, ".avpr");
         Assert.True(file.IsValid);
         Assert.Empty(file.Diagnostics);
         Assert.Empty(file.References);

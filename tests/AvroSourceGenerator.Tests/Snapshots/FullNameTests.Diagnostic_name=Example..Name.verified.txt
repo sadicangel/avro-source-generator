@@ -3,7 +3,7 @@
   Message: 'Example..Name' is not a valid Avro name.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2010,
+    Id: AVROSG2012,
     Title: Invalid Avro Name,
     Description: A schema, field, request parameter, namespace component, or enum symbol violates Avro naming rules.,
     MessageFormat: '{0}' is not a valid Avro name.,

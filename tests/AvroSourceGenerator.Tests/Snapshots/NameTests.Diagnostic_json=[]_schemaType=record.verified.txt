@@ -3,7 +3,7 @@
   Message: Property 'name' must be a non-empty string, but '[]' was found.,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2004,
+    Id: AVROSG2006,
     Title: Invalid String Property,
     Description: A property that requires a string has a value of the wrong kind or an empty required value. Supply an appropriate string.,
     MessageFormat: Property '{0}' must be {1}, but '{2}' was found.,

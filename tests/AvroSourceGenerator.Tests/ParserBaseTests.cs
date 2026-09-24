@@ -11,7 +11,7 @@ public sealed class ParserBaseTests
     [Fact]
     public void References_use_the_latest_declaration_and_keep_declaration_order()
     {
-        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true), TestContext.Current.CancellationToken);
+        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true));
         var first = Record("Shared") with { CSharpName = new CSharpName("First") };
         var latest = Record("Shared") with { CSharpName = new CSharpName("Latest") };
         context.Declare(first, SourceSpan.None);
@@ -30,7 +30,7 @@ public sealed class ParserBaseTests
     [InlineData(true)]
     public void Variant_replacement_preserves_the_latest_duplicate(bool replaceLatest)
     {
-        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true), TestContext.Current.CancellationToken);
+        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true));
         var first = Record("Shared") with { CSharpName = new CSharpName("First") };
         var latest = Record("Shared") with { CSharpName = new CSharpName("Latest") };
         var other = Record("Other");
@@ -53,7 +53,7 @@ public sealed class ParserBaseTests
     [Fact]
     public void Recursive_references_record_dependencies_without_external_references()
     {
-        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true), TestContext.Current.CancellationToken);
+        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true));
         var record = Record("Node");
         using (context.EnterRecursionScope(record.SchemaName))
         {
@@ -66,11 +66,11 @@ public sealed class ParserBaseTests
         Assert.Equal([record.SchemaName], result.Dependencies[record.SchemaName]);
     }
 
-    private static RecordSchema Record(string name) => new RecordSchema(new SchemaName(name, "Example"), null, [], [], ImmutableSortedDictionary<string, System.Text.Json.JsonElement>.Empty);
+    private static RecordSchema Record(string name) => new(new SchemaName(name, "Example"), null, [], [], ImmutableSortedDictionary<string, System.Text.Json.JsonElement>.Empty);
 
-    private static SourceText Source { get; } = new SourceText("test.avsc", "{}");
+    private static SourceText Source { get; } = new("test.avsc", "{}");
 
-    private sealed class TestParser(AvroParseOptions options, CancellationToken cancellationToken) : AvxxParser(options, cancellationToken)
+    private sealed class TestParser(AvroParseOptions options) : AvxxParser(options)
     {
         public new void Declare(TopLevelSchema schema, SourceSpan span) => base.Declare(schema, span);
         public new AvroSchema Reference(SchemaName name, string? containingNamespace, SourceSpan span) => base.Reference(name, containingNamespace, span);
@@ -79,7 +79,7 @@ public sealed class ParserBaseTests
             base.ResolveFieldType(type, name, containingSchema, out underlyingType, out remarks);
 
         private RecursionScope EnterScope(SchemaName name) => base.EnterRecursionScope(name);
-        public new TestScope EnterRecursionScope(SchemaName name) => new TestScope(this, name);
+        public new TestScope EnterRecursionScope(SchemaName name) => new(this, name);
 
         public readonly ref struct TestScope
         {
@@ -88,6 +88,6 @@ public sealed class ParserBaseTests
             public void Dispose() => _scope.Dispose();
         }
 
-        public AvroFile Complete(SourceText source, AvroSchema root, ImmutableArray<AvroImport> imports, ImmutableArray<AvroDiagnostic> diagnostics) => new AvroFile(source, root, [.. Declarations], [.. DeclarationSpans], GetReferences(), GetReferenceSpans(), GetDependencies(), imports, diagnostics, Options);
+        public AvroFile Complete(SourceText source, AvroSchema root, ImmutableArray<AvroImport> imports, ImmutableArray<AvroDiagnostic> diagnostics) => new(source, root, [.. Declarations], [.. DeclarationSpans], GetReferences(), GetReferenceSpans(), GetDependencies(), imports, diagnostics, Options);
     }
 }

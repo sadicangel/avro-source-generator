@@ -9,11 +9,10 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
-public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken) : AvxxParser(options, cancellationToken)
+public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken) : AvxxParser(options)
 {
     protected AvroSchema? ParseSchema()
     {
-        ThrowIfCancellationRequested();
         if (!ParseRootSyntax().Then((Parser: this, ContainingNamespace: (string?)null), Schema).TryGetValue(out var schema))
             return null;
 
@@ -28,7 +27,6 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
 
     protected ProtocolSchema? ParseProtocol()
     {
-        ThrowIfCancellationRequested();
         if (!ParseRootSyntax().Then(this, static (syntax, parser) => parser.AsProtocol(syntax)).Then((Parser: this, ContainingNamespace: (string?)null), Protocol).TryGetValue(out var protocol))
             return null;
 
@@ -83,7 +81,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
     {
         if (property.Value is JsonValueSyntax { TokenType: JsonTokenType.String or JsonTokenType.Null } value)
         {
-            var @string = value.AsString();
+            var @string = value.GetString();
             if (!string.IsNullOrWhiteSpace(@string)) return @string!;
         }
         Report(AvroDiagnostic.InvalidPropertyString(property, required: true));
@@ -103,7 +101,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
     {
         if (property.Value is JsonValueSyntax { TokenType: JsonTokenType.String or JsonTokenType.Null } value)
         {
-            var @string = value.AsString();
+            var @string = value.GetString();
             return string.IsNullOrWhiteSpace(@string) ? null : @string;
         }
         Report(AvroDiagnostic.InvalidPropertyString(property, required: false));
@@ -174,7 +172,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         if (property is null)
             return Option.Some<string?>(null);
 
-        var value = (property.Value as JsonValueSyntax)?.AsString();
+        var value = (property.Value as JsonValueSyntax)?.GetString();
         return !string.IsNullOrWhiteSpace(value)
             ? Option.Some(value)
             : Invalid<string?>(AvroDiagnostic.InvalidJsonString(property.Value));
@@ -182,19 +180,15 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
 
     private static Option<string?> GetOptionalString(JsonObjectSyntax syntax, string propertyName)
     {
-        var value = (syntax.GetProperty(propertyName)?.Value as JsonValueSyntax)?.AsString();
+        var value = (syntax.GetProperty(propertyName)?.Value as JsonValueSyntax)?.GetString();
         return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
-    private static Option<JsonElement?> GetDefaultJson(JsonObjectSyntax syntax)
-    {
-        var property = syntax.GetProperty(AvroJsonKeys.Default);
-        return property is null ? Option.Some<JsonElement?>(null) : property.Value.ToJsonElement();
-    }
+    private static Option<JsonElement?> GetDefaultJson(JsonObjectSyntax syntax) => syntax.GetProperty(AvroJsonKeys.Default)?.Value.AsJsonElement();
 
     private static Option<int> GetSizeInt32(JsonPropertySyntax property, AvjsParser parser)
     {
-        var size = (property.Value as JsonValueSyntax)?.Int32Value;
+        var size = (property.Value as JsonValueSyntax)?.GetInt32();
         if (size is > 0)
             return size.Value;
 
@@ -210,7 +204,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         var builder = ImmutableArray.CreateBuilder<string>(items.Length);
         foreach (var item in items)
         {
-            var @string = (item as JsonValueSyntax)?.AsString();
+            var @string = (item as JsonValueSyntax)?.GetString();
             if (string.IsNullOrWhiteSpace(@string))
             {
                 Report(AvroDiagnostic.InvalidStringArray(property));
@@ -230,7 +224,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
 
     private Option<SchemaName> GetSchemaName(JsonValueSyntax syntax, string? containingNamespace)
     {
-        var qualifiedName = syntax.AsString();
+        var qualifiedName = syntax.GetString();
         if (string.IsNullOrWhiteSpace(qualifiedName))
             return Invalid<SchemaName>(AvroDiagnostic.InvalidJsonString(syntax));
 
@@ -287,14 +281,14 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
     {
         try
         {
-            var reader = new JsonReader(sourceText, CancellationToken);
+            var reader = new JsonReader(sourceText);
             if (!reader.Read())
             {
                 Report(AvroDiagnostic.EmptyJson(sourceText.GetSourceSpan()));
                 return Option.None<JsonSyntax>();
             }
 
-            var root = reader.Parse();
+            var root = reader.Parse(cancellationToken);
 
             if (reader.Read())
             {
@@ -313,7 +307,6 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
 
     protected Option<AvroSchema> Schema(JsonSyntax syntax, string? containingNamespace)
     {
-        CancellationToken.ThrowIfCancellationRequested();
         return syntax switch
         {
             JsonValueSyntax { TokenType: JsonTokenType.String } value => Named(value, containingNamespace),
@@ -472,7 +465,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         Func<TSyntax, TState, Option<T>> parse)
     {
         var builder = ImmutableArray.CreateBuilder<T>(items.Length);
-        foreach (var item in items.WithCancellation(CancellationToken))
+        foreach (var item in items.WithCancellation(cancellationToken))
         {
             var result = parse(item, state);
             if (!result.TryGetValue(out var value))

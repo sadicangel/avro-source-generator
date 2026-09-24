@@ -9,4 +9,4 @@ public abstract record class NamedSchema(
     string? Documentation,
     ImmutableArray<string> Aliases,
     ImmutableSortedDictionary<string, JsonElement> Properties)
-    : TopLevelSchema(Type, SchemaName, Documentation, Properties);
+    : TopLevelSchema(Type, SchemaName, CSharpName.FromSchemaName(SchemaName), Documentation, Properties);

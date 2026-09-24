@@ -10,7 +10,7 @@ public sealed record class ProtocolSchema(
     ImmutableArray<NamedSchema> Types,
     ImmutableArray<ProtocolMessage> Messages,
     ImmutableSortedDictionary<string, JsonElement> Properties)
-    : TopLevelSchema(SchemaType.Protocol, SchemaName, Documentation, Properties)
+    : TopLevelSchema(SchemaType.Protocol, SchemaName, CSharpName.FromSchemaName(SchemaName), Documentation, Properties)
 {
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {

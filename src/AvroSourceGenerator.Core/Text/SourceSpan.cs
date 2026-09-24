@@ -30,6 +30,8 @@ public readonly record struct SourceSpan
 
     public ReadOnlySpan<char> AsSpan() => SourceText is not null ? SourceText.Text.AsSpan(Offset, Length) : ReadOnlySpan<char>.Empty;
 
+    public ReadOnlyMemory<char> AsMemory() => SourceText is not null ? SourceText.Text.AsMemory(Offset, Length) : ReadOnlyMemory<char>.Empty;
+
     public bool Equals(SourceSpan other) => Equals(SourceText, other.SourceText) && Offset == other.Offset && Length == other.Length;
 
     public override int GetHashCode() => HashCode.Combine(SourceText, Offset, Length);

@@ -43,18 +43,6 @@ public sealed record class UnionSchema(
             && Schemas.Any(x => x.Type is not SchemaType.Null);
     }
 
-    public UnionSchema WithVariant(VariantSchema variant)
-    {
-        return this with
-        {
-            CSharpName = CSharpName.HasNullableAnnotation
-                ? variant.CSharpName.WithNullableAnnotation()
-                : variant.CSharpName.WithoutNullableAnnotation(),
-            Schemas = variant.DerivedSchemas,
-            UnderlyingSchema = variant
-        };
-    }
-
     private static bool MapsToValueType(SchemaType type) =>
         type is SchemaType.Boolean or SchemaType.Int or SchemaType.Long or SchemaType.Float or SchemaType.Double or SchemaType.Enum;
 

@@ -8,21 +8,19 @@ namespace AvroSourceGenerator.Avjs;
 
 internal ref struct JsonReader
 {
-    private static readonly Action<JsonSyntax, JsonSyntax> s_setParent = typeof(JsonSyntax).GetProperty(nameof(JsonSyntax.Parent))!
+    private static readonly Action<JsonSyntax, JsonSyntax> s_setParent = typeof(JsonSyntax)
+        .GetProperty(nameof(JsonSyntax.Parent))!
         .GetSetMethod().CreateDelegate<Action<JsonSyntax, JsonSyntax>>();
 
     private readonly SourceText _source;
     private readonly byte[] _utf8;
-    private readonly CancellationToken _cancellationToken;
     private Utf8JsonReader _reader;
     private int _byteOffset;
     private int _characterOffset;
 
-    public JsonReader(SourceText source, CancellationToken cancellationToken)
+    public JsonReader(SourceText source)
     {
-        cancellationToken.ThrowIfCancellationRequested();
         _source = source;
-        _cancellationToken = cancellationToken;
         _utf8 = Encoding.UTF8.GetBytes(source.Text);
         _reader = new Utf8JsonReader(_utf8);
         _byteOffset = 0;
@@ -34,7 +32,6 @@ internal ref struct JsonReader
 
     internal bool Read()
     {
-        _cancellationToken.ThrowIfCancellationRequested();
         if (!_reader.Read()) return false;
         var start = AdvanceTo(_reader.TokenStartIndex);
         var end = _reader.TokenType == JsonTokenType.PropertyName
@@ -68,9 +65,9 @@ internal ref struct JsonReader
         return @object;
     }
 
-    public JsonSyntax Parse()
+    public JsonSyntax Parse(CancellationToken cancellationToken)
     {
-        _cancellationToken.ThrowIfCancellationRequested();
+        cancellationToken.ThrowIfCancellationRequested();
         var start = CurrentSpan.Offset;
         switch (_reader.TokenType)
         {
@@ -79,8 +76,8 @@ internal ref struct JsonReader
                     var items = ImmutableArray.CreateBuilder<JsonSyntax>();
                     while (Read() && _reader.TokenType != JsonTokenType.EndArray)
                     {
-                        _cancellationToken.ThrowIfCancellationRequested();
-                        items.Add(Parse());
+                        cancellationToken.ThrowIfCancellationRequested();
+                        items.Add(Parse(cancellationToken));
                     }
 
                     return SetParents(new JsonArraySyntax(ContainerSpan(start), items.DrainToImmutable()));
@@ -92,10 +89,10 @@ internal ref struct JsonReader
                     ImmutableArray<JsonPropertySyntax>.Builder? duplicates = null;
                     while (Read() && _reader.TokenType != JsonTokenType.EndObject)
                     {
-                        _cancellationToken.ThrowIfCancellationRequested();
+                        cancellationToken.ThrowIfCancellationRequested();
                         var propertyName = new JsonPropertyNameSyntax(_reader.GetString()!, CurrentSpan);
                         Read();
-                        var propertyValue = Parse();
+                        var propertyValue = Parse(cancellationToken);
                         var property = new JsonPropertySyntax(propertyName, propertyValue);
                         if (!nameLookup.TryGetValue(property.Name.Value, out var index))
                         {

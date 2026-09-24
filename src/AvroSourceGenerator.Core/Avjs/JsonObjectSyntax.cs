@@ -15,8 +15,6 @@ public sealed record class JsonObjectSyntax(
 {
     public JsonPropertySyntax? GetProperty(string propertyName) => NameLookup.TryGetValue(propertyName, out var index) ? Properties[index] : null;
 
-    public bool HasProperty(string propertyName) => NameLookup.ContainsKey(propertyName);
-
     public ImmutableSortedDictionary<string, JsonElement> GetSchemaProperties() => GetProperties(ReservedSchemaProperties.IsReserved);
     public ImmutableSortedDictionary<string, JsonElement> GetProtocolProperties() => GetProperties(ReservedProtocolProperties.IsReserved);
 
@@ -27,7 +25,7 @@ public sealed record class JsonObjectSyntax(
         {
             if (isReserved(name.Value)) continue;
             properties ??= ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
-            properties[name.Value] = value.ToJsonElement();
+            properties[name.Value] = value.AsJsonElement();
         }
         return properties?.ToImmutable() ?? ImmutableSortedDictionary<string, JsonElement>.Empty;
     }

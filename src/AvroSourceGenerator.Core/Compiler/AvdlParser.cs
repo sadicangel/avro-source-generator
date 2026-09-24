@@ -20,9 +20,10 @@ using AvroSourceGenerator.Text;
 namespace AvroSourceGenerator.Avdl;
 
 public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken)
-    : AvxxParser(options, cancellationToken)
+    : AvxxParser(options)
 {
     private readonly SyntaxTokenStream _stream = new(sourceText, cancellationToken);
+    private readonly CancellationToken _cancellationToken = cancellationToken;
     private readonly List<IAnnotationSyntax> _annotations = [];
     private readonly List<DocumentationSyntax> _documentation = [];
     public AvdlParser(SourceText sourceText, CancellationToken cancellationToken) : this(sourceText, default, cancellationToken) { }
@@ -31,9 +32,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
 
     public SyntaxTree Parse()
     {
-        CancellationToken.ThrowIfCancellationRequested();
         var document = ParseDocument();
-
         return new SyntaxTree(sourceText, document, [.. _stream.Diagnostics.Concat(Diagnostics)]);
     }
 
@@ -210,7 +209,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     private JsonValueSyntax ParseJsonValue()
     {
         var index = _stream.Position;
-        var json = JsonParser.Parse(_stream, CancellationToken);
+        var json = JsonParser.Parse(_stream, _cancellationToken);
         var count = _stream.Position - index;
         return new JsonValueSyntax(new SyntaxList<SyntaxToken>([.. _stream.GetTokens(index, count)]), json);
     }
@@ -592,7 +591,6 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
 
     private AvroFile ParseCore(SyntaxTree syntaxTree)
     {
-        CancellationToken.ThrowIfCancellationRequested();
         var source = syntaxTree.SourceText;
 
         var imports = syntaxTree.Document.ImportDirectives
@@ -600,7 +598,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
                 syntaxTree.Document.Declarations
                     .OfType<ProtocolDeclarationSyntax>()
                     .SelectMany(static protocol => protocol.Imports))
-            .WithCancellation(CancellationToken)
+            .WithCancellation(_cancellationToken)
             .Select(static import => new AvroImport(
                 import.ImportTypeKeyword.SyntaxKind switch
                 {
@@ -639,7 +637,6 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
 
     private Option<AvroSchema> Document(SyntaxTree syntaxTree)
     {
-        ThrowIfCancellationRequested();
         var document = syntaxTree.Document;
         var containingNamespace = document.NamespaceDirective?.NamespaceName.FullName;
         var mainSchema = document.SchemaDirective?.MainSchemaType;
@@ -651,7 +648,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         }
 
         var valid = true;
-        foreach (var declaration in document.Declarations.WithCancellation(CancellationToken))
+        foreach (var declaration in document.Declarations.WithCancellation(_cancellationToken))
         {
             if (declaration is not ISchemaDeclarationSyntax schemaDeclaration)
             {
@@ -671,7 +668,6 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         ImmutableSortedDictionary<string, JsonElement>? properties = null,
         JsonElement? defaultJson = null)
     {
-        ThrowIfCancellationRequested();
         properties ??= ImmutableSortedDictionary<string, JsonElement>.Empty;
 
         return syntax switch
@@ -750,7 +746,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         {
             var documentation = syntax.GetDocumentation();
             var aliases = parser.GetAliases(syntax);
-            var symbols = syntax.Symbols.WithCancellation(parser.CancellationToken)
+            var symbols = syntax.Symbols.WithCancellation(parser._cancellationToken)
                 .Select(static symbol => symbol.FullName)
                 .ToImmutableArray();
             var defaultValue = parser.GetEnumDefault(syntax);
@@ -964,7 +960,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     {
         var builder = ImmutableArray.CreateBuilder<T>(items.Count);
         var valid = true;
-        foreach (var item in items.WithCancellation(CancellationToken))
+        foreach (var item in items.WithCancellation(_cancellationToken))
         {
             var result = parse(item, state);
             if (result.TryGetValue(out var value))
@@ -987,7 +983,6 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
 
     private Option<string?> GetString(JsonValueSyntax syntax, string description, bool required)
     {
-        ThrowIfCancellationRequested();
         if (syntax.JsonNode is null && !required)
             return Option.Some<string?>(null);
         if (syntax.JsonNode is JsonValue value && value.TryGetValue<string>(out var result) && (!required || result is not null))
@@ -1002,7 +997,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         if (annotation.JsonValue.JsonNode is JsonArray array)
         {
             var builder = ImmutableArray.CreateBuilder<string>(array.Count);
-            foreach (var node in array.WithCancellation(CancellationToken))
+            foreach (var node in array.WithCancellation(_cancellationToken))
             {
                 if (node is not JsonValue value || !value.TryGetValue<string>(out var result))
                     return Invalid<ImmutableArray<string>>(AvroDiagnostic.InvalidIdlDeclaration(annotation.JsonValue.GetSourceSpan(), "Aliases annotation value must be an array of strings."));

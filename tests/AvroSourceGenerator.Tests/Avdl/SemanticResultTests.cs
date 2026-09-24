@@ -9,7 +9,7 @@ namespace AvroSourceGenerator.Tests.Avdl;
 
 public sealed class SemanticResultTests
 {
-    private static readonly AvroParseOptions Options = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions Options = new(GenerationTarget.Modern, true);
 
     [Theory]
     [InlineData("record R {}", AvroDiagnosticCode.InvalidIdlDocument)]
@@ -75,7 +75,7 @@ public sealed class SemanticResultTests
         var file = Parse(text);
         AssertInvalid(file);
         Assert.Equal(
-            new[] { "false", "0", "1", "2", "3", "4", "5", "6", "2147483648", "2147483649", "7" },
+            ["false", "0", "1", "2", "3", "4", "5", "6", "2147483648", "2147483649", "7"],
             file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
         Assert.All(file.Diagnostics, diagnostic => Assert.Equal("test.avdl", diagnostic.SourceSpan.SourceText.Path.OriginalPath));
         Assert.Equal(file.Diagnostics, Parse(text).Diagnostics);
@@ -90,7 +90,7 @@ public sealed class SemanticResultTests
     {
         var file = Parse($"schema F; @namespace(1) @aliases(2) {declaration} fixed G(-1);");
         AssertInvalid(file);
-        Assert.Equal(new[] { "1", "-1" }, file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.Equal(["1", "-1"], file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
     }
 
     [Fact]
@@ -109,9 +109,9 @@ public sealed class SemanticResultTests
         var file = Parse("schema @logicalType(3) string; protocol P {} fixed F(0);");
         AssertInvalid(file);
         Assert.Equal(
-            new[] { AvroDiagnosticCode.InvalidIdlDeclaration, AvroDiagnosticCode.InvalidIdlFixedSize, AvroDiagnosticCode.InvalidIdlDeclaration },
+            [AvroDiagnosticCode.InvalidIdlDeclaration, AvroDiagnosticCode.InvalidIdlFixedSize, AvroDiagnosticCode.InvalidIdlDeclaration],
             file.Diagnostics.Select(diagnostic => diagnostic.Code));
-        Assert.Equal(new[] { "protocol P {}", "0", "3" }, file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.Equal(["protocol P {}", "0", "3"], file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public sealed class SemanticResultTests
             """;
         var file = Parse(text);
         AssertInvalid(file);
-        Assert.Equal(new[] { "0", "1", "2", "2147483648", "4", "oneway", "5" }, file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.Equal(["0", "1", "2", "2147483648", "4", "oneway", "5"], file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
         // The first response failed, so its one-way rule cannot be evaluated.
         Assert.Single(file.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.InvalidIdlOneWayMessage);
     }
@@ -137,7 +137,7 @@ public sealed class SemanticResultTests
     {
         var file = Parse("protocol P { record P {} fixed F(0); fixed F(1); }");
         AssertInvalid(file);
-        Assert.Equal(new[] { AvroDiagnosticCode.RecursiveSchemaDefinition, AvroDiagnosticCode.InvalidIdlFixedSize }, file.Diagnostics.Select(diagnostic => diagnostic.Code));
+        Assert.Equal([AvroDiagnosticCode.RecursiveSchemaDefinition, AvroDiagnosticCode.InvalidIdlFixedSize], file.Diagnostics.Select(diagnostic => diagnostic.Code));
     }
 
     [Fact]

@@ -8,7 +8,7 @@ namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class ParserProvenanceTests
 {
-    private static readonly AvroParseOptions Options = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions Options = new(GenerationTarget.Modern, true);
 
     [Fact]
     public void Imports_require_source_spans_and_preserve_duplicate_occurrences()
@@ -61,11 +61,11 @@ public sealed class ParserProvenanceTests
         var file = AvroFile.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid, string.Join("; ", file.Diagnostics));
         Assert.Equal(
-            new[] { "record R { ns.Missing a; ns.Missing b; }", "record R {}" },
+            ["record R { ns.Missing a; ns.Missing b; }", "record R {}"],
             file.DeclarationSpans.Select(span => span.ToString()));
         Assert.Equal(text.LastIndexOf("record", StringComparison.Ordinal), file.DeclarationSpans[1].Offset);
         var uses = file.ReferenceSpans[new SchemaName("Missing", "ns")];
-        Assert.Equal(new[] { "ns.Missing", "ns.Missing" }, uses.Select(span => span.ToString()));
+        Assert.Equal(["ns.Missing", "ns.Missing"], uses.Select(span => span.ToString()));
         Assert.True(uses[0].Offset < uses[1].Offset);
         Assert.Equal(text.IndexOf("ns.R", StringComparison.Ordinal), Assert.Single(file.ReferenceSpans[new SchemaName("R", "ns")]).Offset);
     }

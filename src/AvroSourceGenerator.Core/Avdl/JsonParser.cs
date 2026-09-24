@@ -4,12 +4,12 @@ using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.Avdl;
 
-internal readonly ref struct JsonParser(SyntaxTokenStream stream, CancellationToken cancellationToken)
+internal readonly ref struct JsonParser(SyntaxTokenStream stream)
 {
     public static JsonNode? Parse(SyntaxTokenStream stream, CancellationToken cancellationToken) =>
-        new JsonParser(stream, cancellationToken).ParseJson();
+        new JsonParser(stream).ParseJson(cancellationToken);
 
-    private JsonNode? ParseJson()
+    private JsonNode? ParseJson(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         return stream.Current.SyntaxKind switch
@@ -19,8 +19,8 @@ internal readonly ref struct JsonParser(SyntaxTokenStream stream, CancellationTo
             SyntaxKind.FalseKeyword => ParseFalse(),
             SyntaxKind.IntegerLiteralToken or SyntaxKind.FloatLiteralToken => ParseNumber(),
             SyntaxKind.StringLiteralToken => ParseString(),
-            SyntaxKind.BracketOpenToken => ParseArray(),
-            SyntaxKind.BraceOpenToken => ParseObject(),
+            SyntaxKind.BracketOpenToken => ParseArray(cancellationToken),
+            SyntaxKind.BraceOpenToken => ParseObject(cancellationToken),
             SyntaxKind.IdentifierToken => ParseSymbol(),
             _ => ParseUnexpected(),
         };
@@ -74,14 +74,14 @@ internal readonly ref struct JsonParser(SyntaxTokenStream stream, CancellationTo
         return JsonValue.Create((string?)stringToken.Value);
     }
 
-    private JsonArray ParseArray()
+    private JsonArray ParseArray(CancellationToken cancellationToken)
     {
         _ = stream.Match(SyntaxKind.BracketOpenToken);
         var array = new JsonArray();
         while (stream is { IsAtEnd: false, Current.SyntaxKind: not SyntaxKind.BracketCloseToken })
         {
             cancellationToken.ThrowIfCancellationRequested();
-            array.Add(ParseJson());
+            array.Add(ParseJson(cancellationToken));
             if (stream.Current.SyntaxKind is not SyntaxKind.CommaToken)
                 break;
 
@@ -93,7 +93,7 @@ internal readonly ref struct JsonParser(SyntaxTokenStream stream, CancellationTo
         return array;
     }
 
-    private JsonObject ParseObject()
+    private JsonObject ParseObject(CancellationToken cancellationToken)
     {
         _ = stream.Match(SyntaxKind.BraceOpenToken);
         var @object = new JsonObject();
@@ -104,7 +104,7 @@ internal readonly ref struct JsonParser(SyntaxTokenStream stream, CancellationTo
                 ? stream.Match(SyntaxKind.StringLiteralToken)
                 : stream.Match(SyntaxKind.IdentifierToken);
             _ = stream.Match(SyntaxKind.ColonToken);
-            var propertyValue = ParseJson();
+            var propertyValue = ParseJson(cancellationToken);
 
             @object[(string?)propertyName.Value ?? propertyName.ValueText] = propertyValue;
             if (stream.Current.SyntaxKind is not SyntaxKind.CommaToken)

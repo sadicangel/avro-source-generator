@@ -68,16 +68,22 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
 
     private AvroSchema BindUnion(UnionSchema union)
     {
-        var schemas = BindItems(union.Schemas, Bind, out var schemasChanged);
+        // The variant contains all the schemas of the union - which beans we can just bind that.
         if (union.UnderlyingSchema is VariantSchema variant)
         {
             var boundVariant = (VariantSchema)Bind(variant);
-            if (!schemasChanged && ReferenceEquals(boundVariant, variant))
+            if (ReferenceEquals(boundVariant, variant))
                 return union;
 
-            return UnionSchema.Create(schemas, _options.UseNullableReferenceTypes).WithVariant(boundVariant);
+            return union with
+            {
+                CSharpName = union.CSharpName.HasNullableAnnotation ? boundVariant.CSharpName.WithNullableAnnotation() : boundVariant.CSharpName,
+                Schemas = boundVariant.DerivedSchemas,
+                UnderlyingSchema = boundVariant
+            };
         }
 
+        var schemas = BindItems(union.Schemas, Bind, out var schemasChanged);
         return schemasChanged
             ? UnionSchema.Create(schemas, _options.UseNullableReferenceTypes)
             : union;
@@ -121,7 +127,7 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
     private AvroSchema BindVariant(VariantSchema variant)
     {
         var derivedSchemas = BindItems(variant.DerivedSchemas, Bind, out var changed);
-        return changed ? new VariantSchema(variant.SchemaName, derivedSchemas) : variant;
+        return changed ? new VariantSchema(variant.SchemaName, variant.CSharpName, derivedSchemas) : variant;
     }
 
     private Field BindField(Field field)

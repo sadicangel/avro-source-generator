@@ -5,16 +5,15 @@ namespace AvroSourceGenerator.Schemas;
 
 public sealed record class VariantSchema(
     SchemaName SchemaName,
+    CSharpName CSharpName,
     ImmutableArray<AvroSchema> DerivedSchemas)
     : TopLevelSchema(
         SchemaType.Variant,
         SchemaName,
+        CSharpName,
         GetDefaultDocumentation(DerivedSchemas),
         ImmutableSortedDictionary<string, JsonElement>.Empty)
 {
-    public VariantSchema(FieldName fieldName, SchemaName containingSchemaName, ImmutableArray<AvroSchema> derivedSchemas)
-        : this(GetSchemaName(containingSchemaName, fieldName), derivedSchemas) { }
-
     internal static SchemaName GetSchemaName(SchemaName containingSchemaName, FieldName fieldName)
     {
         var length = 1 + containingSchemaName.Name.Length + fieldName.SchemaName.Length + 7;

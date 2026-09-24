@@ -5,19 +5,8 @@ namespace AvroSourceGenerator.Avjs;
 
 public sealed record class JsonValueSyntax(SourceSpan SourceSpan, JsonTokenType TokenType) : JsonSyntax(SourceSpan, TokenType)
 {
-    public string? AsString() => TokenType is JsonTokenType.String or JsonTokenType.Null ? StringValue : null;
+    private string? _string;
+    public string? GetString() => _string ??= TokenType is JsonTokenType.String ? AsJsonElement().Deserialize<string>() : null;
 
-    private string? _stringValue;
-
-    public string? StringValue
-    {
-        get
-        {
-            return TokenType == JsonTokenType.String
-                ? _stringValue ??= JsonSerializer.Deserialize<string>(SourceSpan.AsSpan())
-                : null;
-        }
-    }
-
-    public int? Int32Value => TokenType == JsonTokenType.Number && ToJsonElement().TryGetInt32(out var value) ? value : null;
+    public int? GetInt32() => TokenType == JsonTokenType.Number ? AsJsonElement().TryGetInt32(out var int32) ? int32 : null : null;
 }

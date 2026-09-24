@@ -2,13 +2,12 @@
 using System.Collections.Immutable;
 using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Diagnostics;
-using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
-public abstract class AvxxParser(AvroParseOptions options, CancellationToken cancellationToken)
+public abstract class AvxxParser(AvroParseOptions options)
 {
     public static AvroFile Parse(SourceText sourceText, AvroParseOptions parseOptions, CancellationToken cancellationToken)
     {
@@ -47,13 +46,8 @@ public abstract class AvxxParser(AvroParseOptions options, CancellationToken can
 
     protected readonly List<AvroDiagnostic> Diagnostics = [];
 
-    protected CancellationToken CancellationToken { get; } = cancellationToken;
-
-    protected void ThrowIfCancellationRequested() => CancellationToken.ThrowIfCancellationRequested();
-
     protected void Declare(TopLevelSchema schema, SourceSpan sourceSpan)
     {
-        CancellationToken.ThrowIfCancellationRequested();
         DeclarationSpans.Add(sourceSpan);
         DeclarationIndexes[schema.SchemaName] = Declarations.Count;
         Declarations.Add(schema);
@@ -74,7 +68,6 @@ public abstract class AvxxParser(AvroParseOptions options, CancellationToken can
 
     protected AvroSchema Reference(SchemaName schemaName, string? containingNamespace, SourceSpan sourceSpan)
     {
-        CancellationToken.ThrowIfCancellationRequested();
         switch (schemaName.FullName)
         {
             case AvroTypeNames.Null: return AvroSchema.Null;
@@ -114,7 +107,6 @@ public abstract class AvxxParser(AvroParseOptions options, CancellationToken can
         out AvroSchema underlyingType,
         out string? remarks)
     {
-        CancellationToken.ThrowIfCancellationRequested();
         underlyingType = fieldType;
         remarks = null;
 
@@ -123,21 +115,24 @@ public abstract class AvxxParser(AvroParseOptions options, CancellationToken can
             case UnionSchema union:
                 if (union.SupportsVariant())
                 {
-                    var variantName = VariantSchema.GetSchemaName(containingSchemaName, fieldName);
+                    var schemaName = VariantSchema.GetSchemaName(containingSchemaName, fieldName);
+                    var csharpName = CSharpName.FromSchemaName(schemaName);
                     var inherited = ImmutableArray.CreateBuilder<AvroSchema>(union.Schemas.Length);
-                    foreach (var schema in union.Schemas.WithCancellation(CancellationToken))
-                        inherited.Add(
-                            schema is RecordSchema record
-                                ? record with { InheritsFrom = CSharpName.FromSchemaName(variantName) }
-                                : schema);
+                    foreach (var schema in union.Schemas)
+                        inherited.Add(schema is RecordSchema record ? record with { InheritsFrom = csharpName } : schema);
                     var inheritedSchemas = inherited.MoveToImmutable();
                     ReplaceDeclarations(union.Schemas, inheritedSchemas);
 
-                    var variant = new VariantSchema(variantName, inheritedSchemas);
+                    var variant = new VariantSchema(schemaName, csharpName, inheritedSchemas);
                     Declare(variant, SourceSpan.None);
 
                     remarks = variant.Documentation;
-                    union = union.WithVariant(variant);
+                    union = union with
+                    {
+                        CSharpName = union.CSharpName.HasNullableAnnotation ? variant.CSharpName.WithNullableAnnotation() : variant.CSharpName,
+                        Schemas = variant.DerivedSchemas,
+                        UnderlyingSchema = variant
+                    };
                 }
 
                 underlyingType = union.UnderlyingSchema;
@@ -154,26 +149,17 @@ public abstract class AvxxParser(AvroParseOptions options, CancellationToken can
 
     protected bool IsInRecursionScope(SchemaName schemaName) => RecursionStack.Contains(schemaName);
 
-    protected RecursionScope EnterRecursionScope(SchemaName schemaName)
-    {
-        CancellationToken.ThrowIfCancellationRequested();
-        return new RecursionScope(RecursionStack, schemaName);
-    }
+    protected RecursionScope EnterRecursionScope(SchemaName schemaName) => new(RecursionStack, schemaName);
 
-    protected void Report(AvroDiagnostic diagnostic)
-    {
-        CancellationToken.ThrowIfCancellationRequested();
-        Diagnostics.Add(diagnostic);
-    }
+    protected void Report(AvroDiagnostic diagnostic) => Diagnostics.Add(diagnostic);
 
-    protected ImmutableArray<SchemaName> GetReferences() =>
-        [.. References.WithCancellation(CancellationToken).OrderBy(static reference => reference.FullName, StringComparer.Ordinal)];
+    protected ImmutableArray<SchemaName> GetReferences() => [.. References.OrderBy(static reference => reference.FullName, StringComparer.Ordinal)];
 
     protected FrozenDictionary<SchemaName, ImmutableArray<SourceSpan>> GetReferenceSpans()
     {
         var references = new Dictionary<SchemaName, ImmutableArray<SourceSpan>>(ReferenceSpans.Count);
-        foreach (var pair in ReferenceSpans.WithCancellation(CancellationToken))
-            references.Add(pair.Key, [.. pair.Value.WithCancellation(CancellationToken).OrderBy(static span => span.Offset)]);
+        foreach (var pair in ReferenceSpans)
+            references.Add(pair.Key, [.. pair.Value.OrderBy(static span => span.Offset)]);
         return references.ToFrozenDictionary();
     }
 
@@ -187,11 +173,11 @@ public abstract class AvxxParser(AvroParseOptions options, CancellationToken can
     protected FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> GetDependencies()
     {
         var dependencies = new Dictionary<SchemaName, ImmutableArray<SchemaName>>(Dependencies.Count);
-        foreach (var dependency in Dependencies.WithCancellation(CancellationToken))
+        foreach (var dependency in Dependencies)
         {
             dependencies.Add(
                 dependency.Key,
-                [.. dependency.Value.WithCancellation(CancellationToken).OrderBy(static name => name.FullName, StringComparer.Ordinal)]);
+                [.. dependency.Value.OrderBy(static name => name.FullName, StringComparer.Ordinal)]);
         }
         return dependencies.ToFrozenDictionary();
     }
@@ -202,18 +188,12 @@ public abstract class AvxxParser(AvroParseOptions options, CancellationToken can
     {
         for (var schemaIndex = 0; schemaIndex < schemas.Length; schemaIndex++)
         {
-            CancellationToken.ThrowIfCancellationRequested();
-            if (ReferenceEquals(schemas[schemaIndex], replacements[schemaIndex]))
-                continue;
-
+            if (ReferenceEquals(schemas[schemaIndex], replacements[schemaIndex])) continue;
             for (var declarationIndex = 0; declarationIndex < Declarations.Count; declarationIndex++)
             {
-                CancellationToken.ThrowIfCancellationRequested();
-                if (ReferenceEquals(Declarations[declarationIndex], schemas[schemaIndex]))
-                {
-                    Declarations[declarationIndex] = (TopLevelSchema)replacements[schemaIndex];
-                    break;
-                }
+                if (!ReferenceEquals(Declarations[declarationIndex], schemas[schemaIndex])) continue;
+                Declarations[declarationIndex] = (TopLevelSchema)replacements[schemaIndex];
+                break;
             }
         }
     }

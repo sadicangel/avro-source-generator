@@ -93,11 +93,13 @@ public sealed class AvscFixtureCoverageTests
 
         Assert.NotNull(directory);
         var schemasDirectory = Path.Combine(directory.FullName, "tests", "Schemas");
-        return Directory.EnumerateFiles(schemasDirectory)
-            .Where(static path => Path.GetExtension(path) is ".avsc" or ".avpr")
-            .OrderBy(static path => path, StringComparer.Ordinal)
-            .Select(path => new SourceText(Path.GetFileName(path), File.ReadAllText(path)))
-            .ToImmutableArray();
+        return
+        [
+            ..Directory.EnumerateFiles(schemasDirectory)
+                .Where(static path => Path.GetExtension(path) is ".avsc" or ".avpr")
+                .OrderBy(static path => path, StringComparer.Ordinal)
+                .Select(path => new SourceText(Path.GetFileName(path), File.ReadAllText(path)))
+        ];
     }
 
     private readonly record struct PipelineResult(

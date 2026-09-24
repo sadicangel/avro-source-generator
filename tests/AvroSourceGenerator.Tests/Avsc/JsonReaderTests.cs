@@ -18,7 +18,7 @@ public sealed class JsonReaderTests
         Assert.Equal("ab", property.Name.Value);
         var values = Assert.IsType<JsonArraySyntax>(property.Value).Items;
         Assert.Equal(text.IndexOf("1.00", StringComparison.Ordinal), values[0].SourceSpan.Offset);
-        Assert.Equal("1.00", values[0].ToJsonElement().GetRawText());
+        Assert.Equal("1.00", values[0].AsJsonElement().GetRawText());
         Assert.Equal(["1.00", "true", "null", "{}"], values.Select(value => value.GetRawText()));
         Assert.Equal(JsonTokenType.Null, values[2].TokenType);
         Assert.Equal(text.IndexOf("{}", StringComparison.Ordinal), values[3].SourceSpan.Offset);
@@ -69,12 +69,12 @@ public sealed class JsonReaderTests
     public void Cancellation_between_tokens_and_before_parsing_propagates()
     {
         using var cancellation = new CancellationTokenSource();
-        var reader = new JsonReader(new SourceText("test.avsc", "[1,2]"), cancellation.Token);
+        var reader = new JsonReader(new SourceText("test.avsc", "[1,2]"));
         Assert.True(reader.Read());
         cancellation.Cancel();
         try
         {
-            reader.Parse();
+            reader.Parse(cancellation.Token);
             Assert.Fail("Expected cancellation.");
         }
         catch (OperationCanceledException ex)
@@ -85,9 +85,9 @@ public sealed class JsonReaderTests
 
     private static JsonObjectSyntax Span(string text, CancellationToken cancellationToken)
     {
-        var reader = new JsonReader(new SourceText("test.avsc", text), cancellationToken);
+        var reader = new JsonReader(new SourceText("test.avsc", text));
         Assert.True(reader.Read());
-        var root = Assert.IsType<JsonObjectSyntax>(reader.Parse());
+        var root = Assert.IsType<JsonObjectSyntax>(reader.Parse(cancellationToken));
         Assert.False(reader.Read());
         return root;
     }

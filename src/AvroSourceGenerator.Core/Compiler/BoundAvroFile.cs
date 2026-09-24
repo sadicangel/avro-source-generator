@@ -44,8 +44,7 @@ public sealed class BoundAvroFile : IEquatable<BoundAvroFile>, ISourceFile
     {
         cancellationToken.ThrowIfCancellationRequested();
         var file = linkedFile.File;
-        // TODO: Can a file be valid and have a null root schema? If not, we can remove the null check for RootSchema.
-        if (!file.IsValid || file.RootSchema is null)
+        if (!file.IsValid)
             return new BoundAvroFile(linkedFile, null, []);
 
         var binder = new SchemaBinder(linkedFile, cancellationToken);

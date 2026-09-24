@@ -57,7 +57,7 @@ public sealed class InvalidSchemaPropagationTests
         var file = AvxxParser.Parse(new SourceText("test.avpr", text), Options, TestContext.Current.CancellationToken);
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
-        Assert.Equal(new[] { "false", "{}", "false" }, file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.Equal(["false", "{}", "false"], file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
         Assert.All(file.Diagnostics, diagnostic => Assert.NotEqual(AvroDiagnosticCode.None, diagnostic.Code));
     }
 
@@ -79,5 +79,5 @@ public sealed class InvalidSchemaPropagationTests
         Assert.Throws<InvalidOperationException>(() => AvxxParser.Parse(source, new AvroParseOptions((GenerationTarget)(-1), true), TestContext.Current.CancellationToken));
     }
 
-    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static AvroParseOptions Options { get; } = new(GenerationTarget.Modern, true);
 }

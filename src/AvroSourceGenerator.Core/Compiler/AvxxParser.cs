@@ -153,6 +153,15 @@ public abstract class AvxxParser(AvroParseOptions options)
 
     protected void Report(AvroDiagnostic diagnostic) => Diagnostics.Add(diagnostic);
 
+    protected DiagnosticTracker TrackDiagnostics() => new(Diagnostics);
+
+    protected readonly struct DiagnosticTracker(IReadOnlyList<AvroDiagnostic> diagnostics)
+    {
+        private readonly int _initialCount = diagnostics.Count;
+
+        public bool HasNewDiagnostics => diagnostics.Count != _initialCount;
+    }
+
     protected ImmutableArray<SchemaName> GetReferences() => [.. References.OrderBy(static reference => reference.FullName, StringComparer.Ordinal)];
 
     protected FrozenDictionary<SchemaName, ImmutableArray<SourceSpan>> GetReferenceSpans()

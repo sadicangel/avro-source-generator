@@ -2,7 +2,7 @@
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 
-namespace AvroSourceGenerator.Avdl.Syntax;
+namespace AvroSourceGenerator.Avdl;
 
 [CollectionBuilder(typeof(SyntaxListBuilder), nameof(SyntaxListBuilder.Create))]
 public readonly record struct SyntaxList<T>(ImmutableArray<T> SyntaxNodes) : IReadOnlyList<T> where T : ISyntaxNode

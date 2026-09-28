@@ -11,17 +11,17 @@ public sealed class JsonReaderTests
     [Fact]
     public void Structural_parse_preserves_absolute_unicode_offsets_and_raw_values()
     {
-        const string text = "{\r\n\"é😀\":\"x\",\"nested\":{\"a\\u0062\":[1.00,true,null,{}]}}";
-        var root = Span(text, TestContext.Current.CancellationToken);
+        const string Text = "{\r\n\"é😀\":\"x\",\"nested\":{\"a\\u0062\":[1.00,true,null,{}]}}";
+        var root = Span(Text, TestContext.Current.CancellationToken);
         var nested = Assert.IsType<JsonObjectSyntax>(root.Properties[1].Value);
         var property = Assert.Single(nested.Properties);
         Assert.Equal("ab", property.Name.Value);
         var values = Assert.IsType<JsonArraySyntax>(property.Value).Items;
-        Assert.Equal(text.IndexOf("1.00", StringComparison.Ordinal), values[0].SourceSpan.Offset);
+        Assert.Equal(Text.IndexOf("1.00", StringComparison.Ordinal), values[0].SourceSpan.Offset);
         Assert.Equal("1.00", values[0].AsJsonElement().GetRawText());
         Assert.Equal(["1.00", "true", "null", "{}"], values.Select(value => value.GetRawText()));
         Assert.Equal(JsonTokenType.Null, values[2].TokenType);
-        Assert.Equal(text.IndexOf("{}", StringComparison.Ordinal), values[3].SourceSpan.Offset);
+        Assert.Equal(Text.IndexOf("{}", StringComparison.Ordinal), values[3].SourceSpan.Offset);
     }
 
     [Fact]
@@ -50,11 +50,11 @@ public sealed class JsonReaderTests
     [Fact]
     public void Malformed_unicode_json_uses_absolute_utf16_location()
     {
-        const string text = "{\r\n\"é😀\":0,\"bad\":!\r\n}";
-        var file = AvxxParser.Parse(new SourceText("test.avsc", text), new AvroParseOptions(), TestContext.Current.CancellationToken);
+        const string Text = "{\r\n\"é😀\":0,\"bad\":!\r\n}";
+        var file = AvxxParser.Parse(new SourceText("test.avsc", Text), new AvroParseOptions(), TestContext.Current.CancellationToken);
         var diagnostic = Assert.Single(file.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.InvalidJson, diagnostic.Code);
-        Assert.Equal(text.IndexOf('!'), diagnostic.SourceSpan.Offset);
+        Assert.Equal(Text.IndexOf('!'), diagnostic.SourceSpan.Offset);
     }
 
     [Fact]

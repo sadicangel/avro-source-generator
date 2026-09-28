@@ -2,7 +2,7 @@
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Text;
 
-namespace AvroSourceGenerator.Avdl.Syntax;
+namespace AvroSourceGenerator.Avdl;
 
 internal sealed class SyntaxTokenStream
 {
@@ -13,7 +13,7 @@ internal sealed class SyntaxTokenStream
     private readonly CancellationToken _cancellationToken;
     private readonly ImmutableArray<SyntaxToken> _tokens;
     private readonly List<AvroDiagnostic> _diagnostics = [];
-    private bool _lastTokenWasSynthetic = false;
+    private bool _lastTokenWasSynthetic;
 
     public SyntaxTokenStream(SourceText sourceText, CancellationToken cancellationToken)
     {
@@ -27,7 +27,7 @@ internal sealed class SyntaxTokenStream
 
     public SyntaxToken Current => Position < _tokens.Length ? _tokens[Position] : _tokens[^1];
 
-    public int Position { get; private set; } = 0;
+    public int Position { get; private set; }
 
     public bool IsAtEnd => Current.SyntaxKind == SyntaxKind.EofToken;
 

@@ -1,4 +1,4 @@
-﻿namespace AvroSourceGenerator.Avdl.Syntax.Types;
+﻿namespace AvroSourceGenerator.Avdl.Types;
 
 public sealed record class OptionalTypeSyntax(ITypeSyntax Type, SyntaxToken QuestionMarkToken) : ITypeSyntax
 {

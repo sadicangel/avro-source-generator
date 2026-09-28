@@ -1,3 +1,5 @@
+using Avro;
+
 namespace AvroSourceGenerator.Tests.Apache.Bugs;
 
 public sealed class FieldOrderCodeGenCompatibilityTests
@@ -21,7 +23,7 @@ public sealed class FieldOrderCodeGenCompatibilityTests
             }
             """;
 
-        var codeGen = new Avro.CodeGen();
+        var codeGen = new CodeGen();
         codeGen.AddSchema(SchemaJson);
 
         codeGen.GenerateCode();

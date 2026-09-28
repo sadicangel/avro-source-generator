@@ -2,11 +2,8 @@
 using AvroSourceGenerator.Avdl.Annotations;
 using AvroSourceGenerator.Avdl.Declarations;
 using AvroSourceGenerator.Avdl.Directives;
-using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avdl.Syntax.Declarations;
-using AvroSourceGenerator.Avdl.Syntax.Directives;
-using AvroSourceGenerator.Avdl.Syntax.Types;
 using AvroSourceGenerator.Avdl.Types;
+using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.Tests.Avdl;
@@ -421,11 +418,11 @@ public sealed class ParserTests
     [Fact]
     public void Parse_MissingExpectedToken_ReturnsUnexpectedTokenDiagnosticAtCurrentTokenOffset()
     {
-        const string text = "record User { string name }";
-        var tree = ParseTree(text);
+        const string Text = "record User { string name }";
+        var tree = ParseTree(Text);
 
         var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.UnexpectedToken);
-        Assert.Equal(text.IndexOf('}'), diagnostic.SourceSpan.Offset);
+        Assert.Equal(Text.IndexOf('}'), diagnostic.SourceSpan.Offset);
         Assert.Equal(1, diagnostic.SourceSpan.Length);
     }
 
@@ -444,30 +441,30 @@ public sealed class ParserTests
     [Fact]
     public void Parse_ConsecutiveSyntheticTokens_ReportSingleUnexpectedTokenDiagnostic()
     {
-        const string text = "record User { , }";
-        var tree = ParseTree(text);
+        const string Text = "record User { , }";
+        var tree = ParseTree(Text);
 
         var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.UnexpectedToken);
-        Assert.Equal(text.IndexOf(','), diagnostic.SourceSpan.Offset);
+        Assert.Equal(Text.IndexOf(','), diagnostic.SourceSpan.Offset);
     }
 
     [Fact]
     public void Parse_MissingTokenBeforeClosingBrace_DoesNotConsumeClosingBrace()
     {
-        const string text = "record User { string name }";
-        var tree = ParseTree(text);
+        const string Text = "record User { string name }";
+        var tree = ParseTree(Text);
 
         var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
         Assert.Equal("}", record.BraceCloseToken.SourceSpan.ToString());
-        Assert.Equal(text.IndexOf('}'), record.BraceCloseToken.SourceSpan.Offset);
+        Assert.Equal(Text.IndexOf('}'), record.BraceCloseToken.SourceSpan.Offset);
         Assert.Equal(1, record.BraceCloseToken.SourceSpan.Length);
     }
 
     [Fact]
     public void Parse_ExtraTokenImmediatelyBeforeExpectedToken_SkipsTokenAndMatchesExpectedToken()
     {
-        const string text = "record User { string name extra; }";
-        var tree = ParseTree(text);
+        const string Text = "record User { string name extra; }";
+        var tree = ParseTree(Text);
 
         var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
         var field = Assert.Single(record.Fields);
@@ -475,7 +472,7 @@ public sealed class ParserTests
 
         Assert.Equal("name", field.Name.FullName);
         Assert.Equal(";", field.SemicolonToken.SourceSpan.ToString());
-        Assert.Equal(text.IndexOf("extra", StringComparison.Ordinal), diagnostic.SourceSpan.Offset);
+        Assert.Equal(Text.IndexOf("extra", StringComparison.Ordinal), diagnostic.SourceSpan.Offset);
     }
 
     [Fact]

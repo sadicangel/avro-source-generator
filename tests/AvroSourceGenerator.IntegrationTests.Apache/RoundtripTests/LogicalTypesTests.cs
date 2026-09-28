@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.IntegrationTests.Schemas;
+﻿using Avro;
+using AvroSourceGenerator.IntegrationTests.Schemas;
 
 namespace AvroSourceGenerator.IntegrationTests.Apache.RoundtripTests;
 
@@ -10,7 +11,7 @@ public class LogicalTypesTests(DockerFixture dockerFixture)
         var expected = new LogicalTypes
         {
             birthDate = new DateOnly(1990, 1, 1).ToDateTime(default, DateTimeKind.Utc),
-            price = new Avro.AvroDecimal(99.99m),
+            price = new AvroDecimal(99.99m),
             //taxRate = new Avro.AvroDecimal(0.15m),
             subscriptionPeriod = new SubscriptionDuration
             {
@@ -28,6 +29,7 @@ public class LogicalTypesTests(DockerFixture dockerFixture)
             localPublishedTime = DateTime.Now.TruncateToMilliseconds(),
             localEditedTime = DateTime.Now.TruncateToMilliseconds(),
             sessionId = Guid.NewGuid(),
+            futureLabel = "plain string",
             //paymentTransaction = Guid.NewGuid(),
         };
 

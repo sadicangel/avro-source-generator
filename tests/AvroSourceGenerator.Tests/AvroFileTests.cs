@@ -164,7 +164,7 @@ public sealed class AvroFileTests
 
         Assert.True(file.IsValid);
         Assert.Empty(file.References);
-        Assert.Equal(new SchemaName("Message", "Example"), file.RootSchema!.SchemaName);
+        Assert.Equal(new SchemaName("Message", "Example"), file.RootSchema.SchemaName);
     }
 
     [Theory]
@@ -211,13 +211,13 @@ public sealed class AvroFileTests
     [Fact]
     public void Avdl_syntax_diagnostics_are_preserved()
     {
-        const string text = "$ record User { # string name; }";
+        const string Text = "$ record User { # string name; }";
 
-        var file = Parse("schema.avdl", text);
+        var file = Parse("schema.avdl", Text);
 
         Assert.False(file.IsValid);
-        Assert.Contains(file.Diagnostics, diagnostic => diagnostic.SourceSpan.Offset == text.IndexOf('$'));
-        Assert.Contains(file.Diagnostics, diagnostic => diagnostic.SourceSpan.Offset == text.IndexOf('#'));
+        Assert.Contains(file.Diagnostics, diagnostic => diagnostic.SourceSpan.Offset == Text.IndexOf('$'));
+        Assert.Contains(file.Diagnostics, diagnostic => diagnostic.SourceSpan.Offset == Text.IndexOf('#'));
     }
 
     private static AvroFile Parse(string path, string text) =>

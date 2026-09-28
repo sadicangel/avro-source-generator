@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Avdl.Directives;
-
-namespace AvroSourceGenerator.Avdl.Syntax.Directives;
+﻿namespace AvroSourceGenerator.Avdl.Directives;
 
 public sealed record class ImportDirectiveSyntax(
     SyntaxToken ImportKeyword,

@@ -5,7 +5,7 @@ namespace AvroSourceGenerator.Tests.Avdl;
 
 internal static class AvdlTestHelpers
 {
-    public static SourceText SourceText(string text) => new SourceText("test.avdl", text);
+    public static SourceText SourceText(string text) => new("test.avdl", text);
 
     public static IReadOnlyList<ISyntaxNode> Flatten(ISyntaxNode node)
     {

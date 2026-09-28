@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Avdl.Syntax;
-
-namespace AvroSourceGenerator.Avdl.Annotations;
+﻿namespace AvroSourceGenerator.Avdl.Annotations;
 
 public sealed record class AnnotationNameSyntax(SeparatedSyntaxList<SyntaxToken> Identifiers) : ISyntaxNode
 {

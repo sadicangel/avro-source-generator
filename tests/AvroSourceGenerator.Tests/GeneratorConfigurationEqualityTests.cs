@@ -3,6 +3,7 @@ using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Templating;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Tests;
 
@@ -38,7 +39,7 @@ public sealed class GeneratorConfigurationEqualityTests
         Assert.NotEqual(a, Options([first, other]));
     }
 
-    private static AvroDiagnostic Diagnostic(string id, string argument) => new AvroDiagnostic(id == "TEST0001" ? AvroDiagnosticCode.InvalidSchemaValue : AvroDiagnosticCode.InvalidJson, Text.SourceSpan.None, argument);
+    private static AvroDiagnostic Diagnostic(string id, string argument) => new(id == "TEST0001" ? AvroDiagnosticCode.InvalidSchemaValue : AvroDiagnosticCode.InvalidJson, SourceSpan.None, argument);
 
-    private static GeneratorConfiguration Options(ImmutableArray<AvroDiagnostic> diagnostics) => new GeneratorConfiguration(GenerationTarget.Modern, LanguageFeatures.Latest, AccessModifier.Public, ReferenceResolution.Strict, DuplicateResolution.Error, diagnostics);
+    private static GeneratorConfiguration Options(ImmutableArray<AvroDiagnostic> diagnostics) => new(GenerationTarget.Modern, LanguageFeatures.Latest, AccessModifier.Public, ReferenceResolution.Strict, DuplicateResolution.Error, diagnostics);
 }

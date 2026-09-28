@@ -7,7 +7,7 @@ namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class ParserCancellationTests
 {
-    private static readonly AvroParseOptions Options = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new(GenerationTarget.Modern, true);
 
     [Fact]
     public void AvroFile_propagates_pre_cancelled_token()
@@ -15,7 +15,7 @@ public sealed class ParserCancellationTests
         var token = CreateCancelledToken();
 
         Assert.Throws<OperationCanceledException>(() =>
-            AvroFile.Parse(new SourceText("test.avdl", "schema R; record R {}"), Options, token));
+            AvroFile.Parse(new SourceText("test.avdl", "schema R; record R {}"), s_options, token));
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public sealed class ParserCancellationTests
         var token = CreateCancelledToken();
 
         Assert.Throws<OperationCanceledException>(() =>
-            AvxxParser.Parse(new SourceText("test.avdl", "schema R; record R {}"), Options, token));
+            AvxxParser.Parse(new SourceText("test.avdl", "schema R; record R {}"), s_options, token));
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public sealed class ParserCancellationTests
         var token = CreateCancelledToken();
 
         Assert.Throws<OperationCanceledException>(() =>
-            AvxxParser.Parse(new SourceText("test.avsc", "{\"type\":\"record\",\"name\":\"R\",\"fields\":[]}"), Options, token));
+            AvxxParser.Parse(new SourceText("test.avsc", "{\"type\":\"record\",\"name\":\"R\",\"fields\":[]}"), s_options, token));
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public sealed class ParserCancellationTests
         text.Append("]}");
 
         Assert.Throws<OperationCanceledException>(() =>
-            AvxxParser.Parse(new SourceText("large.avsc", text.ToString()), Options, CreateCancelledToken()));
+            AvxxParser.Parse(new SourceText("large.avsc", text.ToString()), s_options, CreateCancelledToken()));
     }
 
     private static CancellationToken CreateCancelledToken()

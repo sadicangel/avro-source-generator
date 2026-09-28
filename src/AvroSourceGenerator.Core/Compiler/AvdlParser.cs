@@ -1,29 +1,23 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Avdl.Annotations;
 using AvroSourceGenerator.Avdl.Declarations;
 using AvroSourceGenerator.Avdl.Directives;
-using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avdl.Syntax.Declarations;
-using AvroSourceGenerator.Avdl.Syntax.Directives;
-using AvroSourceGenerator.Avdl.Syntax.Types;
 using AvroSourceGenerator.Avdl.Types;
-using AvroSourceGenerator.Avjs;
-using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
-namespace AvroSourceGenerator.Avdl;
+namespace AvroSourceGenerator.Compiler;
 
 public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken)
     : AvxxParser(options)
 {
     private readonly SyntaxTokenStream _stream = new(sourceText, cancellationToken);
-    private readonly CancellationToken _cancellationToken = cancellationToken;
     private readonly List<IAnnotationSyntax> _annotations = [];
     private readonly List<DocumentationSyntax> _documentation = [];
     public AvdlParser(SourceText sourceText, CancellationToken cancellationToken) : this(sourceText, default, cancellationToken) { }
@@ -209,7 +203,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     private JsonValueSyntax ParseJsonValue()
     {
         var index = _stream.Position;
-        var json = JsonParser.Parse(_stream, _cancellationToken);
+        var json = JsonParser.Parse(_stream, cancellationToken);
         var count = _stream.Position - index;
         return new JsonValueSyntax(new SyntaxList<SyntaxToken>([.. _stream.GetTokens(index, count)]), json);
     }
@@ -598,7 +592,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
                 syntaxTree.Document.Declarations
                     .OfType<ProtocolDeclarationSyntax>()
                     .SelectMany(static protocol => protocol.Imports))
-            .WithCancellation(_cancellationToken)
+            .WithCancellation(cancellationToken)
             .Select(static import => new AvroImport(
                 import.ImportTypeKeyword.SyntaxKind switch
                 {
@@ -647,7 +641,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         }
 
         var isValid = true;
-        foreach (var declaration in document.Declarations.WithCancellation(_cancellationToken))
+        foreach (var declaration in document.Declarations.WithCancellation(cancellationToken))
         {
             if (declaration is not ISchemaDeclarationSyntax schemaDeclaration)
             {
@@ -687,7 +681,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
 
     private NamedSchema? Schema(ISchemaDeclarationSyntax declaration, string? containingNamespace)
     {
-        return declaration switch
+        var schema = declaration switch
         {
             EnumDeclarationSyntax syntax => Enum(syntax, containingNamespace),
             ErrorDeclarationSyntax syntax => Error(syntax, containingNamespace),
@@ -695,6 +689,19 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
             RecordDeclarationSyntax syntax => Record(syntax, containingNamespace),
             _ => Invalid<NamedSchema?>(null, AvroDiagnostic.InvalidIdlSchemaDeclaration(declaration.GetSourceSpan(), declaration.SyntaxKind))
         };
+
+        if (schema is not FixedSchema fixedSchema ||
+            declaration.Annotations.OfType<LogicalTypeAnnotationSyntax>().LastOrDefault() is not { } annotation)
+            return schema;
+
+        var logicalType = GetString(annotation.JsonValue, "Logical type annotation value", required: true);
+        if (logicalType is null) return null;
+        if (LogicalSchema.Create(logicalType, fixedSchema, Options.GenerationTarget) is not LogicalSchema)
+            return fixedSchema;
+
+        var annotated = fixedSchema with { Properties = fixedSchema.Properties.SetItem(AvroJsonKeys.LogicalType, annotation.JsonValue.ToJsonElement()) };
+        Replace(fixedSchema, annotated);
+        return annotated;
     }
 
     private AvroSchema? Annotated(AnnotatedTypeSyntax syntax, string? containingNamespace, JsonElement? defaultJson)
@@ -752,7 +759,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         using var scope = EnterRecursionScope(schemaName);
         var documentation = syntax.GetDocumentation();
         var aliases = GetAliases(syntax);
-        var symbols = syntax.Symbols.WithCancellation(_cancellationToken)
+        var symbols = syntax.Symbols.WithCancellation(cancellationToken)
             .Select(static symbol => symbol.FullName)
             .ToImmutableArray();
         var defaultValue = GetEnumDefault(syntax);
@@ -838,7 +845,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     {
         var fields = ImmutableArray.CreateBuilder<Field>();
         var valid = true;
-        foreach (var syntax in syntaxList.WithCancellation(_cancellationToken))
+        foreach (var syntax in syntaxList.WithCancellation(cancellationToken))
         {
             if (Field(syntax, containingSchemaName) is { } field)
                 fields.Add(field);
@@ -882,7 +889,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     {
         var schemas = ImmutableArray.CreateBuilder<AvroSchema>();
         var valid = true;
-        foreach (var type in syntax.Types.WithCancellation(_cancellationToken))
+        foreach (var type in syntax.Types.WithCancellation(cancellationToken))
         {
             var schema = Type(type, containingNamespace);
             if (schema is not null)
@@ -955,7 +962,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     {
         var schemas = ImmutableArray.CreateBuilder<NamedSchema>();
         var valid = true;
-        foreach (var declaration in syntaxList.WithCancellation(_cancellationToken))
+        foreach (var declaration in syntaxList.WithCancellation(cancellationToken))
         {
             var schema = Schema(declaration, containingNamespace);
             if (schema is not null)
@@ -970,7 +977,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     {
         var messages = ImmutableArray.CreateBuilder<ProtocolMessage>();
         var valid = true;
-        foreach (var syntax in syntaxList.WithCancellation(_cancellationToken))
+        foreach (var syntax in syntaxList.WithCancellation(cancellationToken))
         {
             if (Message(syntax, containingNamespace) is { } message)
                 messages.Add(message);
@@ -1000,7 +1007,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     {
         var parameters = ImmutableArray.CreateBuilder<ProtocolRequestParameter>();
         var valid = true;
-        foreach (var syntax in syntaxList.WithCancellation(_cancellationToken))
+        foreach (var syntax in syntaxList.WithCancellation(cancellationToken))
         {
             if (ProtocolRequestParameter(syntax, containingNamespace) is { } parameter)
                 parameters.Add(parameter);
@@ -1035,7 +1042,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         if (syntax is null) return ImmutableArray<AvroSchema>.Empty;
         var parameters = ImmutableArray.CreateBuilder<AvroSchema>();
         var valid = true;
-        foreach (var error in syntax.Errors.WithCancellation(_cancellationToken))
+        foreach (var error in syntax.Errors.WithCancellation(cancellationToken))
         {
             var schema = Type(error, containingNamespace);
             if (schema is not null)
@@ -1079,7 +1086,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
             return Invalid(default(ImmutableArray<string>), AvroDiagnostic.InvalidIdlDeclaration(annotation.JsonValue.GetSourceSpan(), "Aliases annotation value must be an array of strings."));
 
         var builder = ImmutableArray.CreateBuilder<string>(array.Count);
-        foreach (var node in array.WithCancellation(_cancellationToken))
+        foreach (var node in array.WithCancellation(cancellationToken))
         {
             if (node is not JsonValue value || !value.TryGetValue<string>(out var result))
                 return Invalid(default(ImmutableArray<string>), AvroDiagnostic.InvalidIdlDeclaration(annotation.JsonValue.GetSourceSpan(), "Aliases annotation value must be an array of strings."));

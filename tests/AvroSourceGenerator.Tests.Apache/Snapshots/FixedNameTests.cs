@@ -20,7 +20,7 @@ public sealed class FixedNameTests
         return Snapshot.Diagnostic(ProjectFile.Schema(schema));
     }
 
-    public static TheoryData<string> ValidNameSchemaPairs() => new TheoryData<string>("PascalCase", "snake_case", "object");
+    public static TheoryData<string> ValidNameSchemaPairs() => new("PascalCase", "snake_case", "object");
 
-    public static TheoryData<string> InvalidNameSchemaPairs() => new TheoryData<string>("null", "\"\"", "[]");
+    public static TheoryData<string> InvalidNameSchemaPairs() => new("null", "\"\"", "[]");
 }

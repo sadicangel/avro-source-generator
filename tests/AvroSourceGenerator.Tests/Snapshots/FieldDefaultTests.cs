@@ -2,7 +2,7 @@
 
 public class FieldDefaultTests
 {
-    public static TheoryData<string, string> Defaults => new TheoryData<string, string>(("null", "null"), ("boolean", "true"), ("int", "42"), ("long", "42"), ("float", "42.0"), ("double", "42.0"), ("bytes", @"""NDI="""), ("string", @"""FortyTwo"""), ("enum<A,B,C>", @"""B"""));
+    public static TheoryData<string, string> Defaults => new(("null", "null"), ("boolean", "true"), ("int", "42"), ("long", "42"), ("float", "42.0"), ("double", "42.0"), ("bytes", @"""NDI="""), ("string", @"""FortyTwo"""), ("enum<A,B,C>", @"""B"""));
 
     [Theory]
     [MemberData(nameof(Defaults))]

@@ -3,8 +3,8 @@ using System.Text;
 using System.Text.Json;
 using AvroSourceGenerator.Avdl.Annotations;
 using AvroSourceGenerator.Avdl.Declarations;
-using AvroSourceGenerator.Avjs;
 using AvroSourceGenerator.Protocols;
+using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.Avdl;
 

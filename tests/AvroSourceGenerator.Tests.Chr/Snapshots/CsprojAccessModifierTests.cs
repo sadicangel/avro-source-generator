@@ -11,5 +11,5 @@ public sealed class CsprojAccessModifierTests
         return Snapshot.Files([schemaType == "protocol" ? ProjectFile.Protocol(schema) : ProjectFile.Schema(schema)], config => config with { AccessModifier = accessModifier });
     }
 
-    public static MatrixTheoryData<string, string> AccessModifierSchemaPairs() => new MatrixTheoryData<string, string>(["public", "internal", "invalid"], ["enum", "error", "record", "protocol"]);
+    public static MatrixTheoryData<string, string> AccessModifierSchemaPairs() => new(["public", "internal", "invalid"], ["enum", "error", "record", "protocol"]);
 }

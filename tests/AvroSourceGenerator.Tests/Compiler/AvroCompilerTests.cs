@@ -8,30 +8,30 @@ namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class AvroCompilerTests
 {
-    private static readonly AvroParseOptions ParseOptions = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_parseOptions = new(GenerationTarget.Modern, true);
 
     [Fact]
     public void Convenience_compiler_matches_independent_stages()
     {
         SourceText[] sources =
         [
-            new SourceText(
+            new(
                 "consumer.avdl",
                 """
                 import schema "shared.avsc";
                 schema Consumer;
                 record Consumer { Shared value; }
                 """),
-            new SourceText("shared.avsc", """{"type":"record","name":"Shared","fields":[]}""")
+            new("shared.avsc", """{"type":"record","name":"Shared","fields":[]}""")
         ];
         var token = TestContext.Current.CancellationToken;
         var options = new AvroCompilationOptions();
-        var parsed = sources.Select(source => AvroFile.Parse(source, ParseOptions, token)).ToImmutableArray();
+        var parsed = sources.Select(source => AvroFile.Parse(source, s_parseOptions, token)).ToImmutableArray();
         var symbols = SymbolTable.FromFiles(parsed, token);
         var files = parsed.Select(file => BoundAvroFile.Bind(LinkedAvroFile.Link(file, symbols, token), token)).ToImmutableArray();
         var composed = AvroCompilation.Create(files, options, token);
 
-        var compiled = AvroCompiler.Compile(sources, ParseOptions, options, token);
+        var compiled = AvroCompiler.Compile(sources, s_parseOptions, options, token);
 
         Assert.True(compiled.IsValid);
         Assert.Empty(compiled.Diagnostics);
@@ -50,16 +50,18 @@ public sealed class AvroCompilerTests
     {
         var source = new SourceText("record.avsc", """{"type":"record","name":"Record","fields":[]}""");
         var token = TestContext.Current.CancellationToken;
-        var parsed = AvroFile.Parse(source, ParseOptions, token);
+        var parsed = AvroFile.Parse(source, s_parseOptions, token);
         var linked = LinkedAvroFile.Link(parsed, SymbolTable.FromFiles([parsed], token), token);
         var bound = BoundAvroFile.Bind(linked, token);
 
-        Assert.All<ISourceFile>([parsed, linked, bound], file =>
-        {
-            Assert.Same(source, file.Text);
-            Assert.Equal(source.Path, file.Path);
-            Assert.True(file.IsValid);
-        });
+        Assert.All<ISourceFile>(
+            [parsed, linked, bound],
+            file =>
+            {
+                Assert.Same(source, file.Text);
+                Assert.Equal(source.Path, file.Path);
+                Assert.True(file.IsValid);
+            });
     }
 
     [Theory]
@@ -70,7 +72,7 @@ public sealed class AvroCompilerTests
     [InlineData("invalid.avdl", "$", AvroDiagnosticCode.InvalidCharacter)]
     public void Invalid_files_return_core_diagnostics(string path, string text, AvroDiagnosticCode expected)
     {
-        var project = AvroCompiler.Compile([new SourceText(path, text)], ParseOptions, cancellationToken: TestContext.Current.CancellationToken);
+        var project = AvroCompiler.Compile([new SourceText(path, text)], s_parseOptions, cancellationToken: TestContext.Current.CancellationToken);
         Assert.False(project.IsValid);
         Assert.False(project.Files[0].File.IsValid);
         Assert.Null(project.Files[0].RootSchema);
@@ -83,10 +85,10 @@ public sealed class AvroCompilerTests
     [InlineData(DuplicateResolution.Ignore, true)]
     public void Duplicate_policy_preserves_first_owner(DuplicateResolution policy, bool valid)
     {
-        const string schema = """{"type":"record","name":"Shared","fields":[]}""";
+        const string Schema = """{"type":"record","name":"Shared","fields":[]}""";
         var project = AvroCompiler.Compile(
-            [new SourceText("first.avsc", schema), new SourceText("second.avsc", schema)],
-            ParseOptions,
+            [new SourceText("first.avsc", Schema), new SourceText("second.avsc", Schema)],
+            s_parseOptions,
             new AvroCompilationOptions(ReferenceResolution.Strict, policy),
             TestContext.Current.CancellationToken);
         Assert.Equal(valid, project.IsValid);
@@ -98,7 +100,7 @@ public sealed class AvroCompilerTests
     [Fact]
     public void Missing_reference_is_a_core_diagnostic()
     {
-        var project = AvroCompiler.Compile([new SourceText("consumer.avdl", "schema Consumer; record Consumer { Missing value; }")], ParseOptions, cancellationToken: TestContext.Current.CancellationToken);
+        var project = AvroCompiler.Compile([new SourceText("consumer.avdl", "schema Consumer; record Consumer { Missing value; }")], s_parseOptions, cancellationToken: TestContext.Current.CancellationToken);
         var diagnostic = Assert.Single(project.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.MissingReferences, diagnostic.Code);
         Assert.Contains("Missing", diagnostic.GetMessage());
@@ -114,7 +116,7 @@ public sealed class AvroCompilerTests
                 new SourceText("right.avdl", """import idl "base.avdl"; schema Right; record Right { Base value; }"""),
                 new SourceText("base.avdl", "schema Base; record Base {}")
             ],
-            ParseOptions,
+            s_parseOptions,
             cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(project.IsValid);
         Assert.Equal(
@@ -131,7 +133,7 @@ public sealed class AvroCompilerTests
                 new SourceText("z/../a.avsc", """{"type":"record","name":"A","fields":[]}"""),
                 new SourceText("b.avsc", """{"type":"record","name":"B","fields":[]}""")
             ],
-            ParseOptions,
+            s_parseOptions,
             new AvroCompilationOptions(ReferenceResolution.Deferred),
             TestContext.Current.CancellationToken);
 
@@ -149,7 +151,7 @@ public sealed class AvroCompilerTests
                 new SourceText("a.avdl", """import idl "b.avdl"; schema A; record A {}"""),
                 new SourceText("b.avdl", """import idl "a.avdl"; schema B; record B {}""")
             ],
-            ParseOptions,
+            s_parseOptions,
             cancellationToken: TestContext.Current.CancellationToken);
         Assert.False(project.IsValid);
         Assert.Equal(AvroDiagnosticCode.ImportCycle, Assert.Single(project.Diagnostics).Code);
@@ -159,7 +161,7 @@ public sealed class AvroCompilerTests
     public void Cancellation_propagates_between_files()
     {
         using var cancellation = new CancellationTokenSource();
-        Assert.Throws<OperationCanceledException>(() => AvroCompiler.Compile(Sources(), ParseOptions, cancellationToken: cancellation.Token));
+        Assert.Throws<OperationCanceledException>(() => AvroCompiler.Compile(Sources(), s_parseOptions, cancellationToken: cancellation.Token));
 
         IEnumerable<SourceText> Sources()
         {

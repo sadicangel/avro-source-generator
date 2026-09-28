@@ -4,7 +4,7 @@ namespace AvroSourceGenerator.Tests.Data;
 
 public static class TestSchemas
 {
-    private static readonly Dictionary<string, string> s_schemas = new Dictionary<string, string>
+    private static readonly Dictionary<string, string> s_schemas = new()
     {
         ["null"] = "\"null\"",
         ["boolean"] = "\"boolean\"",

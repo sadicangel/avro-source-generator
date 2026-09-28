@@ -1,10 +1,14 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Immutable;
+using System.Text.Json;
 using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Extensions;
+using AvroSourceGenerator.Text;
 using Microsoft.CodeAnalysis.Text;
 using Soenneker.Utils.AutoBogus;
 using Soenneker.Utils.AutoBogus.Context;
 using Soenneker.Utils.AutoBogus.Override;
+using SourceText = AvroSourceGenerator.Text.SourceText;
 
 namespace AvroSourceGenerator.Tests;
 
@@ -72,7 +76,7 @@ public class EqualityTests
         var parseOptions = new AvroParseOptions(
             GenerationTarget.Modern,
             UseNullableReferenceTypes: true);
-        var source = new global::AvroSourceGenerator.Text.SourceText(
+        var source = new SourceText(
             "schema.avsc",
             TestSchemas.Get("record").ToJsonString());
         var a = AvroFile.Parse((source, parseOptions), TestContext.Current.CancellationToken);
@@ -117,14 +121,14 @@ file sealed class ObjectArrayOverride : AutoFakerOverride<object?[]?>
         context.Instance = (object?[])[context.Faker.Hacker.Noun()];
 }
 
-file sealed class DiagnosticArrayOverride : AutoFakerOverride<System.Collections.Immutable.ImmutableArray<Diagnostics.AvroDiagnostic>>
+file sealed class DiagnosticArrayOverride : AutoFakerOverride<ImmutableArray<AvroDiagnostic>>
 {
     public override bool Preinitialize => false;
 
     public override void Generate(AutoFakerOverrideContext context) =>
-        context.Instance = System.Collections.Immutable.ImmutableArray.Create(
-            new Diagnostics.AvroDiagnostic(
-                Diagnostics.AvroDiagnosticCode.InvalidIdlDeclaration,
-                Text.SourceSpan.None,
+        context.Instance = ImmutableArray.Create(
+            new AvroDiagnostic(
+                AvroDiagnosticCode.InvalidIdlDeclaration,
+                SourceSpan.None,
                 "invalid"));
 }

@@ -1,4 +1,4 @@
-namespace AvroSourceGenerator.Schemas;
+﻿namespace AvroSourceGenerator.Schemas;
 
 internal static partial class LogicalSchemaExtensions
 {
@@ -10,10 +10,15 @@ internal static partial class LogicalSchemaExtensions
                 underlyingSchema,
                 new SchemaName(logicalType),
                 new CSharpName("DateTime", "System")),
-            LogicalTypeNames.Decimal when underlyingSchema.Type is SchemaType.Bytes => new LogicalSchema(
+            // Apache parses fixed-backed decimal as AvroDecimal, but its specific datum IO
+            // currently rejects the GenericFixed produced by the decimal converter.
+            LogicalTypeNames.Decimal when underlyingSchema.Type is SchemaType.Bytes or SchemaType.Fixed => new LogicalSchema(
                 underlyingSchema,
                 new SchemaName(logicalType),
                 new CSharpName("AvroDecimal", "Avro")),
+            LogicalTypeNames.Decimal => underlyingSchema,
+            // Apache.Avro serializes fixed-backed duration as a nested type that Schema Registry rejects.
+            LogicalTypeNames.Duration when underlyingSchema.Type is SchemaType.Fixed => underlyingSchema,
             LogicalTypeNames.TimeMicros => new LogicalSchema(
                 underlyingSchema,
                 new SchemaName(logicalType),
@@ -42,17 +47,12 @@ internal static partial class LogicalSchemaExtensions
                 underlyingSchema,
                 new SchemaName(logicalType),
                 new CSharpName("Guid", "System")),
-
-            // TODO: Language implementations must ignore unknown logical types when reading, and should use the underlying Avro type.
-            // Apache.Avro will throw an exception when it encounters an unknown logical type, which is not compliant.
-            // We avoid this behaviour in AvroSourceGenerator by erasing unsupported logical types from the schema before
-            // passing it to Avro.Schema.Parse. Although this workaround works for code generation, it will probably cause
-            // issues with validating schemas against schema registries that return schemas with unsupported logical types.
-            // 
-            // These PRs seem to be trying to address this issue:
-            // https://github.com/apache/avro/pull/2512
-            // https://github.com/apache/avro/pull/2751
-            _ => underlyingSchema,
+            // Apache.Avro 1.12.2 still rejects uuid on fixed, despite accepting unknown logical types.
+            LogicalTypeNames.Uuid => underlyingSchema,
+            _ => new LogicalSchema(
+                underlyingSchema,
+                new SchemaName(logicalType),
+                underlyingSchema.CSharpName),
         };
     }
 }

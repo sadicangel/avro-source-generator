@@ -11,13 +11,13 @@ public sealed class SchemaSerializationTests
     [InlineData(true)]
     public void Json_preserves_unicode_and_unescapes_field_names(bool indented)
     {
-        const string source = """
+        const string Source = """
             {"type":"record","name":"Example","doc":"Olá 世界 😀","fields":[
               {"name":"class","type":"string","default":"acção 😀"},
               {"name":"ordinary","type":"int"}
             ]}
             """;
-        var parsed = SchemaCompilerTestHelpers.ParseJson(source);
+        var parsed = SchemaCompilerTestHelpers.ParseJson(Source);
         var record = Assert.IsType<RecordSchema>(parsed.RootSchema);
         Assert.Equal("class", record.Fields[0].Name.SchemaName);
         Assert.Equal("@class", record.Fields[0].Name.CSharpName);

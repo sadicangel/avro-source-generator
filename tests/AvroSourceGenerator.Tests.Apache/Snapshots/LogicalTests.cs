@@ -24,18 +24,19 @@ public class LogicalTests
         """);
 
     [Fact]
-    public Task Verify_Decimal_Fixed() => Snapshot.Schema(
-        """
+    public Task Verify_Decimal_Fixed()
+    {
+        var fixedSchema = TestSchemas.Get("fixed").With("name", "Decimal").With("size", 20)
+            .With("logicalType", "decimal").With("precision", 4).With("scale", 2);
+        var fields = new JsonArray
         {
-            "type": "fixed",
-            "namespace": "SchemaNamespace",
-            "name": "Decimal",
-            "size": 20,
-            "logicalType": "decimal",
-            "precision": 4,
-            "scale": 2
-        }
-        """);
+            new JsonObject { ["name"] = "First", ["type"] = fixedSchema },
+            new JsonObject { ["name"] = "Second", ["type"] = "Decimal" }
+        };
+        var schema = TestSchemas.Get("record").With("name", "Container").With("fields", fields);
+
+        return Snapshot.Schema(schema.ToString());
+    }
 
     [Fact]
     public Task Verify_Uuid_String() => Snapshot.Schema(

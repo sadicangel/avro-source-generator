@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.IntegrationTests.Schemas;
+﻿using Avro;
+using AvroSourceGenerator.IntegrationTests.Schemas;
 
 namespace AvroSourceGenerator.IntegrationTests.Apache.RoundtripTests;
 
@@ -10,7 +11,7 @@ public class RecordsTests(DockerFixture dockerFixture)
         var expected = new TransactionEvent
         {
             Id = Guid.NewGuid(),
-            Amount = new Avro.AvroDecimal(123.45m),
+            Amount = new AvroDecimal(123.45m),
             Currency = "USD",
             Timestamp = DateTime.UtcNow.TruncateToMilliseconds(),
             Status = TransactionStatus.COMPLETED,

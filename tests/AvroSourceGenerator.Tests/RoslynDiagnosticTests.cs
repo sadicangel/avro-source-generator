@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Diagnostics;
+﻿using System.Reflection;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -17,7 +18,7 @@ public sealed class RoslynDiagnosticTests
             var diagnostic = core.ToDiagnostic();
             Assert.Equal($"AVROSG{(int)code:D4}", diagnostic.Id);
             Assert.Same(code.ToDiagnosticDescriptor(), diagnostic.Descriptor);
-            var field = typeof(DiagnosticDescriptors).GetField(code.ToString(), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var field = typeof(DiagnosticDescriptors).GetField(code.ToString(), BindingFlags.NonPublic | BindingFlags.Static);
             Assert.NotNull(field);
             Assert.Same(field.GetValue(null), diagnostic.Descriptor);
             Assert.Same(diagnostic.Descriptor, core.ToDiagnostic().Descriptor);
@@ -37,7 +38,7 @@ public sealed class RoslynDiagnosticTests
             diagnostics,
             static diagnostic =>
             {
-                Assert.Equal("bad", Assert.Single(diagnostic.Arguments!));
+                Assert.Equal("bad", Assert.Single(diagnostic.Arguments));
                 Assert.Equal("Invalid character 'bad'.", diagnostic.GetMessage());
             },
             static diagnostic =>

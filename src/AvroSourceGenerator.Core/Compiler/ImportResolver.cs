@@ -47,8 +47,7 @@ internal sealed class ImportResolver(
             var cycle = new Cycle(_stack.Skip(cycleStart).ToArray());
             if (_reportedCycles.Add(cycle.Key))
             {
-                _diagnostics.Add(
-                    AvroDiagnostic.ImportCycle(incomingImportSpan, cycle.GetPath(files)));
+                _diagnostics.Add(AvroDiagnostic.ImportCycle(incomingImportSpan, cycle.GetPath(files)));
             }
 
             foreach (var cycleFileIndex in cycle.Indices)

@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Avro;
 
 namespace AvroSourceGenerator.IntegrationTests.Apache;
 
@@ -14,16 +15,16 @@ public sealed class AvroProtocolTests
         using var stream = avpr.OpenRead();
         using var reader = new StreamReader(stream);
 
-        var expectedProtocol = Avro.Protocol.Parse(reader.ReadToEnd());
+        var expectedProtocol = Protocol.Parse(reader.ReadToEnd());
         var actualProtocol = GetGeneratedTypeProtocol(Path.ChangeExtension(avpr.Name, null));
 
         Assert.Equal(expectedProtocol, actualProtocol);
     }
 
-    private static Avro.Protocol GetGeneratedTypeProtocol(string typeName)
+    private static Protocol GetGeneratedTypeProtocol(string typeName)
     {
         var type = Type.GetType($"AvroSourceGenerator.IntegrationTests.Schemas.{typeName}", throwOnError: true)!;
         var field = type.GetField("protocol", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!;
-        return (Avro.Protocol)field.GetValue(null)!;
+        return (Protocol)field.GetValue(null)!;
     }
 }

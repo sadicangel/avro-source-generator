@@ -86,6 +86,14 @@
         "logicalType": "uuid"
       },
       "doc": "Universally unique identifier in standard 36-char format."
+    },
+    {
+      "name": "futureLabel",
+      "type": {
+        "type": "string",
+        "logicalType": "future-type"
+      },
+      "doc": "An unrecognized logical type uses its underlying string value."
     }
   ]
 }

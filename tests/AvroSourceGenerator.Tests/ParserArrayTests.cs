@@ -26,7 +26,8 @@ public sealed class ParserArrayTests
               "call":{"request":[{{fields}}],"response":"null","errors":[{{errors}}]}
             }
             }
-            """, extension: ".avpr");
+            """,
+            extension: ".avpr");
 
         var protocol = Assert.IsType<ProtocolSchema>(parsed.RootSchema);
         Assert.Equal(Enumerable.Range(0, count).Select(i => $"Error{i}"), protocol.Types.Select(type => type.SchemaName.Name));

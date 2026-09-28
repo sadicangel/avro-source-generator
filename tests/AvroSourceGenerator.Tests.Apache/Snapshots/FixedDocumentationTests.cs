@@ -20,7 +20,7 @@ public sealed class FixedDocumentationTests
         return Snapshot.Diagnostic(ProjectFile.Schema(schema));
     }
 
-    public static TheoryData<string> ValidDocumentationSchemaPairs() => new TheoryData<string>(null!, "", "Single line comment", "Multi\nline\ncomment");
+    public static TheoryData<string> ValidDocumentationSchemaPairs() => new(null!, "", "Single line comment", "Multi\nline\ncomment");
 
-    public static TheoryData<string> InvalidDocumentationSchemaPairs() => new TheoryData<string>("[]");
+    public static TheoryData<string> InvalidDocumentationSchemaPairs() => new("[]");
 }

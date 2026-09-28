@@ -1,0 +1,22 @@
+{
+  "type": "record",
+  "name": "LogicalTypeCompatibility",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
+  "fields": [
+    {
+      "name": "fixedDecimal",
+      "type": {
+        "type": "fixed",
+        "name": "FixedDecimal",
+        "size": 8,
+        "logicalType": "decimal",
+        "precision": 12,
+        "scale": 2
+      }
+    },
+    {
+      "name": "fixedDecimalReference",
+      "type": "FixedDecimal"
+    }
+  ]
+}

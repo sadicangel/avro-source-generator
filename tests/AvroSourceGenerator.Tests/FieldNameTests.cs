@@ -18,13 +18,19 @@ public sealed class FieldNameTests
     }
 
     [Theory]
-    [InlineData("""
+    [InlineData(
+        """
         {"type":"record","name":"Container","fields":[{"name":"int","type":"string"}]}
-        """, "int", "@int")]
-    [InlineData("""
+        """,
+        "int",
+        "@int")]
+    [InlineData(
+        """
         schema Container;
         record Container { string class; }
-        """, "class", "@class")]
+        """,
+        "class",
+        "@class")]
     public void Parsers_preserve_keyword_field_names(string source, string schemaName, string csharpName)
     {
         var parsed = source.StartsWith('{')

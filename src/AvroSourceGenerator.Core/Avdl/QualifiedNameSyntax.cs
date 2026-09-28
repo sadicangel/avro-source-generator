@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Avdl.Syntax;
-
-namespace AvroSourceGenerator.Avdl;
+﻿namespace AvroSourceGenerator.Avdl;
 
 public sealed record class QualifiedNameSyntax(SeparatedSyntaxList<SyntaxToken> Identifiers) : INameSyntax
 {

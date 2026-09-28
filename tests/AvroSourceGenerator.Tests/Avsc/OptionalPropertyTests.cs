@@ -25,8 +25,8 @@ public sealed class OptionalPropertyTests
     [Fact]
     public void Missing_defaults_and_explicit_null_defaults_remain_distinct()
     {
-        const string text = """{"type":"record","name":"R","fields":[{"name":"a","type":["null","string"]},{"name":"b","type":["null","string"],"default":null}]}""";
-        var file = Parse(text);
+        const string Text = """{"type":"record","name":"R","fields":[{"name":"a","type":["null","string"]},{"name":"b","type":["null","string"],"default":null}]}""";
+        var file = Parse(Text);
         Assert.True(file.IsValid);
         var record = Assert.IsType<RecordSchema>(file.RootSchema);
         Assert.Null(record.Fields[0].DefaultJson);
@@ -50,8 +50,8 @@ public sealed class OptionalPropertyTests
     [Fact]
     public void Duplicate_messages_and_property_lookup_are_last_wins()
     {
-        const string text = """{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":"null"},"m":{"request":[],"response":"null"}},"custom":1,"custom":2}""";
-        var file = Parse(text, ".avpr");
+        const string Text = """{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":"null"},"m":{"request":[],"response":"null"}},"custom":1,"custom":2}""";
+        var file = Parse(Text, ".avpr");
         Assert.True(file.IsValid);
         var protocol = Assert.IsType<ProtocolSchema>(file.RootSchema);
         Assert.Single(protocol.Messages);
@@ -66,8 +66,8 @@ public sealed class OptionalPropertyTests
     [Fact]
     public void Only_selected_message_values_are_semantically_validated()
     {
-        const string text = """{"protocol":"P","types":[],"messages":{"a":{"request":false,"response":"Missing"},"b":{"request":[],"response":"null"},"a":{"request":[],"response":"null"}}}""";
-        var file = Parse(text, ".avpr");
+        const string Text = """{"protocol":"P","types":[],"messages":{"a":{"request":false,"response":"Missing"},"b":{"request":[],"response":"null"},"a":{"request":[],"response":"null"}}}""";
+        var file = Parse(Text, ".avpr");
         Assert.True(file.IsValid);
         Assert.Empty(file.Diagnostics);
         Assert.Empty(file.References);

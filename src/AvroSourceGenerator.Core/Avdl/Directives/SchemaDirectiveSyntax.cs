@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Avdl.Syntax.Types;
+﻿using AvroSourceGenerator.Avdl.Types;
 
 namespace AvroSourceGenerator.Avdl.Directives;
 

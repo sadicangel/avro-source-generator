@@ -1,4 +1,4 @@
-using Confluent.SchemaRegistry;
+﻿using Confluent.SchemaRegistry;
 using Schema = Confluent.SchemaRegistry.Schema;
 
 namespace AvroSourceGenerator.ConfluentKafka;
@@ -64,8 +64,7 @@ internal static class SchemaRegistrySeeder
         var latestRootSchema = await schemaRegistryClient.GetLatestSchemaAsync(GetRootSubject(topicName));
         if (latestRootSchema.References is null || latestRootSchema.References.Count != s_dependencyFiles.Length)
         {
-            throw new InvalidOperationException(
-                $"Expected root schema to reference {s_dependencyFiles.Length} schemas, but found {latestRootSchema.References?.Count ?? 0}.");
+            throw new InvalidOperationException($"Expected root schema to reference {s_dependencyFiles.Length} schemas, but found {latestRootSchema.References?.Count ?? 0}.");
         }
     }
 
@@ -78,5 +77,4 @@ internal static class SchemaRegistrySeeder
     private static string GetRootSubject(string topicName) => $"{topicName}-value";
 
     private sealed record DependencySchemaFile(string FileName, string Subject);
-
 }

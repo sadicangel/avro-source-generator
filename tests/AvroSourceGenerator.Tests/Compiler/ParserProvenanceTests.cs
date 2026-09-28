@@ -8,14 +8,14 @@ namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class ParserProvenanceTests
 {
-    private static readonly AvroParseOptions Options = new(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new(GenerationTarget.Modern, true);
 
     [Fact]
     public void Imports_require_source_spans_and_preserve_duplicate_occurrences()
     {
         Assert.Throws<ArgumentException>(() => new AvroImport(AvroImportKind.Idl, "a.avdl", SourceSpan.None));
-        const string text = "import idl \"a.avdl\"; import idl \"a.avdl\"; schema string;";
-        var file = AvxxParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        const string Text = "import idl \"a.avdl\"; import idl \"a.avdl\"; schema string;";
+        var file = AvxxParser.Parse(new SourceText("test.avdl", Text), s_options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid);
         Assert.Equal(2, file.Imports.Length);
         Assert.All(file.Imports, import => Assert.Equal("\"a.avdl\"", import.SourceSpan.ToString()));
@@ -25,8 +25,8 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Provenance_does_not_change_semantic_schema_equality()
     {
-        var first = AvxxParser.Parse(new SourceText("a.avdl", "schema F; fixed F(4);"), Options, TestContext.Current.CancellationToken);
-        var second = AvxxParser.Parse(new SourceText("b.avdl", "\n schema F; fixed F(4);"), Options, TestContext.Current.CancellationToken);
+        var first = AvxxParser.Parse(new SourceText("a.avdl", "schema F; fixed F(4);"), s_options, TestContext.Current.CancellationToken);
+        var second = AvxxParser.Parse(new SourceText("b.avdl", "\n schema F; fixed F(4);"), s_options, TestContext.Current.CancellationToken);
         Assert.Equal(first.RootSchema, second.RootSchema);
         Assert.Equal(first.Declarations, second.Declarations);
         Assert.NotEqual(first.DeclarationSpans, second.DeclarationSpans);
@@ -35,12 +35,12 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Recursive_definition_diagnostic_points_to_the_nested_name()
     {
-        const string text = "protocol P { record P {} }";
-        var file = AvxxParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        const string Text = "protocol P { record P {} }";
+        var file = AvxxParser.Parse(new SourceText("test.avdl", Text), s_options, TestContext.Current.CancellationToken);
         var diagnostic = Assert.Single(file.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.RecursiveSchemaDefinition, diagnostic.Code);
         Assert.Equal("P", diagnostic.SourceSpan.ToString());
-        Assert.Equal(text.LastIndexOf('P'), diagnostic.SourceSpan.Offset);
+        Assert.Equal(Text.LastIndexOf('P'), diagnostic.SourceSpan.Offset);
         Assert.Equal("Recursive schema definition detected for 'P'.", diagnostic.GetMessage());
     }
 
@@ -49,35 +49,35 @@ public sealed class ParserProvenanceTests
     {
         Assert.True(AvdlParser.Parse(new SourceText("empty.avdl", ""), TestContext.Current.CancellationToken).Document.GetSourceSpan().IsNone);
 
-        const string text = "/** documentation */ record R {}";
-        var declaration = Assert.Single(AvdlParser.Parse(new SourceText("test.avdl", text), TestContext.Current.CancellationToken).Document.Declarations);
+        const string Text = "/** documentation */ record R {}";
+        var declaration = Assert.Single(AvdlParser.Parse(new SourceText("test.avdl", Text), TestContext.Current.CancellationToken).Document.Declarations);
         Assert.Equal("record R {}", declaration.GetSourceSpan().ToString());
     }
 
     [Fact]
     public void Declaration_occurrences_and_ordered_reference_uses_have_separate_provenance()
     {
-        const string text = "namespace ns; schema ns.R; record R { ns.Missing a; ns.Missing b; } record R {}";
-        var file = AvroFile.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        const string Text = "namespace ns; schema ns.R; record R { ns.Missing a; ns.Missing b; } record R {}";
+        var file = AvroFile.Parse(new SourceText("test.avdl", Text), s_options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid, string.Join("; ", file.Diagnostics));
         Assert.Equal(
             ["record R { ns.Missing a; ns.Missing b; }", "record R {}"],
             file.DeclarationSpans.Select(span => span.ToString()));
-        Assert.Equal(text.LastIndexOf("record", StringComparison.Ordinal), file.DeclarationSpans[1].Offset);
+        Assert.Equal(Text.LastIndexOf("record", StringComparison.Ordinal), file.DeclarationSpans[1].Offset);
         var uses = file.ReferenceSpans[new SchemaName("Missing", "ns")];
         Assert.Equal(["ns.Missing", "ns.Missing"], uses.Select(span => span.ToString()));
         Assert.True(uses[0].Offset < uses[1].Offset);
-        Assert.Equal(text.IndexOf("ns.R", StringComparison.Ordinal), Assert.Single(file.ReferenceSpans[new SchemaName("R", "ns")]).Offset);
+        Assert.Equal(Text.IndexOf("ns.R", StringComparison.Ordinal), Assert.Single(file.ReferenceSpans[new SchemaName("R", "ns")]).Offset);
     }
 
     [Fact]
     public void Duplicate_diagnostic_points_to_later_occurrence()
     {
-        const string text = "schema R; record R {} record R {}";
-        var compilation = Bind(("test.avdl", text));
+        const string Text = "schema R; record R {} record R {}";
+        var compilation = Bind(("test.avdl", Text));
         var diagnostic = Assert.Single(compilation.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.DuplicateSchema, diagnostic.Code);
-        Assert.Equal(text.LastIndexOf("record", StringComparison.Ordinal), diagnostic.SourceSpan.Offset);
+        Assert.Equal(Text.LastIndexOf("record", StringComparison.Ordinal), diagnostic.SourceSpan.Offset);
         Assert.Equal("record R {}", diagnostic.SourceSpan.ToString());
     }
 
@@ -95,10 +95,10 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Missing_references_stay_grouped_and_anchor_in_source_order()
     {
-        const string text = "schema R; record R { Z first; A second; Z third; }";
-        var diagnostic = Assert.Single(Bind(("test.avdl", text)).Diagnostics);
+        const string Text = "schema R; record R { Z first; A second; Z third; }";
+        var diagnostic = Assert.Single(Bind(("test.avdl", Text)).Diagnostics);
         Assert.Equal(AvroDiagnosticCode.MissingReferences, diagnostic.Code);
-        Assert.Equal(text.IndexOf('Z'), diagnostic.SourceSpan.Offset);
+        Assert.Equal(Text.IndexOf('Z'), diagnostic.SourceSpan.Offset);
         Assert.Equal("Z", diagnostic.SourceSpan.ToString());
         Assert.Contains("A, Z", diagnostic.GetMessage());
     }
@@ -131,7 +131,7 @@ public sealed class ParserProvenanceTests
     [InlineData("protocol P { string call() oneway; }", "oneway")]
     public void Semantic_validation_returns_a_precise_diagnostic(string text, string anchor)
     {
-        var result = AvxxParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        var result = AvxxParser.Parse(new SourceText("test.avdl", text), s_options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         Assert.Equal(anchor, Assert.Single(result.Diagnostics).SourceSpan.ToString());
     }
@@ -139,7 +139,7 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Syntax_validation_returns_diagnostics()
     {
-        var result = AvxxParser.Parse(new SourceText("test.avdl", "schema ;"), Options, TestContext.Current.CancellationToken);
+        var result = AvxxParser.Parse(new SourceText("test.avdl", "schema ;"), s_options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         Assert.NotEmpty(result.Diagnostics);
     }
@@ -150,7 +150,7 @@ public sealed class ParserProvenanceTests
     public void Json_validation_returns_precise_value_diagnostics(string path, string text)
     {
         var source = new SourceText(path, text);
-        var result = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var result = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         var diagnostic = Assert.Single(result.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.InvalidArrayProperty, diagnostic.Code);

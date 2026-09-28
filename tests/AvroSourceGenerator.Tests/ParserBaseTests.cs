@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Text.Json;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
@@ -66,7 +67,7 @@ public sealed class ParserBaseTests
         Assert.Equal([record.SchemaName], result.Dependencies[record.SchemaName]);
     }
 
-    private static RecordSchema Record(string name) => new(new SchemaName(name, "Example"), null, [], [], ImmutableSortedDictionary<string, System.Text.Json.JsonElement>.Empty);
+    private static RecordSchema Record(string name) => new(new SchemaName(name, "Example"), null, [], [], ImmutableSortedDictionary<string, JsonElement>.Empty);
 
     private static SourceText Source { get; } = new("test.avsc", "{}");
 
@@ -81,10 +82,9 @@ public sealed class ParserBaseTests
         private RecursionScope EnterScope(SchemaName name) => base.EnterRecursionScope(name);
         public new TestScope EnterRecursionScope(SchemaName name) => new(this, name);
 
-        public readonly ref struct TestScope
+        public readonly ref struct TestScope(TestParser parser, SchemaName name)
         {
-            private readonly RecursionScope _scope;
-            public TestScope(TestParser parser, SchemaName name) => _scope = parser.EnterScope(name);
+            private readonly RecursionScope _scope = parser.EnterScope(name);
             public void Dispose() => _scope.Dispose();
         }
 

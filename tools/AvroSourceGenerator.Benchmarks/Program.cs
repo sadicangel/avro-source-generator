@@ -38,14 +38,11 @@ public class FullGenerationBenchmarks
         _environment.ValidateFullRuns();
     }
 
-    [Benchmark(Baseline = true)]
-    public GeneratorDriverRunResult LastGa() => _environment.RunFullLastGa();
+    [Benchmark(Baseline = true)] public GeneratorDriverRunResult LastGa() => _environment.RunFullLastGa();
 
-    [Benchmark]
-    public GeneratorDriverRunResult CurrentTip() => _environment.RunFullCurrent();
+    [Benchmark] public GeneratorDriverRunResult CurrentTip() => _environment.RunFullCurrent();
 
-    [GlobalCleanup]
-    public void Cleanup() => _environment.Dispose();
+    [GlobalCleanup] public void Cleanup() => _environment.Dispose();
 }
 
 [MemoryDiagnoser]
@@ -68,14 +65,11 @@ public class IncrementalGenerationBenchmarks
         _environment.ValidateIncrementalRuns();
     }
 
-    [Benchmark(Baseline = true)]
-    public GeneratorDriverRunResult LastGa() => _environment.RunIncrementalLastGa();
+    [Benchmark(Baseline = true)] public GeneratorDriverRunResult LastGa() => _environment.RunIncrementalLastGa();
 
-    [Benchmark]
-    public GeneratorDriverRunResult CurrentTip() => _environment.RunIncrementalCurrent();
+    [Benchmark] public GeneratorDriverRunResult CurrentTip() => _environment.RunIncrementalCurrent();
 
-    [GlobalCleanup]
-    public void Cleanup() => _environment.Dispose();
+    [GlobalCleanup] public void Cleanup() => _environment.Dispose();
 }
 
 [MemoryDiagnoser]
@@ -96,11 +90,9 @@ public class ReferencedIncrementalGenerationBenchmarks
         _environment.ValidateCurrentIncrementalRun();
     }
 
-    [Benchmark]
-    public GeneratorDriverRunResult CurrentTip() => _environment.RunIncrementalCurrent();
+    [Benchmark] public GeneratorDriverRunResult CurrentTip() => _environment.RunIncrementalCurrent();
 
-    [GlobalCleanup]
-    public void Cleanup() => _environment.Dispose();
+    [GlobalCleanup] public void Cleanup() => _environment.Dispose();
 }
 
 internal static class SmokeTest

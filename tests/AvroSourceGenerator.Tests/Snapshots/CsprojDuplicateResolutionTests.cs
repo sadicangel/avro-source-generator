@@ -4,11 +4,9 @@ namespace AvroSourceGenerator.Tests.Snapshots;
 
 public sealed class CsprojDuplicateResolutionTests
 {
-    [Fact]
-    public Task Verify() => Snapshot.Files([ProjectFile.Schema(Schema1), ProjectFile.Schema(Schema2)], config => config with { DuplicateResolution = "Ignore" });
+    [Fact] public Task Verify() => Snapshot.Files([ProjectFile.Schema(Schema1), ProjectFile.Schema(Schema2)], config => config with { DuplicateResolution = "Ignore" });
 
-    [Fact]
-    public Task Diagnostic() => Snapshot.Diagnostic([ProjectFile.Schema(Schema1), ProjectFile.Schema(Schema2)]);
+    [Fact] public Task Diagnostic() => Snapshot.Diagnostic([ProjectFile.Schema(Schema1), ProjectFile.Schema(Schema2)]);
 
     [StringSyntax(StringSyntaxAttribute.Json)]
     private const string Schema1 = """

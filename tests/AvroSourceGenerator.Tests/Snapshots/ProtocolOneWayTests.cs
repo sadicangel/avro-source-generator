@@ -8,7 +8,8 @@ public sealed class ProtocolOneWayTests
     [Fact]
     public void Lower_ExplicitFalse_PreservesOneWayWhenWritingProtocol()
     {
-        var (schemas, protocol) = LowerProtocol("""
+        var (schemas, protocol) = LowerProtocol(
+            """
             ,
                         "one-way": false
             """);
@@ -59,7 +60,8 @@ public sealed class ProtocolOneWayTests
                     }
                 }
             }
-            """, extension: ".avpr");
+            """,
+            extension: ".avpr");
         var schemas = parsed.Declarations.ToDictionary(static schema => schema.SchemaName);
         return (schemas, Assert.IsType<ProtocolSchema>(Assert.Single(parsed.Declarations)));
     }

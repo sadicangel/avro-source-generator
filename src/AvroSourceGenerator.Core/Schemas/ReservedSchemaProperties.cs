@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Schemas;
-
-namespace AvroSourceGenerator.Avjs;
+﻿namespace AvroSourceGenerator.Schemas;
 
 internal static class ReservedSchemaProperties
 {
@@ -18,7 +16,6 @@ internal static class ReservedSchemaProperties
         AvroJsonKeys.Order,
         AvroJsonKeys.Doc,
         AvroJsonKeys.Default,
-        AvroJsonKeys.LogicalType,
     ];
 
     public static bool IsReserved(string propertyName) => s_reservedProperties.Contains(propertyName);

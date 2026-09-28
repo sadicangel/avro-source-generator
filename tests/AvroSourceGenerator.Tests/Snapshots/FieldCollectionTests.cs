@@ -2,7 +2,7 @@
 
 public class FieldCollectionTests
 {
-    public static MatrixTheoryData<string, string> Primitives => new MatrixTheoryData<string, string>(["record", "error"], ["array<string>", "map<string>"]);
+    public static MatrixTheoryData<string, string> Primitives => new(["record", "error"], ["array<string>", "map<string>"]);
 
     [Theory]
     [MemberData(nameof(Primitives))]

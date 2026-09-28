@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using Chr.Avro.Confluent;
@@ -119,8 +119,7 @@ public sealed class DockerFixture : IAsyncDisposable
         builder = await builder.SetAvroValueSerializer(
             schemaRegistryClient,
             valueSubject,
-            AutomaticRegistrationBehavior.Always,
-            TombstoneBehavior.None);
+            AutomaticRegistrationBehavior.Always);
 
         return builder.Build();
     }
@@ -140,7 +139,7 @@ public sealed class DockerFixture : IAsyncDisposable
 
         return new ConsumerBuilder<string, T>(config)
             .SetKeyDeserializer(Deserializers.Utf8)
-            .SetAvroValueDeserializer(schemaRegistryClient, TombstoneBehavior.None)
+            .SetAvroValueDeserializer(schemaRegistryClient)
             .Build();
     }
 
@@ -162,8 +161,7 @@ public sealed class DockerFixture : IAsyncDisposable
 
         if (!string.IsNullOrEmpty(createTopicResult.Stderr))
         {
-            throw new InvalidOperationException(
-                $"Failed to create topic '{topicName}': {createTopicResult.Stderr}");
+            throw new InvalidOperationException($"Failed to create topic '{topicName}': {createTopicResult.Stderr}");
         }
     }
 
@@ -179,8 +177,7 @@ public sealed class DockerFixture : IAsyncDisposable
 
         if (!string.IsNullOrEmpty(deleteTopicResult.Stderr))
         {
-            throw new InvalidOperationException(
-                $"Failed to delete topic '{topicName}': {deleteTopicResult.Stderr}");
+            throw new InvalidOperationException($"Failed to delete topic '{topicName}': {deleteTopicResult.Stderr}");
         }
     }
 

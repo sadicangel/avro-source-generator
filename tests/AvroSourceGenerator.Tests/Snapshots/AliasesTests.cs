@@ -12,7 +12,6 @@ public sealed class AliasesTests
     }
 
     // TODO: What to do with aliases?
-    public static MatrixTheoryData<string[], string> ValidAliasesSchemaPairs() => new([null!, [], ["Alias1", "Alias2"]], ["enum", "error", "fixed", "record"]);
 
     public static MatrixTheoryData<string, string> InvalidAliasesSchemaPairs() => new(["{}"], ["enum", "error", "fixed", "record"]);
 }

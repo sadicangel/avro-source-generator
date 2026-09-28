@@ -16,7 +16,7 @@ public sealed class AvscParserLocationTests
     [InlineData(GenerationTarget.Modern, true)]
     public void Matches_existing_semantics_for_representative_schemas(GenerationTarget target, bool nullableReferences)
     {
-        const string text = """
+        const string Text = """
             {
               "type":"record",
               "name":"Envelope",
@@ -32,7 +32,7 @@ public sealed class AvscParserLocationTests
               "custom":{"x":[2,false,null]}
             }
             """;
-        var source = new SourceText("test.avsc", text);
+        var source = new SourceText("test.avsc", Text);
         var options = new AvroParseOptions(target, nullableReferences);
 
         var actual = AvxxParser.Parse(source, options, TestContext.Current.CancellationToken);
@@ -41,7 +41,7 @@ public sealed class AvscParserLocationTests
         var actualSchemas = actual.Declarations.ToDictionary(static schema => schema.SchemaName);
         Assert.Equal(actual.Declarations.Length, actualSchemas.Count);
         Assert.All(actual.Declarations, schema => Assert.NotEmpty(schema.ToJsonString(actualSchemas)));
-        Assert.Equal("{\"x\":[2,false,null]}", actual.RootSchema!.Properties["custom"].GetRawText());
+        Assert.Equal("{\"x\":[2,false,null]}", actual.RootSchema.Properties["custom"].GetRawText());
         var actualRecord = Assert.IsType<RecordSchema>(actual.RootSchema);
         Assert.Equal("\"00000000-0000-0000-0000-000000000000\"", actualRecord.Fields[0].DefaultJson?.GetRawText());
     }
@@ -49,8 +49,8 @@ public sealed class AvscParserLocationTests
     [Fact]
     public void Reports_required_array_failures_at_precise_spans_in_parser_order()
     {
-        const string text = """{"protocol":"P","types":0,"messages":{"a":{"request":false,"response":"Missing"},"b":{"request":{},"response":"null"}}}""";
-        var source = new SourceText("test.avpr", text);
+        const string Text = """{"protocol":"P","types":0,"messages":{"a":{"request":false,"response":"Missing"},"b":{"request":{},"response":"null"}}}""";
+        var source = new SourceText("test.avpr", Text);
 
         var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
@@ -91,8 +91,8 @@ public sealed class AvscParserLocationTests
     [Fact]
     public void Invalid_recovered_files_do_not_bind_or_render_or_add_missing_reference_diagnostics()
     {
-        const string text = """{"protocol":"P","types":0,"messages":{"m":{"request":false,"response":"Missing"}}}""";
-        var file = AvxxParser.Parse(new SourceText("test.avpr", text), Options, TestContext.Current.CancellationToken);
+        const string Text = """{"protocol":"P","types":0,"messages":{"m":{"request":false,"response":"Missing"}}}""";
+        var file = AvxxParser.Parse(new SourceText("test.avpr", Text), Options, TestContext.Current.CancellationToken);
         var files = ImmutableArray.Create(file);
         var symbols = SymbolTable.FromFiles(files, TestContext.Current.CancellationToken);
         var bound = BoundAvroFile.Bind(
@@ -100,7 +100,7 @@ public sealed class AvscParserLocationTests
             TestContext.Current.CancellationToken);
         var compilation = AvroCompilation.Create(
             [bound],
-            new AvroCompilationOptions(ReferenceResolution.Deferred, DuplicateResolution.Error),
+            new AvroCompilationOptions(ReferenceResolution.Deferred),
             TestContext.Current.CancellationToken);
         var renderable = RenderableAvroFile.Create(
             bound,
@@ -118,25 +118,25 @@ public sealed class AvscParserLocationTests
     [Fact]
     public void Records_precise_declaration_and_reference_spans()
     {
-        const string text = """{"type":"record","name":"R","fields":[{"name":"value","type":"Other"}]}""";
-        var source = new SourceText("test.avsc", text);
+        const string Text = """{"type":"record","name":"R","fields":[{"name":"value","type":"Other"}]}""";
+        var source = new SourceText("test.avsc", Text);
 
         var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
-        Assert.Equal(text, Assert.Single(file.DeclarationSpans).ToString());
+        Assert.Equal(Text, Assert.Single(file.DeclarationSpans).ToString());
         Assert.Equal("\"Other\"", Assert.Single(file.ReferenceSpans[new SchemaName("Other")]).ToString());
     }
 
     [Fact]
     public void Recoverable_array_validation_uses_the_selected_duplicate_property()
     {
-        const string text = """{"type":"record","name":"R","fields":[],"fields":false}""";
-        var source = new SourceText("test.avsc", text);
+        const string Text = """{"type":"record","name":"R","fields":[],"fields":false}""";
+        var source = new SourceText("test.avsc", Text);
 
         var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
         var diagnostic = Assert.Single(file.Diagnostics);
-        var offset = text.LastIndexOf("false", StringComparison.Ordinal);
+        var offset = Text.LastIndexOf("false", StringComparison.Ordinal);
         Assert.Equal(source.GetSourceSpan(offset, "false".Length), diagnostic.SourceSpan);
         Assert.Equal(
             "Property 'fields' must be an array, but 'False' was found.",
@@ -153,7 +153,7 @@ public sealed class AvscParserLocationTests
             AvxxParser.Parse(new SourceText("test.avsc", "{}"), Options, cancellation.Token));
     }
 
-    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static AvroParseOptions Options { get; } = new(GenerationTarget.Modern, true);
 
     private static void AssertDiagnostic(AvroDiagnostic diagnostic, SourceText source, string value, string message)
     {

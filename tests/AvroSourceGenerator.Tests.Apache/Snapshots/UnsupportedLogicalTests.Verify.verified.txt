@@ -19,7 +19,8 @@ namespace SchemaNamespace
           "type": "fixed",
           "name": "Fixed",
           "namespace": "SchemaNamespace",
-          "size": 16
+          "size": 16,
+          "logicalType": "someType"
         }
         """);
     }

@@ -1,5 +1,4 @@
-﻿using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Compiler;
+﻿using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
@@ -9,7 +8,7 @@ namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class ParserValidationRegressionTests
 {
-    private static readonly AvroParseOptions Options = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new(GenerationTarget.Modern, true);
 
     [Theory]
     [InlineData("1")]
@@ -20,7 +19,7 @@ public sealed class ParserValidationRegressionTests
     {
         var source = new SourceText("test.avdl", $"schema E; enum E {{ A }} = {value};");
 
-        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
 
         var diagnostic = Assert.Single(file.Diagnostics);
         var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
@@ -40,7 +39,7 @@ public sealed class ParserValidationRegressionTests
     {
         var source = new SourceText("test.avdl", text);
 
-        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
 
         var diagnostic = Assert.Single(file.Diagnostics);
         var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
@@ -66,7 +65,7 @@ public sealed class ParserValidationRegressionTests
     [InlineData("@x(1) @x(2) protocol P {}", "protocol")]
     public void Duplicate_avdl_properties_keep_the_last_value(string text, string schemaType)
     {
-        var file = AvxxParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(new SourceText("test.avdl", text), s_options, TestContext.Current.CancellationToken);
 
         Assert.True(file.IsValid, string.Join("; ", file.Diagnostics));
         TopLevelSchema schema = schemaType == "protocol"
@@ -80,7 +79,7 @@ public sealed class ParserValidationRegressionTests
     {
         var file = AvxxParser.Parse(
             new SourceText("test.avdl", "schema R; record R { string @x(1) @x(2) value; }"),
-            Options,
+            s_options,
             TestContext.Current.CancellationToken);
 
         var field = Assert.Single(Assert.IsType<RecordSchema>(Assert.Single(file.Declarations)).Fields);
@@ -92,17 +91,17 @@ public sealed class ParserValidationRegressionTests
     [InlineData("test.avpr", """{"protocol":"P","types":[],"messages":{},"x":1,"x":2}""")]
     public void Duplicate_json_properties_keep_the_last_value(string path, string text)
     {
-        var file = AvxxParser.Parse(new SourceText(path, text), Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(new SourceText(path, text), s_options, TestContext.Current.CancellationToken);
 
         Assert.True(file.IsValid, string.Join("; ", file.Diagnostics));
-        Assert.Equal(2, file.RootSchema!.Properties["x"].GetInt32());
+        Assert.Equal(2, file.RootSchema.Properties["x"].GetInt32());
     }
 
     [Fact]
     public void Duplicate_json_field_properties_keep_the_last_value()
     {
-        const string text = """{"type":"record","name":"R","fields":[{"name":"f","type":"string","x":1,"x":2}]}""";
-        var file = AvxxParser.Parse(new SourceText("test.avsc", text), Options, TestContext.Current.CancellationToken);
+        const string Text = """{"type":"record","name":"R","fields":[{"name":"f","type":"string","x":1,"x":2}]}""";
+        var file = AvxxParser.Parse(new SourceText("test.avsc", Text), s_options, TestContext.Current.CancellationToken);
 
         var field = Assert.Single(Assert.IsType<RecordSchema>(file.RootSchema).Fields);
         Assert.Equal(2, field.Properties["x"].GetInt32());

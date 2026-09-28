@@ -20,6 +20,7 @@ public class LogicalTypesTests(DockerFixture dockerFixture)
             localPublishedTime = (long)(DateTimeOffset.UtcNow - DateTimeOffset.UnixEpoch).TotalMilliseconds,
             localEditedTime = (long)(DateTimeOffset.UtcNow - DateTimeOffset.UnixEpoch).TotalMicroseconds,
             sessionId = Guid.NewGuid(),
+            futureLabel = "plain string",
             //paymentTransaction = Guid.NewGuid(),
         };
 

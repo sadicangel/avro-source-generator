@@ -1,5 +1,4 @@
 ﻿using AvroSourceGenerator.IntegrationTests.Schemas;
-
 using Chr.Avro.Abstract;
 using Chr.Avro.Representation;
 using Confluent.SchemaRegistry;

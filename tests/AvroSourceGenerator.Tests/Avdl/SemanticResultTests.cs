@@ -1,5 +1,4 @@
-﻿using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Avdl.Declarations;
+﻿using AvroSourceGenerator.Avdl.Declarations;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
@@ -9,7 +8,7 @@ namespace AvroSourceGenerator.Tests.Avdl;
 
 public sealed class SemanticResultTests
 {
-    private static readonly AvroParseOptions Options = new(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new(GenerationTarget.Modern, true);
 
     [Theory]
     [InlineData("record R {}", AvroDiagnosticCode.InvalidIdlDocument)]
@@ -62,7 +61,7 @@ public sealed class SemanticResultTests
     [Fact]
     public void Independent_errors_are_collected_in_semantic_traversal_order()
     {
-        const string text = """
+        const string Text = """
             schema R;
             @aliases(false) fixed F(0);
             @aliases(1) record R {
@@ -72,13 +71,13 @@ public sealed class SemanticResultTests
             }
             enum E { A } = 7;
             """;
-        var file = Parse(text);
+        var file = Parse(Text);
         AssertInvalid(file);
         Assert.Equal(
             ["false", "0", "1", "2", "3", "4", "5", "6", "2147483648", "2147483649", "7"],
             file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
         Assert.All(file.Diagnostics, diagnostic => Assert.Equal("test.avdl", diagnostic.SourceSpan.SourceText.Path.OriginalPath));
-        Assert.Equal(file.Diagnostics, Parse(text).Diagnostics);
+        Assert.Equal(file.Diagnostics, Parse(Text).Diagnostics);
     }
 
     [Theory]
@@ -117,7 +116,7 @@ public sealed class SemanticResultTests
     [Fact]
     public void Protocol_errors_continue_across_types_parameters_responses_and_messages()
     {
-        const string text = """
+        const string Text = """
             protocol P {
                 fixed F(0);
                 decimal(2147483648, 0) first(@logicalType(1) string a, @logicalType(2) string b) oneway;
@@ -125,7 +124,7 @@ public sealed class SemanticResultTests
                 void third(@logicalType(5) string d);
             }
             """;
-        var file = Parse(text);
+        var file = Parse(Text);
         AssertInvalid(file);
         Assert.Equal(["0", "1", "2", "2147483648", "4", "oneway", "5"], file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
         // The first response failed, so its one-way rule cannot be evaluated.
@@ -143,22 +142,22 @@ public sealed class SemanticResultTests
     [Fact]
     public void Recursive_declarations_stop_before_metadata_validation()
     {
-        const string text = "protocol P { @aliases(1) fixed P(0); }";
-        var file = Parse(text);
+        const string Text = "protocol P { @aliases(1) fixed P(0); }";
+        var file = Parse(Text);
         AssertInvalid(file);
         var diagnostic = Assert.Single(file.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.RecursiveSchemaDefinition, diagnostic.Code);
         Assert.Equal("P", diagnostic.SourceSpan.ToString());
-        Assert.Equal(text.LastIndexOf('P'), diagnostic.SourceSpan.Offset);
+        Assert.Equal(Text.LastIndexOf('P'), diagnostic.SourceSpan.Offset);
     }
 
     [Fact]
     public void Syntax_errors_skip_semantic_validation()
     {
-        const string text = "schema R; record R { string f } fixed F(0);";
-        var source = new SourceText("test.avdl", text);
+        const string Text = "schema R; record R { string f } fixed F(0);";
+        var source = new SourceText("test.avdl", Text);
         var syntax = AvdlParser.Parse(source, TestContext.Current.CancellationToken);
-        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
         AssertInvalid(file);
         Assert.Equal(syntax.Diagnostics, file.Diagnostics);
         Assert.DoesNotContain(file.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.InvalidIdlFixedSize);
@@ -168,8 +167,8 @@ public sealed class SemanticResultTests
     public void Static_and_instance_entrypoints_return_the_same_diagnostics()
     {
         var source = new SourceText("test.avdl", "schema R; fixed F(0); record R { @logicalType(1) string f; }");
-        var expected = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
-        var actual = new AvdlParser(source, Options, TestContext.Current.CancellationToken).ParseFile();
+        var expected = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
+        var actual = new AvdlParser(source, s_options, TestContext.Current.CancellationToken).ParseFile();
         AssertInvalid(actual);
         Assert.Equal(expected.Diagnostics, actual.Diagnostics);
     }
@@ -177,17 +176,17 @@ public sealed class SemanticResultTests
     [Fact]
     public void Embedded_json_duplicates_keep_the_last_value_in_syntax_and_semantics()
     {
-        const string text = """
+        const string Text = """
             schema R;
             @custom({"x": 1, "x": 2})
             record R { map<long> f = {"x": 3, "x": 4}; }
             """;
-        var source = new SourceText("test.avdl", text);
+        var source = new SourceText("test.avdl", Text);
         var syntax = AvdlParser.Parse(source, TestContext.Current.CancellationToken);
         Assert.Empty(syntax.Diagnostics);
         var recordSyntax = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(syntax.Document.Declarations));
         Assert.Equal(4, recordSyntax.Fields[0].DefaultValueClause!.JsonValue.JsonNode!["x"]!.GetValue<int>());
-        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid);
         var record = Assert.IsType<RecordSchema>(Assert.Single(file.Declarations));
         Assert.Equal(2, record.Properties["custom"].GetProperty("x").GetInt32());
@@ -201,7 +200,7 @@ public sealed class SemanticResultTests
     {
         var source = new SourceText("test.avdl", $"schema R; @custom({number}) record R {{ double f = {number}; }}");
         var syntax = AvdlParser.Parse(source, TestContext.Current.CancellationToken);
-        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
         AssertInvalid(file);
         Assert.Equal(syntax.Diagnostics, file.Diagnostics);
         var numbers = file.Diagnostics.Where(diagnostic => diagnostic.Code == AvroDiagnosticCode.InvalidNumber).ToArray();
@@ -223,11 +222,11 @@ public sealed class SemanticResultTests
     {
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
-        Assert.Throws<OperationCanceledException>(() => AvxxParser.Parse(new SourceText("test.avdl", "schema R; record R {}"), Options, cancellation.Token));
+        Assert.Throws<OperationCanceledException>(() => AvxxParser.Parse(new SourceText("test.avdl", "schema R; record R {}"), s_options, cancellation.Token));
     }
 
     private static AvroFile Parse(string text) =>
-        AvxxParser.Parse(new SourceText("test.avdl", text), Options, TestContext.Current.CancellationToken);
+        AvxxParser.Parse(new SourceText("test.avdl", text), s_options, TestContext.Current.CancellationToken);
 
     private static void AssertInvalid(AvroFile file)
     {

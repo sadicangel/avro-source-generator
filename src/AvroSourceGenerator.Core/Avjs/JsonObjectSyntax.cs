@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Protocols;
+using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avjs;

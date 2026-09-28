@@ -331,13 +331,27 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
             var properties = syntax.GetSchemaProperties();
             if (tracker.HasNewDiagnostics) schema = null;
             if (schema is not null && (documentation is not null || !properties.IsEmpty))
-                schema = schema with { Documentation = documentation, Properties = properties };
+                schema = schema with
+                {
+                    Documentation = documentation,
+                    Properties = properties
+                };
         }
 
         var logicalTracker = TrackDiagnostics();
         var logicalType = GetOptionalSchemaString(syntax, AvroJsonKeys.LogicalType);
         if (schema is null || logicalTracker.HasNewDiagnostics) return null;
-        return logicalType is null ? schema : LogicalSchema.Create(logicalType, schema, Options.GenerationTarget);
+        if (logicalType is null) return schema;
+
+        var logicalSchema = LogicalSchema.Create(logicalType, schema, Options.GenerationTarget);
+        if (logicalSchema is LogicalSchema) return logicalSchema;
+
+        // The target ignores this logical type, so omit the annotation from its generated schema.
+        var underlyingSchema = schema with { Properties = schema.Properties.Remove(AvroJsonKeys.LogicalType) };
+        if (schema is TopLevelSchema declaration)
+            Replace(declaration, (TopLevelSchema)underlyingSchema);
+
+        return underlyingSchema;
     }
 
     private AvroSchema? Array(JsonObjectSyntax syntax, string? containingNamespace)
@@ -491,13 +505,24 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         var order = GetOptionalString(syntax, AvroJsonKeys.Order);
         var properties = syntax.GetSchemaProperties();
         if (tracker.HasNewDiagnostics || aliases.IsDefault) return null;
-        return new Field(fieldName, fieldType, underlyingType, documentation, aliases, defaultJson,
-            fieldType.GetValue(defaultJson), order, properties, remarks);
+        return new Field(
+            fieldName,
+            fieldType,
+            underlyingType,
+            documentation,
+            aliases,
+            defaultJson,
+            fieldType.GetValue(defaultJson),
+            order,
+            properties,
+            remarks);
     }
 
     private AvroSchema? Union(JsonArraySyntax syntax, string? containingNamespace)
     {
-        var schemas = ParseItems(syntax.Items, (Parser: this, ContainingNamespace: containingNamespace),
+        var schemas = ParseItems(
+            syntax.Items,
+            (Parser: this, ContainingNamespace: containingNamespace),
             static (item, state) => state.Parser.Schema(item, state.ContainingNamespace));
         return schemas.IsDefault ? null : UnionSchema.Create(schemas, Options.UseNullableReferenceTypes);
     }

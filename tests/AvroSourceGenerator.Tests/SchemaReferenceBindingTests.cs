@@ -13,16 +13,16 @@ public sealed class SchemaReferenceBindingTests
             ReferenceResolution.Deferred,
             DuplicateResolution.Error,
             ("hash.avsc", """
-            { "type": "fixed", "name": "Hash", "namespace": "Demo", "size": 16 }
-            """),
+                { "type": "fixed", "name": "Hash", "namespace": "Demo", "size": 16 }
+                """),
             ("consumer.avsc", """
-            {
-              "type": "record",
-              "name": "Consumer",
-              "namespace": "Demo",
-              "fields": [{ "name": "hash", "type": "Hash" }]
-            }
-            """));
+                {
+                  "type": "record",
+                  "name": "Consumer",
+                  "namespace": "Demo",
+                  "fields": [{ "name": "hash", "type": "Hash" }]
+                }
+                """));
 
         var consumer = Assert.IsType<RecordSchema>(Assert.Single(compiled.BoundFiles[1].Declarations));
         var reference = Assert.IsType<AvroSchemaReference>(Assert.Single(consumer.Fields).Type);

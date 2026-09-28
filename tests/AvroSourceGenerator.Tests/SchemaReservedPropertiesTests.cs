@@ -55,7 +55,8 @@ public sealed class SchemaReservedPropertiesTests
               },
               "x-protocol": 1
             }
-            """, extension: ".avpr");
+            """,
+            extension: ".avpr");
 
         var protocol = Assert.IsType<ProtocolSchema>(Assert.Single(parsed.Declarations));
 

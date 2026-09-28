@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Nodes;
-using AvroSourceGenerator.Avdl.Syntax;
 using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.Avdl;

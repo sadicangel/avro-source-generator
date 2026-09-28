@@ -4,9 +4,9 @@ using Xunit.Sdk;
 #pragma warning disable IDE0130
 namespace AvroSourceGenerator.IntegrationTests.Schemas;
 
-partial interface INotificationContentVariant : IXunitSerializable;
+public partial interface INotificationContentVariant : IXunitSerializable;
 
-partial record EmailContent
+public partial record EmailContent
 {
     public void Deserialize(IXunitSerializationInfo info)
     {
@@ -34,7 +34,7 @@ partial record EmailContent
     }
 }
 
-partial record PushContent
+public partial record PushContent
 {
     public void Deserialize(IXunitSerializationInfo info)
     {
@@ -62,7 +62,7 @@ partial record PushContent
     }
 }
 
-partial record SmsContent
+public partial record SmsContent
 {
     public void Deserialize(IXunitSerializationInfo info)
     {

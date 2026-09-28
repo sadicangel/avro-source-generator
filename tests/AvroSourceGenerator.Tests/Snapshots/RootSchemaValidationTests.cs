@@ -76,13 +76,4 @@ public sealed class RootSchemaValidationTests
             """,
         _ => throw new ArgumentOutOfRangeException(nameof(schemaType), schemaType, null),
     };
-
-    private const string NamedRecord = """
-        {
-          "type": "record",
-          "name": "OrderCreated",
-          "namespace": "Demo",
-          "fields": []
-        }
-        """;
 }

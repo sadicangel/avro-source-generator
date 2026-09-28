@@ -1,17 +1,17 @@
 ﻿using AvroSourceGenerator.ChrAvroKafka;
 using Confluent.Kafka;
 
-const string topicName = "transactions";
-var valueSubject = $"{topicName}-value";
+const string TopicName = "transactions";
+var valueSubject = $"{TopicName}-value";
 
 Console.WriteLine("Starting Kafka and Schema Registry containers...");
 await using var fixture = new DockerFixture();
 await fixture.StartAsync();
 Console.WriteLine("Containers are ready.");
 
-Console.WriteLine($"Creating topic '{topicName}'...");
-await fixture.CreateTopicAsync(topicName);
-Console.WriteLine($"Topic '{topicName}' created.");
+Console.WriteLine($"Creating topic '{TopicName}'...");
+await fixture.CreateTopicAsync(TopicName);
+Console.WriteLine($"Topic '{TopicName}' created.");
 
 using var registry = fixture.CreateSchemaRegistryClient();
 
@@ -24,7 +24,7 @@ using var producer = await fixture.CreateProducerAsync<TransactionEvent>(registr
 
 Console.WriteLine("Producing message...");
 var deliveryResult = await producer.ProduceAsync(
-    topicName,
+    TopicName,
     new Message<string, TransactionEvent>
     {
         Key = producedTransaction.Id.ToString(),
@@ -43,7 +43,7 @@ Console.WriteLine("Creating consumer...");
 using var consumer = fixture.CreateConsumer<TransactionEvent>(registry);
 
 Console.WriteLine("Subscribing and consuming...");
-consumer.Subscribe(topicName);
+consumer.Subscribe(TopicName);
 
 var consumedTransaction = consumer.Consume(TimeSpan.FromSeconds(10))?.Message?.Value
     ?? throw new InvalidOperationException("Failed to consume the produced transaction.");
@@ -53,8 +53,8 @@ Console.WriteLine($"Consumed transaction {consumedTransaction.Id}.");
 AssertEquivalent(producedTransaction, consumedTransaction);
 Console.WriteLine("Produced and consumed transactions match.");
 
-Console.WriteLine($"Deleting topic '{topicName}'...");
-await fixture.DeleteTopicAsync(topicName);
+Console.WriteLine($"Deleting topic '{TopicName}'...");
+await fixture.DeleteTopicAsync(TopicName);
 Console.WriteLine("Sample completed successfully.");
 
 static TransactionEvent CreateTransaction()

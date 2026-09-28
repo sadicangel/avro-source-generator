@@ -2,7 +2,7 @@
 
 public class FieldPrimitiveTests
 {
-    public static MatrixTheoryData<string, string> Primitives => new MatrixTheoryData<string, string>(["record", "error"], ["null", "boolean", "int", "long", "float", "double", "bytes", "string"]);
+    public static MatrixTheoryData<string, string> Primitives => new(["record", "error"], ["null", "boolean", "int", "long", "float", "double", "bytes", "string"]);
 
     [Theory]
     [MemberData(nameof(Primitives))]

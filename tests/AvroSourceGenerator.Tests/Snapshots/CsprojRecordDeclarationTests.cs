@@ -11,5 +11,5 @@ public sealed class CsprojRecordDeclarationTests
         return Snapshot.Schema(schema, config => config with { RecordDeclaration = recordDeclaration });
     }
 
-    public static MatrixTheoryData<string, string> RecordDeclarationSchemaPairs() => new MatrixTheoryData<string, string>(["record", "class", "invalid"], ["record", "error"]);
+    public static MatrixTheoryData<string, string> RecordDeclarationSchemaPairs() => new(["record", "class", "invalid"], ["record", "error"]);
 }

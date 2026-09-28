@@ -1,7 +1,4 @@
-﻿using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avdl.Syntax.Types;
-
-namespace AvroSourceGenerator.Avdl.Types;
+﻿namespace AvroSourceGenerator.Avdl.Types;
 
 public sealed record class UnionTypeSyntax(
     SyntaxToken UnionKeyword,

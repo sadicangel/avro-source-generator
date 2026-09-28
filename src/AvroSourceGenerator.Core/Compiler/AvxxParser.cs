@@ -1,6 +1,5 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
-using AvroSourceGenerator.Avdl;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
@@ -64,6 +63,15 @@ public abstract class AvxxParser(AvroParseOptions options)
         {
             AddDependency(RecursionStack[^2], schema.SchemaName);
         }
+    }
+
+    protected void Replace(TopLevelSchema original, TopLevelSchema replacement)
+    {
+        if (!DeclarationIndexes.TryGetValue(original.SchemaName, out var index) ||
+            !ReferenceEquals(Declarations[index], original))
+            throw new InvalidOperationException($"Declaration '{original.SchemaName}' was not registered.");
+
+        Declarations[index] = replacement;
     }
 
     protected AvroSchema Reference(SchemaName schemaName, string? containingNamespace, SourceSpan sourceSpan)

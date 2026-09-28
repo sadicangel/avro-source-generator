@@ -38,7 +38,7 @@ public sealed class AvscFixtureCoverageTests
     [Fact]
     public void Uses_last_duplicate_message()
     {
-        const string text = """
+        const string Text = """
             {
               "protocol":"P",
               "types":[],
@@ -48,7 +48,7 @@ public sealed class AvscFixtureCoverageTests
               }
             }
             """;
-        var source = new SourceText("test.avpr", text);
+        var source = new SourceText("test.avpr", Text);
 
         var file = AvxxParser.Parse(source, new AvroParseOptions(GenerationTarget.Modern, true), TestContext.Current.CancellationToken);
 
@@ -70,7 +70,7 @@ public sealed class AvscFixtureCoverageTests
             .ToImmutableArray();
         var compilation = AvroCompilation.Create(
             boundFiles,
-            new AvroCompilationOptions(ReferenceResolution.Deferred, DuplicateResolution.Error),
+            new AvroCompilationOptions(ReferenceResolution.Deferred),
             cancellationToken);
         var languageFeatures = LanguageFeatures.Latest;
         if (!nullableReferences)
@@ -104,6 +104,7 @@ public sealed class AvscFixtureCoverageTests
 
     private readonly record struct PipelineResult(
         ImmutableArray<BoundAvroFile> BoundFiles,
+        // ReSharper disable once NotAccessedPositionalProperty.Local
         ImmutableArray<RenderableAvroFile> RenderableFiles,
         ImmutableArray<RenderedSchema> RenderedSchemas);
 }

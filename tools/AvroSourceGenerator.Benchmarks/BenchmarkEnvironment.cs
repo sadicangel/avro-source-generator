@@ -9,7 +9,7 @@ namespace AvroSourceGenerator.Benchmarks;
 
 internal sealed class BenchmarkEnvironment : IDisposable
 {
-    private static readonly CSharpParseOptions s_parseOptions = new CSharpParseOptions(LanguageVersion.CSharp12);
+    private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.CSharp12);
 
     private readonly BenchmarkScenario _scenario;
     private readonly CSharpCompilation _compilation;
@@ -212,7 +212,7 @@ internal sealed class LoadedGenerator : IDisposable
 internal sealed class GeneratorLoadContext(string name, string componentAssemblyPath) : AssemblyLoadContext(name, isCollectible: true)
 {
     private readonly string _assemblyDirectory = Path.GetDirectoryName(componentAssemblyPath)!;
-    private readonly AssemblyDependencyResolver _resolver = new AssemblyDependencyResolver(componentAssemblyPath);
+    private readonly AssemblyDependencyResolver _resolver = new(componentAssemblyPath);
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {

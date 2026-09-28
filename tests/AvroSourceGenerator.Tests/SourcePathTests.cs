@@ -106,5 +106,4 @@ public sealed class SourcePathTests
         Assert.NotEqual(new SourcePath(string.Empty), path);
         Assert.True(path.CompareTo(new SourcePath(string.Empty)) < 0);
     }
-
 }

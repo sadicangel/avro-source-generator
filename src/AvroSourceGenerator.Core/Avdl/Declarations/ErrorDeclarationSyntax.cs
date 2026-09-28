@@ -1,6 +1,4 @@
 ﻿using AvroSourceGenerator.Avdl.Annotations;
-using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avdl.Syntax.Declarations;
 
 namespace AvroSourceGenerator.Avdl.Declarations;
 

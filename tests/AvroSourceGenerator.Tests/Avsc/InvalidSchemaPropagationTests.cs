@@ -53,8 +53,8 @@ public sealed class InvalidSchemaPropagationTests
     [Fact]
     public void Earlier_recovered_diagnostics_survive_a_later_invalid_child()
     {
-        const string text = """{"protocol":"P","types":false,"messages":{"m":{"request":{},"response":false}}}""";
-        var file = AvxxParser.Parse(new SourceText("test.avpr", text), Options, TestContext.Current.CancellationToken);
+        const string Text = """{"protocol":"P","types":false,"messages":{"m":{"request":{},"response":false}}}""";
+        var file = AvxxParser.Parse(new SourceText("test.avpr", Text), Options, TestContext.Current.CancellationToken);
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
         Assert.Equal(["false", "{}", "false"], file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
@@ -64,8 +64,8 @@ public sealed class InvalidSchemaPropagationTests
     [Fact]
     public void Recursive_declaration_returns_an_invalid_result()
     {
-        const string text = """{"type":"record","name":"R","fields":[{"name":"f","type":{"type":"record","name":"R","fields":[]}}]}""";
-        var source = new SourceText("test.avsc", text);
+        const string Text = """{"type":"record","name":"R","fields":[{"name":"f","type":{"type":"record","name":"R","fields":[]}}]}""";
+        var source = new SourceText("test.avsc", Text);
         var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
         Assert.Same(AvroSchema.Null, file.RootSchema);

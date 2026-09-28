@@ -1,7 +1,5 @@
 ﻿using AvroSourceGenerator.Avdl.Declarations;
 using AvroSourceGenerator.Avdl.Directives;
-using AvroSourceGenerator.Avdl.Syntax;
-using AvroSourceGenerator.Avdl.Syntax.Directives;
 
 namespace AvroSourceGenerator.Avdl;
 

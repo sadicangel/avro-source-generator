@@ -11,7 +11,7 @@ internal static class SyntaxTriviaScanner
     {
         var sourceCode = sourceText.Text.AsSpan(offset);
         var totalSkipped = 0;
-        var skipped = 0;
+        int skipped;
         do
         {
             cancellationToken.ThrowIfCancellationRequested();

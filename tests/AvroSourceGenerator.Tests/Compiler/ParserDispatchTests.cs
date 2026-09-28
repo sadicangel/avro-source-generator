@@ -8,7 +8,7 @@ namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class ParserDispatchTests
 {
-    private static readonly AvroParseOptions Options = new(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new(GenerationTarget.Modern, true);
 
     [Theory]
     [InlineData(".avsc", """{"protocol":"P"}""", AvroDiagnosticCode.SchemaExpected)]
@@ -26,7 +26,7 @@ public sealed class ParserDispatchTests
     public void Wrong_shapes_report_one_diagnostic_at_the_json_value(string extension, string json, AvroDiagnosticCode expected)
     {
         var source = new SourceText("test" + extension, " \r\n" + json + " ");
-        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
         var diagnostic = Assert.Single(file.Diagnostics);
         Assert.False(file.IsValid);
         Assert.Equal(expected, diagnostic.Code);
@@ -42,7 +42,7 @@ public sealed class ParserDispatchTests
     public void Both_properties_follow_the_extension(string extension)
     {
         var source = new SourceText("test" + extension, """{"type":"record","name":"R","fields":[],"protocol":"P","types":[],"messages":{}}""");
-        var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid);
         if (extension == ".avsc") Assert.IsType<RecordSchema>(file.RootSchema);
         else Assert.IsType<ProtocolSchema>(file.RootSchema);
@@ -54,7 +54,7 @@ public sealed class ParserDispatchTests
     public void Present_discriminators_keep_property_diagnostics(string extension, string json, string value)
     {
         var source = new SourceText("test" + extension, json);
-        var diagnostic = Assert.Single(AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken).Diagnostics);
+        var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).Diagnostics);
         Assert.Equal(AvroDiagnosticCode.InvalidStringProperty, diagnostic.Code);
         Assert.Equal(value, diagnostic.SourceSpan.ToString());
     }
@@ -68,7 +68,7 @@ public sealed class ParserDispatchTests
     public void Nested_protocols_are_not_schemas(string extension, string json)
     {
         var source = new SourceText("test" + extension, json);
-        var diagnostic = Assert.Single(AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken).Diagnostics);
+        var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).Diagnostics);
         Assert.Equal(AvroDiagnosticCode.SchemaExpected, diagnostic.Code);
         Assert.Equal("""{"protocol":"P"}""", diagnostic.SourceSpan.ToString());
         Assert.Same(source, diagnostic.SourceSpan.SourceText);
@@ -85,13 +85,13 @@ public sealed class ParserDispatchTests
     public void File_wrapper_preserves_dispatch_results(string path, string text)
     {
         var source = new SourceText(path, text);
-        var expected = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
-        var actual = AvroFile.Parse(source, Options, TestContext.Current.CancellationToken);
+        var expected = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
+        var actual = AvroFile.Parse(source, s_options, TestContext.Current.CancellationToken);
         Assert.Equal(expected, actual);
         Assert.Equal(expected.RootSchema.ToJsonString(expected.Declarations.ToDictionary(schema => schema.SchemaName)), actual.RootSchema.ToJsonString(actual.Declarations.ToDictionary(schema => schema.SchemaName)));
         Assert.Equal(expected.Diagnostics, actual.Diagnostics);
         Assert.Equal(expected.Declarations.Select(schema => schema.SchemaName), actual.Declarations.Select(schema => schema.SchemaName));
-        Assert.Equal(Options, actual.ParseOptions);
+        Assert.Equal(s_options, actual.ParseOptions);
     }
 
     [Theory]
@@ -99,7 +99,7 @@ public sealed class ParserDispatchTests
     [InlineData(".avpr", """{"protocol":"P","types":[{"type":"record","name":"R","fields":[]}],"messages":{"m":{"request":[{"name":"a","type":"Missing"}],"response":false}}}""")]
     public void Invalid_roots_discard_partial_semantic_state(string extension, string json)
     {
-        var file = AvxxParser.Parse(new SourceText("test" + extension, json), Options, TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(new SourceText("test" + extension, json), s_options, TestContext.Current.CancellationToken);
         Assert.Same(AvroSchema.Null, file.RootSchema);
         Assert.Empty(file.Declarations);
         Assert.Empty(file.DeclarationSpans);

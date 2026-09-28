@@ -1,6 +1,4 @@
-﻿using AvroSourceGenerator.Avdl.Syntax.Types;
-
-namespace AvroSourceGenerator.Avdl.Types;
+﻿namespace AvroSourceGenerator.Avdl.Types;
 
 public sealed record class PrimitiveTypeSyntax(SyntaxToken TypeKeyword) : ITypeSyntax
 {

@@ -24,8 +24,8 @@ public sealed class BoundAvroFileTests
     {
         var compiled = Compile(
             ("hash.avsc", """
-            { "type": "fixed", "name": "Hash", "namespace": "Demo", "size": 16 }
-            """),
+                { "type": "fixed", "name": "Hash", "namespace": "Demo", "size": 16 }
+                """),
             ("consumer.avsc", Record(
                 "Consumer",
                 Field("hash", "Hash"),
@@ -46,19 +46,19 @@ public sealed class BoundAvroFileTests
     {
         var compiled = Compile(
             ("hash.avsc", """
-            { "type": "fixed", "name": "Hash", "namespace": "Demo", "size": 16 }
-            """),
+                { "type": "fixed", "name": "Hash", "namespace": "Demo", "size": 16 }
+                """),
             ("consumer.avsc", """
-            {
-              "type": "record",
-              "name": "Consumer",
-              "namespace": "Demo",
-              "fields": [
-                { "name": "hashes", "type": { "type": "array", "items": "Hash" } },
-                { "name": "hashByName", "type": { "type": "map", "values": "Hash" } }
-              ]
-            }
-            """));
+                {
+                  "type": "record",
+                  "name": "Consumer",
+                  "namespace": "Demo",
+                  "fields": [
+                    { "name": "hashes", "type": { "type": "array", "items": "Hash" } },
+                    { "name": "hashByName", "type": { "type": "map", "values": "Hash" } }
+                  ]
+                }
+                """));
         var consumer = Assert.IsType<RecordSchema>(Assert.Single(compiled.BoundFiles[1].Declarations));
 
         Assert.Equal("global::System.Collections.Generic.List<byte[]>", consumer.Fields[0].Type.CSharpName.FullName);
@@ -82,26 +82,26 @@ public sealed class BoundAvroFileTests
     {
         var compiled = Compile(
             ("hash.avsc", """
-            { "type": "fixed", "name": "Hash", "namespace": "Demo", "size": 16 }
-            """),
+                { "type": "fixed", "name": "Hash", "namespace": "Demo", "size": 16 }
+                """),
             ("envelope.avsc", """
-            {
-              "type": "record",
-              "name": "Envelope",
-              "namespace": "Demo",
-              "fields": [{
-                "name": "choice",
-                "type": [
-                  {
-                    "type": "record",
-                    "name": "First",
-                    "fields": [{ "name": "hash", "type": "Hash" }]
-                  },
-                  { "type": "record", "name": "Second", "fields": [] }
-                ]
-              }]
-            }
-            """));
+                {
+                  "type": "record",
+                  "name": "Envelope",
+                  "namespace": "Demo",
+                  "fields": [{
+                    "name": "choice",
+                    "type": [
+                      {
+                        "type": "record",
+                        "name": "First",
+                        "fields": [{ "name": "hash", "type": "Hash" }]
+                      },
+                      { "type": "record", "name": "Second", "fields": [] }
+                    ]
+                  }]
+                }
+                """));
         var parsed = compiled.Files[1].Declarations;
         var parsedFirst = Assert.IsType<RecordSchema>(parsed.Single(schema => schema.SchemaName.Name == "First"));
         var parsedSecond = Assert.IsType<RecordSchema>(parsed.Single(schema => schema.SchemaName.Name == "Second"));

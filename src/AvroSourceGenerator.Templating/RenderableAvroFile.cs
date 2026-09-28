@@ -54,7 +54,7 @@ public sealed class RenderableAvroFile(
         return true;
     }
 
-    public static RenderableAvroFile Invalid() => new RenderableAvroFile([], FrozenDictionary<SchemaName, TopLevelSchema>.Empty, [], default);
+    public static RenderableAvroFile Invalid() => new([], FrozenDictionary<SchemaName, TopLevelSchema>.Empty, [], default);
 
     public static RenderableAvroFile Create(BoundAvroFile file, AvroCompilation compilation, RenderOptions options, CancellationToken cancellationToken = default)
     {

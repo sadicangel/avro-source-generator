@@ -1,4 +1,6 @@
 ﻿using System.Collections.Immutable;
+using Chr.Avro.Abstract;
+using Chr.Avro.Serialization;
 using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.Tests.Chr.Helpers;
@@ -7,11 +9,11 @@ internal sealed class Snapshot : ISnapshot<Snapshot>
 {
     public static ImmutableArray<MetadataReference> References { get; } =
     [
-        MetadataReference.CreateFromFile(typeof(global::Chr.Avro.Abstract.Schema).Assembly.Location),
-        MetadataReference.CreateFromFile(typeof(global::Chr.Avro.Serialization.IBinarySerializerBuilder).Assembly.Location),
+        MetadataReference.CreateFromFile(typeof(Schema).Assembly.Location),
+        MetadataReference.CreateFromFile(typeof(IBinarySerializerBuilder).Assembly.Location),
     ];
 
-    public static ProjectConfig ProjectConfig => new ProjectConfig();
+    public static ProjectConfig ProjectConfig => new();
 
     // Ignore assembly reference mismatches because Chr.Avro references .NET 6, while we're targeting .NET 10.
     public static ImmutableArray<Diagnostic> FilterDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>

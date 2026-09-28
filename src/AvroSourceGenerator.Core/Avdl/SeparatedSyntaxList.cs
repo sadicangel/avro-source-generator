@@ -1,6 +1,7 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections;
+using System.Collections.Immutable;
 
-namespace AvroSourceGenerator.Avdl.Syntax;
+namespace AvroSourceGenerator.Avdl;
 
 public readonly record struct SeparatedSyntaxList<T>(ImmutableArray<ISyntaxNode> SyntaxNodes)
     : IEquatable<SeparatedSyntaxList<T>>, IReadOnlyList<T> where T : ISyntaxNode
@@ -17,7 +18,7 @@ public readonly record struct SeparatedSyntaxList<T>(ImmutableArray<ISyntaxNode>
             yield return this[i];
     }
 
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public bool Equals(SeparatedSyntaxList<T> other) => SyntaxNodes.SequenceEqual(other.SyntaxNodes);
 

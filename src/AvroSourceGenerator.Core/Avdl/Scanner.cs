@@ -11,8 +11,8 @@ public sealed class Scanner(SourceText sourceText, CancellationToken cancellatio
 
     private readonly List<SyntaxToken> _badTokens = [];
     private readonly List<AvroDiagnostic> _diagnostics = [];
-    private int _position = 0;
-    private SyntaxToken? _previousSyntaxToken = null;
+    private int _position;
+    private SyntaxToken? _previousSyntaxToken;
 
     private ReadOnlySpan<char> CurrentSpan => sourceText.Text.AsSpan(_position);
 

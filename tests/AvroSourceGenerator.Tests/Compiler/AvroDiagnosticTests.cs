@@ -1,8 +1,10 @@
 ﻿using System.Collections.Immutable;
+using System.Globalization;
 using System.Text.Json;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Text;
+using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.Tests.Compiler;
 
@@ -14,8 +16,8 @@ public sealed class AvroDiagnosticTests
         var diagnostic = new AvroDiagnostic(AvroDiagnosticCode.InvalidIdlDeclaration, SourceSpan.None, 1234.5m);
         Assert.IsType<decimal>(Assert.Single(diagnostic.Arguments));
         var roslyn = diagnostic.ToDiagnostic();
-        Assert.Contains("1234,5", roslyn.GetMessage(System.Globalization.CultureInfo.GetCultureInfo("fr-FR")));
-        Assert.Contains("1234.5", roslyn.GetMessage(System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Contains("1234,5", roslyn.GetMessage(CultureInfo.GetCultureInfo("fr-FR")));
+        Assert.Contains("1234.5", roslyn.GetMessage(CultureInfo.InvariantCulture));
     }
 
     [Fact]
@@ -51,7 +53,7 @@ public sealed class AvroDiagnosticTests
     {
         Assert.Throws<ArgumentNullException>(() => new SourceSpan(null!, 0, 0));
         Assert.Throws<ArgumentNullException>(() => new SourceSpan(null!, 0));
-        Assert.Equal(Microsoft.CodeAnalysis.Location.None, SourceSpan.None.ToLocation());
+        Assert.Equal(Location.None, SourceSpan.None.ToLocation());
     }
 
     [Fact]

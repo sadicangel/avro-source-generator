@@ -1,8 +1,7 @@
 ﻿using AvroSourceGenerator.Avdl.Annotations;
-using AvroSourceGenerator.Avdl.Declarations;
-using AvroSourceGenerator.Avdl.Syntax.Types;
+using AvroSourceGenerator.Avdl.Types;
 
-namespace AvroSourceGenerator.Avdl.Syntax.Declarations;
+namespace AvroSourceGenerator.Avdl.Declarations;
 
 public sealed record class ParameterDeclarationSyntax(
     ITypeSyntax Type,

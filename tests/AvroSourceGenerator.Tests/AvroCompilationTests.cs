@@ -1,6 +1,7 @@
 ﻿using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Tests;
 
@@ -13,7 +14,7 @@ public sealed class AvroCompilationTests
     public void Core_pipeline_reports_unsupported_extensions(string path, string text)
     {
         var compilation = AvroCompiler.Compile(
-            [new Text.SourceText(path, text)],
+            [new SourceText(path, text)],
             new AvroParseOptions(GenerationTarget.Modern, true),
             cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AvroDiagnosticCode.UnsupportedSourceType, Assert.Single(compilation.Diagnostics).Code);
@@ -691,7 +692,7 @@ public sealed class AvroCompilationTests
         """;
 
     private static string Field(string name, string type, bool rawType = false) => $$"""
-        {"name":"{{name}}","type":{{(rawType ? type : JsonValue.Create(type)!.ToJsonString())}}}
+        {"name":"{{name}}","type":{{(rawType ? type : JsonValue.Create(type).ToJsonString())}}}
         """;
 
     private static string Protocol() => """

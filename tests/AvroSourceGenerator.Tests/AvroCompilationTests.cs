@@ -112,6 +112,24 @@ public sealed class AvroCompilationTests
     }
 
     [Fact]
+    public void Contributing_files_follow_direct_and_transitive_file_dependencies()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Deferred,
+            DuplicateResolution.Error,
+            ("a.avsc", Record("A", Field("B", "B"), Field("C", "C"))),
+            ("b.avsc", Record("B", Field("D", "D"))),
+            ("c.avsc", Record("C")),
+            ("d.avsc", Record("D")));
+
+        Assert.Empty(compiled.Compilation.Diagnostics);
+        Assert.Equal(
+            ["a.avsc", "b.avsc", "c.avsc", "d.avsc"],
+            compiled.Compilation.GetContributingFiles(compiled.BoundFiles[0], TestContext.Current.CancellationToken)
+                .Select(file => file.Path.OriginalPath));
+    }
+
+    [Fact]
     public void Handles_recursive_dependencies()
     {
         var compiled = Compile(
@@ -138,6 +156,68 @@ public sealed class AvroCompilationTests
         Assert.Empty(compiled.RenderableFiles[0].EmittedSchemas);
     }
 
+    [Fact]
+    public void Failed_schema_suppresses_transitive_references_but_not_independent_files()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Deferred,
+            DuplicateResolution.Error,
+            ("broken.avsc", Record("Broken", Field("Missing", "Missing"))),
+            ("middle.avsc", Record("Middle", Field("Broken", "Broken"))),
+            ("consumer.avsc", Record("Consumer", Field("Middle", "Middle"))),
+            ("independent.avsc", Record("Independent")));
+
+        Assert.False(compiled.Compilation.IsValid);
+        Assert.Equal(["AVROSG0005"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.False(compiled.Compilation.IsFileValid(compiled.BoundFiles[0], TestContext.Current.CancellationToken));
+        Assert.All(compiled.BoundFiles.Skip(1).Take(2), file => Assert.True(compiled.Compilation.IsFileValid(file, TestContext.Current.CancellationToken)));
+        Assert.All(compiled.RenderableFiles.Take(3), file => Assert.Empty(file.EmittedSchemas));
+        Assert.True(compiled.Compilation.IsFileValid(compiled.BoundFiles[3], TestContext.Current.CancellationToken));
+        Assert.Equal([Name("Independent")], compiled.RenderableFiles[3].EmittedSchemas.Select(static schema => schema.SchemaName));
+    }
+
+    [Fact]
+    public void Unused_import_does_not_make_the_importer_depend_on_its_target()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Strict,
+            DuplicateResolution.Error,
+            ("broken.avsc", Record("Broken", Field("Missing", "Missing"))),
+            ("importer.avdl", """
+                namespace GraphTests;
+                import schema "broken.avsc";
+                schema Importer;
+                record Importer { }
+                """),
+            ("independent.avsc", Record("Independent")));
+
+        Assert.Equal(["AVROSG5004", "AVROSG0005"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.True(compiled.Compilation.IsFileValid(compiled.BoundFiles[1], TestContext.Current.CancellationToken));
+        Assert.Equal(
+            ["importer.avdl"],
+            compiled.Compilation.GetContributingFiles(compiled.BoundFiles[1], TestContext.Current.CancellationToken)
+                .Select(file => file.Path.OriginalPath));
+        Assert.Single(compiled.RenderableFiles[1].EmittedSchemas);
+        Assert.True(compiled.Compilation.IsFileValid(compiled.BoundFiles[2], TestContext.Current.CancellationToken));
+        Assert.Single(compiled.RenderableFiles[2].EmittedSchemas);
+    }
+
+    [Fact]
+    public void Malformed_file_does_not_suppress_independent_generation()
+    {
+        var compiled = Compile(
+            ReferenceResolution.Deferred,
+            DuplicateResolution.Error,
+            ("broken.avsc", "{"),
+            ("independent.avsc", Record("Independent")));
+
+        Assert.Equal(["AVROSG1000"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.False(compiled.Compilation.IsFileValid(compiled.BoundFiles[0], TestContext.Current.CancellationToken));
+        Assert.Empty(compiled.RenderableFiles[0].EmittedSchemas);
+        Assert.True(compiled.Compilation.IsFileValid(compiled.BoundFiles[1], TestContext.Current.CancellationToken));
+        Assert.Single(compiled.RenderableFiles[1].EmittedSchemas);
+    }
+
     [Theory]
     [InlineData(DuplicateResolution.Error, 1, false)]
     [InlineData(DuplicateResolution.Ignore, 0, true)]
@@ -159,6 +239,13 @@ public sealed class AvroCompilationTests
             Assert.Equal([Name("Shared")], compiled.RenderableFiles[0].EmittedSchemas.Select(static schema => schema.SchemaName));
             Assert.Empty(compiled.RenderableFiles[1].EmittedSchemas);
         }
+        else
+        {
+            Assert.True(compiled.Compilation.IsFileValid(compiled.BoundFiles[0], TestContext.Current.CancellationToken));
+            Assert.False(compiled.Compilation.IsFileValid(compiled.BoundFiles[1], TestContext.Current.CancellationToken));
+            Assert.Single(compiled.RenderableFiles[0].EmittedSchemas);
+            Assert.Empty(compiled.RenderableFiles[1].EmittedSchemas);
+        }
     }
 
     [Fact]
@@ -174,6 +261,8 @@ public sealed class AvroCompilationTests
 
         Assert.False(compiled.Compilation.IsValid);
         Assert.Equal(["AVROSG0004"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.False(compiled.Compilation.IsFileValid(compiled.BoundFiles[0], TestContext.Current.CancellationToken));
+        Assert.Empty(compiled.RenderableFiles[0].EmittedSchemas);
     }
 
     [Fact]
@@ -305,16 +394,20 @@ public sealed class AvroCompilationTests
                 import idl "missing.avdl";
                 schema Consumer;
                 record Consumer { Missing missing; }
-                """));
+                """),
+            ("independent.avsc", Record("Independent")));
 
         Assert.Equal(["AVROSG5002"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
+        Assert.False(compiled.Compilation.IsFileValid(compiled.BoundFiles[0], TestContext.Current.CancellationToken));
+        Assert.True(compiled.Compilation.IsFileValid(compiled.BoundFiles[1], TestContext.Current.CancellationToken));
+        Assert.Single(compiled.RenderableFiles[1].EmittedSchemas);
     }
 
     [Theory]
     [InlineData(ReferenceResolution.Strict)]
     [InlineData(ReferenceResolution.Deferred)]
-    public void Import_kind_mismatch_is_invalid(ReferenceResolution resolution)
+    public void Unused_import_kind_mismatch_warns_and_renders(ReferenceResolution resolution)
     {
         var compiled = Compile(
             resolution,
@@ -326,8 +419,9 @@ public sealed class AvroCompilationTests
                 """),
             ("common.avpr", Protocol()));
 
-        Assert.Equal(["AVROSG5001"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
-        Assert.False(compiled.Compilation.IsValid);
+        Assert.Equal(["AVROSG5004"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.True(compiled.Compilation.IsValid);
+        Assert.Single(compiled.RenderableFiles[0].EmittedSchemas);
     }
 
     [Fact]
@@ -343,7 +437,7 @@ public sealed class AvroCompilationTests
                 """),
             ("common.avpr", Record("Common")));
 
-        Assert.Equal(["AVROSG2001"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG2001", "AVROSG5004"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 
@@ -366,7 +460,7 @@ public sealed class AvroCompilationTests
     }
 
     [Fact]
-    public void Import_cycles_are_invalid()
+    public void Unused_import_cycle_warns_and_renders()
     {
         var compiled = Compile(
             ReferenceResolution.Strict,
@@ -382,8 +476,9 @@ public sealed class AvroCompilationTests
                 record B { }
                 """));
 
-        Assert.Equal(["AVROSG5000"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
-        Assert.False(compiled.Compilation.IsValid);
+        Assert.Equal(["AVROSG5004", "AVROSG5004"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.True(compiled.Compilation.IsValid);
+        Assert.All(compiled.RenderableFiles, file => Assert.Single(file.EmittedSchemas));
     }
 
     [Fact]
@@ -474,9 +569,11 @@ public sealed class AvroCompilationTests
         }
         else
         {
-            var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);
-            Assert.Equal(AvroDiagnosticCode.MissingImport, diagnostic.Code);
-            Assert.Contains("common.avsc", diagnostic.GetMessage());
+            Assert.Equal(
+                [AvroDiagnosticCode.UnusedImport, AvroDiagnosticCode.MissingReferences],
+                compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.Code));
+            Assert.Contains("common.avsc", compiled.Compilation.Diagnostics[0].GetMessage());
+            Assert.False(compiled.Compilation.IsValid);
         }
     }
 
@@ -535,12 +632,12 @@ public sealed class AvroCompilationTests
             (@"C:\Project\a.avdl", """
                 import idl ".\\sub\\..\\B.avdl";
                 schema A;
-                record A { }
+                record A { B b; }
                 """),
             ("C:/Project/B.avdl", """
                 import idl "./a.avdl";
                 schema B;
-                record B { }
+                record B { A a; }
                 """));
 
         var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);
@@ -581,7 +678,7 @@ public sealed class AvroCompilationTests
                 record Consumer { Common common; }
                 """));
 
-        Assert.Equal(["AVROSG0005"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
+        Assert.Equal(["AVROSG5004", "AVROSG0005"], compiled.Compilation.Diagnostics.Select(static diagnostic => diagnostic.ToDiagnostic().Id));
         Assert.False(compiled.Compilation.IsValid);
     }
 

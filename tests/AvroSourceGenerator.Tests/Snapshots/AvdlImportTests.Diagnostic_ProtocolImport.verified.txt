@@ -1,14 +1,15 @@
 ﻿{
   Location: hbZLgMCOL8DyJ_VK6KfKhulyZhA.avdl: (1,15)-(1,28),
-  Message: Import path 'common.avdl' does not match an Avro AdditionalFile.,
-  Severity: Error,
+  Message: Import path 'common.avdl' is not used by any schema reference.,
+  Severity: Warning,
+  WarningLevel: 1,
   Descriptor: {
-    Id: AVROSG5002,
-    Title: Missing Import,
-    Description: An Avro IDL import path does not match a supplied AdditionalFile relative to the importing file.,
-    MessageFormat: Import path '{0}' does not match an Avro AdditionalFile.,
+    Id: AVROSG5004,
+    Title: Unused Import,
+    Description: No schema reference requires this import. Remove it or reference a declaration from the imported file.,
+    MessageFormat: Import path '{0}' is not used by any schema reference.,
     Category: Compiler,
-    DefaultSeverity: Error,
+    DefaultSeverity: Warning,
     IsEnabledByDefault: true
   }
 }

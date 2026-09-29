@@ -6,13 +6,17 @@ using AvroSourceGenerator.Schemas;
 namespace AvroSourceGenerator.Templating;
 
 public sealed class RenderableAvroFile(
+    BoundAvroFile mainFile,
     ImmutableArray<TopLevelSchema> emittedSchemas,
     FrozenDictionary<SchemaName, TopLevelSchema> projectSchemas,
     ImmutableArray<BoundAvroFile> contributingFiles,
     RenderOptions options)
     : IEquatable<RenderableAvroFile>
 {
+    private readonly BoundAvroFile _mainFile = mainFile;
+
     private readonly ImmutableArray<BoundAvroFile> _contributingFiles = contributingFiles;
+
 
     public ImmutableArray<TopLevelSchema> EmittedSchemas { get; } = emittedSchemas;
 
@@ -23,6 +27,7 @@ public sealed class RenderableAvroFile(
     public bool Equals(RenderableAvroFile? other) =>
         ReferenceEquals(this, other) ||
         other is not null &&
+        Equals(_mainFile, other._mainFile) &&
         Options == other.Options &&
         HasSameSchemaNames(other) &&
         _contributingFiles.SequenceEqual(other._contributingFiles);
@@ -32,6 +37,7 @@ public sealed class RenderableAvroFile(
     public override int GetHashCode()
     {
         var hash = new HashCode();
+        hash.Add(_mainFile);
         hash.Add(Options);
         foreach (var schema in EmittedSchemas)
             hash.Add(schema.SchemaName);
@@ -54,16 +60,22 @@ public sealed class RenderableAvroFile(
         return true;
     }
 
-    public static RenderableAvroFile Invalid() => new([], FrozenDictionary<SchemaName, TopLevelSchema>.Empty, [], default);
-
     public static RenderableAvroFile Create(BoundAvroFile file, AvroCompilation compilation, RenderOptions options, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!compilation.IsValid) return Invalid();
+        var contributingFiles = compilation.GetContributingFiles(file, cancellationToken);
+        foreach (var contributor in contributingFiles)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!compilation.IsFileValid(contributor, cancellationToken))
+                return Invalid(file);
+        }
         var emittedSchemas = compilation.GetOwnedDeclarations(file, cancellationToken)
             .Where(static schema => schema.Type is not SchemaType.Fixed || schema.CSharpName != AvroSchema.Bytes.CSharpName)
             .ToImmutableArray();
-        var contributingFiles = compilation.GetContributingFiles(emittedSchemas.Select(static schema => schema.SchemaName), cancellationToken);
-        return new RenderableAvroFile(emittedSchemas, compilation.Schemas, contributingFiles, options);
+        return new RenderableAvroFile(file, emittedSchemas, compilation.Schemas, contributingFiles, options);
     }
+
+    private static RenderableAvroFile Invalid(BoundAvroFile file) =>
+        new(file, [], [], [], default);
 }

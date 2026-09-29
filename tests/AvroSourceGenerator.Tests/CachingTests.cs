@@ -68,6 +68,51 @@ public sealed class CachingTests
     }
 
     [Fact]
+    public void Fixing_a_failed_schema_restores_dependents_and_reuses_independent_output()
+    {
+        var files = ImmutableArray.Create(
+            ProjectFile.Schema(Record("Broken", "{\"name\": \"missing\", \"type\": \"Missing\"}"), "schemas/broken.avsc"),
+            ProjectFile.Schema(Record("Consumer", "{\"name\": \"broken\", \"type\": \"Broken\"}"), "schemas/consumer.avsc"),
+            ProjectFile.Schema(Record("Independent", ""), "schemas/independent.avsc"));
+        var config = new ProjectConfig
+        {
+            LanguageVersion = LanguageVersion.CSharp10,
+            ReferenceResolution = "Deferred"
+        };
+        var input = GeneratorInput.Create(files, [], config);
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var initial = driver.GetRunResult();
+        Assert.Equal(["AVROSG0005"], initial.Diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).Select(diagnostic => diagnostic.Id));
+        Assert.Equal(["CachingTests.Independent.Avro.g.cs"], initial.Results.Single().GeneratedSources.Select(source => source.HintName));
+
+        var fixedFile = new ChangedAdditionalText(input.AdditionalTexts[0].Path, Record("Broken", ""));
+        driver = driver.ReplaceAdditionalText(input.AdditionalTexts[0], fixedFile)
+            .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var result = driver.GetRunResult();
+
+        AssertSuccessfulGeneration(result, 3);
+        AssertRenderFanout(StepTracking.GetTrackedSteps(result), 2, 3);
+        Assert.Contains(result.Results.Single().GeneratedSources, source => source.HintName == "CachingTests.Independent.Avro.g.cs");
+    }
+
+    [Fact]
+    public void Duplicate_source_paths_emit_only_the_first_file()
+    {
+        var duplicate = ProjectFile.Schema(Record("Shared", ""), "schemas/shared.avsc");
+        var input = GeneratorInput.Create(
+            [duplicate, duplicate],
+            [],
+            new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 });
+        var result = input.GeneratorDriver
+            .RunGenerators(input.Compilation, TestContext.Current.CancellationToken)
+            .GetRunResult();
+
+        Assert.Equal(["AVROSG0003"], result.Diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).Select(diagnostic => diagnostic.Id));
+        Assert.Equal(["CachingTests.Shared.Avro.g.cs"], result.Results.Single().GeneratedSources.Select(source => source.HintName));
+        Assert.All(result.Results, generator => Assert.Null(generator.Exception));
+    }
+
+    [Fact]
     public void Access_modifier_change_only_invalidates_rendering()
     {
         var files = ImmutableArray.Create(ProjectFile.Schema(Record("Shared", "")));

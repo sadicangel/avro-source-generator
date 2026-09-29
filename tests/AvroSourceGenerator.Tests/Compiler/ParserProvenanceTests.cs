@@ -106,10 +106,10 @@ public sealed class ParserProvenanceTests
     [Theory]
     [InlineData("import idl \"missing.avdl\"; schema R; record R {}", "\"missing.avdl\"")]
     [InlineData("protocol P { import schema \"wrong.avdl\"; }", "\"wrong.avdl\"")]
-    public void Import_failures_point_to_the_literal(string text, string literal)
+    public void Unused_import_warnings_point_to_the_literal(string text, string literal)
     {
         var diagnostic = Assert.Single(Bind(("test.avdl", text)).Diagnostics);
-        Assert.Contains(diagnostic.Code, new[] { AvroDiagnosticCode.MissingImport, AvroDiagnosticCode.InvalidImportFileExtension });
+        Assert.Equal(AvroDiagnosticCode.UnusedImport, diagnostic.Code);
         Assert.Equal(literal, diagnostic.SourceSpan.ToString());
         Assert.Equal(text.IndexOf(literal, StringComparison.Ordinal), diagnostic.SourceSpan.Offset);
     }
@@ -119,8 +119,8 @@ public sealed class ParserProvenanceTests
     {
         var diagnostic = Assert.Single(
             Bind(
-                ("a.avdl", "import idl \"b.avdl\"; schema A; record A {}"),
-                ("b.avdl", "import idl \"a.avdl\"; schema B; record B {}")).Diagnostics);
+                ("a.avdl", "import idl \"b.avdl\"; schema A; record A { B b; }"),
+                ("b.avdl", "import idl \"a.avdl\"; schema B; record B { A a; }")).Diagnostics);
         Assert.Equal("b.avdl", diagnostic.SourceSpan.SourceText.Path.OriginalPath);
         Assert.Equal("\"a.avdl\"", diagnostic.SourceSpan.ToString());
         Assert.Contains("a.avdl -> b.avdl -> a.avdl", diagnostic.GetMessage());

@@ -7,7 +7,8 @@ namespace AvroSourceGenerator.Compiler;
 
 internal sealed class ImportResolver(
     ImmutableArray<BoundAvroFile> files,
-    IReadOnlyDictionary<SourcePath, int> fileIndexes,
+    IReadOnlyDictionary<SourcePath, int> fileIndices,
+    HashSet<AvroImport> usedImports,
     CancellationToken cancellationToken)
 {
     private readonly Dictionary<int, ImportResolution> _resolutions = [];
@@ -58,10 +59,12 @@ internal sealed class ImportResolver(
 
         _stack.Add(fileIndex);
         var isValid = file.IsValid;
-        var importedFileIndexes = new HashSet<int>();
+        var importedFileIndices = new HashSet<int>();
         foreach (var import in file.File.Imports)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (!usedImports.Contains(import))
+                continue;
             var importSpan = import.SourceSpan;
             var expectedExtension = GetExpectedExtension(import.Kind);
             if (!import.Path.EndsWith(expectedExtension, StringComparison.OrdinalIgnoreCase))
@@ -72,7 +75,7 @@ internal sealed class ImportResolver(
             }
 
             var importedPath = file.Path.Resolve(import.Path);
-            if (!fileIndexes.TryGetValue(importedPath, out var importedFileIndex))
+            if (!fileIndices.TryGetValue(importedPath, out var importedFileIndex))
             {
                 isValid = false;
                 _diagnostics.Add(AvroDiagnostic.MissingImport(importSpan, import.Path));
@@ -94,21 +97,21 @@ internal sealed class ImportResolver(
                 continue;
             }
 
-            if (!importedFileIndexes.Add(importedFileIndex))
+            if (!importedFileIndices.Add(importedFileIndex))
                 continue;
 
             var importedResolution = Resolve(importedFileIndex, importSpan);
-            importedFileIndexes.UnionWith(importedResolution.ImportedFileIndexes);
+            importedFileIndices.UnionWith(importedResolution.ImportedFileIndices);
             if (!importedResolution.IsValid)
                 isValid = false;
         }
 
-        importedFileIndexes.Remove(fileIndex);
+        importedFileIndices.Remove(fileIndex);
         _stack.RemoveAt(_stack.Count - 1);
         _visiting.Remove(fileIndex);
         var resolution = new ImportResolution(
             isValid && !_cycleFiles.Contains(fileIndex),
-            importedFileIndexes);
+            importedFileIndices);
         _resolutions.Add(fileIndex, resolution);
         return resolution;
     }
@@ -149,15 +152,4 @@ internal sealed class ImportResolver(
         AvroImportKind.Schema => "schema",
         _ => throw new InvalidOperationException("Unreachable: Unsupported Avro import kind."),
     };
-}
-
-// Ownership of the set is transferred by the resolver; callers only read the completed set.
-internal readonly struct ImportResolution(bool isValid, HashSet<int> importedFileIndexes)
-{
-    public bool IsValid { get; } = isValid;
-    public bool Contains(int fileIndex) => importedFileIndexes.Contains(fileIndex);
-    public IEnumerable<int> ImportedFileIndexes => importedFileIndexes;
-
-    public static readonly ImportResolution Empty = new(true, []);
-    public static readonly ImportResolution Invalid = new(false, []);
 }

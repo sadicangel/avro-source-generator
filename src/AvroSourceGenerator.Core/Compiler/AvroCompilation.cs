@@ -9,26 +9,21 @@ namespace AvroSourceGenerator.Compiler;
 public sealed class AvroCompilation : IEquatable<AvroCompilation>
 {
     private readonly Lazy<int> _hashCode;
-    private readonly FrozenDictionary<SchemaName, SchemaOwner> _owners;
-    private readonly FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> _dependencies;
+    private readonly FrozenDictionary<SchemaName, BoundAvroFile> _owners;
+    private readonly FrozenDictionary<BoundAvroFile, FileMetadata> _fileMetadata;
+    private readonly FrozenDictionary<BoundAvroFile, ImmutableArray<BoundAvroFile>> _fileDependencies;
 
-    private AvroCompilation(
-        ImmutableArray<BoundAvroFile> files,
-        AvroCompilationOptions options,
-        FrozenDictionary<SchemaName, TopLevelSchema> schemas,
-        FrozenDictionary<SchemaName, SchemaOwner> owners,
-        FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> dependencies,
-        ImmutableArray<AvroDiagnostic> diagnostics,
-        bool isValid)
+    private AvroCompilation(ImmutableArray<BoundAvroFile> files, AvroCompilationOptions options, SchemaIndex schemaIndex)
     {
         Files = files;
         _hashCode = new Lazy<int>(ComputeHashCode);
         Options = options;
-        Schemas = schemas;
-        _owners = owners;
-        _dependencies = dependencies;
-        Diagnostics = diagnostics;
-        IsValid = isValid;
+        Schemas = schemaIndex.Schemas.ToFrozenDictionary();
+        _owners = schemaIndex.Owners.ToFrozenDictionary();
+        _fileMetadata = schemaIndex.FileMetadata.ToFrozenDictionary(ReferenceEqualityComparer.Instance);
+        _fileDependencies = schemaIndex.FileDependencies.ToFrozenDictionary(ReferenceEqualityComparer.Instance);
+        Diagnostics = [.. schemaIndex.Diagnostics];
+        IsValid = !schemaIndex.Diagnostics.HasErrors;
     }
 
     public ImmutableArray<BoundAvroFile> Files { get; }
@@ -60,29 +55,10 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
     public static AvroCompilation Create(ImmutableArray<BoundAvroFile> files, AvroCompilationOptions options, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var diagnostics = files.SelectMany(static file => file.File.Diagnostics).ToImmutableArray();
-
-        var schemaIndex = BuildSchemaIndex(
-            files,
-            options.DuplicateResolution,
-            cancellationToken);
-        diagnostics = diagnostics
-            .AddRange(schemaIndex.Diagnostics)
-            .AddRange(
-                ValidateReferences(
-                    files,
-                    schemaIndex,
-                    options.ReferenceResolution,
-                    cancellationToken));
-
-        return new AvroCompilation(
-            files,
-            options,
-            schemaIndex.Schemas.ToFrozenDictionary(),
-            schemaIndex.Owners.ToFrozenDictionary(),
-            schemaIndex.Dependencies.ToFrozenDictionary(),
-            diagnostics,
-            isValid: !diagnostics.HasErrors);
+        var schemaIndex = BuildSchemaIndex(files, options.DuplicateResolution, cancellationToken);
+        AnalyzeImports(schemaIndex, files, cancellationToken);
+        ValidateReferences(schemaIndex, files, options.ReferenceResolution, cancellationToken);
+        return new AvroCompilation(files, options, schemaIndex);
     }
 
     private static SchemaIndex BuildSchemaIndex(
@@ -94,12 +70,15 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         var localNames = new HashSet<SchemaName>();
         foreach (var (fileIndex, file) in files.Index())
         {
+            schemaIndex.Diagnostics.AddRange(file.File.Diagnostics);
             cancellationToken.ThrowIfCancellationRequested();
+            schemaIndex.FileMetadata.Add(file, new FileMetadata(fileIndex, file.IsValid));
             var filePath = file.Path;
-            if (!schemaIndex.FileIndexes.TryAdd(filePath, fileIndex))
+            if (!schemaIndex.FileIndices.TryAdd(filePath, fileIndex))
             {
-                var originalFile = files[schemaIndex.FileIndexes[filePath]];
-                schemaIndex.DuplicateFileIndexes.Add(fileIndex);
+                var originalFile = files[schemaIndex.FileIndices[filePath]];
+                schemaIndex.DuplicateFileIndices.Add(fileIndex);
+                schemaIndex.Invalidate(file);
                 schemaIndex.Diagnostics.Add(
                     AvroDiagnostic.DuplicateSourcePath(
                         SourceSpan.FromSourceFile(file),
@@ -115,6 +94,7 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
                 var name = declaration.SchemaName;
                 if (!localNames.Add(name))
                 {
+                    schemaIndex.Invalidate(file);
                     schemaIndex.Diagnostics.Add(AvroDiagnostic.DuplicateSchema(declarationSpan, declaration.CSharpName.ToString(includeGlobalPrefix: false)));
                     continue;
                 }
@@ -122,36 +102,143 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
                 if (!schemaIndex.Schemas.TryAdd(name, declaration))
                 {
                     if (duplicateResolution is DuplicateResolution.Error)
+                    {
+                        schemaIndex.Invalidate(file);
                         schemaIndex.Diagnostics.Add(AvroDiagnostic.DuplicateSchema(declarationSpan, declaration.CSharpName.ToString(includeGlobalPrefix: false)));
+                    }
                     continue;
                 }
 
-                schemaIndex.Owners.Add(name, new SchemaOwner(file, fileIndex));
-                schemaIndex.Dependencies.Add(name, file.Dependencies.GetValueOrDefault(name, []));
+                schemaIndex.Owners.Add(name, file);
             }
         }
 
         return schemaIndex;
     }
 
-    private static SourceSpan GetDeclarationSpan(BoundAvroFile file, int declarationIndex) =>
-        declarationIndex < file.File.DeclarationSpans.Length
-            ? file.File.DeclarationSpans[declarationIndex]
-            : SourceSpan.None;
-
-    private static ImmutableArray<AvroDiagnostic> ValidateReferences(
-        ImmutableArray<BoundAvroFile> files,
+    private static void AnalyzeImports(
         SchemaIndex schemaIndex,
+        ImmutableArray<BoundAvroFile> files,
+        CancellationToken cancellationToken)
+    {
+        var imports = new List<ImportEdge>?[files.Length];
+        var importers = new List<int>?[files.Length];
+
+        foreach (var (fileIndex, file) in files.Index())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach (var import in file.File.Imports)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var targetIndex = schemaIndex.FileIndices.GetValueOrDefault(file.Path.Resolve(import.Path), -1);
+                (imports[fileIndex] ??= []).Add(new ImportEdge(import, targetIndex));
+                if (targetIndex >= 0)
+                    (importers[targetIndex] ??= []).Add(fileIndex);
+            }
+        }
+
+        var reachableByOwner = new Dictionary<int, bool[]>();
+        foreach (var (fileIndex, file) in files.Index())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var fileDependencies = new HashSet<BoundAvroFile>(ReferenceEqualityComparer.Instance);
+            foreach (var dependencies in file.Dependencies.Values)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var dependency in dependencies)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (schemaIndex.Owners.TryGetValue(dependency, out var owner))
+                        fileDependencies.Add(owner);
+                }
+            }
+
+            foreach (var reference in file.References.Keys)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                bool[]? reachesOwner = null;
+                if (schemaIndex.Owners.TryGetValue(reference, out var owner))
+                {
+                    fileDependencies.Add(owner);
+                    var ownerIndex = schemaIndex.FileMetadata[owner].FileIndex;
+                    if (ownerIndex == fileIndex)
+                        continue;
+
+                    if (!reachableByOwner.TryGetValue(ownerIndex, out reachesOwner))
+                    {
+                        reachesOwner = new bool[files.Length];
+                        var pendingImporters = new Queue<int>();
+                        reachesOwner[ownerIndex] = true;
+                        pendingImporters.Enqueue(ownerIndex);
+                        while (pendingImporters.TryDequeue(out var targetIndex))
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            if (importers[targetIndex] is not { Count: > 0 } targetImporters)
+                                continue;
+
+                            foreach (var importerIndex in targetImporters)
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+                                if (reachesOwner[importerIndex])
+                                    continue;
+                                reachesOwner[importerIndex] = true;
+                                pendingImporters.Enqueue(importerIndex);
+                            }
+                        }
+                        reachableByOwner.Add(ownerIndex, reachesOwner);
+                    }
+                }
+
+                var visited = new HashSet<int>();
+                var pending = new Stack<int>();
+                pending.Push(fileIndex);
+                while (pending.TryPop(out var currentIndex))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!visited.Add(currentIndex))
+                        continue;
+
+                    if (imports[currentIndex] is not { Count: > 0 } currentImports)
+                        continue;
+
+                    foreach (var (avroImport, targetIndex) in currentImports)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (reachesOwner is not null && (targetIndex < 0 || !reachesOwner[targetIndex]))
+                            continue;
+                        schemaIndex.UsedImports.Add(avroImport);
+                        if (targetIndex >= 0)
+                            pending.Push(targetIndex);
+                    }
+                }
+            }
+            schemaIndex.FileDependencies.Add(file, [.. fileDependencies]);
+        }
+
+        foreach (var file in files)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach (var import in file.File.Imports)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!schemaIndex.UsedImports.Contains(import))
+                    schemaIndex.Diagnostics.Add(AvroDiagnostic.UnusedImport(import.SourceSpan, import.Path));
+            }
+        }
+    }
+
+    private static void ValidateReferences(
+        SchemaIndex schemaIndex,
+        ImmutableArray<BoundAvroFile> files,
         ReferenceResolution referenceResolution,
         CancellationToken cancellationToken)
     {
-        var diagnostics = ImmutableArray.CreateBuilder<AvroDiagnostic>();
         ImportResolver? importResolver = null;
         foreach (var (fileIndex, file) in files.Index())
         {
             cancellationToken.ThrowIfCancellationRequested();
             // Invalid sources already carry primary diagnostics and have no linkable declarations.
-            if (!file.IsValid || schemaIndex.DuplicateFileIndexes.Contains(fileIndex))
+            if (!file.IsValid || schemaIndex.DuplicateFileIndices.Contains(fileIndex))
                 continue;
 
             var importResolution = ImportResolution.Empty;
@@ -159,11 +246,15 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
             {
                 importResolver ??= new ImportResolver(
                     files,
-                    schemaIndex.FileIndexes,
+                    schemaIndex.FileIndices,
+                    schemaIndex.UsedImports,
                     cancellationToken);
                 importResolution = importResolver.Resolve(fileIndex);
                 if (!importResolution.IsValid)
+                {
+                    schemaIndex.Invalidate(file);
                     continue;
+                }
             }
 
             var missingReferences = file.References.Keys
@@ -178,25 +269,65 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
                         return false;
 
                     // The reference is a forward reference, or the reference was declared in a file that is not explicitly imported by the current file.
-                    return owner.FileIndex == fileIndex || !importResolution.Contains(owner.FileIndex);
+                    var ownerIndex = schemaIndex.FileMetadata[owner].FileIndex;
+                    return ownerIndex == fileIndex || !importResolution.Contains(ownerIndex);
                 })
                 .OrderBy(static reference => reference.FullName, StringComparer.Ordinal)
                 .ToImmutableArray();
 
             if (!missingReferences.IsEmpty)
-                diagnostics.Add(
+            {
+                schemaIndex.Invalidate(file);
+                schemaIndex.Diagnostics.Add(
                     AvroDiagnostic.MissingReferences(
                         missingReferences.SelectMany(name => file.File.ReferenceSpans.GetValueOrDefault(name, []))
                             .OrderBy(span => span.Offset)
                             .DefaultIfEmpty(SourceSpan.FromSourceFile(file))
                             .First(),
                         missingReferences));
+            }
         }
 
         if (importResolver is not null)
-            diagnostics.AddRange(importResolver.Diagnostics);
+            schemaIndex.Diagnostics.AddRange(importResolver.Diagnostics);
+    }
 
-        return diagnostics.ToImmutable();
+    private readonly record struct ImportEdge(AvroImport Import, int TargetIndex);
+
+    private static SourceSpan GetDeclarationSpan(BoundAvroFile file, int declarationIndex) =>
+        declarationIndex < file.File.DeclarationSpans.Length
+            ? file.File.DeclarationSpans[declarationIndex]
+            : SourceSpan.None;
+
+    public bool IsFileValid(BoundAvroFile file, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return _fileMetadata.TryGetValue(file, out var metadata) && metadata.IsValid;
+    }
+
+    public ImmutableArray<BoundAvroFile> GetContributingFiles(BoundAvroFile file, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!_fileDependencies.ContainsKey(file))
+            return [];
+
+        var visited = new HashSet<BoundAvroFile>(ReferenceEqualityComparer.Instance);
+        var pending = new Stack<BoundAvroFile>();
+        pending.Push(file);
+        while (pending.TryPop(out var current))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!visited.Add(current))
+                continue;
+
+            foreach (var dependency in _fileDependencies[current])
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                pending.Push(dependency);
+            }
+        }
+
+        return [.. visited.OrderBy(static contributingFile => contributingFile.Path)];
     }
 
     public ImmutableArray<TopLevelSchema> GetOwnedDeclarations(BoundAvroFile file, CancellationToken cancellationToken = default)
@@ -206,59 +337,9 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         foreach (var declaration in file.Declarations)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (_owners.TryGetValue(declaration.SchemaName, out var owner) && ReferenceEquals(owner.File, file))
+            if (_owners.TryGetValue(declaration.SchemaName, out var owner) && ReferenceEquals(owner, file))
                 declarations.Add(declaration);
         }
         return declarations.DrainToImmutable();
     }
-
-    public ImmutableArray<BoundAvroFile> GetContributingFiles(IEnumerable<SchemaName> roots, CancellationToken cancellationToken = default) =>
-    [
-        .. GetDependencyClosure(roots, cancellationToken)
-            .Select(name => _owners[name].File)
-            .Distinct()
-            .OrderBy(static file => file.Path)
-    ];
-
-    private HashSet<SchemaName> GetDependencyClosure(IEnumerable<SchemaName> roots, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var visited = new HashSet<SchemaName>();
-        var pending = new Stack<SchemaName>(roots);
-        while (pending.TryPop(out var schema))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (!Schemas.ContainsKey(schema) || !visited.Add(schema))
-                continue;
-
-            if (!_dependencies.TryGetValue(schema, out var dependencies))
-                continue;
-            for (var index = dependencies.Length - 1; index >= 0; index--)
-            {
-                var dependency = dependencies[index];
-                if (Schemas.ContainsKey(dependency))
-                    pending.Push(dependency);
-            }
-        }
-
-        return visited;
-    }
-
-    private sealed class SchemaIndex
-    {
-        public Dictionary<SchemaName, TopLevelSchema> Schemas { get; } = [];
-
-        public Dictionary<SchemaName, SchemaOwner> Owners { get; } = [];
-
-        public Dictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies { get; } = [];
-
-        public Dictionary<SourcePath, int> FileIndexes { get; } = [];
-
-        public HashSet<int> DuplicateFileIndexes { get; } = [];
-
-        public ImmutableArray<AvroDiagnostic>.Builder Diagnostics { get; } =
-            ImmutableArray.CreateBuilder<AvroDiagnostic>();
-    }
-
-    private readonly record struct SchemaOwner(BoundAvroFile File, int FileIndex);
 }

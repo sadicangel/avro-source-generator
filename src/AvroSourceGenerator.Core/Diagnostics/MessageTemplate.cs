@@ -51,6 +51,7 @@ public static class MessageTemplate
     public const string InvalidImportFileExtension = "Import kind '{0}' requires a '{1}' target, but '{2}' was specified.";
     public const string MissingImport = "Import path '{0}' does not match an Avro AdditionalFile.";
     public const string InvalidImportTarget = "Import path '{0}' is not a valid {1} target.";
+    public const string UnusedImport = "Import path '{0}' is not used by any schema reference.";
     public const string NoAvroLibraryDetected = "AvroLibrary is set to 'Auto', but no supported Avro library was found.";
     public const string MultipleAvroLibrariesDetected = "Multiple Avro libraries are referenced: {0}. Set AvroSourceGeneratorAvroLibrary to one of: {1}.";
 
@@ -106,6 +107,7 @@ public static class MessageTemplate
         AvroDiagnosticCode.InvalidImportFileExtension => InvalidImportFileExtension,
         AvroDiagnosticCode.MissingImport => MissingImport,
         AvroDiagnosticCode.InvalidImportTarget => InvalidImportTarget,
+        AvroDiagnosticCode.UnusedImport => UnusedImport,
         AvroDiagnosticCode.NoAvroLibraryDetected => NoAvroLibraryDetected,
         AvroDiagnosticCode.MultipleAvroLibrariesDetected => MultipleAvroLibrariesDetected,
         _ => throw new ArgumentOutOfRangeException(nameof(code), code, null)

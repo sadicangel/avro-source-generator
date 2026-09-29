@@ -49,13 +49,15 @@ Run the validation-only smoke test first:
 dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --smoke
 ```
 
-Run all benchmarks:
+Run all seven benchmarks from the repository root (quote the wildcard in PowerShell so BenchmarkDotNet selects every class without prompting):
 
 ```powershell
-dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release --
+dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter '*'
 ```
 
-For a faster, lower-confidence local check, add `--job short` after the final `--`.
+The benchmark project pins the NuGet baseline to `LastGaVersion` in its `.csproj` and loads the current generator from the local Release build, including uncommitted changes. The run prints both versions before measuring. It validates generated source counts and checks for generator errors during setup. Allow several minutes for the full run. From the repository root, BenchmarkDotNet writes its reports under `BenchmarkDotNet.Artifacts/results/`.
+
+For a faster, lower-confidence local check, add `--job short` after `--filter '*'`.
 
 Run only one scenario:
 

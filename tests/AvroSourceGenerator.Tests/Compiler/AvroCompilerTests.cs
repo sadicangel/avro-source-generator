@@ -42,7 +42,7 @@ public sealed class AvroCompilerTests
         Assert.Single(compiled.GetOwnedDeclarations(compiled.Files[0], token));
         Assert.Equal(
             ["consumer.avdl", "shared.avsc"],
-            compiled.GetContributingFiles([new SchemaName("Consumer")], token).Select(file => file.Path.OriginalPath));
+            compiled.GetContributingFiles(compiled.Files[0], token).Select(file => file.Path.OriginalPath));
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public sealed class AvroCompilerTests
         Assert.True(project.IsValid);
         Assert.Equal(
             ["base.avdl", "left.avdl", "right.avdl", "top.avdl"],
-            project.GetContributingFiles([new SchemaName("Top")], TestContext.Current.CancellationToken).Select(file => file.Path.OriginalPath));
+            project.GetContributingFiles(project.Files[0], TestContext.Current.CancellationToken).Select(file => file.Path.OriginalPath));
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public sealed class AvroCompilerTests
         Assert.True(project.IsValid);
         Assert.Equal(
             ["z/../a.avsc", "b.avsc", "root.avsc"],
-            project.GetContributingFiles([new SchemaName("Root")], TestContext.Current.CancellationToken).Select(file => file.Path.OriginalPath));
+            project.GetContributingFiles(project.Files[0], TestContext.Current.CancellationToken).Select(file => file.Path.OriginalPath));
     }
 
     [Fact]
@@ -148,8 +148,8 @@ public sealed class AvroCompilerTests
     {
         var project = AvroCompiler.Compile(
             [
-                new SourceText("a.avdl", """import idl "b.avdl"; schema A; record A {}"""),
-                new SourceText("b.avdl", """import idl "a.avdl"; schema B; record B {}""")
+                new SourceText("a.avdl", """import idl "b.avdl"; schema A; record A { B b; }"""),
+                new SourceText("b.avdl", """import idl "a.avdl"; schema B; record B { A a; }""")
             ],
             s_parseOptions,
             cancellationToken: TestContext.Current.CancellationToken);

@@ -14,7 +14,7 @@ public enum AvroDiagnosticCode
     MisplacedAnnotation = 3009, MisplacedDocumentation = 3010,
     InvalidIdlDocument = 4000, InvalidIdlDeclaration = 4001, InvalidIdlType = 4002, InvalidIdlSchemaDeclaration = 4003, InvalidIdlPrimitive = 4004,
     InvalidIdlFixedSize = 4005, InvalidIdlDecimalPrecision = 4006, InvalidIdlDecimalScale = 4007, InvalidIdlLogicalType = 4008, InvalidIdlOneWayMessage = 4009,
-    ImportCycle = 5000, InvalidImportFileExtension = 5001, MissingImport = 5002, InvalidImportTarget = 5003,
+    ImportCycle = 5000, InvalidImportFileExtension = 5001, MissingImport = 5002, InvalidImportTarget = 5003, UnusedImport = 5004,
     NoAvroLibraryDetected = 6000, MultipleAvroLibrariesDetected = 6001,
 }
 
@@ -25,7 +25,7 @@ public static class AvroDiagnosticCodeExtensions
         public AvroDiagnosticSeverity Severity => code switch
         {
             AvroDiagnosticCode.None => AvroDiagnosticSeverity.Hidden,
-            AvroDiagnosticCode.NoAvroLibraryDetected or AvroDiagnosticCode.MultipleAvroLibrariesDetected => AvroDiagnosticSeverity.Warning,
+            AvroDiagnosticCode.NoAvroLibraryDetected or AvroDiagnosticCode.MultipleAvroLibrariesDetected or AvroDiagnosticCode.UnusedImport => AvroDiagnosticSeverity.Warning,
             _ => AvroDiagnosticSeverity.Error,
         };
         public string MessageTemplate => MessageTemplate.Get(code);

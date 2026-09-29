@@ -51,13 +51,13 @@ public sealed class AvdlImportTests
         ProjectFile.Source(ProtocolImportSource));
 
     [Fact]
-    public void Diagnostic_ProtocolImport_DoesNotGenerateDocuments()
+    public void Diagnostic_ProtocolImport_GeneratesDocuments()
     {
         var output = GeneratorOutput.Create(
             GeneratorInput.Create([ProjectFile.Source(ProtocolImportSource)], Snapshot.References, Snapshot.ProjectConfig));
 
-        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG5002");
-        Assert.Empty(output.Documents);
+        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG5004");
+        Assert.NotEmpty(output.Documents);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public sealed class AvdlImportTests
     [InlineData("idl")]
     [InlineData("schema")]
     [InlineData("protocol")]
-    public void Deferred_ImportKinds_ValidatePaths(string importKind)
+    public void Deferred_UnusedImportKinds_WarnAndGenerate(string importKind)
     {
         var source = $$"""
             import {{importKind}} "missing-and-unused.file";
@@ -97,8 +97,8 @@ public sealed class AvdlImportTests
 
         var output = GenerateDeferred(("consumer.avdl", source));
 
-        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG5001");
-        Assert.Empty(output.Documents);
+        Assert.Contains(output.Diagnostics, diagnostic => diagnostic.Id == "AVROSG5004");
+        Assert.NotEmpty(output.Documents);
     }
 
     [Fact]

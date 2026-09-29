@@ -313,7 +313,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         var typeName = GetRequiredString(type);
         if (typeName is null) return null;
 
-        AvroSchema? schema = typeName switch
+        var schema = typeName switch
         {
             AvroTypeNames.Array => Array(syntax, containingNamespace),
             AvroTypeNames.Map => Map(syntax, containingNamespace),

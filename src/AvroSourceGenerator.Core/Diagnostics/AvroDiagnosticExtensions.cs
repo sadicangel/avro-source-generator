@@ -76,5 +76,6 @@ internal static class AvroDiagnosticExtensions
         public static AvroDiagnostic InvalidImportFileExtension(SourceSpan span, string kind, string extension, string path) => new(AvroDiagnosticCode.InvalidImportFileExtension, span, kind, extension, path);
         public static AvroDiagnostic MissingImport(SourceSpan span, string path) => new(AvroDiagnosticCode.MissingImport, span, path);
         public static AvroDiagnostic InvalidImportTarget(SourceSpan span, string path, string kind) => new(AvroDiagnosticCode.InvalidImportTarget, span, path, kind);
+        public static AvroDiagnostic UnusedImport(SourceSpan span, string path) => new(AvroDiagnosticCode.UnusedImport, span, path);
     }
 }

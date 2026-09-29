@@ -54,5 +54,6 @@ AVROSG5000  | Compiler      | Error    | Import cycle
 AVROSG5001  | Compiler      | Error    | Invalid import extension
 AVROSG5002  | Compiler      | Error    | Missing import
 AVROSG5003  | Compiler      | Error    | Invalid import target
+AVROSG5004  | Compiler      | Warning  | Unused import
 AVROSG6000  | Configuration | Warning  | No Avro library detected
 AVROSG6001  | Configuration | Warning  | Multiple Avro libraries detected

@@ -61,6 +61,7 @@ internal static class DiagnosticDescriptors
     internal static readonly DiagnosticDescriptor InvalidImportFileExtension = new("AVROSG5001", "Invalid Import File Extension", MessageTemplate.Get(AvroDiagnosticCode.InvalidImportFileExtension), CompilerCategory, DiagnosticSeverity.Error, true, "An import kind targets a file with an incompatible extension. Use .avdl, .avpr, or .avsc for the corresponding import kind.");
     internal static readonly DiagnosticDescriptor MissingImport = new("AVROSG5002", "Missing Import", MessageTemplate.Get(AvroDiagnosticCode.MissingImport), CompilerCategory, DiagnosticSeverity.Error, true, "An Avro IDL import path does not match a supplied AdditionalFile relative to the importing file.");
     internal static readonly DiagnosticDescriptor InvalidImportTarget = new("AVROSG5003", "Invalid Import Target", MessageTemplate.Get(AvroDiagnosticCode.InvalidImportTarget), CompilerCategory, DiagnosticSeverity.Error, true, "An imported file exists but does not contain the Avro definition kind required by the import directive.");
+    internal static readonly DiagnosticDescriptor UnusedImport = new("AVROSG5004", "Unused Import", MessageTemplate.Get(AvroDiagnosticCode.UnusedImport), CompilerCategory, DiagnosticSeverity.Warning, true, "No schema reference requires this import. Remove it or reference a declaration from the imported file.");
 
     internal static readonly DiagnosticDescriptor NoAvroLibraryDetected = new("AVROSG6000", "No Avro Library Detected", MessageTemplate.Get(AvroDiagnosticCode.NoAvroLibraryDetected), ConfigurationCategory, DiagnosticSeverity.Warning, true, "AvroLibrary is Auto, but no supported runtime library was detected. Install one, select one explicitly, or configure None for library-neutral generation.");
     internal static readonly DiagnosticDescriptor MultipleAvroLibrariesDetected = new("AVROSG6001", "Multiple Avro Libraries Detected", MessageTemplate.Get(AvroDiagnosticCode.MultipleAvroLibrariesDetected), ConfigurationCategory, DiagnosticSeverity.Warning, true, "AvroLibrary is Auto, but multiple supported runtime libraries were detected. Select the intended library explicitly or remove extra package references.");
@@ -121,6 +122,7 @@ internal static class DiagnosticDescriptors
         AvroDiagnosticCode.InvalidImportFileExtension => InvalidImportFileExtension,
         AvroDiagnosticCode.MissingImport => MissingImport,
         AvroDiagnosticCode.InvalidImportTarget => InvalidImportTarget,
+        AvroDiagnosticCode.UnusedImport => UnusedImport,
 
         AvroDiagnosticCode.NoAvroLibraryDetected => NoAvroLibraryDetected,
         AvroDiagnosticCode.MultipleAvroLibrariesDetected => MultipleAvroLibrariesDetected,

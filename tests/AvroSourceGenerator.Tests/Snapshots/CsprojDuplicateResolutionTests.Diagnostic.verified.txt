@@ -1,12 +1,12 @@
 ﻿{
   Location: tmnltCk6NCew4wkJzi1dZ455VJk.avsc: (7,20)-(12,13),
-  Message: The type 'RecordNamespace.Record' is declared more than once.,
+  Message: Schema 'RecordNamespace.Record' is declared more than once,
   Severity: Error,
   Descriptor: {
     Id: AVROSG0004,
     Title: Duplicate Schema,
     Description: Multiple declarations define the same fully qualified schema name. Rename or remove a declaration; only use AvroSourceGeneratorDuplicateResolution=Ignore when an arbitrary winner is acceptable.,
-    MessageFormat: The type '{0}' is declared more than once.,
+    MessageFormat: Schema '{0}' is declared more than once,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

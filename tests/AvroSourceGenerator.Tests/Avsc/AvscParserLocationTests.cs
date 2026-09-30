@@ -63,12 +63,14 @@ public sealed class AvscParserLocationTests
                 diagnostic,
                 source,
                 "0",
-                "Property 'types' must be an array, but '0' was found."),
+                AvroDiagnosticCode.InvalidTypes,
+                "Property 'types' must be an array of record, error, enum, or fixed definitions"),
             diagnostic => AssertDiagnostic(
                 diagnostic,
                 source,
                 "false",
-                "Property 'request' must be an array, but 'False' was found."));
+                AvroDiagnosticCode.InvalidRequest,
+                "Property 'request' must be an array of request parameter objects"));
     }
 
     [Theory]
@@ -83,7 +85,7 @@ public sealed class AvscParserLocationTests
 
         var diagnostic = Assert.Single(file.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.MissingSchemaProperty, diagnostic.Code);
-        Assert.Equal($"Required property '{propertyName}' is missing.", diagnostic.GetMessage());
+        Assert.Equal($"Required property '{propertyName}' is missing", diagnostic.GetMessage());
         Assert.StartsWith("{", diagnostic.SourceSpan.ToString(), StringComparison.Ordinal);
         Assert.EndsWith("}", diagnostic.SourceSpan.ToString(), StringComparison.Ordinal);
     }
@@ -139,8 +141,9 @@ public sealed class AvscParserLocationTests
         var offset = Text.LastIndexOf("false", StringComparison.Ordinal);
         Assert.Equal(source.GetSourceSpan(offset, "false".Length), diagnostic.SourceSpan);
         Assert.Equal(
-            "Property 'fields' must be an array, but 'False' was found.",
+            "Property 'fields' must be an array of field objects",
             diagnostic.GetMessage());
+        Assert.Equal(AvroDiagnosticCode.InvalidFields, diagnostic.Code);
     }
 
     [Fact]
@@ -155,10 +158,10 @@ public sealed class AvscParserLocationTests
 
     private static AvroParseOptions Options { get; } = new(GenerationTarget.Modern, true);
 
-    private static void AssertDiagnostic(AvroDiagnostic diagnostic, SourceText source, string value, string message)
+    private static void AssertDiagnostic(AvroDiagnostic diagnostic, SourceText source, string value, AvroDiagnosticCode code, string message)
     {
         var offset = source.Text.IndexOf(value, StringComparison.Ordinal);
-        Assert.Equal(AvroDiagnosticCode.InvalidArrayProperty, diagnostic.Code);
+        Assert.Equal(code, diagnostic.Code);
         Assert.Equal(source.GetSourceSpan(offset, value.Length), diagnostic.SourceSpan);
         Assert.Equal(message, diagnostic.GetMessage());
     }

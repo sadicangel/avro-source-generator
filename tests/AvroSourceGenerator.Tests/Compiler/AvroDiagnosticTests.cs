@@ -13,7 +13,7 @@ public sealed class AvroDiagnosticTests
     [Fact]
     public void Immutable_numeric_arguments_preserve_roslyn_culture_formatting()
     {
-        var diagnostic = new AvroDiagnostic(AvroDiagnosticCode.InvalidIdlDeclaration, SourceSpan.None, 1234.5m);
+        var diagnostic = new AvroDiagnostic(AvroDiagnosticCode.InvalidNumber, SourceSpan.None, 1234.5m);
         Assert.IsType<decimal>(Assert.Single(diagnostic.Arguments));
         var roslyn = diagnostic.ToDiagnostic();
         Assert.Contains("1234,5", roslyn.GetMessage(CultureInfo.GetCultureInfo("fr-FR")));
@@ -106,6 +106,18 @@ public sealed class AvroDiagnosticTests
         Assert.Equal("!", span.ToString());
     }
 
+    [Theory]
+    [InlineData("Syntax error", null, null, "Syntax error")]
+    [InlineData("Syntax error | LineNumber: 1 | BytePositionInLine: 2.", 1L, 2L, "Syntax error")]
+    [InlineData("Syntax error. Path: $.type | LineNumber: 1 | BytePositionInLine: 2.", 1L, 2L, "Syntax error. Path: $.type")]
+    [InlineData("Unexpected 'LineNumber: 1 | BytePositionInLine: 2.'", 1L, 2L, "Unexpected 'LineNumber: 1 | BytePositionInLine: 2.'")]
+    public void Json_diagnostics_remove_only_redundant_location_metadata(string message, long? line, long? position, string expected)
+    {
+        var exception = new JsonException(message, null, line, position);
+        var diagnostic = AvroDiagnostic.InvalidJson(SourceSpan.None, exception);
+        Assert.Equal($"Invalid JSON: {expected}", diagnostic.GetMessage());
+    }
+
     [Fact]
     public void Source_length_and_line_offsets_include_whitespace()
     {
@@ -138,7 +150,7 @@ public sealed class AvroDiagnosticTests
     {
         var diagnostic = new AvroDiagnostic(AvroDiagnosticCode.NoAvroLibraryDetected, SourceSpan.None, "Apache.Avro");
         Assert.Equal(AvroDiagnosticSeverity.Warning, diagnostic.Severity);
-        Assert.NotEmpty(diagnostic.GetMessage());
+        Assert.Equal("AvroSourceGeneratorAvroLibrary is 'Auto', but no supported Avro library was found", diagnostic.GetMessage());
     }
 
     [Fact]

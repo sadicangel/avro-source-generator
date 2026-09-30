@@ -1,12 +1,12 @@
 ﻿{
   Location: kOCzINUORH2LvzkFdTpyR6i2b40.avpr: (1,14)-(1,16),
-  Message: Property 'protocol' must be a non-empty string, but '[]' was found.,
+  Message: Property 'protocol' must be a non-empty string containing a valid Avro name, optionally prefixed with its namespace,
   Severity: Error,
   Descriptor: {
     Id: AVROSG2006,
-    Title: Invalid String Property,
-    Description: A property that requires a string has a value of the wrong kind or an empty required value. Supply an appropriate string.,
-    MessageFormat: Property '{0}' must be {1}, but '{2}' was found.,
+    Title: Invalid Protocol Name,
+    Description: Property 'protocol' must be a non-empty string containing a valid Avro name, optionally prefixed with its namespace.,
+    MessageFormat: Property 'protocol' must be a non-empty string containing a valid Avro name, optionally prefixed with its namespace,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

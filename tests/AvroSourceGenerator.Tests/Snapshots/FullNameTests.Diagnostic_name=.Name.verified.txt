@@ -1,12 +1,12 @@
 ﻿{
   Location: dan-z1P6cJUaNdE9Q0_cGUS5NfI.avsc: (2,10)-(2,17),
-  Message: '.Name' is not a valid Avro name.,
+  Message: Property 'name' must be a non-empty string containing a valid Avro name, optionally prefixed with its namespace,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2012,
-    Title: Invalid Avro Name,
-    Description: A schema, field, request parameter, namespace component, or enum symbol violates Avro naming rules.,
-    MessageFormat: '{0}' is not a valid Avro name.,
+    Id: AVROSG2005,
+    Title: Invalid Schema Name,
+    Description: Property 'name' must be a non-empty string containing a valid Avro name, optionally prefixed with its namespace.,
+    MessageFormat: Property 'name' must be a non-empty string containing a valid Avro name, optionally prefixed with its namespace,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

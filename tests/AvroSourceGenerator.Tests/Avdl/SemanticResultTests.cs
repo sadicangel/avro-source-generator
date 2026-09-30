@@ -31,18 +31,18 @@ public sealed class SemanticResultTests
     }
 
     [Theory]
-    [InlineData("@namespace(null) record R {}")]
-    [InlineData("@aliases(null) record R {}")]
-    [InlineData("@aliases([\"Old\", null]) record R {}")]
-    [InlineData("@aliases([\"Old\", 2]) record R {}")]
-    [InlineData("enum R { A } = false;")]
-    [InlineData("record R { @logicalType(null) string f; }")]
-    [InlineData("record R { string @order(null) f; }")]
-    public void Invalid_values_preserve_the_annotation_or_default_diagnostic(string declaration)
+    [InlineData("@namespace(null) record R {}", AvroDiagnosticCode.InvalidIdlNamespace)]
+    [InlineData("@aliases(null) record R {}", AvroDiagnosticCode.InvalidIdlAliases)]
+    [InlineData("@aliases([\"Old\", null]) record R {}", AvroDiagnosticCode.InvalidIdlAliases)]
+    [InlineData("@aliases([\"Old\", 2]) record R {}", AvroDiagnosticCode.InvalidIdlAliases)]
+    [InlineData("enum R { A } = false;", AvroDiagnosticCode.InvalidIdlEnumDefault)]
+    [InlineData("record R { @logicalType(null) string f; }", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation)]
+    [InlineData("record R { string @order(null) f; }", AvroDiagnosticCode.InvalidIdlOrder)]
+    public void Invalid_values_have_property_specific_diagnostics(string declaration, AvroDiagnosticCode code)
     {
         var file = Parse("schema R; " + declaration);
         AssertInvalid(file);
-        Assert.Equal(AvroDiagnosticCode.InvalidIdlDeclaration, Assert.Single(file.Diagnostics).Code);
+        Assert.Equal(code, Assert.Single(file.Diagnostics).Code);
     }
 
     [Theory]
@@ -76,6 +76,12 @@ public sealed class SemanticResultTests
         Assert.Equal(
             ["false", "0", "1", "2", "3", "4", "5", "6", "2147483648", "2147483649", "7"],
             file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.Equal(
+            [AvroDiagnosticCode.InvalidIdlAliases, AvroDiagnosticCode.InvalidIdlFixedSize, AvroDiagnosticCode.InvalidIdlAliases,
+                AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, AvroDiagnosticCode.InvalidIdlAliases, AvroDiagnosticCode.InvalidIdlOrder,
+                AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation,
+                AvroDiagnosticCode.InvalidIdlDecimalPrecision, AvroDiagnosticCode.InvalidIdlDecimalScale, AvroDiagnosticCode.InvalidIdlEnumDefault],
+            file.Diagnostics.Select(diagnostic => diagnostic.Code));
         Assert.All(file.Diagnostics, diagnostic => Assert.Equal("test.avdl", diagnostic.SourceSpan.SourceText.Path.OriginalPath));
         Assert.Equal(file.Diagnostics, Parse(Text).Diagnostics);
     }
@@ -98,7 +104,7 @@ public sealed class SemanticResultTests
         var file = Parse("@namespace(1) protocol P { fixed F(0); string call() oneway; }");
         AssertInvalid(file);
         var diagnostic = Assert.Single(file.Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.InvalidIdlDeclaration, diagnostic.Code);
+        Assert.Equal(AvroDiagnosticCode.InvalidIdlNamespace, diagnostic.Code);
         Assert.Equal("1", diagnostic.SourceSpan.ToString());
     }
 
@@ -108,7 +114,7 @@ public sealed class SemanticResultTests
         var file = Parse("schema @logicalType(3) string; protocol P {} fixed F(0);");
         AssertInvalid(file);
         Assert.Equal(
-            [AvroDiagnosticCode.InvalidIdlDeclaration, AvroDiagnosticCode.InvalidIdlFixedSize, AvroDiagnosticCode.InvalidIdlDeclaration],
+            [AvroDiagnosticCode.InvalidIdlDeclaration, AvroDiagnosticCode.InvalidIdlFixedSize, AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation],
             file.Diagnostics.Select(diagnostic => diagnostic.Code));
         Assert.Equal(["protocol P {}", "0", "3"], file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
     }
@@ -215,6 +221,13 @@ public sealed class SemanticResultTests
         Assert.True(file.IsValid);
         var enumeration = Assert.IsType<EnumSchema>(Assert.Single(file.Declarations));
         Assert.Empty(enumeration.Aliases);
+    }
+
+    [Fact]
+    public void Empty_annotation_strings_keep_their_existing_meaning()
+    {
+        var file = Parse("schema R; @namespace(\"\") @aliases([\"\"]) record R { @logicalType(\"\") string @order(\"\") @aliases([\"\"]) f; }");
+        Assert.True(file.IsValid, string.Join("; ", file.Diagnostics));
     }
 
     [Fact]

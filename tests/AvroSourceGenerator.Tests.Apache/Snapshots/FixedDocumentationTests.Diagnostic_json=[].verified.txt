@@ -1,12 +1,12 @@
 ﻿{
   Location: 2F5ZcdhaUjwEDzLtgtOywVYu3Dw.avsc: (5,9)-(5,11),
-  Message: Property 'doc' must be a string, but '[]' was found.,
+  Message: Property 'doc' must be a string or null,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2006,
-    Title: Invalid String Property,
-    Description: A property that requires a string has a value of the wrong kind or an empty required value. Supply an appropriate string.,
-    MessageFormat: Property '{0}' must be {1}, but '{2}' was found.,
+    Id: AVROSG2018,
+    Title: Invalid Doc,
+    Description: A doc property must be a string or null.,
+    MessageFormat: Property 'doc' must be a string or null,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

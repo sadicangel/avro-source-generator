@@ -96,7 +96,7 @@ public sealed class ScannerTests
         new()
         {
             { "$", AvroDiagnosticCode.InvalidCharacter, 0, 1 },
-            { "\"bad\\q\"", AvroDiagnosticCode.InvalidEscapeSequence, 0, 7 },
+            { "\"bad\\q\"", AvroDiagnosticCode.InvalidEscapeSequence, 4, 2 },
             { "1e", AvroDiagnosticCode.InvalidNumber, 0, 2 },
             { "\"unterminated", AvroDiagnosticCode.UnterminatedString, 0, 13 },
             { "/** unterminated", AvroDiagnosticCode.UnterminatedDocumentation, 0, 16 },
@@ -304,17 +304,36 @@ public sealed class ScannerTests
     }
 
     [Theory]
-    [InlineData("\"prefix\\u12xz\"", AvroDiagnosticCode.InvalidEscapeSequence)]
-    [InlineData("\"prefix\\ntext\\q\"", AvroDiagnosticCode.InvalidEscapeSequence)]
-    [InlineData("\"prefix\\ntext", AvroDiagnosticCode.UnterminatedString)]
-    public void Scan_malformed_strings_keeps_the_full_diagnostic_span(string text, AvroDiagnosticCode code)
+    [InlineData("\"prefix\\u12xz\"", "\\u12xz")]
+    [InlineData("\"prefix\\ntext\\q\"", "\\q")]
+    [InlineData("\"é😀\\q\"", "\\q")]
+    [InlineData("\"prefix\\u12\"", "\\u12")]
+    [InlineData("\"prefix\\u", "\\u")]
+    [InlineData("\"prefix\\", "\\")]
+    public void Scan_invalid_escapes_reports_only_the_escape_and_recovers_the_full_string(string text, string escape)
     {
         var scanner = CreateScanner(text);
+        var tokens = scanner.ScanAllTokens().ToArray();
+        var diagnostic = Assert.Single(scanner.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.InvalidEscapeSequence, diagnostic.Code);
+        Assert.Equal(text.IndexOf(escape, StringComparison.Ordinal), diagnostic.SourceSpan.Offset);
+        Assert.Equal(escape.Length, diagnostic.SourceSpan.Length);
+        Assert.Equal(escape, diagnostic.SourceSpan.ToString());
+        Assert.Equal($"Invalid escape sequence '{escape}'", diagnostic.GetMessage());
+        Assert.Equal(text, Assert.Single(scanner.BadTokens).SourceSpan.ToString());
+        Assert.Equal(SyntaxKind.EofToken, Assert.Single(tokens).SyntaxKind);
+    }
+
+    [Fact]
+    public void Scan_unterminated_strings_keeps_the_full_diagnostic_span()
+    {
+        const string Text = "\"prefix\\ntext";
+        var scanner = CreateScanner(Text);
         _ = scanner.ScanAllTokens().ToArray();
         var diagnostic = Assert.Single(scanner.Diagnostics);
-        Assert.Equal(code, diagnostic.Code);
+        Assert.Equal(AvroDiagnosticCode.UnterminatedString, diagnostic.Code);
         Assert.Equal(0, diagnostic.SourceSpan.Offset);
-        Assert.Equal(text.Length, diagnostic.SourceSpan.Length);
+        Assert.Equal(Text.Length, diagnostic.SourceSpan.Length);
     }
 
     private static Scanner CreateScanner(string text) => new(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);

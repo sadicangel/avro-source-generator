@@ -39,12 +39,12 @@ public sealed class RoslynDiagnosticTests
             static diagnostic =>
             {
                 Assert.Equal("bad", Assert.Single(diagnostic.Arguments));
-                Assert.Equal("Invalid character 'bad'.", diagnostic.GetMessage());
+                Assert.Equal("Unexpected character 'bad'", diagnostic.GetMessage());
             },
             static diagnostic =>
             {
                 Assert.Empty(diagnostic.Arguments);
-                Assert.Equal("An Avro IDL file must contain a main schema directive or a single protocol declaration.", diagnostic.GetMessage());
+                Assert.Equal("IDL document must contain a main schema directive or exactly one protocol declaration", diagnostic.GetMessage());
             });
         Assert.All(
             diagnostics,
@@ -53,6 +53,22 @@ public sealed class RoslynDiagnosticTests
                 var diagnostic = core.ToDiagnostic();
                 Assert.Equal(core.GetMessage(), diagnostic.GetMessage());
             });
+    }
+
+    [Fact]
+    public void Diagnostic_display_text_uses_uppercase_acronyms()
+    {
+        foreach (var code in Enum.GetValues<AvroDiagnosticCode>().Where(static code => code is not AvroDiagnosticCode.None))
+        {
+            var descriptor = code.ToDiagnosticDescriptor();
+            foreach (var displayText in new[] { descriptor.Title.ToString(), descriptor.Description.ToString(), descriptor.MessageFormat.ToString() })
+            {
+                Assert.DoesNotContain("Idl", displayText);
+                Assert.DoesNotContain("Json", displayText);
+            }
+        }
+        Assert.Equal("Invalid IDL Document", AvroDiagnosticCode.InvalidIdlDocument.ToDiagnosticDescriptor().Title.ToString());
+        Assert.Equal("Invalid JSON", AvroDiagnosticCode.InvalidJson.ToDiagnosticDescriptor().Title.ToString());
     }
 
     [Fact]

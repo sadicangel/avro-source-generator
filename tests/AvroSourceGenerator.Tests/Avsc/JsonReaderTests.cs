@@ -44,7 +44,11 @@ public sealed class JsonReaderTests
     {
         var file = AvxxParser.Parse(new SourceText("test.avsc", text), new AvroParseOptions(), TestContext.Current.CancellationToken);
         Assert.False(file.IsValid);
-        Assert.Equal(AvroDiagnosticCode.InvalidJson, Assert.Single(file.Diagnostics).Code);
+        var diagnostic = Assert.Single(file.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.InvalidJson, diagnostic.Code);
+        Assert.StartsWith("Invalid JSON: ", diagnostic.GetMessage());
+        Assert.DoesNotContain("LineNumber:", diagnostic.GetMessage());
+        Assert.DoesNotContain("BytePositionInLine:", diagnostic.GetMessage());
     }
 
     [Fact]
@@ -55,6 +59,8 @@ public sealed class JsonReaderTests
         var diagnostic = Assert.Single(file.Diagnostics);
         Assert.Equal(AvroDiagnosticCode.InvalidJson, diagnostic.Code);
         Assert.Equal(Text.IndexOf('!'), diagnostic.SourceSpan.Offset);
+        Assert.Equal("!", diagnostic.SourceSpan.ToString());
+        Assert.Equal("Invalid JSON: '!' is an invalid start of a value.", diagnostic.GetMessage());
     }
 
     [Fact]

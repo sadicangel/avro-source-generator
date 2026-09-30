@@ -31,7 +31,7 @@ public sealed class ParserDispatchTests
         Assert.False(file.IsValid);
         Assert.Equal(expected, diagnostic.Code);
         Assert.Equal(source.GetSourceSpan(3, json.Length), diagnostic.SourceSpan);
-        Assert.Equal(expected == AvroDiagnosticCode.SchemaExpected ? "An Avro schema is expected." : "An Avro protocol is expected.", diagnostic.GetMessage());
+        Assert.Equal(expected == AvroDiagnosticCode.SchemaExpected ? "Avro schema expected" : "Avro protocol expected", diagnostic.GetMessage());
         Assert.Empty(file.Declarations);
         Assert.Empty(file.References);
     }
@@ -49,27 +49,27 @@ public sealed class ParserDispatchTests
     }
 
     [Theory]
-    [InlineData(".avsc", """{"type":null}""", "null")]
-    [InlineData(".avpr", """{"protocol":false}""", "false")]
-    public void Present_discriminators_keep_property_diagnostics(string extension, string json, string value)
+    [InlineData(".avsc", """{"type":null}""", "null", AvroDiagnosticCode.InvalidSchemaType)]
+    [InlineData(".avpr", """{"protocol":false}""", "false", AvroDiagnosticCode.InvalidProtocolName)]
+    public void Present_discriminators_keep_property_diagnostics(string extension, string json, string value, AvroDiagnosticCode code)
     {
         var source = new SourceText("test" + extension, json);
         var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.InvalidStringProperty, diagnostic.Code);
+        Assert.Equal(code, diagnostic.Code);
         Assert.Equal(value, diagnostic.SourceSpan.ToString());
     }
 
     [Theory]
-    [InlineData(".avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":{"protocol":"P"}}]}""")]
-    [InlineData(".avsc", """[{"protocol":"P"}]""")]
-    [InlineData(".avsc", """{"type":"array","items":{"protocol":"P"}}""")]
-    [InlineData(".avpr", """{"protocol":"Outer","types":[{"protocol":"P"}],"messages":{}}""")]
-    [InlineData(".avpr", """{"protocol":"Outer","types":[],"messages":{"m":{"request":[],"response":{"protocol":"P"}}}}""")]
-    public void Nested_protocols_are_not_schemas(string extension, string json)
+    [InlineData(".avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":{"protocol":"P"}}]}""", AvroDiagnosticCode.InvalidFieldType)]
+    [InlineData(".avsc", """[{"protocol":"P"}]""", AvroDiagnosticCode.SchemaExpected)]
+    [InlineData(".avsc", """{"type":"array","items":{"protocol":"P"}}""", AvroDiagnosticCode.InvalidItems)]
+    [InlineData(".avpr", """{"protocol":"Outer","types":[{"protocol":"P"}],"messages":{}}""", AvroDiagnosticCode.MissingSchemaProperty)]
+    [InlineData(".avpr", """{"protocol":"Outer","types":[],"messages":{"m":{"request":[],"response":{"protocol":"P"}}}}""", AvroDiagnosticCode.InvalidResponse)]
+    public void Nested_protocols_are_not_schemas(string extension, string json, AvroDiagnosticCode code)
     {
         var source = new SourceText("test" + extension, json);
         var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.SchemaExpected, diagnostic.Code);
+        Assert.Equal(code, diagnostic.Code);
         Assert.Equal("""{"protocol":"P"}""", diagnostic.SourceSpan.ToString());
         Assert.Same(source, diagnostic.SourceSpan.SourceText);
     }
@@ -95,9 +95,9 @@ public sealed class ParserDispatchTests
     }
 
     [Theory]
-    [InlineData(".avsc", """{"type":"record","name":"R","fields":[{"name":"a","type":{"type":"record","name":"Nested","fields":[]}},{"name":"b","type":false}]} """)]
-    [InlineData(".avpr", """{"protocol":"P","types":[{"type":"record","name":"R","fields":[]}],"messages":{"m":{"request":[{"name":"a","type":"Missing"}],"response":false}}}""")]
-    public void Invalid_roots_discard_partial_semantic_state(string extension, string json)
+    [InlineData(".avsc", """{"type":"record","name":"R","fields":[{"name":"a","type":{"type":"record","name":"Nested","fields":[]}},{"name":"b","type":false}]} """, AvroDiagnosticCode.InvalidFieldType)]
+    [InlineData(".avpr", """{"protocol":"P","types":[{"type":"record","name":"R","fields":[]}],"messages":{"m":{"request":[{"name":"a","type":"Missing"}],"response":false}}}""", AvroDiagnosticCode.InvalidResponse)]
+    public void Invalid_roots_discard_partial_semantic_state(string extension, string json, AvroDiagnosticCode code)
     {
         var file = AvxxParser.Parse(new SourceText("test" + extension, json), s_options, TestContext.Current.CancellationToken);
         Assert.Same(AvroSchema.Null, file.RootSchema);
@@ -106,6 +106,6 @@ public sealed class ParserDispatchTests
         Assert.Empty(file.References);
         Assert.Empty(file.ReferenceSpans);
         Assert.Empty(file.Dependencies);
-        Assert.Equal(AvroDiagnosticCode.SchemaExpected, Assert.Single(file.Diagnostics).Code);
+        Assert.Equal(code, Assert.Single(file.Diagnostics).Code);
     }
 }

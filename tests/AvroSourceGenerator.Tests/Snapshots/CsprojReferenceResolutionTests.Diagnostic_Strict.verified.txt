@@ -1,12 +1,12 @@
 ﻿{
   Location: 7ne69Miwm3AbPqt5Q8iw551pqPs.avsc: (7,20)-(7,30),
-  Message: The schema reference(s) 'Demo.Store.Customer, Demo.Store.OrderLine' could not be resolved.,
+  Message: Schema references could not be resolved: 'Demo.Store.Customer', 'Demo.Store.OrderLine',
   Severity: Error,
   Descriptor: {
     Id: AVROSG0005,
     Title: Missing References,
     Description: A named schema reference is not visible to the source file. Supply or import the referenced schema, or correct its fully qualified name.,
-    MessageFormat: The schema reference(s) '{0}' could not be resolved.,
+    MessageFormat: Schema references could not be resolved: {0},
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

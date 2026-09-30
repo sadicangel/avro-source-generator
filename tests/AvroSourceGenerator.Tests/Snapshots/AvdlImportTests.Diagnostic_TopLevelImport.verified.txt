@@ -1,13 +1,13 @@
 ﻿{
   Location: _qvgXOwTDtIBeSz3UV4HRIelOGc.avdl: (0,11)-(0,24),
-  Message: Import path 'common.avdl' is not used by any schema reference.,
+  Message: Import 'common.avdl' is unused,
   Severity: Warning,
   WarningLevel: 1,
   Descriptor: {
     Id: AVROSG5004,
     Title: Unused Import,
     Description: No schema reference requires this import. Remove it or reference a declaration from the imported file.,
-    MessageFormat: Import path '{0}' is not used by any schema reference.,
+    MessageFormat: Import '{0}' is unused,
     Category: Compiler,
     DefaultSeverity: Warning,
     IsEnabledByDefault: true

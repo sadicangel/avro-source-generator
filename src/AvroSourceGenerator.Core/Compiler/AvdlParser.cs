@@ -645,7 +645,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         {
             if (declaration is not ISchemaDeclarationSyntax schemaDeclaration)
             {
-                Report(AvroDiagnostic.InvalidIdlDeclaration(declaration.GetSourceSpan(), declaration.SyntaxKind));
+                Report(AvroDiagnostic.InvalidIdlDeclaration(declaration.GetSourceSpan()));
                 isValid = false;
                 continue;
             }
@@ -675,7 +675,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
             OptionalTypeSyntax type => Optional(type, containingNamespace, defaultJson),
             PrimitiveTypeSyntax type => Primitive(type, containingNamespace, properties),
             UnionTypeSyntax type => Union(type, containingNamespace),
-            _ => Invalid<AvroSchema?>(null, AvroDiagnostic.InvalidIdlType(syntax.GetSourceSpan(), syntax.SyntaxKind)),
+            _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL type syntax '{syntax.SyntaxKind}'."),
         };
     }
 
@@ -687,14 +687,14 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
             ErrorDeclarationSyntax syntax => Error(syntax, containingNamespace),
             FixedDeclarationSyntax syntax => Fixed(syntax, containingNamespace),
             RecordDeclarationSyntax syntax => Record(syntax, containingNamespace),
-            _ => Invalid<NamedSchema?>(null, AvroDiagnostic.InvalidIdlSchemaDeclaration(declaration.GetSourceSpan(), declaration.SyntaxKind))
+            _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL schema declaration '{declaration.SyntaxKind}'.")
         };
 
         if (schema is not FixedSchema fixedSchema ||
             declaration.Annotations.OfType<LogicalTypeAnnotationSyntax>().LastOrDefault() is not { } annotation)
             return schema;
 
-        var logicalType = GetString(annotation.JsonValue, "Logical type annotation value", required: true);
+        var logicalType = GetString(annotation.JsonValue, AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, required: true);
         if (logicalType is null) return null;
         if (LogicalSchema.Create(logicalType, fixedSchema, Options.GenerationTarget) is not LogicalSchema)
             return fixedSchema;
@@ -708,7 +708,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     {
         var tracker = TrackDiagnostics();
         var logicalTypeName = syntax.Annotations.OfType<LogicalTypeAnnotationSyntax>().LastOrDefault() is { } annotation
-            ? GetString(annotation.JsonValue, "Logical type annotation value", required: true)
+            ? GetString(annotation.JsonValue, AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, required: true)
             : null;
         var properties = syntax.Annotations.GetProperties(ReservedSchemaProperties.IsReserved);
         var underlyingSchema = Type(syntax.Type, containingNamespace, properties, defaultJson);
@@ -732,7 +732,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
             SyntaxKind.DoubleType => AvroSchema.Double,
             SyntaxKind.BytesType => AvroSchema.Bytes,
 
-            _ => Invalid<AvroSchema?>(null, AvroDiagnostic.InvalidIdlPrimitive(syntax.TypeKeyword.SourceSpan, syntax.SyntaxKind))
+            _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL primitive type '{syntax.TypeKeyword.SyntaxKind}'.")
         };
     }
 
@@ -864,7 +864,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         var documentation = syntax.GetDocumentation();
         var aliases = GetAliases(syntax);
         var order = syntax.Annotations.OfType<OrderAnnotationSyntax>().LastOrDefault() is { } annotation
-            ? GetString(annotation.JsonValue, "Order annotation value", required: true)
+            ? GetString(annotation.JsonValue, AvroDiagnosticCode.InvalidIdlOrder, required: true)
             : null;
         var properties = syntax.GetSchemaProperties();
 
@@ -924,7 +924,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
 
         if (syntax is not LogicalTypeSyntax logical)
         {
-            return Invalid<AvroSchema?>(null, AvroDiagnostic.InvalidIdlLogicalType(syntax.GetSourceSpan(), syntax.SyntaxKind));
+            throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL logical type syntax '{syntax.SyntaxKind}'.");
         }
 
         return logical.LogicalTypeNameKeyword.SyntaxKind switch
@@ -934,7 +934,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
             SyntaxKind.TimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimestampMillis, AvroSchema.Long, Options.GenerationTarget),
             SyntaxKind.LocalTimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.LocalTimestampMillis, AvroSchema.Long, Options.GenerationTarget),
             SyntaxKind.UuidKeyword => LogicalSchema.Create(LogicalTypeNames.Uuid, AvroSchema.String, Options.GenerationTarget),
-            _ => Invalid<AvroSchema?>(null, AvroDiagnostic.InvalidIdlLogicalType(logical.LogicalTypeNameKeyword.SourceSpan, syntax.SyntaxKind))
+            _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL logical type '{logical.LogicalTypeNameKeyword.SyntaxKind}'.")
         };
     }
 
@@ -1061,7 +1061,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
 
     private string? GetEnumDefault(EnumDeclarationSyntax syntax) =>
         syntax.DefaultValue is { } clause
-            ? GetString(clause.JsonValue, "Enum default value", required: false)
+            ? GetString(clause.JsonValue, AvroDiagnosticCode.InvalidIdlEnumDefault, required: false)
             : null;
 
     private int GetFixedSize(FixedDeclarationSyntax syntax) =>
@@ -1069,13 +1069,13 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
             ? value
             : Invalid(0, AvroDiagnostic.InvalidIdlFixedSize(syntax.SizeLiteralToken.SourceSpan));
 
-    private string? GetString(JsonValueSyntax syntax, string description, bool required)
+    private string? GetString(JsonValueSyntax syntax, AvroDiagnosticCode code, bool required)
     {
         if (syntax.JsonNode is null && !required)
             return null;
         if (syntax.JsonNode is JsonValue value && value.TryGetValue<string>(out var result) && (!required || result is not null))
             return result;
-        return Invalid<string?>(null, AvroDiagnostic.InvalidIdlDeclaration(syntax.GetSourceSpan(), $"{description} must be a string."));
+        return Invalid<string?>(null, AvroDiagnostic.InvalidIdlProperty(code, syntax.GetSourceSpan()));
     }
 
     private ImmutableArray<string> GetAliases(IDeclarationSyntax syntax)
@@ -1083,13 +1083,13 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         if (syntax.Annotations.OfType<AliasesAnnotationSyntax>().LastOrDefault() is not { } annotation)
             return ImmutableArray<string>.Empty;
         if (annotation.JsonValue.JsonNode is not JsonArray array)
-            return Invalid(default(ImmutableArray<string>), AvroDiagnostic.InvalidIdlDeclaration(annotation.JsonValue.GetSourceSpan(), "Aliases annotation value must be an array of strings."));
+            return Invalid(default(ImmutableArray<string>), AvroDiagnostic.InvalidIdlProperty(AvroDiagnosticCode.InvalidIdlAliases, annotation.JsonValue.GetSourceSpan()));
 
         var builder = ImmutableArray.CreateBuilder<string>(array.Count);
         foreach (var node in array.WithCancellation(cancellationToken))
         {
             if (node is not JsonValue value || !value.TryGetValue<string>(out var result))
-                return Invalid(default(ImmutableArray<string>), AvroDiagnostic.InvalidIdlDeclaration(annotation.JsonValue.GetSourceSpan(), "Aliases annotation value must be an array of strings."));
+                return Invalid(default(ImmutableArray<string>), AvroDiagnostic.InvalidIdlProperty(AvroDiagnosticCode.InvalidIdlAliases, annotation.JsonValue.GetSourceSpan()));
             builder.Add(result);
         }
         return builder.MoveToImmutable();
@@ -1103,7 +1103,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         if (syntax.Annotations.OfType<NamespaceAnnotationSyntax>().LastOrDefault() is { } annotation)
         {
             var tracker = TrackDiagnostics();
-            containingNamespace = GetString(annotation.JsonValue, "Namespace annotation value", required: true);
+            containingNamespace = GetString(annotation.JsonValue, AvroDiagnosticCode.InvalidIdlNamespace, required: true);
             if (tracker.HasNewDiagnostics) return default;
         }
         return new SchemaName(name, containingNamespace);
@@ -1113,7 +1113,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     {
         syntax.Name.FullName.TrySplitQualifiedName(out var name, out var ns);
         if (string.IsNullOrWhiteSpace(name) || ns is "")
-            return Invalid<AvroSchema?>(null, AvroDiagnostic.InvalidSchemaValue(sourceText.GetSourceSpan(), "Argument has an invalid name format: 'cannot start or end with a dot'"));
+            return Invalid<AvroSchema?>(null, AvroDiagnostic.InvalidSchemaReference(syntax.Name.GetSourceSpan(), syntax.Name.FullName));
         return Reference(new SchemaName(name, ns), containingNamespace, syntax.Name.GetSourceSpan());
     }
 }

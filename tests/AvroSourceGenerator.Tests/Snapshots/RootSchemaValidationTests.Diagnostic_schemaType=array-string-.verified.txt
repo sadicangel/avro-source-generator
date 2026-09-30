@@ -1,12 +1,12 @@
 ﻿{
   Location: yBFT8VPXh_7SeHn-SRUugr6vuy4.avsc: (0,0)-(3,1),
-  Message: A named schema or protocol is required.,
+  Message: Named schema or protocol required,
   Severity: Error,
   Descriptor: {
     Id: AVROSG2002,
     Title: Missing Root Schema,
     Description: The input contains no named schema or protocol that can serve as a root declaration.,
-    MessageFormat: A named schema or protocol is required.,
+    MessageFormat: Named schema or protocol required,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

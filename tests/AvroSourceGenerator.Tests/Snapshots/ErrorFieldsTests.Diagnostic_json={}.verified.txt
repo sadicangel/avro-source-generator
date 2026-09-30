@@ -1,12 +1,12 @@
 ﻿{
   Location: fz2GLGAtc50ZUajpxly_MzZEUiU.avsc: (4,12)-(4,14),
-  Message: Property 'fields' must be an array, but '{}' was found.,
+  Message: Property 'fields' must be an array of field objects,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2007,
-    Title: Invalid Array Property,
-    Description: A property that requires a JSON array has a value of another kind. Replace it with an array of expected elements.,
-    MessageFormat: Property '{0}' must be an array, but '{1}' was found.,
+    Id: AVROSG2013,
+    Title: Invalid Fields,
+    Description: A fields property must be an array of field objects.,
+    MessageFormat: Property 'fields' must be an array of field objects,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

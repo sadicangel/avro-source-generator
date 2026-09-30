@@ -77,7 +77,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
     private JsonObjectSyntax? AsObject(JsonSyntax syntax)
     {
         if (syntax is JsonObjectSyntax @object) return @object;
-        Report(AvroDiagnostic.InvalidSchemaValue(syntax));
+        Report(AvroDiagnostic.InvalidProperty(syntax));
         return null;
     }
 
@@ -88,7 +88,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
             var @string = value.GetString();
             if (!string.IsNullOrWhiteSpace(@string)) return @string!;
         }
-        Report(AvroDiagnostic.InvalidPropertyString(property, required: true));
+        Report(AvroDiagnostic.InvalidProperty(property));
         return null;
     }
 
@@ -97,7 +97,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         var name = GetRequiredString(property);
         if (name is null) return null;
         if (IsValidName(name)) return name;
-        Report(AvroDiagnostic.InvalidAvroName(property));
+        Report(AvroDiagnostic.InvalidProperty(property));
         return null;
     }
 
@@ -108,14 +108,15 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
             var @string = value.GetString();
             return string.IsNullOrWhiteSpace(@string) ? null : @string;
         }
-        Report(AvroDiagnostic.InvalidPropertyString(property, required: false));
+        Report(AvroDiagnostic.InvalidProperty(property));
         return null;
     }
 
     private string? GetOptionalNullableString(JsonObjectSyntax syntax, string propertyName)
     {
         var property = GetOptionalProperty(syntax, propertyName);
-        return property is not null ? GetNullableString(property) : null;
+        if (property is null) return null;
+        return GetNullableString(property);
     }
 
     private ImmutableArray<JsonSyntax> GetArrayItems(JsonPropertySyntax property)
@@ -124,7 +125,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         {
             return array.Items;
         }
-        Report(AvroDiagnostic.InvalidArray(property));
+        Report(AvroDiagnostic.InvalidProperty(property));
         return default;
     }
 
@@ -145,7 +146,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         if (property.Value is JsonObjectSyntax @object)
             return @object.Properties;
 
-        Report(AvroDiagnostic.InvalidObject(property.Value, property.Parent!, property.Name.Value));
+        Report(AvroDiagnostic.InvalidProperty(property));
         return default;
     }
 
@@ -153,7 +154,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
     {
         if (property.Value.TokenType == JsonTokenType.True) return true;
         if (property.Value.TokenType == JsonTokenType.False) return false;
-        Report(AvroDiagnostic.InvalidPropertyBoolean(property.Value, property.Parent!, property.Name.Value));
+        Report(AvroDiagnostic.InvalidProperty(property));
         return null;
     }
 
@@ -172,7 +173,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         var value = (property.Value as JsonValueSyntax)?.GetString();
         return !string.IsNullOrWhiteSpace(value)
             ? value
-            : Invalid<string?>(null, AvroDiagnostic.InvalidJsonString(property.Value));
+            : Invalid<string?>(null, AvroDiagnostic.InvalidProperty(property));
     }
 
     private static string? GetOptionalString(JsonObjectSyntax syntax, string propertyName)
@@ -189,7 +190,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         if (size is > 0)
             return size.Value;
 
-        Report(AvroDiagnostic.InvalidFixedSize(property));
+        Report(AvroDiagnostic.InvalidProperty(property));
         return 0;
     }
 
@@ -204,13 +205,13 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
             var @string = (item as JsonValueSyntax)?.GetString();
             if (string.IsNullOrWhiteSpace(@string))
             {
-                Report(AvroDiagnostic.InvalidStringArray(property));
+                Report(AvroDiagnostic.InvalidProperty(property, item));
                 return default;
             }
 
             if (normalize && !IsValidName(@string))
             {
-                Report(AvroDiagnostic.InvalidAvroName(item));
+                Report(AvroDiagnostic.InvalidProperty(property, item));
                 return default;
             }
 
@@ -223,14 +224,14 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
     {
         var qualifiedName = syntax.GetString();
         if (string.IsNullOrWhiteSpace(qualifiedName))
-            return Invalid(default(SchemaName), AvroDiagnostic.InvalidJsonString(syntax));
+            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(syntax));
 
         if (!IsValidQualifiedName(qualifiedName!))
-            return Invalid(default(SchemaName), AvroDiagnostic.InvalidAvroName(syntax));
+            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(syntax));
 
         _ = qualifiedName!.TrySplitQualifiedName(out var localName, out var @namespace);
         if (!IsValidName(localName) || (@namespace is not null && !IsValidNamespace(@namespace)))
-            return Invalid(default(SchemaName), AvroDiagnostic.InvalidAvroName(syntax));
+            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(syntax));
 
         return new SchemaName(localName, @namespace ?? containingNamespace);
     }
@@ -240,15 +241,20 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         var qualifiedName = GetRequiredString(property);
         if (qualifiedName is null) return default;
         if (!IsValidQualifiedName(qualifiedName))
-            return Invalid(default(SchemaName), AvroDiagnostic.InvalidAvroName(property));
+            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(property));
 
         var hasNamespace = qualifiedName.TrySplitQualifiedName(out var localName, out var @namespace);
         var tracker = TrackDiagnostics();
         if (!hasNamespace)
             @namespace = GetOptionalNullableString((JsonObjectSyntax)property.Parent!, AvroJsonKeys.Namespace);
         if (tracker.HasNewDiagnostics) return default;
-        if (!IsValidName(localName) || (@namespace is not null && !IsValidNamespace(@namespace)))
-            return Invalid(default(SchemaName), AvroDiagnostic.InvalidAvroName(property));
+        if (!IsValidName(localName))
+            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(property));
+        if (@namespace is not null && !IsValidNamespace(@namespace))
+        {
+            var invalidProperty = hasNamespace ? property : ((JsonObjectSyntax)property.Parent!).GetProperty(AvroJsonKeys.Namespace)!;
+            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(invalidProperty));
+        }
         return new SchemaName(localName, @namespace ?? containingNamespace);
     }
 
@@ -283,7 +289,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         }
         catch (JsonException ex)
         {
-            Report(AvroDiagnostic.InvalidJson(SourceSpan.FromException(sourceText, ex), ex.Message));
+            Report(AvroDiagnostic.InvalidJson(SourceSpan.FromException(sourceText, ex), ex));
             return null;
         }
     }
@@ -295,15 +301,14 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
             JsonValueSyntax { TokenType: JsonTokenType.String } value => Named(value, containingNamespace),
             JsonObjectSyntax @object when @object.GetProperty(AvroJsonKeys.Type) is not null => Complex(@object, containingNamespace),
             JsonArraySyntax array => Union(array, containingNamespace),
-            _ => Invalid<AvroSchema?>(null, AvroDiagnostic.SchemaExpected(syntax.SourceSpan))
+            _ => Invalid<AvroSchema?>(null, AvroDiagnostic.InvalidProperty(syntax))
         };
     }
 
-    // TODO: Change JsonValueSyntax syntax -> string or SchemaName?
     private AvroSchema? Named(JsonValueSyntax syntax, string? containingNamespace)
     {
         var schemaName = GetSchemaName(syntax, containingNamespace: null);
-        return schemaName.Name is null ? null : Reference(schemaName, containingNamespace, syntax.SourceSpan);
+        return schemaName.IsDefault ? null : Reference(schemaName, containingNamespace, syntax.SourceSpan);
     }
 
     private AvroSchema? Complex(JsonObjectSyntax syntax, string? containingNamespace)
@@ -561,10 +566,12 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
 
     private NamedSchema? NamedSchema(JsonSyntax syntax, string? containingNamespace)
     {
-        if (syntax is not JsonObjectSyntax namedSchema || namedSchema.GetProperty(AvroJsonKeys.Type) is null)
-            return Invalid<NamedSchema?>(null, AvroDiagnostic.SchemaExpected(syntax.SourceSpan));
+        if (syntax is not JsonObjectSyntax namedSchema)
+            return Invalid<NamedSchema?>(null, AvroDiagnostic.InvalidProperty(syntax));
 
-        var type = GetRequiredString(namedSchema.GetProperty(AvroJsonKeys.Type)!);
+        var typeProperty = GetRequiredProperty(namedSchema, AvroJsonKeys.Type);
+        if (typeProperty is null) return null;
+        var type = GetRequiredString(typeProperty);
         if (type is null) return null;
 
         return type switch
@@ -573,7 +580,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
             AvroTypeNames.Record => Record(namedSchema, containingNamespace),
             AvroTypeNames.Error => Error(namedSchema, containingNamespace),
             AvroTypeNames.Fixed => Fixed(namedSchema, containingNamespace),
-            _ => Invalid<NamedSchema?>(null, AvroDiagnostic.UnknownSchemaType(namedSchema, type))
+            _ => Invalid<NamedSchema?>(null, AvroDiagnostic.InvalidProperty(typeProperty))
         };
     }
 
@@ -641,7 +648,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
 
         var tracker = TrackDiagnostics();
         var schemaName = GetSchemaName(property, containingNamespace);
-        if (schemaName.Name is null || tracker.HasNewDiagnostics)
+        if (schemaName.IsDefault || tracker.HasNewDiagnostics)
             return null;
 
         if (IsInRecursionScope(schemaName))

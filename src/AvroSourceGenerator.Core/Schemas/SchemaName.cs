@@ -2,6 +2,8 @@
 
 public readonly record struct SchemaName(string Name, string? Namespace)
 {
+    public bool IsDefault => Name is null;
+
     public string FullName { get; } = Namespace is null ? Name : $"{Namespace}.{Name}";
 
     public SchemaName(string name) : this(name, null) { }

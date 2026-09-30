@@ -48,20 +48,20 @@ public sealed class CachingTests
         var input = GeneratorInput.Create(files, [], new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 });
         var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         var initial = driver.GetRunResult();
-        var diagnostics = initial.Diagnostics.Where(diagnostic => diagnostic.Id == "AVROSG4005").ToArray();
+        var diagnostics = initial.Diagnostics.Where(diagnostic => diagnostic.Id == "AVROSG4010").ToArray();
         Assert.Equal(2, diagnostics.Length);
         Assert.All(initial.Results, result => Assert.Null(result.Exception));
 
         driver = driver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         var cached = driver.GetRunResult();
-        Assert.Equal(diagnostics, cached.Diagnostics.Where(diagnostic => diagnostic.Id == "AVROSG4005"));
+        Assert.Equal(diagnostics, cached.Diagnostics.Where(diagnostic => diagnostic.Id == "AVROSG4010"));
         var tracked = StepTracking.GetTrackedSteps(cached);
         Assert.All(tracked["AvroFile"].SelectMany(step => step.Outputs), output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
 
         driver = driver.ReplaceAdditionalText(input.AdditionalTexts[0], new ChangedAdditionalText(input.AdditionalTexts[0].Path, "schema F; fixed F(1); fixed G(0);"))
             .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         var changed = driver.GetRunResult();
-        var remaining = Assert.Single(changed.Diagnostics, diagnostic => diagnostic.Id == "AVROSG4005");
+        var remaining = Assert.Single(changed.Diagnostics, diagnostic => diagnostic.Id == "AVROSG4010");
         Assert.Equal(diagnostics[1].Location.SourceSpan, remaining.Location.SourceSpan);
         Assert.Equal(1, CountModified(StepTracking.GetTrackedSteps(changed), "AvroFile"));
         Assert.All(changed.Results, result => Assert.Null(result.Exception));

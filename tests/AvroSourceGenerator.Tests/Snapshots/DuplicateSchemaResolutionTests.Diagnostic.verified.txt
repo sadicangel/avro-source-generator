@@ -1,12 +1,12 @@
 ﻿{
   Location: gO1rGGsFlD-KhjzpVNTo95EM5WY.avsc: (7,14)-(12,7),
-  Message: The type 'Demo.SharedRecord' is declared more than once.,
+  Message: Schema 'Demo.SharedRecord' is declared more than once,
   Severity: Error,
   Descriptor: {
     Id: AVROSG0004,
     Title: Duplicate Schema,
     Description: Multiple declarations define the same fully qualified schema name. Rename or remove a declaration; only use AvroSourceGeneratorDuplicateResolution=Ignore when an arbitrary winner is acceptable.,
-    MessageFormat: The type '{0}' is declared more than once.,
+    MessageFormat: Schema '{0}' is declared more than once,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

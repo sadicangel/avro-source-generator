@@ -214,8 +214,9 @@ public sealed class Scanner(SourceText sourceText, CancellationToken cancellatio
                     escapeWidth = 6;
                     break;
                 case ['\\', ..]:
-                    var invalidEscapeSpan = new SourceSpan(sourceText, _position, GetInvalidStringLength(length + 2));
-                    return CreateInvalidToken(invalidEscapeSpan, AvroDiagnostic.InvalidEscapeSequence(invalidEscapeSpan));
+                    var invalidStringSpan = new SourceSpan(sourceText, _position, GetInvalidStringLength(length + 2));
+                    var invalidEscapeSpan = new SourceSpan(sourceText, _position + length, GetInvalidEscapeLength(CurrentSpan[length..]));
+                    return CreateInvalidToken(invalidStringSpan, AvroDiagnostic.InvalidEscapeSequence(invalidEscapeSpan));
                 case ['"', ..]:
                     var content = CurrentSpan.Slice(segmentStart, length - segmentStart);
                     var value = builder is null ? content.ToString() : builder.Append(content).ToString();
@@ -334,6 +335,17 @@ public sealed class Scanner(SourceText sourceText, CancellationToken cancellatio
         }
 
         return new SyntaxToken(syntaxKind, new SourceSpan(sourceText, _position, length), value);
+    }
+
+    private static int GetInvalidEscapeLength(ReadOnlySpan<char> span)
+    {
+        var length = Math.Min(span is ['\\', 'u', ..] ? 6 : 2, span.Length);
+        for (var index = 1; index < length; index++)
+        {
+            if (span[index] is '"' or '\r' or '\n' or '\0')
+                return index;
+        }
+        return length;
     }
 
     private int GetInvalidStringLength(int start)

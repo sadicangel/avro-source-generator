@@ -1,12 +1,12 @@
 ﻿{
   Location: HlSCURh1L9i82XihaMA1B-T2Ltc.avdl: (1,23)-(1,29),
-  Message: One-way message 'heartbeat' must have a null response and no errors.,
+  Message: One-way message 'heartbeat' must have a null response and no declared errors,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG4009,
-    Title: Invalid Idl One Way Message,
+    Id: AVROSG4014,
+    Title: Invalid IDL One Way Message,
     Description: An Avro IDL one-way message has a non-null response or declares errors.,
-    MessageFormat: One-way message '{0}' must have a null response and no errors.,
+    MessageFormat: One-way message '{0}' must have a null response and no declared errors,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

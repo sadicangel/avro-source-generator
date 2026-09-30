@@ -100,7 +100,7 @@ public sealed class ParserProvenanceTests
         Assert.Equal(AvroDiagnosticCode.MissingReferences, diagnostic.Code);
         Assert.Equal(Text.IndexOf('Z'), diagnostic.SourceSpan.Offset);
         Assert.Equal("Z", diagnostic.SourceSpan.ToString());
-        Assert.Contains("A, Z", diagnostic.GetMessage());
+        Assert.Contains("'A', 'Z'", diagnostic.GetMessage());
     }
 
     [Theory]
@@ -145,15 +145,15 @@ public sealed class ParserProvenanceTests
     }
 
     [Theory]
-    [InlineData("test.avsc", "{\"type\":\"record\",\"name\":\"R\",\"fields\":null}")]
-    [InlineData("test.avpr", "{\"protocol\":\"P\",\"types\":null,\"messages\":{}}")]
-    public void Json_validation_returns_precise_value_diagnostics(string path, string text)
+    [InlineData("test.avsc", "{\"type\":\"record\",\"name\":\"R\",\"fields\":null}", AvroDiagnosticCode.InvalidFields)]
+    [InlineData("test.avpr", "{\"protocol\":\"P\",\"types\":null,\"messages\":{}}", AvroDiagnosticCode.InvalidTypes)]
+    public void Json_validation_returns_precise_value_diagnostics(string path, string text, AvroDiagnosticCode code)
     {
         var source = new SourceText(path, text);
         var result = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.InvalidArrayProperty, diagnostic.Code);
+        Assert.Equal(code, diagnostic.Code);
         var offset = text.IndexOf("null", StringComparison.Ordinal);
         Assert.Equal(source.GetSourceSpan(offset, "null".Length), diagnostic.SourceSpan);
         Assert.Contains("must be an array", diagnostic.GetMessage(), StringComparison.Ordinal);

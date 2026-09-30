@@ -1,12 +1,12 @@
 ﻿{
   Location: uitHctBQk1OJSNzUpKT_Kd_Psw8.avsc: (5,13)-(5,15),
-  Message: Property 'aliases' must be an array, but '{}' was found.,
+  Message: Property 'aliases' must be an array of non-empty strings, or null,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2007,
-    Title: Invalid Array Property,
-    Description: A property that requires a JSON array has a value of another kind. Replace it with an array of expected elements.,
-    MessageFormat: Property '{0}' must be an array, but '{1}' was found.,
+    Id: AVROSG2017,
+    Title: Invalid Aliases,
+    Description: Property 'aliases' must be an array of non-empty strings, or null.,
+    MessageFormat: Property 'aliases' must be an array of non-empty strings, or null,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

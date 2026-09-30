@@ -23,19 +23,20 @@ public sealed class ParserValidationRegressionTests
 
         var diagnostic = Assert.Single(file.Diagnostics);
         var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
-        Assert.Equal(AvroDiagnosticCode.InvalidIdlDeclaration, diagnostic.Code);
+        Assert.Equal(AvroDiagnosticCode.InvalidIdlEnumDefault, diagnostic.Code);
         Assert.Equal(expectedSpan, diagnostic.SourceSpan);
         Assert.Equal(
-            AvroDiagnostic.InvalidIdlDeclaration(expectedSpan, "Enum default value must be a string.").GetMessage(),
+            "Enum default must be a string or null",
             diagnostic.GetMessage());
     }
 
     [Theory]
-    [InlineData("schema R; @namespace(1) record R {}", "1", "Namespace annotation value must be a string.")]
-    [InlineData("schema R; @aliases(1) record R {}", "1", "Aliases annotation value must be an array of strings.")]
-    [InlineData("schema R; record R { @logicalType(1) string f; }", "1", "Logical type annotation value must be a string.")]
-    [InlineData("schema R; record R { string @order(1) f; }", "1", "Order annotation value must be a string.")]
-    public void Invalid_annotation_values_report_the_value_span(string text, string value, string message)
+    [InlineData("schema R; @namespace(1) record R {}", "1", AvroDiagnosticCode.InvalidIdlNamespace, "Annotation '@namespace' must have a string value")]
+    [InlineData("schema R; @aliases(1) record R {}", "1", AvroDiagnosticCode.InvalidIdlAliases, "Annotation '@aliases' must have an array of strings as its value")]
+    [InlineData("schema R; record R { @logicalType(1) string f; }", "1", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
+    [InlineData("schema R; @logicalType(1) fixed R(16);", "1", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
+    [InlineData("schema R; record R { string @order(1) f; }", "1", AvroDiagnosticCode.InvalidIdlOrder, "Annotation '@order' must have a string value")]
+    public void Invalid_annotation_values_report_the_value_span(string text, string value, AvroDiagnosticCode code, string message)
     {
         var source = new SourceText("test.avdl", text);
 
@@ -43,9 +44,24 @@ public sealed class ParserValidationRegressionTests
 
         var diagnostic = Assert.Single(file.Diagnostics);
         var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
-        Assert.Equal(AvroDiagnosticCode.InvalidIdlDeclaration, diagnostic.Code);
+        Assert.Equal(code, diagnostic.Code);
         Assert.Equal(expectedSpan, diagnostic.SourceSpan);
-        Assert.Equal(AvroDiagnostic.InvalidIdlDeclaration(expectedSpan, message).GetMessage(), diagnostic.GetMessage());
+        Assert.Equal(message, diagnostic.GetMessage());
+        Assert.Empty(diagnostic.Arguments);
+        Assert.Equal($"AVROSG{(int)code:D4}", diagnostic.ToDiagnostic().Id);
+    }
+
+    [Theory]
+    [InlineData("schema Order.;", "Order.", "Order.")]
+    [InlineData("schema com.example.Order.;", "com.example.Order.", "com.example.Order.")]
+    public void Invalid_idl_references_use_the_shared_reference_diagnostic(string text, string name, string reference)
+    {
+        var source = new SourceText("test.avdl", text);
+        var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.InvalidSchemaReference, diagnostic.Code);
+        Assert.Equal("AVROSG2003", diagnostic.ToDiagnostic().Id);
+        Assert.Equal($"Invalid type reference '{name}'; expected a name such as 'Order' or 'com.example.Order'", diagnostic.GetMessage());
+        Assert.Equal(source.GetSourceSpan(text.IndexOf(reference, StringComparison.Ordinal), reference.Length), diagnostic.SourceSpan);
     }
 
     [Fact]

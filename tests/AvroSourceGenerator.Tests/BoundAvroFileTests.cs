@@ -77,14 +77,16 @@ public sealed class BoundAvroFileTests
         Assert.Null(compiled.BoundFiles[0].References[Name("Missing")]);
     }
 
-    [Fact]
-    public void Rebuilt_variant_uses_bound_clones_without_mutating_parsed_schemas()
+    [Theory]
+    [InlineData("record")]
+    [InlineData("error")]
+    public void Rebuilt_variant_uses_bound_clones_without_mutating_parsed_schemas(string memberType)
     {
         var compiled = Compile(
             ("hash.avsc", """
                 { "type": "fixed", "name": "Hash", "namespace": "Demo", "size": 16 }
                 """),
-            ("envelope.avsc", """
+            ("envelope.avsc", $$"""
                 {
                   "type": "record",
                   "name": "Envelope",
@@ -93,7 +95,7 @@ public sealed class BoundAvroFileTests
                     "name": "choice",
                     "type": [
                       {
-                        "type": "record",
+                        "type": "{{memberType}}",
                         "name": "First",
                         "fields": [{ "name": "hash", "type": "Hash" }]
                       },
@@ -103,11 +105,11 @@ public sealed class BoundAvroFileTests
                 }
                 """));
         var parsed = compiled.Files[1].Declarations;
-        var parsedFirst = Assert.IsType<RecordSchema>(parsed.Single(schema => schema.SchemaName.Name == "First"));
+        var parsedFirst = Assert.IsAssignableFrom<NamedSchema>(parsed.Single(schema => schema.SchemaName.Name == "First"));
         var parsedSecond = Assert.IsType<RecordSchema>(parsed.Single(schema => schema.SchemaName.Name == "Second"));
         var parsedVariant = Assert.IsType<VariantSchema>(parsed.Single(schema => schema.Type is SchemaType.Variant));
         var bound = compiled.BoundFiles[1].Declarations;
-        var boundFirst = Assert.IsType<RecordSchema>(bound.Single(schema => schema.SchemaName.Name == "First"));
+        var boundFirst = Assert.IsAssignableFrom<NamedSchema>(bound.Single(schema => schema.SchemaName.Name == "First"));
         var boundSecond = Assert.IsType<RecordSchema>(bound.Single(schema => schema.SchemaName.Name == "Second"));
         var boundVariant = Assert.IsType<VariantSchema>(bound.Single(schema => schema.Type is SchemaType.Variant));
         var envelope = Assert.IsType<RecordSchema>(bound.Single(schema => schema.SchemaName.Name == "Envelope"));
@@ -121,9 +123,15 @@ public sealed class BoundAvroFileTests
         Assert.Equal(boundVariant.CSharpName, boundFirst.InheritsFrom);
         Assert.Equal(boundVariant.CSharpName, boundSecond.InheritsFrom);
         Assert.Same(boundVariant, union.UnderlyingSchema);
-        Assert.Contains(boundFirst, boundVariant.DerivedSchemas);
-        Assert.Contains(boundSecond, boundVariant.DerivedSchemas);
-        Assert.Equal(AvroSchema.Bytes.CSharpName, Assert.Single(boundFirst.Fields).Type.CSharpName);
+        Assert.Same(boundFirst, boundVariant.DerivedSchemas[0]);
+        Assert.Same(boundSecond, boundVariant.DerivedSchemas[1]);
+        var fields = boundFirst switch
+        {
+            RecordSchema record => record.Fields,
+            ErrorSchema error => error.Fields,
+            _ => throw new InvalidOperationException()
+        };
+        Assert.Equal(AvroSchema.Bytes.CSharpName, Assert.Single(fields).Type.CSharpName);
     }
 
     [Fact]

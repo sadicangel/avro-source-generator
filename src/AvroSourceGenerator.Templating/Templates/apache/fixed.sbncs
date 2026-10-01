@@ -1,4 +1,4 @@
-{{ AccessModifier }} partial {{ Fixed }} {{ $.schema.CSharpName.Name }}
+{{ AccessModifier }} partial {{ Fixed }} {{ $.schema.CSharpName.Name }}{{ if $.schema.InheritsFrom }} : {{ $.schema.InheritsFrom }}{{ end }}
 {
     public int Size { get => {{ $.schema.Size }}; }
 }

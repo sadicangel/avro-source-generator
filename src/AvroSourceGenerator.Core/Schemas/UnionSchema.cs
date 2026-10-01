@@ -29,20 +29,20 @@ public sealed record class UnionSchema(
         writer.WriteEndArray();
     }
 
-    // TODO: Can we extend this to Fixed and Error types in the future?
-    // Yes, we can. The only named schema that must exclude the union as eligible is Enum since it can't implement interfaces.
     public bool SupportsVariant()
     {
         if (Schemas is [] or [_] or [{ Type: SchemaType.Null }, _] or [_, { Type: SchemaType.Null }])
         {
-            // Empty union, single type union, or union with nulls only are not eligible for generating abstract base records.
+            // Empty union, single type union, or union with nulls only are not eligible for generating an interface.
             return false;
         }
 
-        // Check if all schemas are either Record or Null, and at least one is not Null.
-        return Schemas.All(x => x.Type is SchemaType.Record or SchemaType.Null)
-            && Schemas.Any(x => x.Type is not SchemaType.Null);
+        return Schemas.All(IsUnionMemberCandidate) && Schemas.Any(x => x.Type is not SchemaType.Null);
     }
+
+    // A union member must be a record, error, fixed not substituted by another type, or null.
+    private static bool IsUnionMemberCandidate(AvroSchema schema) =>
+        schema.Type is SchemaType.Record or SchemaType.Error or SchemaType.Null || schema is FixedSchema { IsSubstituted: false };
 
     private static bool MapsToValueType(SchemaType type) =>
         type is SchemaType.Boolean or SchemaType.Int or SchemaType.Long or SchemaType.Float or SchemaType.Double or SchemaType.Enum;

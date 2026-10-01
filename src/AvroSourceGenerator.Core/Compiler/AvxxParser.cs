@@ -67,9 +67,17 @@ public abstract class AvxxParser(AvroParseOptions options)
 
     protected void Replace(TopLevelSchema original, TopLevelSchema replacement)
     {
-        if (!DeclarationIndexes.TryGetValue(original.SchemaName, out var index) ||
-            !ReferenceEquals(Declarations[index], original))
+        if (!DeclarationIndexes.TryGetValue(original.SchemaName, out var index))
             throw new InvalidOperationException($"Declaration '{original.SchemaName}' was not registered.");
+
+        // The name index points at the latest declaration. Keep earlier duplicates
+        // so compilation can report them at their original source locations.
+        if (!ReferenceEquals(Declarations[index], original))
+        {
+            index = Declarations.FindIndex(schema => ReferenceEquals(schema, original));
+            if (index < 0)
+                throw new InvalidOperationException($"Declaration '{original.SchemaName}' was not registered.");
+        }
 
         Declarations[index] = replacement;
     }
@@ -125,13 +133,21 @@ public abstract class AvxxParser(AvroParseOptions options)
                 {
                     var schemaName = VariantSchema.GetSchemaName(containingSchemaName, fieldName);
                     var csharpName = CSharpName.FromSchemaName(schemaName);
-                    var inherited = ImmutableArray.CreateBuilder<AvroSchema>(union.Schemas.Length);
+                    var derivedSchemas = ImmutableArray.CreateBuilder<AvroSchema>(union.Schemas.Length);
                     foreach (var schema in union.Schemas)
-                        inherited.Add(schema is RecordSchema record ? record with { InheritsFrom = csharpName } : schema);
-                    var inheritedSchemas = inherited.MoveToImmutable();
-                    ReplaceDeclarations(union.Schemas, inheritedSchemas);
-
-                    var variant = new VariantSchema(schemaName, csharpName, inheritedSchemas);
+                    {
+                        if (schema is NamedSchema { Type: not SchemaType.Enum } named)
+                        {
+                            named = named with { InheritsFrom = csharpName };
+                            Replace((TopLevelSchema)schema, named);
+                            derivedSchemas.Add(named);
+                        }
+                        else
+                        {
+                            derivedSchemas.Add(schema);
+                        }
+                    }
+                    var variant = new VariantSchema(schemaName, csharpName, derivedSchemas.DrainToImmutable());
                     Declare(variant, SourceSpan.None);
 
                     remarks = variant.Documentation;
@@ -197,22 +213,6 @@ public abstract class AvxxParser(AvroParseOptions options)
                 [.. dependency.Value.OrderBy(static name => name.FullName, StringComparer.Ordinal)]);
         }
         return dependencies.ToFrozenDictionary();
-    }
-
-    private void ReplaceDeclarations(
-        ImmutableArray<AvroSchema> schemas,
-        ImmutableArray<AvroSchema> replacements)
-    {
-        for (var schemaIndex = 0; schemaIndex < schemas.Length; schemaIndex++)
-        {
-            if (ReferenceEquals(schemas[schemaIndex], replacements[schemaIndex])) continue;
-            for (var declarationIndex = 0; declarationIndex < Declarations.Count; declarationIndex++)
-            {
-                if (!ReferenceEquals(Declarations[declarationIndex], schemas[schemaIndex])) continue;
-                Declarations[declarationIndex] = (TopLevelSchema)replacements[schemaIndex];
-                break;
-            }
-        }
     }
 
     protected readonly ref struct RecursionScope

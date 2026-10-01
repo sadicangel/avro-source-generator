@@ -9,7 +9,7 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
 {
     private readonly AvroParseOptions _options = linkedFile.File.ParseOptions;
     private readonly FrozenDictionary<SchemaName, CSharpName?> _references = linkedFile.References;
-    private readonly Dictionary<AvroSchema, AvroSchema> _boundSchemas = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<AvroSchema, AvroSchema> _boundSchemas = [with(ReferenceEqualityComparer.Instance)];
 
     public AvroSchema Bind(AvroSchema schema)
     {

@@ -8,7 +8,7 @@ namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class ParserValidationRegressionTests
 {
-    private static readonly AvroParseOptions s_options = new(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, true);
 
     [Theory]
     [InlineData("1")]
@@ -32,6 +32,10 @@ public sealed class ParserValidationRegressionTests
 
     [Theory]
     [InlineData("schema R; @namespace(1) record R {}", "1", AvroDiagnosticCode.InvalidIdlNamespace, "Annotation '@namespace' must have a string value")]
+    [InlineData("schema R; @namespace(null) record R {}", "null", AvroDiagnosticCode.InvalidIdlNamespace, "Annotation '@namespace' must have a string value")]
+    [InlineData("schema R; record R { @logicalType(null) string f; }", "null", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
+    [InlineData("schema R; @logicalType(null) fixed R(16);", "null", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
+    [InlineData("schema R; record R { string @order(null) f; }", "null", AvroDiagnosticCode.InvalidIdlOrder, "Annotation '@order' must have a string value")]
     [InlineData("schema R; @aliases(1) record R {}", "1", AvroDiagnosticCode.InvalidIdlAliases, "Annotation '@aliases' must have an array of strings as its value")]
     [InlineData("schema R; record R { @logicalType(1) string f; }", "1", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
     [InlineData("schema R; @logicalType(1) fixed R(16);", "1", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]

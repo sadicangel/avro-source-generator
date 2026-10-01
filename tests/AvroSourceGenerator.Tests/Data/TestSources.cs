@@ -2,7 +2,7 @@
 
 public static class TestSources
 {
-    private static readonly Dictionary<string, string> s_sources = new()
+    private static readonly Dictionary<string, string> s_sources = new Dictionary<string, string>()
     {
         ["null"] = "schema null;",
         ["boolean"] = "schema boolean;",

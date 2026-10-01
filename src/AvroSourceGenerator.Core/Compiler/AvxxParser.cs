@@ -157,11 +157,11 @@ public abstract class AvxxParser(AvroParseOptions options)
 
     protected bool IsInRecursionScope(SchemaName schemaName) => RecursionStack.Contains(schemaName);
 
-    protected RecursionScope EnterRecursionScope(SchemaName schemaName) => new(RecursionStack, schemaName);
+    protected RecursionScope EnterRecursionScope(SchemaName schemaName) => new RecursionScope(RecursionStack, schemaName);
 
     protected void Report(AvroDiagnostic diagnostic) => Diagnostics.Add(diagnostic);
 
-    protected DiagnosticTracker TrackDiagnostics() => new(Diagnostics);
+    protected DiagnosticTracker TrackDiagnostics() => new DiagnosticTracker(Diagnostics);
 
     protected readonly struct DiagnosticTracker(IReadOnlyList<AvroDiagnostic> diagnostics)
     {

@@ -13,7 +13,7 @@ internal sealed class Snapshot : ISnapshot<Snapshot>
         MetadataReference.CreateFromFile(typeof(IBinarySerializerBuilder).Assembly.Location),
     ];
 
-    public static ProjectConfig ProjectConfig => new();
+    public static ProjectConfig ProjectConfig => new ProjectConfig();
 
     // Ignore assembly reference mismatches because Chr.Avro references .NET 6, while we're targeting .NET 10.
     public static ImmutableArray<Diagnostic> FilterDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>

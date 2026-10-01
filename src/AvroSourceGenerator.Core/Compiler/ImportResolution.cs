@@ -7,6 +7,6 @@ internal readonly struct ImportResolution(bool isValid, HashSet<int> importedFil
     public bool Contains(int fileIndex) => importedFileIndices.Contains(fileIndex);
     public IEnumerable<int> ImportedFileIndices => importedFileIndices;
 
-    public static readonly ImportResolution Empty = new(true, []);
-    public static readonly ImportResolution Invalid = new(false, []);
+    public static readonly ImportResolution Empty = new ImportResolution(true, []);
+    public static readonly ImportResolution Invalid = new ImportResolution(false, []);
 }

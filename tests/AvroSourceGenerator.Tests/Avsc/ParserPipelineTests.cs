@@ -35,5 +35,5 @@ public sealed class ParserPipelineTests
         Assert.Equal("record R { string value; }", Assert.Single(file.DeclarationSpans).ToString());
     }
 
-    private static AvroParseOptions Options => new(GenerationTarget.Modern, true);
+    private static AvroParseOptions Options => new AvroParseOptions(GenerationTarget.Modern, true);
 }

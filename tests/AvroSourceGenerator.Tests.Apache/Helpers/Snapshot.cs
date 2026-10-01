@@ -7,5 +7,5 @@ namespace AvroSourceGenerator.Tests.Apache.Helpers;
 internal sealed class Snapshot : ISnapshot<Snapshot>
 {
     public static ImmutableArray<MetadataReference> References { get; } = [MetadataReference.CreateFromFile(typeof(Schema).Assembly.Location)];
-    public static ProjectConfig ProjectConfig => new();
+    public static ProjectConfig ProjectConfig => new ProjectConfig();
 }

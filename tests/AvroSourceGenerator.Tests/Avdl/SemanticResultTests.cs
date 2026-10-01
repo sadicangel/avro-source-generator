@@ -8,7 +8,7 @@ namespace AvroSourceGenerator.Tests.Avdl;
 
 public sealed class SemanticResultTests
 {
-    private static readonly AvroParseOptions s_options = new(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, true);
 
     [Theory]
     [InlineData("record R {}", AvroDiagnosticCode.InvalidIdlDocument)]
@@ -170,7 +170,7 @@ public sealed class SemanticResultTests
     }
 
     [Fact]
-    public void Static_and_instance_entrypoints_return_the_same_diagnostics()
+    public void Static_and_instance_entry_points_return_the_same_diagnostics()
     {
         var source = new SourceText("test.avdl", "schema R; fixed F(0); record R { @logicalType(1) string f; }");
         var expected = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);

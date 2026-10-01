@@ -30,6 +30,7 @@ public sealed record class UnionSchema(
     }
 
     // TODO: Can we extend this to Fixed and Error types in the future?
+    // Yes, we can. The only named schema that must exclude the union as eligible is Enum since it can't implement interfaces.
     public bool SupportsVariant()
     {
         if (Schemas is [] or [_] or [{ Type: SchemaType.Null }, _] or [_, { Type: SchemaType.Null }])

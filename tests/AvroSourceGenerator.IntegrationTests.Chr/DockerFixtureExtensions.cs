@@ -10,7 +10,7 @@ namespace AvroSourceGenerator.IntegrationTests.Chr;
 
 public static class DockerFixtureExtensions
 {
-    private static readonly Schema s_keySchema = new("\"string\"", SchemaType.Avro);
+    private static readonly Schema s_keySchema = new Schema("\"string\"", SchemaType.Avro);
 
     extension(DockerFixture docker)
     {

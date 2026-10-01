@@ -81,7 +81,7 @@ public class AvroSchemaTests
     }
 
     [Fact]
-    public void Generic_fixed_decimal_roundtrips()
+    public void Generic_fixed_decimal_round_trips()
     {
         var source = TestSchemas.Get("fixed").With("name", "Decimal").With("size", 8)
             .With("logicalType", "decimal").With("precision", 12).With("scale", 2);

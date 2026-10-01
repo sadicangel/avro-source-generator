@@ -25,6 +25,8 @@ public sealed record class JsonObjectSyntax(
         foreach (var (name, value) in Properties)
         {
             if (isReserved(name.Value)) continue;
+            // Preserve the existing dictionary value equality; JSON content equality is a separate contract.
+            // ReSharper disable once UsageOfDefaultStructEquality
             properties ??= ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
             properties[name.Value] = value.AsJsonElement();
         }

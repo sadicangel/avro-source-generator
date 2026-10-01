@@ -28,5 +28,5 @@ public readonly record struct SyntaxList<T>(ImmutableArray<T> SyntaxNodes) : IRe
 
 public static class SyntaxListBuilder
 {
-    public static SyntaxList<T> Create<T>(ReadOnlySpan<T> nodes) where T : ISyntaxNode => new([.. nodes]);
+    public static SyntaxList<T> Create<T>(ReadOnlySpan<T> nodes) where T : ISyntaxNode => new SyntaxList<T>([.. nodes]);
 }

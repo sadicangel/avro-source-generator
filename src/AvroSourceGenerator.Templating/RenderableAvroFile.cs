@@ -77,5 +77,5 @@ public sealed class RenderableAvroFile(
     }
 
     private static RenderableAvroFile Invalid(BoundAvroFile file) =>
-        new(file, [], [], [], default);
+        new RenderableAvroFile(file, [], [], [], default);
 }

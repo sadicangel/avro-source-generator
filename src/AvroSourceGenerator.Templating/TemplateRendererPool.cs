@@ -24,8 +24,8 @@ internal static class TemplateRendererPool
 
 internal sealed class TemplateRenderer
 {
-    private static readonly ScriptVariableGlobal s_schema = new("Schema");
-    private static readonly ScriptVariableGlobal s_schemaJson = new("SchemaJson");
+    private static readonly ScriptVariableGlobal s_schema = new ScriptVariableGlobal("Schema");
+    private static readonly ScriptVariableGlobal s_schemaJson = new ScriptVariableGlobal("SchemaJson");
     private readonly TemplateContext _context;
     private readonly Template _template;
 
@@ -52,7 +52,7 @@ internal sealed class TemplateRenderer
 
     public void ClearSchemaValues()
     {
-        // Context.Reset clears Scriban's parsed-template cache. Retain that cache, but remove the values which
+        // Context.Reset clears the parsed-template cache in Scriban. Retain that cache, but remove the values which
         // otherwise retain the current project's schema graph and generated Apache JSON between generator runs.
         _context.SetValue(s_schema, null);
         _context.SetValue(s_schemaJson, null);

@@ -10,7 +10,7 @@ public static class SourceSpanExtensions
     extension(SourceSpan)
     {
         public static SourceSpan FromSourceText(SourceText sourceText, int offset = 0, int length = -1) =>
-            new(sourceText, offset, length == -1 ? sourceText.Length - offset : length);
+            new SourceSpan(sourceText, offset, length == -1 ? sourceText.Length - offset : length);
 
         public static SourceSpan FromSourceFile(ISourceFile sourceFile, int offset = 0, int length = -1)
         {

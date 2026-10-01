@@ -20,7 +20,7 @@ public sealed class NameTests
         return Snapshot.Diagnostic(ProjectFile.Schema(schema));
     }
 
-    public static MatrixTheoryData<string, string> ValidNameSchemaPairs() => new(["PascalCase", "snake_case", "object"], ["enum", "error", "record"]);
+    public static MatrixTheoryData<string, string> ValidNameSchemaPairs() => new MatrixTheoryData<string, string>(["PascalCase", "snake_case", "object"], ["enum", "error", "record"]);
 
-    public static MatrixTheoryData<string, string> InvalidNameSchemaPairs() => new(["null", "\"\"", "[]"], ["enum", "error", "record"]);
+    public static MatrixTheoryData<string, string> InvalidNameSchemaPairs() => new MatrixTheoryData<string, string>(["null", "\"\"", "[]"], ["enum", "error", "record"]);
 }

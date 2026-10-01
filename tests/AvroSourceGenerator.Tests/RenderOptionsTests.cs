@@ -5,7 +5,7 @@ namespace AvroSourceGenerator.Tests;
 
 public sealed class RenderOptionsTests
 {
-    public static TheoryData<LanguageFeatures, string, string, string> ConfigurationDerivedExpressions => new()
+    public static TheoryData<LanguageFeatures, string, string, string> ConfigurationDerivedExpressions => new TheoryData<LanguageFeatures, string, string, string>()
     {
         { LanguageFeatures.None, "object", "fieldValue", "set" },
         { LanguageFeatures.NullableReferenceTypes, "object?", "fieldValue!", "set" },

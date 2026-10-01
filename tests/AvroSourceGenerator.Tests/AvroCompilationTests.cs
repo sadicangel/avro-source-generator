@@ -777,7 +777,7 @@ public sealed class AvroCompilationTests
             duplicateResolution,
             sources);
 
-    private static SchemaName Name(string name) => new(name, "GraphTests");
+    private static SchemaName Name(string name) => new SchemaName(name, "GraphTests");
 
     private static string Record(string name, params string[] fields) => $$"""
         {

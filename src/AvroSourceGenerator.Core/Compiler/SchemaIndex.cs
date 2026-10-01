@@ -17,11 +17,11 @@ internal sealed class SchemaIndex
 
     public HashSet<int> DuplicateFileIndices { get; } = [];
 
-    public Dictionary<BoundAvroFile, FileMetadata> FileMetadata { get; } = new(ReferenceEqualityComparer.Instance);
+    public Dictionary<BoundAvroFile, FileMetadata> FileMetadata { get; } = new Dictionary<BoundAvroFile, FileMetadata>(ReferenceEqualityComparer.Instance);
 
-    public Dictionary<BoundAvroFile, ImmutableArray<BoundAvroFile>> FileDependencies { get; } = new(ReferenceEqualityComparer.Instance);
+    public Dictionary<BoundAvroFile, ImmutableArray<BoundAvroFile>> FileDependencies { get; } = new Dictionary<BoundAvroFile, ImmutableArray<BoundAvroFile>>(ReferenceEqualityComparer.Instance);
 
-    public HashSet<AvroImport> UsedImports { get; } = new(ReferenceEqualityComparer.Instance);
+    public HashSet<AvroImport> UsedImports { get; } = new HashSet<AvroImport>(ReferenceEqualityComparer.Instance);
 
     public List<AvroDiagnostic> Diagnostics { get; } = [];
 

@@ -4,13 +4,11 @@ using System.Collections.Immutable;
 namespace AvroSourceGenerator.Avdl;
 
 public readonly record struct SeparatedSyntaxList<T>(ImmutableArray<ISyntaxNode> SyntaxNodes)
-    : IEquatable<SeparatedSyntaxList<T>>, IReadOnlyList<T> where T : ISyntaxNode
+    : IReadOnlyList<T> where T : ISyntaxNode
 {
     public int Count { get => (SyntaxNodes.Length + 1) / 2; }
 
     public T this[int index] => (T)SyntaxNodes[index * 2];
-
-    internal SyntaxToken GetSeparator(Index index) => (SyntaxToken)SyntaxNodes[index.GetOffset(SyntaxNodes.Length) * 2 + 1];
 
     public IEnumerator<T> GetEnumerator()
     {

@@ -52,6 +52,19 @@ public sealed class ParserBaseTests
     }
 
     [Fact]
+    public void Replacement_rejects_an_equal_but_unregistered_instance()
+    {
+        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true));
+        var original = Record("Shared");
+        context.Declare(original, SourceSpan.None);
+        var clone = original with { };
+
+        Assert.Equal(original, clone);
+        Assert.Throws<InvalidOperationException>(() => context.Replace(clone, clone with { InheritsFrom = new CSharpName("IVariant") }));
+        Assert.Same(original, Assert.Single(context.Complete(Source, original, [], []).Declarations));
+    }
+
+    [Fact]
     public void Recursive_references_record_dependencies_without_external_references()
     {
         var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true));
@@ -74,6 +87,7 @@ public sealed class ParserBaseTests
     private sealed class TestParser(AvroParseOptions options) : AvxxParser(options)
     {
         public new void Declare(TopLevelSchema schema, SourceSpan span) => base.Declare(schema, span);
+        public new void Replace(TopLevelSchema original, TopLevelSchema replacement) => base.Replace(original, replacement);
         public new AvroSchema Reference(SchemaName name, string? containingNamespace, SourceSpan span) => base.Reference(name, containingNamespace, span);
 
         public void ApplyFieldType(AvroSchema type, FieldName name, SchemaName containingSchema) =>

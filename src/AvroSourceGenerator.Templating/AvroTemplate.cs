@@ -11,7 +11,6 @@ public static class AvroTemplate
     public static ImmutableArray<RenderedSchema> Render(RenderableAvroFile file, CancellationToken cancellationToken = default)
     {
         var renderer = TemplateRendererPool.Rent(file.Options);
-        var completed = false;
         try
         {
             var renderedSchemas = ImmutableArray.CreateRange(
@@ -26,13 +25,11 @@ public static class AvroTemplate
                     return new RenderedSchema(hintName, sourceText);
                 }));
 
-            completed = true;
             return renderedSchemas;
         }
         finally
         {
-            if (completed)
-                TemplateRendererPool.Return(file.Options, renderer);
+            TemplateRendererPool.Return(file.Options, renderer);
         }
     }
 

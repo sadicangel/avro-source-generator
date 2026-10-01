@@ -17,7 +17,7 @@ namespace AvroSourceGenerator.Compiler;
 public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken)
     : AvxxParser(options)
 {
-    private readonly SyntaxTokenStream _stream = new(sourceText, cancellationToken);
+    private readonly SyntaxTokenStream _stream = new SyntaxTokenStream(sourceText, cancellationToken);
     private readonly List<IAnnotationSyntax> _annotations = [];
     private readonly List<DocumentationSyntax> _documentation = [];
     public AvdlParser(SourceText sourceText, CancellationToken cancellationToken) : this(sourceText, default, cancellationToken) { }
@@ -555,7 +555,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     private static string GetAnnotationName(IAnnotationSyntax annotation) =>
         annotation.AnnotationName.FullName;
 
-    private ProgressTracker EnsureProgress(ReadOnlySpan<SyntaxKind> terminators = default) => new(_stream, terminators);
+    private ProgressTracker EnsureProgress(ReadOnlySpan<SyntaxKind> terminators = default) => new ProgressTracker(_stream, terminators);
 
     private readonly ref struct ProgressTracker(SyntaxTokenStream stream, ReadOnlySpan<SyntaxKind> terminators)
     {
@@ -669,11 +669,11 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         {
             AnnotatedTypeSyntax type => Annotated(type, containingNamespace, defaultJson),
             ArrayTypeSyntax type => Array(type, containingNamespace, properties),
-            ILogicalTypeSyntax type => Logical(type, containingNamespace),
+            ILogicalTypeSyntax type => Logical(type),
             MapTypeSyntax type => Map(type, containingNamespace, properties),
             NamedTypeSyntax type => Named(type, containingNamespace),
             OptionalTypeSyntax type => Optional(type, containingNamespace, defaultJson),
-            PrimitiveTypeSyntax type => Primitive(type, containingNamespace, properties),
+            PrimitiveTypeSyntax type => Primitive(type),
             UnionTypeSyntax type => Union(type, containingNamespace),
             _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL type syntax '{syntax.SyntaxKind}'."),
         };
@@ -718,7 +718,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
             : underlyingSchema;
     }
 
-    private AvroSchema? Primitive(PrimitiveTypeSyntax syntax, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
+    private static AvroSchema Primitive(PrimitiveTypeSyntax syntax)
     {
         return syntax.SyntaxKind switch
         {
@@ -879,9 +879,9 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     {
         var underlyingSchema = Type(syntax.Type, containingNamespace);
         if (underlyingSchema is null) return null;
-        var schemas = defaultJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }
-            ? ImmutableArray.Create(AvroSchema.Null, underlyingSchema)
-            : ImmutableArray.Create(underlyingSchema, AvroSchema.Null);
+        ImmutableArray<AvroSchema> schemas = defaultJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }
+            ? [AvroSchema.Null, underlyingSchema]
+            : [underlyingSchema, AvroSchema.Null];
         return UnionSchema.Create(schemas, Options.UseNullableReferenceTypes);
     }
 
@@ -901,7 +901,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         return UnionSchema.Create(schemas.DrainToImmutable(), Options.UseNullableReferenceTypes);
     }
 
-    private AvroSchema? Logical(ILogicalTypeSyntax syntax, string? containingNamespace)
+    private AvroSchema? Logical(ILogicalTypeSyntax syntax)
     {
         if (syntax is DecimalLogicalTypeSyntax decimalSyntax)
         {
@@ -1039,7 +1039,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
 
     private ImmutableArray<AvroSchema> ProtocolErrors(ThrowsErrorClauseSyntax? syntax, string? containingNamespace)
     {
-        if (syntax is null) return ImmutableArray<AvroSchema>.Empty;
+        if (syntax is null) return [];
         var parameters = ImmutableArray.CreateBuilder<AvroSchema>();
         var valid = true;
         foreach (var error in syntax.Errors.WithCancellation(cancellationToken))
@@ -1073,7 +1073,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     {
         if (syntax.JsonNode is null && !required)
             return null;
-        if (syntax.JsonNode is JsonValue value && value.TryGetValue<string>(out var result) && (!required || result is not null))
+        if (syntax.JsonNode is JsonValue value && value.TryGetValue<string>(out var result))
             return result;
         return Invalid<string?>(null, AvroDiagnostic.InvalidIdlProperty(code, syntax.GetSourceSpan()));
     }
@@ -1081,7 +1081,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
     private ImmutableArray<string> GetAliases(IDeclarationSyntax syntax)
     {
         if (syntax.Annotations.OfType<AliasesAnnotationSyntax>().LastOrDefault() is not { } annotation)
-            return ImmutableArray<string>.Empty;
+            return [];
         if (annotation.JsonValue.JsonNode is not JsonArray array)
             return Invalid(default(ImmutableArray<string>), AvroDiagnostic.InvalidIdlProperty(AvroDiagnosticCode.InvalidIdlAliases, annotation.JsonValue.GetSourceSpan()));
 

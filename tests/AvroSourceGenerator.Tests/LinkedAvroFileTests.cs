@@ -93,7 +93,7 @@ public sealed class LinkedAvroFileTests
         Assert.Equal(a.GetHashCode(), b.GetHashCode());
     }
 
-    private static SchemaName Name(string name) => new(name, "Example");
+    private static SchemaName Name(string name) => new SchemaName(name, "Example");
 
     private static string Record(string name, params string[] references)
     {

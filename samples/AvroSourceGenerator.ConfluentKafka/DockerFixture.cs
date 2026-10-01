@@ -39,7 +39,10 @@ public sealed class DockerFixture : IAsyncDisposable
                     ["KAFKA_CONTROLLER_QUORUM_VOTERS"] = "1@kraft-kafka:9093",
                     ["KAFKA_INTER_BROKER_LISTENER_NAME"] = "PLAINTEXT",
                     ["KAFKA_CONTROLLER_LISTENER_NAMES"] = "CONTROLLER",
+                    // Encoded Kafka cluster identifier.
+                    // ReSharper disable StringLiteralTypo
                     ["CLUSTER_ID"] = "MkU3OEVBNTcwNTJENDM2Qk"
+                    // ReSharper restore StringLiteralTypo
                 })
             .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(29092))
             .Build();

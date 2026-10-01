@@ -71,7 +71,10 @@ public sealed class DockerFixture : IAsyncDisposable
         static string GenerateClusterId()
         {
             Span<char> clusterId = stackalloc char[22];
+            // This alphabet supplies encoded Kafka cluster identifiers.
+            // ReSharper disable StringLiteralTypo
             RandomNumberGenerator.GetItems("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", clusterId);
+            // ReSharper restore StringLiteralTypo
             return clusterId.ToString();
         }
     }

@@ -71,5 +71,5 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
     internal static AvroFile Invalid(SourceText source, AvroDiagnostic diagnostic, AvroParseOptions parseOptions) =>
         Invalid(source, [diagnostic], parseOptions);
 
-    internal static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) => new(sourceText, AvroSchema.Null, [], [], [], [], [], [], diagnostics, parseOptions);
+    internal static AvroFile Invalid(SourceText sourceText, ImmutableArray<AvroDiagnostic> diagnostics, AvroParseOptions parseOptions) => new AvroFile(sourceText, AvroSchema.Null, [], [], [], [], [], [], diagnostics, parseOptions);
 }

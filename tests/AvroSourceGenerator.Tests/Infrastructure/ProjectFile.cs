@@ -13,8 +13,8 @@ public readonly record struct ProjectFile(string Content, string Extension, stri
 
     public string Path => LogicalPath ?? Hash;
 
-    public static ProjectFile CSharp(string content, string? path = null) => new(content, "cs", path);
-    public static ProjectFile Schema([StringSyntax(StringSyntaxAttribute.Json)] string content, string? path = null) => new(content, "avsc", path);
-    public static ProjectFile Protocol([StringSyntax(StringSyntaxAttribute.Json)] string content, string? path = null) => new(content, "avpr", path);
-    public static ProjectFile Source(string content, string? path = null) => new(content, "avdl", path);
+    public static ProjectFile CSharp(string content, string? path = null) => new ProjectFile(content, "cs", path);
+    public static ProjectFile Schema([StringSyntax(StringSyntaxAttribute.Json)] string content, string? path = null) => new ProjectFile(content, "avsc", path);
+    public static ProjectFile Protocol([StringSyntax(StringSyntaxAttribute.Json)] string content, string? path = null) => new ProjectFile(content, "avpr", path);
+    public static ProjectFile Source(string content, string? path = null) => new ProjectFile(content, "avdl", path);
 }

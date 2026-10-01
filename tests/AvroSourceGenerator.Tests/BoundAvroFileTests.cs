@@ -158,5 +158,5 @@ public sealed class BoundAvroFileTests
     private static string Field(string name, string type) =>
         $$"""{ "name": "{{name}}", "type": "{{type}}" }""";
 
-    private static SchemaName Name(string name) => new(name, "Demo");
+    private static SchemaName Name(string name) => new SchemaName(name, "Demo");
 }

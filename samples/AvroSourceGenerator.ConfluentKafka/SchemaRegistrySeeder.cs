@@ -9,9 +9,9 @@ internal static class SchemaRegistrySeeder
 
     private static readonly DependencySchemaFile[] s_dependencyFiles =
     [
-        new("Customer.avsc", "AvroSourceGenerator.ConfluentKafka.Customer"),
-        new("OrderItem.avsc", "AvroSourceGenerator.ConfluentKafka.OrderItem"),
-        new("OrderStatus.avsc", "AvroSourceGenerator.ConfluentKafka.OrderStatus")
+        new DependencySchemaFile("Customer.avsc", "AvroSourceGenerator.ConfluentKafka.Customer"),
+        new DependencySchemaFile("OrderItem.avsc", "AvroSourceGenerator.ConfluentKafka.OrderItem"),
+        new DependencySchemaFile("OrderStatus.avsc", "AvroSourceGenerator.ConfluentKafka.OrderStatus")
     ];
 
     public static async Task<int> SeedAsync(

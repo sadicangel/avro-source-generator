@@ -21,5 +21,5 @@ public sealed record class ArraySchema(AvroSchema ItemSchema, string? Documentat
         writer.WriteEndObject();
     }
 
-    private static CSharpName GetCSharpName(AvroSchema itemSchema) => new($"List<{itemSchema}>", "System.Collections.Generic");
+    private static CSharpName GetCSharpName(AvroSchema itemSchema) => new CSharpName($"List<{itemSchema}>", "System.Collections.Generic");
 }

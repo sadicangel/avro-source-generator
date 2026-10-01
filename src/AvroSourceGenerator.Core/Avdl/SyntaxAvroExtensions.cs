@@ -28,6 +28,8 @@ internal static class SyntaxAvroExtensions
     {
         public ImmutableSortedDictionary<string, JsonElement> GetProperties(Func<string, bool> isReserved)
         {
+            // Preserve the existing dictionary value equality; JSON content equality is a separate contract.
+            // ReSharper disable once UsageOfDefaultStructEquality
             var properties = ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
             foreach (var annotation in annotations.OfType<CustomAnnotationSyntax>())
             {

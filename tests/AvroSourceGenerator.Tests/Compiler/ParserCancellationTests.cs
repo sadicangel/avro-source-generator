@@ -7,7 +7,7 @@ namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class ParserCancellationTests
 {
-    private static readonly AvroParseOptions s_options = new(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, true);
 
     [Fact]
     public void AvroFile_propagates_pre_cancelled_token()

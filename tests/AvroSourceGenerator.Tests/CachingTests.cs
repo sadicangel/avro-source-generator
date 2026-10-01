@@ -166,7 +166,7 @@ public sealed class CachingTests
         AssertCurrentInvalidationBaseline(IncrementalScenario.SchemaIdentity());
 
     [Fact]
-    public void Schema_kind_change_relinks_and_rebinds_only_the_declaration_and_its_consumer()
+    public void Schema_kind_change_re_links_and_rebinds_only_the_declaration_and_its_consumer()
     {
         var files = ImmutableArray.Create(
             ProjectFile.Schema(Record("Shared", ""), "schemas/shared.avsc"),
@@ -458,12 +458,12 @@ public sealed class CachingTests
     {
         public int ExpectedSourceCount => Files.Length;
 
-        public static IncrementalScenario IndependentContent() => new([ProjectFile.Schema(Record("Independent", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedOne", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedTwo", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedThree", "{\"name\": \"Value\", \"type\": \"string\"}")),], ChangedFileIndex: 0, ChangedFile: ProjectFile.Schema(Record("Independent", "{\"name\": \"Value\", \"type\": \"string\"}, {\"name\": \"Revision\", \"type\": \"int\"}")), ReferenceResolution: "Strict", ExpectedSymbolTableInvalidations: 0, ExpectedRenderedFileInvalidations: 1);
+        public static IncrementalScenario IndependentContent() => new IncrementalScenario([ProjectFile.Schema(Record("Independent", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedOne", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedTwo", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedThree", "{\"name\": \"Value\", \"type\": \"string\"}")),], ChangedFileIndex: 0, ChangedFile: ProjectFile.Schema(Record("Independent", "{\"name\": \"Value\", \"type\": \"string\"}, {\"name\": \"Revision\", \"type\": \"int\"}")), ReferenceResolution: "Strict", ExpectedSymbolTableInvalidations: 0, ExpectedRenderedFileInvalidations: 1);
 
-        public static IncrementalScenario ReferencedSchemaContent() => new([ProjectFile.Schema(Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}")), ProjectFile.Schema(Record("Customer", "{\"name\": \"Address\", \"type\": \"Address\"}")), ProjectFile.Schema(Record("Order", "{\"name\": \"Customer\", \"type\": \"Customer\"}")), ProjectFile.Schema(Record("Unrelated", "{\"name\": \"Value\", \"type\": \"string\"}")),], ChangedFileIndex: 0, ChangedFile: ProjectFile.Schema(Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}, {\"name\": \"Revision\", \"type\": \"int\"}")), ReferenceResolution: "Deferred", ExpectedSymbolTableInvalidations: 0, ExpectedRenderedFileInvalidations: 3);
+        public static IncrementalScenario ReferencedSchemaContent() => new IncrementalScenario([ProjectFile.Schema(Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}")), ProjectFile.Schema(Record("Customer", "{\"name\": \"Address\", \"type\": \"Address\"}")), ProjectFile.Schema(Record("Order", "{\"name\": \"Customer\", \"type\": \"Customer\"}")), ProjectFile.Schema(Record("Unrelated", "{\"name\": \"Value\", \"type\": \"string\"}")),], ChangedFileIndex: 0, ChangedFile: ProjectFile.Schema(Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}, {\"name\": \"Revision\", \"type\": \"int\"}")), ReferenceResolution: "Deferred", ExpectedSymbolTableInvalidations: 0, ExpectedRenderedFileInvalidations: 3);
 
         public static IncrementalScenario ImportedSchemaContent() =>
-            new(
+            new IncrementalScenario(
                 [
                     ProjectFile.Schema(Record("Address", "{\"name\": \"LineOne\", \"type\": \"string\"}"), "schemas/common.avsc"),
                     ProjectFile.Source(
@@ -482,16 +482,7 @@ public sealed class CachingTests
                 ExpectedSymbolTableInvalidations: 0,
                 ExpectedRenderedFileInvalidations: 2);
 
-        public static IncrementalScenario SchemaIdentity() => new([ProjectFile.Schema(Record("Original", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedOne", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedTwo", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedThree", "{\"name\": \"Value\", \"type\": \"string\"}")),], ChangedFileIndex: 0, ChangedFile: ProjectFile.Schema(Record("Renamed", "{\"name\": \"Value\", \"type\": \"string\"}")), ReferenceResolution: "Strict", ExpectedSymbolTableInvalidations: 1, ExpectedRenderedFileInvalidations: 1, RemovedHintName: "CachingTests.Original.Avro.g.cs", AddedHintName: "CachingTests.Renamed.Avro.g.cs");
-
-        private static string Record(string name, string fields) => $$"""
-            {
-              "type": "record",
-              "namespace": "CachingTests",
-              "name": "{{name}}",
-              "fields": [{{fields}}]
-            }
-            """;
+        public static IncrementalScenario SchemaIdentity() => new IncrementalScenario([ProjectFile.Schema(Record("Original", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedOne", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedTwo", "{\"name\": \"Value\", \"type\": \"string\"}")), ProjectFile.Schema(Record("UnrelatedThree", "{\"name\": \"Value\", \"type\": \"string\"}")),], ChangedFileIndex: 0, ChangedFile: ProjectFile.Schema(Record("Renamed", "{\"name\": \"Value\", \"type\": \"string\"}")), ReferenceResolution: "Strict", ExpectedSymbolTableInvalidations: 1, ExpectedRenderedFileInvalidations: 1, RemovedHintName: "CachingTests.Original.Avro.g.cs", AddedHintName: "CachingTests.Renamed.Avro.g.cs");
     }
 
     private sealed class ChangedAdditionalText(string path, string content) : AdditionalText

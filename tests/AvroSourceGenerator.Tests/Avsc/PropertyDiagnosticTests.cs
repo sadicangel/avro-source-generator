@@ -121,5 +121,5 @@ public sealed class PropertyDiagnosticTests
     private static AvroFile Parse(string json, string extension) => AvxxParser.Parse(
         new SourceText("test" + extension, json), Options, TestContext.Current.CancellationToken);
 
-    private static AvroParseOptions Options { get; } = new(GenerationTarget.Modern, true);
+    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, true);
 }

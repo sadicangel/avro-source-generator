@@ -41,7 +41,7 @@ public sealed class ParserBaseTests
         var replaced = replaceLatest ? latest : first;
         var union = UnionSchema.Create([replaced, other], true);
 
-        context.ResolveFieldType(union, "Choice", new SchemaName("Container", "Example"), out _, out _);
+        context.ApplyFieldType(union, "Choice", new SchemaName("Container", "Example"));
 
         var result = context.Complete(Source, union, [], []);
         var updated = Assert.IsType<RecordSchema>(result.Declarations[replaceLatest ? 1 : 0]);
@@ -67,20 +67,20 @@ public sealed class ParserBaseTests
         Assert.Equal([record.SchemaName], result.Dependencies[record.SchemaName]);
     }
 
-    private static RecordSchema Record(string name) => new(new SchemaName(name, "Example"), null, [], [], ImmutableSortedDictionary<string, JsonElement>.Empty);
+    private static RecordSchema Record(string name) => new RecordSchema(new SchemaName(name, "Example"), null, [], [], ImmutableSortedDictionary<string, JsonElement>.Empty);
 
-    private static SourceText Source { get; } = new("test.avsc", "{}");
+    private static SourceText Source { get; } = new SourceText("test.avsc", "{}");
 
     private sealed class TestParser(AvroParseOptions options) : AvxxParser(options)
     {
         public new void Declare(TopLevelSchema schema, SourceSpan span) => base.Declare(schema, span);
         public new AvroSchema Reference(SchemaName name, string? containingNamespace, SourceSpan span) => base.Reference(name, containingNamespace, span);
 
-        public new AvroSchema ResolveFieldType(AvroSchema type, FieldName name, SchemaName containingSchema, out AvroSchema underlyingType, out string? remarks) =>
-            base.ResolveFieldType(type, name, containingSchema, out underlyingType, out remarks);
+        public void ApplyFieldType(AvroSchema type, FieldName name, SchemaName containingSchema) =>
+            _ = base.ResolveFieldType(type, name, containingSchema, out _, out _);
 
         private RecursionScope EnterScope(SchemaName name) => base.EnterRecursionScope(name);
-        public new TestScope EnterRecursionScope(SchemaName name) => new(this, name);
+        public new TestScope EnterRecursionScope(SchemaName name) => new TestScope(this, name);
 
         public readonly ref struct TestScope(TestParser parser, SchemaName name)
         {
@@ -88,6 +88,6 @@ public sealed class ParserBaseTests
             public void Dispose() => _scope.Dispose();
         }
 
-        public AvroFile Complete(SourceText source, AvroSchema root, ImmutableArray<AvroImport> imports, ImmutableArray<AvroDiagnostic> diagnostics) => new(source, root, [.. Declarations], [.. DeclarationSpans], GetReferences(), GetReferenceSpans(), GetDependencies(), imports, diagnostics, Options);
+        public AvroFile Complete(SourceText source, AvroSchema root, ImmutableArray<AvroImport> imports, ImmutableArray<AvroDiagnostic> diagnostics) => new AvroFile(source, root, [.. Declarations], [.. DeclarationSpans], GetReferences(), GetReferenceSpans(), GetDependencies(), imports, diagnostics, Options);
     }
 }

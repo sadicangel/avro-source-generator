@@ -1,28 +1,27 @@
 ﻿using System.Collections.Immutable;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
-using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class AvroCompilerTests
 {
-    private static readonly AvroParseOptions s_parseOptions = new(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_parseOptions = new AvroParseOptions(GenerationTarget.Modern, true);
 
     [Fact]
     public void Convenience_compiler_matches_independent_stages()
     {
         SourceText[] sources =
         [
-            new(
+            new SourceText(
                 "consumer.avdl",
                 """
                 import schema "shared.avsc";
                 schema Consumer;
                 record Consumer { Shared value; }
                 """),
-            new("shared.avsc", """{"type":"record","name":"Shared","fields":[]}""")
+            new SourceText("shared.avsc", """{"type":"record","name":"Shared","fields":[]}""")
         ];
         var token = TestContext.Current.CancellationToken;
         var options = new AvroCompilationOptions();
@@ -56,6 +55,8 @@ public sealed class AvroCompilerTests
 
         Assert.All<ISourceFile>(
             [parsed, linked, bound],
+            // Assertions verify the shared source-file contract at each compiler stage.
+            // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
             file =>
             {
                 Assert.Same(source, file.Text);

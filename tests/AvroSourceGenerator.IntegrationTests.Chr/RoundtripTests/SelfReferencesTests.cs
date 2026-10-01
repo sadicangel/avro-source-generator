@@ -20,7 +20,7 @@ public class SelfReferencesTests(DockerFixture dockerFixture)
         var next1 = new SelfReference
         {
             items = [],
-            lookup = new Dictionary<string, SelfReference>(),
+            lookup = [],
             next = null
         };
 
@@ -31,7 +31,7 @@ public class SelfReferencesTests(DockerFixture dockerFixture)
                 new SelfReference
                 {
                     items = [],
-                    lookup = new Dictionary<string, SelfReference>(),
+                    lookup = [],
                     next = null
                 }
             ],

@@ -20,7 +20,7 @@ public sealed class DocumentationTests
         return Snapshot.Diagnostic(schemaType == "protocol" ? ProjectFile.Protocol(schema) : ProjectFile.Schema(schema));
     }
 
-    public static MatrixTheoryData<string, string> ValidDocumentationSchemaPairs() => new([null!, "", "Single line comment", "Multi\nline\ncomment"], ["enum", "error", "record", "protocol"]);
+    public static MatrixTheoryData<string, string> ValidDocumentationSchemaPairs() => new MatrixTheoryData<string, string>([null!, "", "Single line comment", "Multi\nline\ncomment"], ["enum", "error", "record", "protocol"]);
 
-    public static MatrixTheoryData<string, string> InvalidDocumentationSchemaPairs() => new(["[]"], ["enum", "error", "record", "protocol"]);
+    public static MatrixTheoryData<string, string> InvalidDocumentationSchemaPairs() => new MatrixTheoryData<string, string>(["[]"], ["enum", "error", "record", "protocol"]);
 }

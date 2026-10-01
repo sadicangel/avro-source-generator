@@ -8,9 +8,6 @@ internal enum AvroLibraryReference
 
 internal static class AvroLibraryReferenceExtensions
 {
-    private static readonly string s_supportedPackageList =
-        string.Join(", ", Enum.GetValues(typeof(AvroLibraryReference)).OfType<AvroLibraryReference>().Select(x => $"'{x.PackageName}'"));
-
     extension(AvroLibraryReference reference)
     {
         public AvroLibrary ToAvroLibrary() => reference switch
@@ -26,7 +23,5 @@ internal static class AvroLibraryReferenceExtensions
             AvroLibraryReference.Chr => "Chr.Avro",
             _ => throw new InvalidOperationException($"Invalid {nameof(AvroLibraryReference)} '{reference}'"),
         };
-
-        public static string SupportedPackageList => s_supportedPackageList;
     }
 }

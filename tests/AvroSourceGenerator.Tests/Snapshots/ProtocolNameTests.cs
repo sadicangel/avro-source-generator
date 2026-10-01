@@ -20,7 +20,7 @@ public sealed class ProtocolNameTests
         return Snapshot.Diagnostic(ProjectFile.Protocol(schema));
     }
 
-    public static TheoryData<string> ValidNames() => new("PascalCase", "snake_case", "object");
+    public static TheoryData<string> ValidNames() => new TheoryData<string>("PascalCase", "snake_case", "object");
 
-    public static TheoryData<string> InvalidNames() => new("null", "\"\"", "[]");
+    public static TheoryData<string> InvalidNames() => new TheoryData<string>("null", "\"\"", "[]");
 }

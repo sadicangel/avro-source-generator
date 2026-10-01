@@ -6,7 +6,7 @@ namespace AvroSourceGenerator.Tests.Avdl;
 public sealed class ScannerTests
 {
     public static TheoryData<string, SyntaxKind> Punctuation =>
-        new()
+        new TheoryData<string, SyntaxKind>
         {
             { "{", SyntaxKind.BraceOpenToken },
             { "}", SyntaxKind.BraceCloseToken },
@@ -26,7 +26,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string, SyntaxKind> Keywords =>
-        new()
+        new TheoryData<string, SyntaxKind>
         {
             { "true", SyntaxKind.TrueKeyword },
             { "false", SyntaxKind.FalseKeyword },
@@ -63,7 +63,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string, object> IntegerLiterals =>
-        new()
+        new TheoryData<string, object>
         {
             { "0", 0 },
             { "42", 42 },
@@ -72,7 +72,7 @@ public sealed class ScannerTests
         };
 
     public static TheoryData<string, double> FloatLiterals =>
-        new()
+        new TheoryData<string, double>
         {
             { "0.5", 0.5D },
             { ".5", 0.5D },
@@ -93,7 +93,7 @@ public sealed class ScannerTests
     ];
 
     public static TheoryData<string, AvroDiagnosticCode, int, int> InvalidInputDiagnostics =>
-        new()
+        new TheoryData<string, AvroDiagnosticCode, int, int>
         {
             { "$", AvroDiagnosticCode.InvalidCharacter, 0, 1 },
             { "\"bad\\q\"", AvroDiagnosticCode.InvalidEscapeSequence, 4, 2 },
@@ -178,8 +178,8 @@ public sealed class ScannerTests
 
         var tokens = scanner.ScanAllTokens().ToArray();
 
-        Assert.Single(scanner.BadTokens);
-        Assert.Equal("-", scanner.BadTokens[0].SourceSpan.ToString());
+        var item = Assert.Single(scanner.BadTokens);
+        Assert.Equal("-", item.SourceSpan.ToString());
         Assert.Equal(SyntaxKind.IdentifierToken, tokens[0].SyntaxKind);
         Assert.Equal("java", tokens[0].ValueText);
         Assert.Equal(SyntaxKind.IdentifierToken, tokens[1].SyntaxKind);
@@ -194,8 +194,8 @@ public sealed class ScannerTests
         var tokens = scanner.ScanAllTokens().ToArray();
 
         Assert.Empty(scanner.BadTokens);
-        Assert.Single(tokens);
-        Assert.Equal(SyntaxKind.EofToken, tokens[0].SyntaxKind);
+        var item = Assert.Single(tokens);
+        Assert.Equal(SyntaxKind.EofToken, item.SyntaxKind);
     }
 
     [Fact]
@@ -258,8 +258,8 @@ public sealed class ScannerTests
 
         var tokens = scanner.ScanAllTokens().ToArray();
 
-        Assert.Single(scanner.BadTokens);
-        Assert.Equal(SyntaxKind.InvalidSyntax, scanner.BadTokens[0].SyntaxKind);
+        var item = Assert.Single(scanner.BadTokens);
+        Assert.Equal(SyntaxKind.InvalidSyntax, item.SyntaxKind);
         Assert.Equal(SyntaxKind.EofToken, Assert.Single(tokens).SyntaxKind);
     }
 
@@ -287,7 +287,10 @@ public sealed class ScannerTests
     [Theory]
     [InlineData("\"\"", "")]
     [InlineData("\"Olá 世界 😀\"", "Olá 世界 😀")]
+    // Deliberate escaped text exercises scanner decoding and error locations.
+    // ReSharper disable StringLiteralTypo
     [InlineData("\"before\\nafter\\tmiddle\"", "before\nafter\tmiddle")]
+    // ReSharper restore StringLiteralTypo
     [InlineData("\"\\b\\f\\r\"", "\b\f\r")]
     [InlineData("\"a\\uD83D\\uDE00z\"", "a😀z")]
     public void Scan_strings_preserves_content_and_source_span(string text, string expected)
@@ -305,6 +308,8 @@ public sealed class ScannerTests
 
     [Theory]
     [InlineData("\"prefix\\u12xz\"", "\\u12xz")]
+    // Deliberate escaped text exercises scanner decoding and error locations.
+    // ReSharper disable once StringLiteralTypo
     [InlineData("\"prefix\\ntext\\q\"", "\\q")]
     [InlineData("\"é😀\\q\"", "\\q")]
     [InlineData("\"prefix\\u12\"", "\\u12")]
@@ -327,6 +332,8 @@ public sealed class ScannerTests
     [Fact]
     public void Scan_unterminated_strings_keeps_the_full_diagnostic_span()
     {
+        // Deliberate unterminated escaped text exercises the full diagnostic span.
+        // ReSharper disable once StringLiteralTypo
         const string Text = "\"prefix\\ntext";
         var scanner = CreateScanner(Text);
         _ = scanner.ScanAllTokens().ToArray();
@@ -336,5 +343,5 @@ public sealed class ScannerTests
         Assert.Equal(Text.Length, diagnostic.SourceSpan.Length);
     }
 
-    private static Scanner CreateScanner(string text) => new(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
+    private static Scanner CreateScanner(string text) => new Scanner(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
 }

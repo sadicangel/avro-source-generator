@@ -79,5 +79,5 @@ public sealed class InvalidSchemaPropagationTests
         Assert.Throws<InvalidOperationException>(() => AvxxParser.Parse(source, new AvroParseOptions((GenerationTarget)(-1), true), TestContext.Current.CancellationToken));
     }
 
-    private static AvroParseOptions Options { get; } = new(GenerationTarget.Modern, true);
+    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, true);
 }

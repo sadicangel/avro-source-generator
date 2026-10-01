@@ -18,6 +18,8 @@ public enum LanguageFeatures
     CSharp10 = NullableReferenceTypes | Records | InitOnlyProperties,
     CSharp11 = NullableReferenceTypes | Records | InitOnlyProperties | RequiredProperties | RawStringLiterals,
     CSharp12 = NullableReferenceTypes | Records | InitOnlyProperties | RequiredProperties | RawStringLiterals | UnsafeAccessors,
+    // A supported public configuration value, also discovered by enum name in consumers and tests.
+    // ReSharper disable once UnusedMember.Global
     CSharp13 = NullableReferenceTypes | Records | InitOnlyProperties | RequiredProperties | RawStringLiterals | UnsafeAccessors,
 
     Latest = 2147483647,

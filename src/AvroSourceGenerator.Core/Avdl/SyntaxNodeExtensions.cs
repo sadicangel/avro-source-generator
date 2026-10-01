@@ -2,6 +2,8 @@
 
 namespace AvroSourceGenerator.Avdl;
 
+// Used through extension member calls such as syntax.GetSourceSpan().
+// ReSharper disable once UnusedMember.Global
 internal static class SyntaxNodeExtensions
 {
     extension(ISyntaxNode syntax)

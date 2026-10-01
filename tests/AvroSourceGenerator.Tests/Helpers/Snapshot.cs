@@ -6,5 +6,5 @@ namespace AvroSourceGenerator.Tests.Helpers;
 internal class Snapshot : ISnapshot<Snapshot>
 {
     public static ImmutableArray<MetadataReference> References => [];
-    public static ProjectConfig ProjectConfig => new() { AvroLibrary = "None" };
+    public static ProjectConfig ProjectConfig => new ProjectConfig() { AvroLibrary = "None" };
 }

@@ -11,5 +11,5 @@ public sealed class RecordFieldsTests
         return Snapshot.Diagnostic(ProjectFile.Schema(schema));
     }
 
-    public static TheoryData<string> InvalidFields() => new("null", "{}");
+    public static TheoryData<string> InvalidFields() => new TheoryData<string>("null", "{}");
 }

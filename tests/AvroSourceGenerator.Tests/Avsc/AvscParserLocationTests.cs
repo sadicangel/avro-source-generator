@@ -156,7 +156,7 @@ public sealed class AvscParserLocationTests
             AvxxParser.Parse(new SourceText("test.avsc", "{}"), Options, cancellation.Token));
     }
 
-    private static AvroParseOptions Options { get; } = new(GenerationTarget.Modern, true);
+    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, true);
 
     private static void AssertDiagnostic(AvroDiagnostic diagnostic, SourceText source, string value, AvroDiagnosticCode code, string message)
     {

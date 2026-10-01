@@ -11,6 +11,8 @@ public sealed class SchemaSerializationTests
     [InlineData(true)]
     public void Json_preserves_unicode_and_unescapes_field_names(bool indented)
     {
+        // Deliberate Portuguese text exercises Unicode preservation.
+        // ReSharper disable once StringLiteralTypo
         const string Source = """
             {"type":"record","name":"Example","doc":"Olá 世界 😀","fields":[
               {"name":"class","type":"string","default":"acção 😀"},
@@ -34,6 +36,7 @@ public sealed class SchemaSerializationTests
         Assert.Equal("Olá 世界 😀", document.RootElement.GetProperty("doc").GetString());
         var fields = document.RootElement.GetProperty("fields");
         Assert.Equal("class", fields[0].GetProperty("name").GetString());
+        // ReSharper disable once StringLiteralTypo
         Assert.Equal("acção 😀", fields[0].GetProperty("default").GetString());
         Assert.Equal("ordinary", fields[1].GetProperty("name").GetString());
         Assert.DoesNotContain('\0', json);

@@ -6,6 +6,8 @@ using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.Tests.Infrastructure;
 
+// The type parameter identifies the configuration used by static snapshot extension dispatch.
+// ReSharper disable once UnusedTypeParameter
 public interface ISnapshot<TSnapshot>
 {
     static abstract ImmutableArray<MetadataReference> References { get; }

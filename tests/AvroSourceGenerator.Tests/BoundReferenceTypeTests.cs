@@ -109,5 +109,5 @@ public sealed class BoundReferenceTypeTests
         { "type": "record", "name": "{{name}}", "namespace": "Demo", "fields": [] }
         """;
 
-    private static SchemaName Name(string name) => new(name, "Demo");
+    private static SchemaName Name(string name) => new SchemaName(name, "Demo");
 }

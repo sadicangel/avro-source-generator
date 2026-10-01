@@ -75,7 +75,7 @@ public readonly record struct GeneratorInput(
     private sealed class AnalyzerConfigOptionsImplementation(IEnumerable<KeyValuePair<string, string>> options)
         : AnalyzerConfigOptions
     {
-        private readonly Dictionary<string, string> _options = new([.. options.Select(kvp => new KeyValuePair<string, string>($"build_property.{kvp.Key}", kvp.Value))]);
+        private readonly Dictionary<string, string> _options = new Dictionary<string, string>([.. options.Select(kvp => new KeyValuePair<string, string>($"build_property.{kvp.Key}", kvp.Value))]);
         public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value) => _options.TryGetValue(key, out value);
     }
 }

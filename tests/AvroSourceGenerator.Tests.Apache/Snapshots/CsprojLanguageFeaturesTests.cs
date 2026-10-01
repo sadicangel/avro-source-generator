@@ -72,5 +72,5 @@ public sealed class CsprojLanguageFeaturesTests
         return Snapshot.Files([schemaType == "protocol" ? ProjectFile.Protocol(schema) : ProjectFile.Schema(schema)], config => config with { LanguageFeatures = languageFeatures });
     }
 
-    public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new([.. Enum.GetNames<LanguageFeatures>().Where(n => n.StartsWith("CSharp")), "invalid"], ["enum", "error", "fixed", "record", "protocol"]);
+    public static MatrixTheoryData<string, string> LanguageFeaturesSchemaPairs() => new MatrixTheoryData<string, string>([.. Enum.GetNames<LanguageFeatures>().Where(n => n.StartsWith("CSharp")), "invalid"], ["enum", "error", "fixed", "record", "protocol"]);
 }

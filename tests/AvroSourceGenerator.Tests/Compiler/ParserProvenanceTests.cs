@@ -8,7 +8,7 @@ namespace AvroSourceGenerator.Tests.Compiler;
 
 public sealed class ParserProvenanceTests
 {
-    private static readonly AvroParseOptions s_options = new(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, true);
 
     [Fact]
     public void Imports_require_source_spans_and_preserve_duplicate_occurrences()

@@ -12,7 +12,7 @@ public sealed class AvroDiagnostic(AvroDiagnosticCode code, SourceSpan sourceSpa
 
     public AvroDiagnosticSeverity Severity => Code.Severity;
 
-    public string GetMessage() => string.Format(Code.MessageTemplate, Arguments.ToArray());
+    public string GetMessage() => string.Format(Code.MessageTemplate, [.. Arguments]);
 
     public override string ToString() => GetMessage();
 

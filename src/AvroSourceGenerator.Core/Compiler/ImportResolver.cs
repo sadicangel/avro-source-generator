@@ -15,7 +15,7 @@ internal sealed class ImportResolver(
     private readonly HashSet<int> _visiting = [];
     private readonly List<int> _stack = [];
     private readonly HashSet<int> _cycleFiles = [];
-    private readonly HashSet<string> _reportedCycles = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _reportedCycles = [with(StringComparer.Ordinal)];
     private readonly List<AvroDiagnostic> _diagnostics = [];
 
     public IEnumerable<AvroDiagnostic> Diagnostics => _diagnostics;
@@ -45,7 +45,7 @@ internal sealed class ImportResolver(
         if (!_visiting.Add(fileIndex))
         {
             var cycleStart = _stack.IndexOf(fileIndex);
-            var cycle = new Cycle(_stack.Skip(cycleStart).ToArray());
+            var cycle = new Cycle([.. _stack.Skip(cycleStart)]);
             if (_reportedCycles.Add(cycle.Key))
             {
                 _diagnostics.Add(AvroDiagnostic.ImportCycle(incomingImportSpan, cycle.GetPath(files)));

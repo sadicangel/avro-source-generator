@@ -85,6 +85,11 @@ function Invoke-DotNet([string[]]$Arguments) {
   if ($LASTEXITCODE -ne 0) { throw "dotnet $($Arguments -join ' ') failed with exit code $LASTEXITCODE." }
 }
 
+$passedConsumers = 0
+$compilerVersion = $null
+$selectedApi = $null
+$reviewNote = $null
+$failure = $null
 Push-Location $workspace
 try {
   $actualSdk = & dotnet --version
@@ -113,7 +118,8 @@ try {
       $compilerVersion = [version]$compilerApi[0].Replace('roslyn', '')
       if ($mode -eq 'CSharp12' -and $library -eq 'Apache' -and
           $ExpectedRoslynApiVersion -eq $roslynVersions[-1] -and $compilerVersion -gt [version]$roslynVersions[-1]) {
-        Write-Warning "SDK compiler Roslyn $compilerVersion is newer than the latest generator target $($roslynVersions[-1]); review Roslyn updates. Compatibility checks will validate the supported variant."
+        $reviewNote = "Compiler Roslyn $compilerVersion is newer than generator target $($roslynVersions[-1]); review Roslyn updates."
+        Write-Warning "$reviewNote Compatibility checks will validate the supported variant."
       }
       $selectedApi = @($roslynVersions | Where-Object { [version]$_ -le $compilerVersion } |
         Sort-Object { [version]$_ })[-1]
@@ -141,7 +147,24 @@ try {
         }
         [IO.File]::WriteAllText((Join-Path $OutputDirectory "$library.json"), ($hashes | ConvertTo-Json))
       }
+      $passedConsumers++
     }
   }
 }
-finally { Pop-Location }
+catch {
+  $failure = $_.Exception.Message
+  throw
+}
+finally {
+  Pop-Location
+  $summary = @{
+    Sdk = $SdkVersion
+    CompilerRoslyn = if ($compilerVersion) { $compilerVersion.ToString(2) } else { 'Unknown' }
+    GeneratorRoslyn = if ($selectedApi) { $selectedApi } else { 'Unknown' }
+    PassedConsumers = $passedConsumers
+    ExpectedConsumers = 6
+    ReviewNote = $reviewNote
+    Failure = $failure
+  }
+  [IO.File]::WriteAllText((Join-Path $OutputDirectory 'summary.json'), ($summary | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
+}

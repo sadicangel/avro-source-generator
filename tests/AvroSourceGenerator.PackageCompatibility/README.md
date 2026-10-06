@@ -49,4 +49,8 @@ a published package cannot satisfy the validation run. The main solution's SDK p
 The build workflow builds and packs once. Unit and fast integration tests, Docker roundtrips, and package compatibility
 checks then run in parallel jobs using those build outputs. Compatibility checks use the minimum SDK 10.0.100 and resolve
 the latest preview SDK on every push and pull request, comparing the generated sources in the same job.
+The Actions summary shows the SDK and compiler versions, selected generator variants, completed consumer checks,
+generated-source comparison status, and any Roslyn review reminders or failures.
+Test jobs run the prebuilt assemblies through `dotnet test` and use Microsoft's GitHub Actions reporter for counts,
+durations, failure details, and source annotations, including when tests fail.
 The release workflow builds, tests stable releases, and packs the release version separately before publishing.

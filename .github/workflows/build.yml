@@ -19,18 +19,23 @@ jobs:
       with:
         dotnet-version: 10.0.x
     - name: Restore dependencies
+      id: restore
       run: dotnet restore avro-source-generator.slnx
     - name: Build
+      id: compile
       run: dotnet build avro-source-generator.slnx --no-restore --configuration Release
     - name: Pack
+      id: pack
       run: dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-validation --output artifacts/packages
     - uses: actions/upload-artifact@v4
+      id: package_artifact
       with:
         name: validation-package
         path: artifacts/packages/*.nupkg
         if-no-files-found: error
         retention-days: 1
     - uses: actions/upload-artifact@v4
+      id: test_artifact
       with:
         name: test-binaries
         path: |
@@ -39,6 +44,31 @@ jobs:
           tests/AvroSourceGenerator.RoundtripTests.*/bin/Release/net10.0/
         if-no-files-found: error
         retention-days: 1
+
+    - name: Build summary
+      if: always()
+      shell: pwsh
+      env:
+        RESTORE_RESULT: ${{ steps.restore.outcome }}
+        BUILD_RESULT: ${{ steps.compile.outcome }}
+        PACK_RESULT: ${{ steps.pack.outcome }}
+        PACKAGE_URL: ${{ steps.package_artifact.outputs.artifact-url }}
+        TEST_BINARY_URL: ${{ steps.test_artifact.outputs.artifact-url }}
+      run: |
+        $sdk = if (Get-Command dotnet -ErrorAction SilentlyContinue) { & dotnet --version } else { 'Unavailable' }
+        if ($LASTEXITCODE -ne 0) { $sdk = 'Unavailable' }
+        @(
+          '## Build and package', '', "SDK: **$sdk**", '',
+          '| Step | Result |', '| --- | --- |',
+          "| Restore | $env:RESTORE_RESULT |",
+          "| Build | $env:BUILD_RESULT |",
+          "| Pack | $env:PACK_RESULT |", ''
+        ) >> $env:GITHUB_STEP_SUMMARY
+        if ($env:PACKAGE_URL) {
+          $package = Get-ChildItem artifacts/packages/*.nupkg | Select-Object -First 1
+          "Package: [$($package.Name)]($env:PACKAGE_URL)" >> $env:GITHUB_STEP_SUMMARY
+        }
+        if ($env:TEST_BINARY_URL) { "`n[Test binaries]($env:TEST_BINARY_URL)" >> $env:GITHUB_STEP_SUMMARY }
 
   tests:
     needs: build
@@ -53,10 +83,26 @@ jobs:
         name: test-binaries
         path: tests
     - name: Unit and fast integration tests
+      id: run_tests
+      shell: pwsh
       run: |
-        for suite in UnitTests UnitTests.Apache UnitTests.Chr IntegrationTests.Apache IntegrationTests.Chr; do
-          (cd "tests/AvroSourceGenerator.$suite/bin/Release/net10.0" && dotnet "AvroSourceGenerator.$suite.dll")
-        done
+        $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'test-summary.md'
+        $exitCode = 0
+        foreach ($suite in 'UnitTests','UnitTests.Apache','UnitTests.Chr','IntegrationTests.Apache','IntegrationTests.Chr') {
+          dotnet test --test-modules "tests/AvroSourceGenerator.$suite/bin/Release/net10.0/AvroSourceGenerator.$suite.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
+          if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
+        }
+        exit $exitCode
+    - name: Test summary
+      if: always()
+      shell: pwsh
+      env:
+        TEST_RESULT: ${{ steps.run_tests.outcome }}
+      run: |
+        $report = Join-Path $env:RUNNER_TEMP 'test-summary.md'
+        "## Unit and fast integration tests`n`nTest step: **$env:TEST_RESULT**.`n" >> $env:GITHUB_STEP_SUMMARY
+        if (Test-Path -LiteralPath $report) { Get-Content -LiteralPath $report >> $env:GITHUB_STEP_SUMMARY }
+        else { 'No test report was produced.' >> $env:GITHUB_STEP_SUMMARY }
 
   compatibility:
     needs: build
@@ -79,6 +125,7 @@ jobs:
         name: validation-package
         path: artifacts/packages
     - name: Validate package consumers
+      id: consumers
       shell: pwsh
       env:
         MINIMUM_SDK: ${{ steps.minimum.outputs.dotnet-version }}
@@ -89,13 +136,51 @@ jobs:
         ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $packages[0].FullName -SdkVersion $env:MINIMUM_SDK -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
         ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $packages[0].FullName -SdkVersion $env:PREVIEW_SDK -ExpectedRoslynApiVersion latest -OutputDirectory artifacts/manifests/preview
     - name: Compare generated contracts across SDKs
+      id: parity
       shell: pwsh
       run: ./tests/AvroSourceGenerator.PackageCompatibility/Compare-GeneratedSources.ps1 -ManifestDirectory artifacts/manifests
+    - name: Compatibility summary
+      if: always()
+      shell: pwsh
+      env:
+        MINIMUM_SDK: ${{ steps.minimum.outputs.dotnet-version }}
+        PREVIEW_SDK: ${{ steps.preview.outputs.dotnet-version }}
+        CONSUMER_RESULT: ${{ steps.consumers.outcome }}
+        PARITY_RESULT: ${{ steps.parity.outcome }}
+      run: |
+        @(
+          '## Package compatibility', '',
+          "Package validation and consumers: **$env:CONSUMER_RESULT**.",
+          "Generated-source comparison: **$env:PARITY_RESULT**.", '',
+          '| SDK | Compiler Roslyn | Generator variant | Consumers |',
+          '| --- | --- | --- | --- |'
+        ) >> $env:GITHUB_STEP_SUMMARY
+        $notes = @()
+        foreach ($baseline in @(
+          @{ Directory = 'minimum'; Sdk = $env:MINIMUM_SDK },
+          @{ Directory = 'preview'; Sdk = $env:PREVIEW_SDK }
+        )) {
+          $report = "artifacts/manifests/$($baseline.Directory)/summary.json"
+          if (!(Test-Path -LiteralPath $report)) {
+            "| $($baseline.Sdk) | — | — | Not run |" >> $env:GITHUB_STEP_SUMMARY
+            continue
+          }
+          $result = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+          $status = if ($result.Failure) { 'failed' } else { 'passed' }
+          "| $($result.Sdk) | $($result.CompilerRoslyn) | $($result.GeneratorRoslyn) | $($result.PassedConsumers)/$($result.ExpectedConsumers) $status |" >> $env:GITHUB_STEP_SUMMARY
+          if ($result.ReviewNote) { $notes += "**Review reminder:** $($result.ReviewNote)" }
+          if ($result.Failure) {
+            $failure = [Net.WebUtility]::HtmlEncode($result.Failure)
+            $notes += "**Failure for SDK $($result.Sdk):**<pre>$failure</pre>"
+          }
+        }
+        if ($notes.Count) { "`n$($notes -join "`n`n")" >> $env:GITHUB_STEP_SUMMARY }
 
   roundtrips:
     needs: build
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v5
     - uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
@@ -106,7 +191,23 @@ jobs:
     - name: Docker
       run: docker info
     - name: Kafka roundtrips once per library
+      id: run_tests
+      shell: pwsh
       run: |
-        for library in Apache Chr; do
-          (cd "tests/AvroSourceGenerator.RoundtripTests.$library/bin/Release/net10.0" && dotnet "AvroSourceGenerator.RoundtripTests.$library.dll")
-        done
+        $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'roundtrip-summary.md'
+        $exitCode = 0
+        foreach ($library in 'Apache','Chr') {
+          dotnet test --test-modules "tests/AvroSourceGenerator.RoundtripTests.$library/bin/Release/net10.0/AvroSourceGenerator.RoundtripTests.$library.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
+          if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
+        }
+        exit $exitCode
+    - name: Roundtrip summary
+      if: always()
+      shell: pwsh
+      env:
+        TEST_RESULT: ${{ steps.run_tests.outcome }}
+      run: |
+        $report = Join-Path $env:RUNNER_TEMP 'roundtrip-summary.md'
+        "## Kafka and Schema Registry roundtrips`n`nTest step: **$env:TEST_RESULT**.`n" >> $env:GITHUB_STEP_SUMMARY
+        if (Test-Path -LiteralPath $report) { Get-Content -LiteralPath $report >> $env:GITHUB_STEP_SUMMARY }
+        else { 'No test report was produced.' >> $env:GITHUB_STEP_SUMMARY }

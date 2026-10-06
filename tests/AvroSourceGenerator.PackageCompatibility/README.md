@@ -51,6 +51,7 @@ checks then run in parallel jobs using those build outputs. Compatibility checks
 the latest preview SDK on every push and pull request, comparing the generated sources in the same job.
 The Actions summary shows the SDK and compiler versions, selected generator variants, completed consumer checks,
 generated-source comparison status, and any Roslyn review reminders or failures.
-Test jobs run the prebuilt assemblies through `dotnet test` and use Microsoft's GitHub Actions reporter for counts,
-durations, failure details, and source annotations, including when tests fail.
+Test jobs run the prebuilt assemblies directly with the Microsoft.Testing.Platform runner and use Microsoft's GitHub
+Actions reporter for counts, durations, failure details, and source annotations, including when tests fail. Direct
+execution preserves the reporter's workflow commands for GitHub; `dotnet test` remains available for local runs.
 The release workflow builds, tests stable releases, and packs the release version separately before publishing.

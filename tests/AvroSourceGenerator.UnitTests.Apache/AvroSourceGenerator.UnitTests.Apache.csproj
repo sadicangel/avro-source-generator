@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <NoWarn>$(NoWarn);CA1707;MSB3243</NoWarn>
   </PropertyGroup>
 

@@ -89,7 +89,7 @@ jobs:
         $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'test-summary.md'
         $exitCode = 0
         foreach ($suite in 'UnitTests','UnitTests.Apache','UnitTests.Chr','IntegrationTests.Apache','IntegrationTests.Chr') {
-          dotnet test --test-modules "tests/AvroSourceGenerator.$suite/bin/Release/net10.0/AvroSourceGenerator.$suite.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
+          dotnet "tests/AvroSourceGenerator.$suite/bin/Release/net10.0/AvroSourceGenerator.$suite.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
           if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
         }
         exit $exitCode
@@ -197,7 +197,7 @@ jobs:
         $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'roundtrip-summary.md'
         $exitCode = 0
         foreach ($library in 'Apache','Chr') {
-          dotnet test --test-modules "tests/AvroSourceGenerator.RoundtripTests.$library/bin/Release/net10.0/AvroSourceGenerator.RoundtripTests.$library.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
+          dotnet "tests/AvroSourceGenerator.RoundtripTests.$library/bin/Release/net10.0/AvroSourceGenerator.RoundtripTests.$library.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
           if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
         }
         exit $exitCode

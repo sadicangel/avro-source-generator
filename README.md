@@ -16,6 +16,10 @@ Generated code takes advantage of modern C# language features, including **nulla
 
 ## Prerequisites
 
+> [!IMPORTANT]
+> Starting with v0.8.0, building projects that use this package requires **.NET SDK 10.0.100 or newer**.
+> .NET SDK 8 and 9 are no longer supported.
+
 - **.NET SDK 10.0.100 or later, with [Roslyn 5.0 or later](https://github.com/dotnet/roslyn/blob/main/docs/wiki/NuGet-packages.md)**. Visual Studio builds require Visual Studio 2026 18.0 or later; see the [SDK and Visual Studio version mapping](https://learn.microsoft.com/en-us/dotnet/core/porting/versioning-sdk-msbuild-vs).
 - Optional runtime integration with one of the following Avro libraries:
   - [Apache.Avro](https://www.nuget.org/packages/Apache.Avro) — official Avro implementation for C#

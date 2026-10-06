@@ -27,14 +27,14 @@ jobs:
     - name: Pack
       id: pack
       run: dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-validation --output artifacts/packages
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       id: package_artifact
       with:
         name: validation-package
         path: artifacts/packages/*.nupkg
         if-no-files-found: error
         retention-days: 1
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       id: test_artifact
       with:
         name: test-binaries
@@ -78,7 +78,7 @@ jobs:
     - uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: test-binaries
         path: tests
@@ -120,7 +120,7 @@ jobs:
       with:
         dotnet-version: latest
         dotnet-quality: preview
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: validation-package
         path: artifacts/packages
@@ -184,7 +184,7 @@ jobs:
     - uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: test-binaries
         path: tests

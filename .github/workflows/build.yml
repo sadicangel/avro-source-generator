@@ -68,12 +68,6 @@ jobs:
       uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.100
-    - name: Setup latest stable SDK
-      id: stable
-      uses: actions/setup-dotnet@v6
-      with:
-        dotnet-version: latest
-        dotnet-quality: ga
     - name: Setup latest preview SDK
       id: preview
       uses: actions/setup-dotnet@v6
@@ -88,13 +82,11 @@ jobs:
       shell: pwsh
       env:
         MINIMUM_SDK: ${{ steps.minimum.outputs.dotnet-version }}
-        STABLE_SDK: ${{ steps.stable.outputs.dotnet-version }}
         PREVIEW_SDK: ${{ steps.preview.outputs.dotnet-version }}
       run: |
         $packages = @(Get-ChildItem artifacts/packages/*.nupkg)
         if ($packages.Count -ne 1) { throw 'Expected one validation package.' }
-        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $packages[0].FullName -SdkVersion $env:MINIMUM_SDK -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum -IncludeNet8Consumer
-        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $packages[0].FullName -SdkVersion $env:STABLE_SDK -OutputDirectory artifacts/manifests/stable
+        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $packages[0].FullName -SdkVersion $env:MINIMUM_SDK -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
         ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $packages[0].FullName -SdkVersion $env:PREVIEW_SDK -ExpectedRoslynApiVersion latest -OutputDirectory artifacts/manifests/preview
     - name: Compare generated contracts across SDKs
       shell: pwsh

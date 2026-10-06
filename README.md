@@ -361,8 +361,8 @@ If you encounter bugs, want to propose features, or improve docs, please open an
 
 The unsuffixed generator project tracks the latest supported Roslyn, while a separate project retains the 5.0 baseline.
 Both share source files and build targets. Build the solution, then pack `src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj`.
-Unit and snapshot tests run once against the latest variant. Fast package consumers check all supported SDK baselines,
-the latest stable SDK, and the latest preview SDK; Docker roundtrips run once per Avro library.
+Unit and snapshot tests run once against the latest variant. Fast package consumers check the minimum SDK 10.0.100
+and the latest preview SDK; Docker roundtrips run once per Avro library.
 See [package compatibility checks](tests/AvroSourceGenerator.PackageCompatibility/README.md) for local commands.
 
 ---

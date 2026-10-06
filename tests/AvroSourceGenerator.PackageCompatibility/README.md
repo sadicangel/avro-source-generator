@@ -5,13 +5,12 @@ They verify the exact analyzer files and dependencies in the package, selection 
 compiler-visible package properties, and generated models for Apache.Avro, Chr.Avro, and no runtime library.
 Shared fixtures exercise schemas, protocols, IDL imports, collections, and union interfaces without Docker.
 
+The SDK matrix currently contains the fixed minimum SDK 10.0.100 and the latest preview SDK.
+When .NET 11 is GA and .NET 12 enters preview, add a fixed .NET 11 SDK baseline alongside those checks.
+
 Each SDK runs every consumer twice: with C# 12 targeting .NET 10, and with its default C# version targeting its own .NET version.
 The C# 12 runs emit source hashes for comparison across SDKs. Unit snapshots remain a single suite on the latest Roslyn;
 Kafka and Schema Registry tests live in the separate roundtrip projects and run once per library.
-
-CI also passes `-IncludeNet8Consumer` to the SDK 10.0.100 run. This builds one library-free consumer with C# 12 targeting
-.NET 8, checking that generated models still compile for an older target framework using a supported compiler host.
-This isolated check does not require SDK 8 or the .NET 8 runtime; solution tests and tools remain on .NET 10.
 
 The unsuffixed generator uses the central `Microsoft.CodeAnalysis.CSharp` package version.
 Only the fixed Roslyn 5.0 baseline project overrides it. Package analyzer directories use the major and minor numbers of that configured version.
@@ -24,19 +23,20 @@ All source projects use the central `System.Collections.Immutable` version witho
 The package consumers verify that the shared assemblies and Immutable APIs work with every supported compiler host,
 including SDK 10.0.100. Increasing Immutable's major version requires checking that minimum host again.
 
-Install SDK 10.0.100, the latest stable SDK, and the latest preview SDK, plus the .NET 10 runtime.
+Install SDK 10.0.100 and the latest preview SDK, plus the .NET 10 runtime.
 Run from the repository root after a Release solution build:
 
 ```powershell
 dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-validation --output artifacts/packages
 $package = 'artifacts/packages/AvroSourceGenerator.0.0.0-validation.nupkg'
-./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $package -SdkVersion 10.0.100 -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/net10 -IncludeNet8Consumer
+./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $package -SdkVersion 10.0.100 -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
 ```
 
-Run the same script for the exact installed latest stable and preview SDK versions, writing to separate manifest directories.
-For the preview SDK, pass `-ExpectedRoslynApiVersion latest`; this also checks that the compiler API matches the latest
-configured generator target, so CI catches new Roslyn baselines that need review. The stable SDK's selected variant
-is determined from its compiler API version. Then compare all outputs:
+Run the same script for the exact installed latest preview SDK version, writing to a separate manifest directory.
+For the preview SDK, pass `-ExpectedRoslynApiVersion latest` to require selection of the latest packaged generator variant.
+A newer compiler API emits a Roslyn update review warning; compatibility is established by analyzer selection,
+compilation, consumer execution, and generated-source comparison. The minimum SDK must select the Roslyn 5.0 variant.
+Then compare both SDK outputs:
 
 ```powershell
 ./tests/AvroSourceGenerator.PackageCompatibility/Compare-GeneratedSources.ps1 -ManifestDirectory artifacts/manifests
@@ -47,6 +47,6 @@ External consumer dependencies restore from nuget.org. The generator itself must
 a published package cannot satisfy the validation run. The main solution's SDK policy and NuGet configuration are unchanged.
 
 The build workflow builds and packs once. Unit and fast integration tests, Docker roundtrips, and package compatibility
-checks then run in parallel jobs using those build outputs. Compatibility checks resolve the newest stable and preview
-SDKs on every push and pull request and compare the generated sources in the same job.
+checks then run in parallel jobs using those build outputs. Compatibility checks use the minimum SDK 10.0.100 and resolve
+the latest preview SDK on every push and pull request, comparing the generated sources in the same job.
 The release workflow builds, tests stable releases, and packs the release version separately before publishing.

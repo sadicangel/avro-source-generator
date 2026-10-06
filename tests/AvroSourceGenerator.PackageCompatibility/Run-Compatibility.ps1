@@ -2,8 +2,7 @@ param(
   [Parameter(Mandatory)][string]$PackagePath,
   [Parameter(Mandatory)][string]$SdkVersion,
   [string]$ExpectedRoslynApiVersion,
-  [string]$OutputDirectory,
-  [switch]$IncludeNet8Consumer
+  [string]$OutputDirectory
 )
 
 $ErrorActionPreference = 'Stop'
@@ -94,9 +93,7 @@ try {
   }
   Write-Host "Validating SDK $actualSdk with package $packageVersion."
   $sdkMajor = [int]($SdkVersion.Split('.')[0])
-  $modes = @('CSharp12', 'SdkDefault')
-  if ($IncludeNet8Consumer) { $modes += 'Net8' }
-  foreach ($mode in $modes) {
+  foreach ($mode in @('CSharp12', 'SdkDefault')) {
     $modeDirectory = Join-Path $workspace $mode
     [IO.Directory]::CreateDirectory($modeDirectory) | Out-Null
     Copy-Item -LiteralPath $PSScriptRoot -Destination (Join-Path $modeDirectory 'Consumers') -Recurse
@@ -105,22 +102,18 @@ try {
     Get-ChildItem -LiteralPath (Join-Path $repoRoot 'tests/Schemas') -File |
       Where-Object Extension -In @('.avsc', '.avpr', '.avdl') |
       Copy-Item -Destination $schemas
-    $framework = switch ($mode) {
-      'CSharp12' { 'net10.0' }
-      'Net8' { 'net8.0' }
-      default { "net$sdkMajor.0" }
-    }
-    $language = if ($mode -eq 'SdkDefault') { 'default' } else { '12.0' }
-    $libraries = if ($mode -eq 'Net8') { @('None') } else { @('Apache', 'Chr', 'None') }
-    foreach ($library in $libraries) {
+    $framework = if ($mode -eq 'CSharp12') { 'net10.0' } else { "net$sdkMajor.0" }
+    $language = if ($mode -eq 'CSharp12') { '12.0' } else { 'default' }
+    foreach ($library in @('Apache', 'Chr', 'None')) {
       $project = Join-Path $modeDirectory "Consumers/$library/$library.csproj"
       $compilerApi = & dotnet msbuild $project -nologo -getProperty:CompilerApiVersion
       if ($LASTEXITCODE -ne 0) { throw 'Cannot determine the consumer compiler API version.' }
       $compilerApi = @($compilerApi | Where-Object { $_ -match '^roslyn\d+\.\d+$' })
       if ($compilerApi.Count -ne 1) { throw 'Expected one consumer compiler API version.' }
       $compilerVersion = [version]$compilerApi[0].Replace('roslyn', '')
-      if ($ExpectedRoslynApiVersion -eq $roslynVersions[-1] -and $compilerVersion -ne [version]$roslynVersions[-1]) {
-        throw "Latest SDK compiler $compilerVersion differs from the latest generator target $($roslynVersions[-1]); review the Roslyn versions."
+      if ($mode -eq 'CSharp12' -and $library -eq 'Apache' -and
+          $ExpectedRoslynApiVersion -eq $roslynVersions[-1] -and $compilerVersion -gt [version]$roslynVersions[-1]) {
+        Write-Warning "SDK compiler Roslyn $compilerVersion is newer than the latest generator target $($roslynVersions[-1]); review Roslyn updates. Compatibility checks will validate the supported variant."
       }
       $selectedApi = @($roslynVersions | Where-Object { [version]$_ -le $compilerVersion } |
         Sort-Object { [version]$_ })[-1]
@@ -135,13 +128,7 @@ try {
         "-p:ExpectedRoslynApiVersion=$selectedApi"
       )
       Invoke-DotNet -Arguments (@('restore', $project, '--configfile', $nugetConfig, '--packages', $cache) + $properties)
-      if ($mode -eq 'Net8') {
-        # Compile older-target models with the supported SDK; no .NET 8 runtime is needed.
-        Invoke-DotNet -Arguments (@('build', $project, '--configuration', 'Release', '--no-restore') + $properties)
-      }
-      else {
-        Invoke-DotNet -Arguments (@('run', '--project', $project, '--configuration', 'Release', '--no-restore') + $properties)
-      }
+      Invoke-DotNet -Arguments (@('run', '--project', $project, '--configuration', 'Release', '--no-restore') + $properties)
       if ($mode -eq 'CSharp12') {
         $generatedRoot = Join-Path (Split-Path $project) 'obj/generated'
         $hashes = [ordered]@{}

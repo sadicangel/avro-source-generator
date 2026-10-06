@@ -16,13 +16,18 @@ Generated code takes advantage of modern C# language features, including **nulla
 
 ## Prerequisites
 
-- **.NET SDK with [Roslyn 4.11 or later](https://github.com/dotnet/roslyn/blob/main/docs/wiki/NuGet-packages.md)**, such as .NET SDK 8.0.400 or later. Visual Studio builds require Visual Studio 2022 17.11 or later; see the [SDK and Visual Studio version mapping](https://learn.microsoft.com/en-us/dotnet/core/porting/versioning-sdk-msbuild-vs).
+- **.NET SDK 10.0.100 or later, with [Roslyn 5.0 or later](https://github.com/dotnet/roslyn/blob/main/docs/wiki/NuGet-packages.md)**. Visual Studio builds require Visual Studio 2026 18.0 or later; see the [SDK and Visual Studio version mapping](https://learn.microsoft.com/en-us/dotnet/core/porting/versioning-sdk-msbuild-vs).
 - Optional runtime integration with one of the following Avro libraries:
   - [Apache.Avro](https://www.nuget.org/packages/Apache.Avro) — official Avro implementation for C#
   - [Chr.Avro](https://www.nuget.org/packages/Chr.Avro) — designed to serve as a flexible alternative to the Apache implementation
 
 > [!NOTE]
 > You can use the generator without an Avro library, but library-specific features (e.g., `ISpecificRecord`) won’t be emitted.
+
+The package includes generator builds for Roslyn 5.0 and the latest supported Roslyn (currently 5.9).
+The SDK selects the highest compatible build automatically. The minimum supported SDK is 10.0.100;
+SDK 10.0.100 selects the 5.0 build, and SDKs with Roslyn 5.9 or newer select the latest build.
+This selection follows the compiler version, independently of the consuming project’s target framework.
 
 ---
 
@@ -181,7 +186,7 @@ partial record User : global::Avro.Specific.ISpecificRecord
 - [samples/AvroSourceGenerator.ConfluentKafka/AvroSourceGenerator.ConfluentKafka.csproj](samples/AvroSourceGenerator.ConfluentKafka/AvroSourceGenerator.ConfluentKafka.csproj) shows Kafka and Schema Registry integration using Confluent's Avro serializer.
 - [samples/AvroSourceGenerator.ChrAvroKafka/AvroSourceGenerator.ChrAvroKafka.csproj](samples/AvroSourceGenerator.ChrAvroKafka/AvroSourceGenerator.ChrAvroKafka.csproj) shows the same Kafka and Schema Registry container workflow using `Chr.Avro.Confluent`.
 
-The repository samples use the SDK selected by [global.json](global.json), currently .NET 10.
+The repository samples target .NET 10 and use the latest installed SDK, including previews, selected by [global.json](global.json) with a minimum of SDK 10.0.401.
 The Kafka samples also require Docker to run their Kafka and Schema Registry containers.
 
 For example, run the Chr.Avro Kafka sample with:
@@ -353,6 +358,12 @@ Supported values:
 
 Contributions are welcome!
 If you encounter bugs, want to propose features, or improve docs, please open an issue or submit a pull request on **GitHub**.
+
+The unsuffixed generator project tracks the latest supported Roslyn, while a separate project retains the 5.0 baseline.
+Both share source files and build targets. Build the solution, then pack `src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj`.
+Unit and snapshot tests run once against the latest variant. Fast package consumers check all supported SDK baselines,
+the latest stable SDK, and the latest preview SDK; Docker roundtrips run once per Avro library.
+See [package compatibility checks](tests/AvroSourceGenerator.PackageCompatibility/README.md) for local commands.
 
 ---
 

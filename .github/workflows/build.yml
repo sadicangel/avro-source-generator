@@ -6,18 +6,115 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
     - name: Setup .NET
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore avro-source-generator.slnx
     - name: Build
-      run: dotnet build --no-restore --configuration Release
-    - name: Test
-      run: dotnet test --no-build --configuration Release --verbosity normal
+      run: dotnet build avro-source-generator.slnx --no-restore --configuration Release
+    - name: Pack
+      run: dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-validation --output artifacts/packages
+    - uses: actions/upload-artifact@v4
+      with:
+        name: validation-package
+        path: artifacts/packages/*.nupkg
+        if-no-files-found: error
+        retention-days: 1
+    - uses: actions/upload-artifact@v4
+      with:
+        name: test-binaries
+        path: |
+          tests/AvroSourceGenerator.UnitTests*/bin/Release/net10.0/
+          tests/AvroSourceGenerator.IntegrationTests.*/bin/Release/net10.0/
+          tests/AvroSourceGenerator.RoundtripTests.*/bin/Release/net10.0/
+        if-no-files-found: error
+        retention-days: 1
+
+  tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+    - uses: actions/download-artifact@v4
+      with:
+        name: test-binaries
+        path: tests
+    - name: Unit and fast integration tests
+      run: |
+        for suite in UnitTests UnitTests.Apache UnitTests.Chr IntegrationTests.Apache IntegrationTests.Chr; do
+          (cd "tests/AvroSourceGenerator.$suite/bin/Release/net10.0" && dotnet "AvroSourceGenerator.$suite.dll")
+        done
+
+  compatibility:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Setup minimum SDK
+      id: minimum
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.100
+    - name: Setup latest stable SDK
+      id: stable
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: latest
+        dotnet-quality: ga
+    - name: Setup latest preview SDK
+      id: preview
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: latest
+        dotnet-quality: preview
+    - uses: actions/download-artifact@v4
+      with:
+        name: validation-package
+        path: artifacts/packages
+    - name: Validate package consumers
+      shell: pwsh
+      env:
+        MINIMUM_SDK: ${{ steps.minimum.outputs.dotnet-version }}
+        STABLE_SDK: ${{ steps.stable.outputs.dotnet-version }}
+        PREVIEW_SDK: ${{ steps.preview.outputs.dotnet-version }}
+      run: |
+        $packages = @(Get-ChildItem artifacts/packages/*.nupkg)
+        if ($packages.Count -ne 1) { throw 'Expected one validation package.' }
+        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $packages[0].FullName -SdkVersion $env:MINIMUM_SDK -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum -IncludeNet8Consumer
+        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $packages[0].FullName -SdkVersion $env:STABLE_SDK -OutputDirectory artifacts/manifests/stable
+        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $packages[0].FullName -SdkVersion $env:PREVIEW_SDK -ExpectedRoslynApiVersion latest -OutputDirectory artifacts/manifests/preview
+    - name: Compare generated contracts across SDKs
+      shell: pwsh
+      run: ./tests/AvroSourceGenerator.PackageCompatibility/Compare-GeneratedSources.ps1 -ManifestDirectory artifacts/manifests
+
+  roundtrips:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+    - uses: actions/download-artifact@v4
+      with:
+        name: test-binaries
+        path: tests
+    - name: Docker
+      run: docker info
+    - name: Kafka roundtrips once per library
+      run: |
+        for library in Apache Chr; do
+          (cd "tests/AvroSourceGenerator.RoundtripTests.$library/bin/Release/net10.0" && dotnet "AvroSourceGenerator.RoundtripTests.$library.dll")
+        done

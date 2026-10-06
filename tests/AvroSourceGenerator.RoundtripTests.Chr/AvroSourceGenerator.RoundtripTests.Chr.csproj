@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Chr.Avro.Confluent references Apache.Avro so we need to specify which library we want to avoid AVROSG0004 -->
+    <AvroSourceGeneratorAvroLibrary>Chr</AvroSourceGeneratorAvroLibrary>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <CompilerVisibleProperty Include="AvroSourceGeneratorAvroLibrary" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />
+    <AdditionalFiles Include="..\Schemas\*.avdl" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
+    <AdditionalFiles Include="..\Schemas\*.avsc" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
+    <AdditionalFiles Include="..\Schemas\*.avpr" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
+    <Compile Include="..\Schemas\*.cs" Link="Schemas\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Chr.Avro.Codegen" />
+    <PackageReference Include="Chr.Avro.Confluent" />
+    <!-- Chr.Avro.Confluent 10.13.1 requires Confluent packages >= 2.14.0 and < 2.15.0. -->
+    <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" VersionOverride="2.14.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Testcontainers" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AvroSourceGenerator\AvroSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\AvroSourceGenerator.RoundtripTests\AvroSourceGenerator.RoundtripTests.csproj" />
+  </ItemGroup>
+
+</Project>

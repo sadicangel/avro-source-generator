@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ConsumerLibrary>Chr</ConsumerLibrary>
+    <DefineConstants>$(DefineConstants);CHR</DefineConstants>
+  </PropertyGroup>
+  <Import Project="../Consumer.targets" />
+  <ItemGroup>
+    <PackageReference Include="Chr.Avro.Codegen" />
+    <PackageReference Include="Chr.Avro.Binary" />
+    <PackageReference Include="Chr.Avro.Json" />
+  </ItemGroup>
+</Project>

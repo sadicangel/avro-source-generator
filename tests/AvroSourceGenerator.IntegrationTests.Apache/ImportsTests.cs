@@ -1,19 +1,21 @@
+﻿using Avro;
+using Avro.Specific;
 using AvroSourceGenerator.IntegrationTests.Schemas;
 
 namespace AvroSourceGenerator.IntegrationTests.Apache;
 
-public class ImportsTests(DockerFixture dockerFixture)
+public sealed class ImportsTests
 {
     [Fact]
-    public async Task Imported_schema_types_remain_unchanged_after_roundtrip_to_kafka()
+    public void Imported_schema_uses_the_generated_nested_type()
     {
         var item = new NestedType { displayName = "Imported" };
-        var expected = new ImportedEnvelope { Item = item };
+        var envelope = new ImportedEnvelope { Item = item };
+        var record = (ISpecificRecord)envelope;
+        var schema = Assert.IsType<RecordSchema>(record.Schema);
 
-        var actual = await dockerFixture.RoundtripAsync(
-            expected,
-            TestContext.Current.CancellationToken);
-
-        Assert.EqualAsJson(expected, actual);
+        Assert.Same(item, envelope.Item);
+        Assert.Equal(((ISpecificRecord)item).Schema, schema.Fields.Single().Schema);
+        Assert.Same(item, record.Get(0));
     }
 }

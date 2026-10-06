@@ -1,0 +1,41 @@
+<Project>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework Condition="'$(ConsumerTargetFramework)' != ''">$(ConsumerTargetFramework)</TargetFramework>
+    <LangVersion Condition="'$(ConsumerLanguageVersion)' != ''">$(ConsumerLanguageVersion)</LangVersion>
+    <AvroSourceGeneratorAvroLibrary>$(ConsumerLibrary)</AvroSourceGeneratorAvroLibrary>
+    <AvroSourceGeneratorRecordDeclaration>class</AvroSourceGeneratorRecordDeclaration>
+    <AvroSourceGeneratorAccessModifier>internal</AvroSourceGeneratorAccessModifier>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+    <WarningsAsErrors>$(WarningsAsErrors);CS8032;CS8784;CS8785;CS9057;AVROSG0004</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Program.cs" Link="Program.cs" />
+    <AdditionalFiles Include="../../Schemas/*.avsc;../../Schemas/*.avpr;../../Schemas/*.avdl" Link="Schemas/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <PackageReference Include="AvroSourceGenerator" VersionOverride="$(ValidationPackageVersion)" PrivateAssets="all" />
+  </ItemGroup>
+  <Target Name="CheckSelectedGenerator" BeforeTargets="CoreCompile" DependsOnTargets="ResolveReferences">
+    <ItemGroup>
+      <_AvroPackageAnalyzer Include="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'AvroSourceGenerator'" />
+      <_AvroSharedAnalyzer Include="@(_AvroPackageAnalyzer)"
+                           Condition="$([System.String]::Copy('%(_AvroPackageAnalyzer.Identity)').Replace('\', '/').Contains('/analyzers/dotnet/cs/'))" />
+      <_AvroSelectedVersionAnalyzer Include="@(_AvroPackageAnalyzer)"
+                                    Condition="$([System.String]::Copy('%(_AvroPackageAnalyzer.Identity)').Replace('\', '/').Contains('/analyzers/dotnet/roslyn$(ExpectedRoslynApiVersion)/cs/'))" />
+      <_AvroAnalyzer Include="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'AvroSourceGenerator'" />
+    </ItemGroup>
+    <Error Condition="'$(ExpectedRoslynApiVersion)' == ''" Text="ExpectedRoslynApiVersion must be supplied by the compatibility runner." />
+    <Error Condition="'@(_AvroPackageAnalyzer->Count())' != '12'" Text="Expected 12 analyzer files from the generator package, got @(_AvroPackageAnalyzer->Count())." />
+    <Error Condition="'@(_AvroSharedAnalyzer->Count())' != '11'" Text="Expected all 11 shared analyzer dependencies, got @(_AvroSharedAnalyzer->Count())." />
+    <Error Condition="'@(_AvroSelectedVersionAnalyzer->Count())' != '1'" Text="Expected only the generator from Roslyn $(ExpectedRoslynApiVersion), got @(_AvroSelectedVersionAnalyzer)." />
+    <Error Condition="'@(_AvroAnalyzer->Count())' != '1'" Text="Expected exactly one AvroSourceGenerator analyzer, got @(_AvroAnalyzer)." />
+    <PropertyGroup>
+      <_SelectedAnalyzerPath>@(_AvroAnalyzer)</_SelectedAnalyzerPath>
+      <_AnalyzerLanguageDirectory>$([System.IO.Path]::GetDirectoryName('$(_SelectedAnalyzerPath)'))</_AnalyzerLanguageDirectory>
+      <_SelectedRoslynDirectory>$([System.IO.Path]::GetFileName($([System.IO.Path]::GetDirectoryName('$(_AnalyzerLanguageDirectory)'))))</_SelectedRoslynDirectory>
+    </PropertyGroup>
+    <Error Condition="'$(_SelectedRoslynDirectory)' != 'roslyn$(ExpectedRoslynApiVersion)'"
+           Text="Incorrect analyzer selection: @(_AvroAnalyzer); expected Roslyn $(ExpectedRoslynApiVersion)." />
+    <WriteLinesToFile File="$(IntermediateOutputPath)selected-analyzer.txt" Lines="@(_AvroAnalyzer)" Overwrite="true" />
+  </Target>
+</Project>

@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GeneratorRoslynVersion>5.0.0</GeneratorRoslynVersion>
+  </PropertyGroup>
+  <Import Project="../AvroSourceGenerator/AvroSourceGenerator.Build.targets" />
+</Project>

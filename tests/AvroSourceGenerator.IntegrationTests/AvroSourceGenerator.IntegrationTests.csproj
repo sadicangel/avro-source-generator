@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="Testcontainers" />
     <PackageReference Include="xunit.v3.extensibility.core" />
   </ItemGroup>
   

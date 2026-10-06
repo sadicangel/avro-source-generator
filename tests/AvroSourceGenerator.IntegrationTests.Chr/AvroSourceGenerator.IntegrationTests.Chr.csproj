@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- Chr.Avro.Confluent references Apache.Avro so we need to specify which library we want to avoid AVROSG0004 -->
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <AvroSourceGeneratorAvroLibrary>Chr</AvroSourceGeneratorAvroLibrary>
   </PropertyGroup>
 
@@ -23,16 +23,13 @@
     <AdditionalFiles Include="..\Schemas\*.avdl" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
     <AdditionalFiles Include="..\Schemas\*.avsc" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
     <AdditionalFiles Include="..\Schemas\*.avpr" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
-    <Compile Include="..\Schemas\*.cs" Link="Schemas\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Chr.Avro.Binary" />
     <PackageReference Include="Chr.Avro.Codegen" />
-    <PackageReference Include="Chr.Avro.Confluent" />
-    <!-- Chr.Avro.Confluent 10.13.1 requires Confluent packages >= 2.14.0 and < 2.15.0. -->
-    <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" VersionOverride="2.14.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="Testcontainers" />
+    <PackageReference Include="Microsoft.Testing.Extensions.GitHubActionsReport" PrivateAssets="all" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>

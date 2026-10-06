@@ -3,23 +3,27 @@ name: release
 on:
   release:
     types: [published]
+
+permissions:
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       packages: write
     steps:
-    - name: Validate Version
+    - name: Validate version
       run: |
         VERSION=${GITHUB_REF_NAME#v}
         if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
           echo "Invalid semantic version: $VERSION"
           exit 1
         fi
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "VERSION=$VERSION" >> "$GITHUB_ENV"
     - uses: actions/checkout@v5
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
+    - uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
     - name: Build
@@ -28,12 +32,12 @@ jobs:
       run: dotnet test --no-build --configuration Release --verbosity normal
       if: (!contains(env.VERSION, '-'))
     - name: Pack
-      run: dotnet pack --no-build --configuration Release /p:PackageVersion=${VERSION} --output ./nupkg
+      run: dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion="${VERSION}" --output ./nupkg
     - name: Publish to GitHub
-      run: dotnet nuget push ./nupkg/*.nupkg --source "https://nuget.pkg.github.com/sadicangel/index.json" --api-key ${GITHUB_TOKEN}
+      run: dotnet nuget push ./nupkg/*.nupkg --source "https://nuget.pkg.github.com/sadicangel/index.json" --api-key "${GITHUB_TOKEN}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Publish to nuget.org
-      run: dotnet nuget push ./nupkg/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key ${NUGET_API_KEY}
+      run: dotnet nuget push ./nupkg/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key "${NUGET_API_KEY}"
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_ORG_API_KEY }}

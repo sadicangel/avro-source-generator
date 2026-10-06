@@ -1,0 +1,16 @@
+﻿namespace AvroSourceGenerator.RoundtripTests;
+
+public static class PrecisionExtensions
+{
+    extension(DateTime dateTime)
+    {
+        // Kafka seems to store with less precision, so we fix that here for comparison.
+        public DateTime TruncateToMilliseconds() => dateTime.AddTicks(-(dateTime.Ticks % TimeSpan.TicksPerMillisecond));
+    }
+
+    extension(DateTimeOffset dateTime)
+    {
+        // Kafka seems to store with less precision, so we fix that here for comparison.
+        public DateTimeOffset TruncateToMilliseconds() => dateTime.AddTicks(-(dateTime.Ticks % TimeSpan.TicksPerMillisecond));
+    }
+}

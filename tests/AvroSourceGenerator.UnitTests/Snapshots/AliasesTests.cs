@@ -1,0 +1,17 @@
+﻿namespace AvroSourceGenerator.UnitTests.Snapshots;
+
+public sealed class AliasesTests
+{
+    [Theory]
+    [MemberData(nameof(InvalidAliasesSchemaPairs))]
+    public Task Diagnostic(string json, string schemaType)
+    {
+        var schema = TestSchemas.Get(schemaType).With("aliases", JsonNode.Parse(json)!).ToString();
+
+        return Snapshot.Diagnostic(ProjectFile.Schema(schema));
+    }
+
+    // TODO: What to do with aliases?
+
+    public static MatrixTheoryData<string, string> InvalidAliasesSchemaPairs() => new MatrixTheoryData<string, string>(["{}"], ["enum", "error", "fixed", "record"]);
+}

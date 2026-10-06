@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="AvroSourceGenerator.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" PrivateAssets="all" />
     <PackageReference Include="System.Text.Json" PrivateAssets="all" />
     <PackageReference Include="Meziantou.Polyfill" PrivateAssets="all" />

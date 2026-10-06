@@ -1,0 +1,93 @@
+﻿namespace AvroSourceGenerator.UnitTests.Chr.Snapshots;
+
+public class RecursionTests
+{
+    [Fact]
+    public Task Verify_Record()
+    {
+        return Snapshot.Schema(
+            """
+            {
+              "type": "record",
+              "name": "A",
+              "namespace": "ex",
+              "fields": [
+                {
+                  "name": "child",
+                  "type": {
+                    "type": "record",
+                    "name": "B",
+                    "fields": [
+                      {
+                        "name": "owner",
+                        "type": "A"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+            """);
+    }
+
+    [Fact]
+    public Task Verify_Array()
+    {
+        return Snapshot.Schema(
+            """
+            {
+              "type": "record",
+              "name": "A",
+              "namespace": "ex",
+              "fields": [
+                {
+                  "name": "items",
+                  "type": {
+                    "type": "array",
+                    "items": "A"
+                  }
+                }
+              ]
+            }
+            """);
+    }
+
+    [Fact]
+    public Task Verify_Map()
+    {
+        return Snapshot.Schema(
+            """
+            {
+              "type": "record",
+              "name": "A",
+              "namespace": "ex",
+              "fields": [
+                {
+                  "name": "lookup",
+                  "type": {
+                    "type": "map",
+                    "values": "A"
+                  }
+                }
+              ]
+            }
+            """);
+    }
+
+    [Fact]
+    public Task Verify_Union()
+    {
+        return Snapshot.Schema(
+            """
+            {
+              "type": "record",
+              "name": "Node",
+              "namespace": "ex",
+              "fields": [
+                { "name": "value", "type": "int" },
+                { "name": "next", "type": ["null", "Node"], "default": null }
+              ]
+            }
+            """);
+    }
+}

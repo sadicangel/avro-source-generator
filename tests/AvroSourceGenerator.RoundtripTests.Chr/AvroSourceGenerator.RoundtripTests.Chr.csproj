@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <LangVersion>preview</LangVersion>
+    <AvroSourceGeneratorPreviewFeatures>Unions</AvroSourceGeneratorPreviewFeatures>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <!-- Chr.Avro.Confluent references Apache.Avro so we need to specify which library we want to avoid AVROSG0004 -->
     <AvroSourceGeneratorAvroLibrary>Chr</AvroSourceGeneratorAvroLibrary>

@@ -16,10 +16,6 @@ Generated code takes advantage of modern C# language features, including **nulla
 
 ## Prerequisites
 
-> [!IMPORTANT]
-> Starting with v0.8.0, building projects that use this package requires **.NET SDK 10.0.100 or newer**.
-> .NET SDK 8 and 9 are no longer supported.
-
 - **.NET SDK 10.0.100 or later, with [Roslyn 5.0 or later](https://github.com/dotnet/roslyn/blob/main/docs/wiki/NuGet-packages.md)**. Visual Studio builds require Visual Studio 2026 18.0 or later; see the [SDK and Visual Studio version mapping](https://learn.microsoft.com/en-us/dotnet/core/porting/versioning-sdk-msbuild-vs).
 - Optional runtime integration with one of the following Avro libraries:
   - [Apache.Avro](https://www.nuget.org/packages/Apache.Avro) — official Avro implementation for C#
@@ -27,11 +23,6 @@ Generated code takes advantage of modern C# language features, including **nulla
 
 > [!NOTE]
 > You can use the generator without an Avro library, but library-specific features (e.g., `ISpecificRecord`) won’t be emitted.
-
-The package includes generator builds for Roslyn 5.0 and the latest supported Roslyn (currently 5.9).
-The SDK selects the highest compatible build automatically. The minimum supported SDK is 10.0.100;
-SDK 10.0.100 selects the 5.0 build, and SDKs with Roslyn 5.9 or newer select the latest build.
-This selection follows the compiler version, independently of the consuming project’s target framework.
 
 ---
 

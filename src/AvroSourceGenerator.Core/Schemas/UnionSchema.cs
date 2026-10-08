@@ -29,21 +29,6 @@ public sealed record class UnionSchema(
         writer.WriteEndArray();
     }
 
-    public bool SupportsVariant()
-    {
-        if (Schemas is [] or [_] or [{ Type: SchemaType.Null }, _] or [_, { Type: SchemaType.Null }])
-        {
-            // Empty union, single type union, or union with nulls only are not eligible for generating an interface.
-            return false;
-        }
-
-        return Schemas.All(IsUnionMemberCandidate) && Schemas.Any(x => x.Type is not SchemaType.Null);
-    }
-
-    // A union member must be a record, error, fixed not substituted by another type, or null.
-    private static bool IsUnionMemberCandidate(AvroSchema schema) =>
-        schema.Type is SchemaType.Record or SchemaType.Error or SchemaType.Null || schema is FixedSchema { IsSubstituted: false };
-
     private static bool MapsToValueType(SchemaType type) =>
         type is SchemaType.Boolean or SchemaType.Int or SchemaType.Long or SchemaType.Float or SchemaType.Double or SchemaType.Enum;
 

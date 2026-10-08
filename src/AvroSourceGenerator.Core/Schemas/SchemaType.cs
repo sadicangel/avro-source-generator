@@ -19,6 +19,6 @@ public enum SchemaType
     Error,
     Logical,
     Protocol,
-    Variant,
+    UnionObject,
     Reference,
 }

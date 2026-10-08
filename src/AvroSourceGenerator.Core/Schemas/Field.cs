@@ -15,7 +15,20 @@ public sealed record class Field(
     ImmutableSortedDictionary<string, JsonElement> Properties,
     string? Remarks)
 {
-    public ImmutableArray<AvroSchema> PossibleTypes => Type is UnionSchema union ? union.Schemas : [Type];
+    public IEnumerable<AvroSchema> PossibleTypes
+    {
+        get
+        {
+            if (Type is not UnionSchema union)
+            {
+                yield return Type;
+                yield break;
+            }
+
+            foreach (var schema in union.Schemas.Canonicalize(includeNull: false))
+                yield return schema;
+        }
+    }
 
     public bool AllowsNull => Type is UnionSchema union
         ? union.Schemas.Any(static schema => schema.Type is SchemaType.Null)

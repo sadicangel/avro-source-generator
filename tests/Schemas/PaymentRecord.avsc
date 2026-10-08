@@ -10,6 +10,11 @@
         "string",
         "int",
         {
+          "type": "fixed",
+          "name": "PaymentMethodId",
+          "size": 16
+        },
+        {
           "type": "record",
           "name": "CreditCardPayment",
           "fields": [
@@ -26,10 +31,20 @@
               "type": "string"
             }
           ]
+        },
+        {
+          "type": "enum",
+          "name": "DeferredPaymentReason",
+          "symbols": [
+            "AwaitingInvoice",
+            "PendingApproval",
+            "PaymentOnDelivery",
+            "ManualSettlement"
+          ]
         }
       ],
       "default": null,
-      "doc": "The method used for payment: a string name, ID, or credit card record"
+      "doc": "The method used for payment: a name, numeric code, fixed ID, credit card record, or deferred payment reason"
     }
   ]
 }

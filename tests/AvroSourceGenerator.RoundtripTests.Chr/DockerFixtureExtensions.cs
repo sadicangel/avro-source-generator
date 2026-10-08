@@ -35,7 +35,8 @@ public static class DockerFixtureExtensions
 
             var serializerBuilder = new BinarySerializerBuilder(
                 BinarySerializerBuilder.CreateDefaultCaseBuilders()
-                    .Prepend(builder => new NotificationContentVariantSerializerBuilderCase(builder)));
+                    .Prepend(builder => new NotificationContentUnionSerializerBuilderCase(builder))
+                    .Prepend(builder => new PaymentRecordPaymentMethodUnionSerializerBuilderCase(builder)));
 
             return new ProducerBuilder<string, T>(config)
                 .SetAvroKeySerializer(schemaRegistryClient)
@@ -58,7 +59,8 @@ public static class DockerFixtureExtensions
 
             var deserializerBuilder = new BinaryDeserializerBuilder(
                 BinaryDeserializerBuilder.CreateDefaultCaseBuilders()
-                    .Prepend(builder => new NotificationContentVariantDeserializerBuilderCase(builder)));
+                    .Prepend(builder => new NotificationContentUnionDeserializerBuilderCase(builder))
+                    .Prepend(builder => new PaymentRecordPaymentMethodUnionDeserializerBuilderCase(builder)));
 
             return new ConsumerBuilder<string, T>(config)
                 .SetAvroKeyDeserializer(schemaRegistryClient)

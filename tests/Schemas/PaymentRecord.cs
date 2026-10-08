@@ -31,3 +31,21 @@ public partial record CreditCardPayment : IXunitSerializable
         info.AddValue(nameof(expirationDate), expirationDate);
     }
 }
+
+#if APACHE
+public partial class PaymentMethodId : IXunitSerializable
+{
+    public void Deserialize(IXunitSerializationInfo info)
+    {
+        SetValue(this, Convert.FromHexString((string)info.GetValue(nameof(Value))!));
+
+        return;
+
+        [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "set_Value")]
+        static extern void SetValue(PaymentMethodId obj, byte[] value);
+    }
+
+    public void Serialize(IXunitSerializationInfo info) =>
+        info.AddValue(nameof(Value), Convert.ToHexString(Value));
+}
+#endif

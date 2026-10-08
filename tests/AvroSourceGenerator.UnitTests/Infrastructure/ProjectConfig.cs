@@ -4,6 +4,8 @@ namespace AvroSourceGenerator.UnitTests.Infrastructure;
 
 public record struct ProjectConfig(LanguageVersion LanguageVersion)
 {
+    public ProjectConfig() : this(LanguageVersion.Preview) { }
+
     public Dictionary<string, string> GlobalOptions => field ??= [];
 
     public string AvroLibrary
@@ -16,6 +18,12 @@ public record struct ProjectConfig(LanguageVersion LanguageVersion)
     {
         get => GlobalOptions.GetValueOrDefault("AvroSourceGeneratorLanguageFeatures") ?? string.Empty;
         set => GlobalOptions["AvroSourceGeneratorLanguageFeatures"] = value;
+    }
+
+    public string PreviewFeatures
+    {
+        get => GlobalOptions.GetValueOrDefault("AvroSourceGeneratorPreviewFeatures") ?? string.Empty;
+        set => GlobalOptions["AvroSourceGeneratorPreviewFeatures"] = value;
     }
 
     public string AccessModifier

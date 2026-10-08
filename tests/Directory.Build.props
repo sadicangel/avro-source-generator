@@ -1,0 +1,11 @@
+<Project>
+  <Import Project="..\Directory.Build.props" />
+
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Apache'))">
+    <DefineConstants>$(DefineConstants);APACHE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Chr'))">
+    <DefineConstants>$(DefineConstants);CHR</DefineConstants>
+  </PropertyGroup>
+</Project>

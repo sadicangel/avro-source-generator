@@ -30,7 +30,8 @@ The solution uses the latest installed development SDK, including previews, sele
 - Preserve valid-input behavior, generated output, import behavior, provenance, and deterministic diagnostic ordering unless the requested change intentionally updates a contract.
 - Treat equality and hash codes as part of incremental-generator correctness. Add or update caching tests when a change affects pipeline inputs or outputs.
 - Imports resolve only among supplied sources and relative to the importing file. Do not add implicit filesystem reads.
-- Keep public API changes source-compatible when practical. Update API and regression coverage when public behavior changes.
+- Treat repository implementation APIs as internal, regardless of visibility or project. Refactor them directly and update callers and tests; do not retain compatibility wrappers solely because a type or member is public.
+- Keep consumer-facing contracts—generated code, MSBuild properties, package integration, and diagnostics—compatible when practical. Update documentation and regression coverage when those contracts change.
 - Do not include agent or AI attribution in branches, commits, PR titles, or PR descriptions.
 - Do not prefix branches.
 

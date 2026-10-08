@@ -882,7 +882,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         ImmutableArray<AvroSchema> schemas = defaultJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }
             ? [AvroSchema.Null, underlyingSchema]
             : [underlyingSchema, AvroSchema.Null];
-        return UnionSchema.Create(schemas, Options.UseNullableReferenceTypes);
+        return UnionSchema.Create(schemas, Options.LanguageFeatures.HasNullableReferenceTypes);
     }
 
     private AvroSchema? Union(UnionTypeSyntax syntax, string? containingNamespace)
@@ -898,7 +898,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
                 valid = false;
         }
         if (!valid) return null;
-        return UnionSchema.Create(schemas.DrainToImmutable(), Options.UseNullableReferenceTypes);
+        return UnionSchema.Create(schemas.DrainToImmutable(), Options.LanguageFeatures.HasNullableReferenceTypes);
     }
 
     private AvroSchema? Logical(ILogicalTypeSyntax syntax)

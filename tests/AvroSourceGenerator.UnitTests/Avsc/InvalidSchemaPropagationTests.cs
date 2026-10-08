@@ -76,8 +76,8 @@ public sealed class InvalidSchemaPropagationTests
     public void Invariant_failures_are_not_converted_to_diagnostics()
     {
         var source = new SourceText("test.avsc", """{"type":"string","logicalType":"uuid"}""");
-        Assert.Throws<InvalidOperationException>(() => AvxxParser.Parse(source, new AvroParseOptions((GenerationTarget)(-1), true), TestContext.Current.CancellationToken));
+        Assert.Throws<InvalidOperationException>(() => AvxxParser.Parse(source, new AvroParseOptions((GenerationTarget)(-1), LanguageFeatures.NullableReferenceTypes), TestContext.Current.CancellationToken));
     }
 
-    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
 }

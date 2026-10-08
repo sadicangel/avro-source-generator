@@ -19,6 +19,7 @@
     <File Path="SpellingExclusions.dic" />
   </Folder>
   <Folder Name="/tests/">
+    <File Path="tests/Directory.Build.props" />
     <Project Path="tests/AvroSourceGenerator.RoundtripTests.Chr/AvroSourceGenerator.RoundtripTests.Chr.csproj" />
     <Project Path="tests/AvroSourceGenerator.RoundtripTests.Apache/AvroSourceGenerator.RoundtripTests.Apache.csproj" />
     <Project Path="tests/AvroSourceGenerator.RoundtripTests/AvroSourceGenerator.RoundtripTests.csproj" />
@@ -28,6 +29,9 @@
     <Project Path="tests/AvroSourceGenerator.UnitTests.Apache/AvroSourceGenerator.UnitTests.Apache.csproj" />
     <Project Path="tests/AvroSourceGenerator.UnitTests.Chr/AvroSourceGenerator.UnitTests.Chr.csproj" Id="460c2e67-236f-443b-83f7-0a8634407824" />
     <Project Path="tests/AvroSourceGenerator.UnitTests/AvroSourceGenerator.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/AvroSourceGenerator.PackageCompatibility/">
+    <File Path="tests/AvroSourceGenerator.PackageCompatibility/Directory.Build.props" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/AvroSourceGenerator.Benchmarks/AvroSourceGenerator.Benchmarks.csproj" />

@@ -33,7 +33,7 @@ public sealed class AvscParserLocationTests
             }
             """;
         var source = new SourceText("test.avsc", Text);
-        var options = new AvroParseOptions(target, nullableReferences);
+        var options = new AvroParseOptions(target, nullableReferences ? LanguageFeatures.NullableReferenceTypes : LanguageFeatures.None);
 
         var actual = AvxxParser.Parse(source, options, TestContext.Current.CancellationToken);
 
@@ -156,7 +156,7 @@ public sealed class AvscParserLocationTests
             AvxxParser.Parse(new SourceText("test.avsc", "{}"), Options, cancellation.Token));
     }
 
-    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
 
     private static void AssertDiagnostic(AvroDiagnostic diagnostic, SourceText source, string value, AvroDiagnosticCode code, string message)
     {

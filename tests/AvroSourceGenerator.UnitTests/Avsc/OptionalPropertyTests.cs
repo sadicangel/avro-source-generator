@@ -60,7 +60,7 @@ public sealed class OptionalPropertyTests
 
     private static AvroFile Parse(string text, string extension = ".avsc") => AvxxParser.Parse(
         new SourceText("test" + extension, text),
-        new AvroParseOptions(GenerationTarget.Modern, true),
+        new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes),
         TestContext.Current.CancellationToken);
 
     [Fact]

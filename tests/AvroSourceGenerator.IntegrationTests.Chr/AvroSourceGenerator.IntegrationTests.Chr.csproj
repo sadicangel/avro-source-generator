@@ -17,6 +17,7 @@
   <ItemGroup>
     <CompilerVisibleProperty Include="AvroSourceGeneratorAvroLibrary" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorPreviewFeatures" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />
@@ -28,6 +29,7 @@
   <ItemGroup>
     <PackageReference Include="Chr.Avro.Binary" />
     <PackageReference Include="Chr.Avro.Codegen" />
+    <PackageReference Include="Chr.Avro.Json" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.Testing.Extensions.GitHubActionsReport" PrivateAssets="all" />
     <PackageReference Include="xunit.v3" />

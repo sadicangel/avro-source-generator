@@ -22,7 +22,7 @@ public sealed class AvscFixtureCoverageTests
         bool nullableReferences)
     {
         var sources = GetJsonFixtureSources();
-        var options = new AvroParseOptions(target, nullableReferences);
+        var options = new AvroParseOptions(target, nullableReferences ? LanguageFeatures.NullableReferenceTypes : LanguageFeatures.None);
         var files = sources
             .Select(source => AvxxParser.Parse(source, options, TestContext.Current.CancellationToken))
             .ToImmutableArray();
@@ -50,7 +50,7 @@ public sealed class AvscFixtureCoverageTests
             """;
         var source = new SourceText("test.avpr", Text);
 
-        var file = AvxxParser.Parse(source, new AvroParseOptions(GenerationTarget.Modern, true), TestContext.Current.CancellationToken);
+        var file = AvxxParser.Parse(source, new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes), TestContext.Current.CancellationToken);
 
         var protocol = Assert.IsType<ProtocolSchema>(file.RootSchema);
         Assert.Equal("second", Assert.Single(protocol.Messages).Documentation);

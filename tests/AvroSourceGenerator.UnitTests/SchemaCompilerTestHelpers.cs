@@ -15,7 +15,7 @@ internal static class SchemaCompilerTestHelpers
         string extension = ".avsc") =>
         AvxxParser.Parse(
             new SourceText("test" + extension, json),
-            new AvroParseOptions(generationTarget, useNullableReferenceTypes),
+            new AvroParseOptions(generationTarget, useNullableReferenceTypes ? LanguageFeatures.NullableReferenceTypes : LanguageFeatures.None),
             TestContext.Current.CancellationToken);
 
     public static AvroFile ParseSource(
@@ -24,7 +24,7 @@ internal static class SchemaCompilerTestHelpers
         bool useNullableReferenceTypes = true) =>
         AvxxParser.Parse(
             new SourceText("test.avdl", source),
-            new AvroParseOptions(generationTarget, useNullableReferenceTypes),
+            new AvroParseOptions(generationTarget, useNullableReferenceTypes ? LanguageFeatures.NullableReferenceTypes : LanguageFeatures.None),
             TestContext.Current.CancellationToken);
 
     public static AvroCompilation Bind(
@@ -52,7 +52,7 @@ internal static class SchemaCompilerTestHelpers
                 new SourceText(source.Path, source.Text),
                 new AvroParseOptions(
                     configuration.GenerationTarget,
-                    configuration.LanguageFeatures.HasFlag(LanguageFeatures.NullableReferenceTypes)),
+                    configuration.LanguageFeatures),
                 cancellationToken))
             .ToImmutableArray();
         var symbolTable = SymbolTable.FromFiles(files, cancellationToken);

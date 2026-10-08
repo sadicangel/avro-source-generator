@@ -43,13 +43,9 @@ internal sealed record GeneratorConfiguration(
         cancellationToken.ThrowIfCancellationRequested();
 
         var (projectProperties, compilationEnvironment) = input;
-        var generationTarget = GetGenerationTarget(projectProperties.AvroLibrary ?? AvroLibrary.Auto, compilationEnvironment.LanguageVersion, compilationEnvironment.AvroLibraries, out var diagnostics);
-        var languageFeatures = GetLanguageFeatures(projectProperties.LanguageFeatures ?? MapVersionToFeatures(compilationEnvironment.LanguageVersion), generationTarget, projectProperties.RecordDeclaration);
-        var accessModifier = projectProperties.AccessModifier ?? AccessModifier.Public;
-        var referenceResolution = projectProperties.ReferenceResolution ?? ReferenceResolution.Strict;
-        var duplicateResolution = projectProperties.DuplicateResolution ?? DuplicateResolution.Error;
-
-        return new GeneratorConfiguration(generationTarget, languageFeatures, accessModifier, referenceResolution, duplicateResolution, diagnostics);
+        var generationTarget = GetGenerationTarget(projectProperties.AvroLibrary, compilationEnvironment.LanguageVersion, compilationEnvironment.AvroLibraries, out var diagnostics);
+        var languageFeatures = GetLanguageFeatures(projectProperties, generationTarget) & MapVersionToFeatures(compilationEnvironment.LanguageVersion);
+        return new GeneratorConfiguration(generationTarget, languageFeatures, projectProperties.AccessModifier, projectProperties.ReferenceResolution, projectProperties.DuplicateResolution, diagnostics);
     }
 
     private static GenerationTarget GetGenerationTarget(AvroLibrary avroLibrary, LanguageVersion languageVersion, ImmutableArray<AvroLibraryReference> references, out ImmutableArray<AvroDiagnostic> diagnostics)
@@ -85,33 +81,23 @@ internal sealed record GeneratorConfiguration(
         };
     }
 
-    private static LanguageFeatures GetLanguageFeatures(LanguageFeatures languageFeatures, GenerationTarget generationTarget, string? recordDeclaration)
-    {
-        var useRecords = generationTarget is not GenerationTarget.Legacy && recordDeclaration switch
-        {
-            "record" => true,
-            "class" => false,
-            _ => languageFeatures.HasFlag(LanguageFeatures.Records)
-        };
+    private static LanguageFeatures GetLanguageFeatures(ProjectProperties projectProperties, GenerationTarget generationTarget) => projectProperties.LanguageFeatures
+        .SetRecords(projectProperties.LanguageFeatures.HasRecords && generationTarget is not GenerationTarget.Legacy && projectProperties.RecordDeclaration is "record")
+        .SetUnions(projectProperties.LanguageFeatures.HasUnions && (projectProperties.PreviewFeatures & PreviewFeatures.Unions) != 0);
 
-        return useRecords
-            ? languageFeatures | LanguageFeatures.Records
-            : languageFeatures & ~LanguageFeatures.Records;
-    }
-
-    private static LanguageFeatures MapVersionToFeatures(LanguageVersion languageVersion)
+    private static LanguageFeatures MapVersionToFeatures(LanguageVersion languageVersion) => languageVersion switch
     {
-        return languageVersion switch
-        {
-            <= LanguageVersion.CSharp7_3 => LanguageFeatures.CSharp7_3,
-            LanguageVersion.CSharp8 => LanguageFeatures.CSharp8,
-            LanguageVersion.CSharp9 => LanguageFeatures.CSharp9,
-            LanguageVersion.CSharp10 => LanguageFeatures.CSharp10,
-            LanguageVersion.CSharp11 => LanguageFeatures.CSharp11,
-            LanguageVersion.CSharp12 => LanguageFeatures.CSharp12,
-            //LanguageVersion.CSharp13 => LanguageFeatures.CSharp13,
-            //LanguageVersion.CSharp14 => LanguageFeatures.CSharp14,
-            _ => LanguageFeatures.Latest,
-        };
-    }
+        <= LanguageVersion.CSharp7_3 => LanguageFeatures.CSharp7_3,
+        LanguageVersion.CSharp8 => LanguageFeatures.CSharp8,
+        LanguageVersion.CSharp9 => LanguageFeatures.CSharp9,
+        LanguageVersion.CSharp10 => LanguageFeatures.CSharp10,
+        LanguageVersion.CSharp11 => LanguageFeatures.CSharp11,
+        LanguageVersion.CSharp12 => LanguageFeatures.CSharp12,
+        // Numeric values keep this mapping compatible with the Roslyn 5.0 baseline.
+        <= (LanguageVersion)1300 => LanguageFeatures.CSharp13,
+        <= (LanguageVersion)1400 => LanguageFeatures.CSharp14,
+        <= (LanguageVersion)1500 => LanguageFeatures.CSharp15,
+        LanguageVersion.Preview => LanguageFeatures.CSharp15,
+        _ => LanguageFeatures.All,
+    };
 }

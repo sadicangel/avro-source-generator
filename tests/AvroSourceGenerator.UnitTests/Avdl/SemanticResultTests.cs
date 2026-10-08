@@ -8,7 +8,7 @@ namespace AvroSourceGenerator.UnitTests.Avdl;
 
 public sealed class SemanticResultTests
 {
-    private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
 
     [Theory]
     [InlineData("record R {}", AvroDiagnosticCode.InvalidIdlDocument)]

@@ -12,7 +12,7 @@ public sealed class ParserBaseTests
     [Fact]
     public void References_use_the_latest_declaration_and_keep_declaration_order()
     {
-        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true));
+        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes));
         var first = Record("Shared") with { CSharpName = new CSharpName("First") };
         var latest = Record("Shared") with { CSharpName = new CSharpName("Latest") };
         context.Declare(first, SourceSpan.None);
@@ -31,7 +31,7 @@ public sealed class ParserBaseTests
     [InlineData(true)]
     public void Variant_replacement_preserves_the_latest_duplicate(bool replaceLatest)
     {
-        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true));
+        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes));
         var first = Record("Shared") with { CSharpName = new CSharpName("First") };
         var latest = Record("Shared") with { CSharpName = new CSharpName("Latest") };
         var other = Record("Other");
@@ -54,7 +54,7 @@ public sealed class ParserBaseTests
     [Fact]
     public void Replacement_rejects_an_equal_but_unregistered_instance()
     {
-        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true));
+        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes));
         var original = Record("Shared");
         context.Declare(original, SourceSpan.None);
         var clone = original with { };
@@ -67,7 +67,7 @@ public sealed class ParserBaseTests
     [Fact]
     public void Recursive_references_record_dependencies_without_external_references()
     {
-        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, true));
+        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes));
         var record = Record("Node");
         using (context.EnterRecursionScope(record.SchemaName))
         {

@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <LangVersion>preview</LangVersion>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <!-- Chr.Avro.Confluent references Apache.Avro so we need to specify which library we want to avoid AVROSG0004 -->
     <AvroSourceGeneratorAvroLibrary>Chr</AvroSourceGeneratorAvroLibrary>
@@ -18,6 +19,7 @@
   <ItemGroup>
     <CompilerVisibleProperty Include="AvroSourceGeneratorAvroLibrary" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorPreviewFeatures" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />

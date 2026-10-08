@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Templating;
+﻿using AvroSourceGenerator.Compiler;
 
 namespace AvroSourceGenerator.UnitTests.Apache.Snapshots;
 

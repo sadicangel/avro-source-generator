@@ -5,18 +5,19 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace AvroSourceGenerator.Configuration;
 
 internal sealed record ProjectProperties(
-    AvroLibrary? AvroLibrary,
-    LanguageFeatures? LanguageFeatures,
-    AccessModifier? AccessModifier,
-    string? RecordDeclaration,
-    ReferenceResolution? ReferenceResolution,
-    DuplicateResolution? DuplicateResolution)
+    AvroLibrary AvroLibrary,
+    LanguageFeatures LanguageFeatures,
+    AccessModifier AccessModifier,
+    string RecordDeclaration,
+    ReferenceResolution ReferenceResolution,
+    DuplicateResolution DuplicateResolution,
+    PreviewFeatures PreviewFeatures)
 {
     public static ProjectProperties FromAnalyzerOptions(AnalyzerConfigOptionsProvider provider, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var avroLibrary = default(AvroLibrary?);
+        var avroLibrary = AvroLibrary.Auto;
         if (provider.GlobalOptions.TryGetValue(
                 "build_property.AvroSourceGeneratorAvroLibrary",
                 out var avroLibraryString) &&
@@ -25,7 +26,7 @@ internal sealed record ProjectProperties(
             avroLibrary = parsedAvroLibrary;
         }
 
-        var languageFeatures = default(LanguageFeatures?);
+        var languageFeatures = LanguageFeatures.All;
         if (provider.GlobalOptions.TryGetValue(
                 "build_property.AvroSourceGeneratorLanguageFeatures",
                 out var languageFeaturesString) &&
@@ -34,7 +35,16 @@ internal sealed record ProjectProperties(
             languageFeatures = parsedLanguageFeatures;
         }
 
-        var accessModifier = default(AccessModifier?);
+        var previewFeatures = PreviewFeatures.None;
+        if (provider.GlobalOptions.TryGetValue(
+                "build_property.AvroSourceGeneratorPreviewFeatures",
+                out var previewFeaturesString) &&
+            Enum.TryParse<PreviewFeatures>(previewFeaturesString, ignoreCase: true, out var parsedPreviewFeatures))
+        {
+            previewFeatures = parsedPreviewFeatures;
+        }
+
+        var accessModifier = AccessModifier.Public;
         if (provider.GlobalOptions.TryGetValue(
                 "build_property.AvroSourceGeneratorAccessModifier",
                 out var accessModifierString) &&
@@ -43,15 +53,16 @@ internal sealed record ProjectProperties(
             accessModifier = parsedAccessModifier;
         }
 
-        if (!provider.GlobalOptions.TryGetValue(
+        var recordDeclaration = "record";
+        if (provider.GlobalOptions.TryGetValue(
                 "build_property.AvroSourceGeneratorRecordDeclaration",
-                out var recordDeclaration) ||
-            recordDeclaration is not ("record" or "class"))
+                out var recordDeclarationString) &&
+            recordDeclarationString is "record" or "class")
         {
-            recordDeclaration = null;
+            recordDeclaration = recordDeclarationString;
         }
 
-        var referenceResolution = default(ReferenceResolution?);
+        var referenceResolution = ReferenceResolution.Strict;
         if (provider.GlobalOptions.TryGetValue(
                 "build_property.AvroSourceGeneratorReferenceResolution",
                 out var referenceResolutionString) &&
@@ -60,7 +71,7 @@ internal sealed record ProjectProperties(
             referenceResolution = parsedReferenceResolution;
         }
 
-        var duplicateResolution = default(DuplicateResolution?);
+        var duplicateResolution = DuplicateResolution.Error;
         if (provider.GlobalOptions.TryGetValue(
                 "build_property.AvroSourceGeneratorDuplicateResolution",
                 out var duplicateResolutionString) &&
@@ -69,6 +80,6 @@ internal sealed record ProjectProperties(
             duplicateResolution = parsedDuplicateResolution;
         }
 
-        return new ProjectProperties(avroLibrary, languageFeatures, accessModifier, recordDeclaration, referenceResolution, duplicateResolution);
+        return new ProjectProperties(avroLibrary, languageFeatures, accessModifier, recordDeclaration, referenceResolution, duplicateResolution, previewFeatures);
     }
 }

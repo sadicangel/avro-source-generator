@@ -128,6 +128,30 @@ public abstract class AvxxParser(AvroParseOptions options)
 
         switch (fieldType)
         {
+            case UnionSchema union when Options.LanguageFeatures.HasUnions:
+                {
+                    var memberSchemas = union.Schemas.Canonicalize(includeNull: false).ToImmutableArray();
+                    if (memberSchemas.Length > 1)
+                    {
+                        var schemaName = UnionTaggedSchema.GetSchemaName(containingSchemaName, fieldName);
+                        var csharpName = CSharpName.FromSchemaName(schemaName);
+
+                        var generatedUnion = new UnionTaggedSchema(schemaName, csharpName, memberSchemas);
+                        Declare(generatedUnion, SourceSpan.None);
+
+                        remarks = UnionSchemaHelpers.GetDocumentation(union.Schemas, includeNull: true);
+                        union = union with
+                        {
+                            CSharpName = union.Schemas.Any(static schema => schema.Type is SchemaType.Null)
+                                ? generatedUnion.CSharpName.WithNullableAnnotation()
+                                : generatedUnion.CSharpName,
+                            UnderlyingSchema = generatedUnion
+                        };
+                    }
+                    underlyingType = union.UnderlyingSchema;
+                    return union;
+                }
+
             case UnionSchema union when UnionObjectSchema.CanCreate(union):
                 {
                     var schemaName = UnionObjectSchema.GetSchemaName(containingSchemaName, fieldName);

@@ -42,7 +42,7 @@ internal static class SchemaCompilerTestHelpers
         var cancellationToken = TestContext.Current.CancellationToken;
         var configuration = new GeneratorConfiguration(
             generationTarget,
-            LanguageFeatures.Latest,
+            LanguageFeatures.CSharp14,
             AccessModifier.Public,
             referenceResolution,
             duplicateResolution,

@@ -6,7 +6,7 @@ using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.UnitTests;
 
-public sealed class UnionObjectSchemaTests
+public sealed class UnionObjectGenerationTests
 {
     [Theory]
     [InlineData(GenerationTarget.Modern, "record", "error", true)]
@@ -30,10 +30,10 @@ public sealed class UnionObjectSchemaTests
         var field = Assert.Single(container.Fields);
         var union = Assert.IsType<UnionSchema>(field.Type);
 
-        Assert.Equal(supportsObjectUnion, UnionObjectSchema.CanCreate(union));
+        Assert.Equal(supportsObjectUnion, UnionTypeSchema.CanCreateObjectUnion(union));
         if (supportsObjectUnion)
         {
-            var variant = Assert.IsType<UnionObjectSchema>(field.UnderlyingType);
+            var variant = Assert.IsType<UnionTypeSchema>(field.UnderlyingType);
             Assert.Equal("IEnvelopeChoiceVariant", variant.SchemaName.Name);
             Assert.Same(variant, union.UnderlyingSchema);
             Assert.Equal(variant.CSharpName, field.Type.CSharpName);
@@ -49,7 +49,7 @@ public sealed class UnionObjectSchemaTests
         }
         else
         {
-            Assert.DoesNotContain(file.Declarations, schema => schema is UnionObjectSchema);
+            Assert.DoesNotContain(file.Declarations, schema => schema is UnionTypeSchema);
             Assert.All(file.Declarations.OfType<NamedSchema>(), schema => Assert.Null(schema.InheritsFrom));
         }
     }
@@ -63,13 +63,13 @@ public sealed class UnionObjectSchemaTests
         var file = SchemaCompilerTestHelpers.ParseJson(VariantGenerationAssertions.Schema(type, "error"), GenerationTarget.Apache);
         var member = file.Declarations.OfType<NamedSchema>().First();
 
-        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([], true)));
-        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([member], true)));
-        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([AvroSchema.Null, member], true)));
-        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([member, AvroSchema.Null], true)));
-        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([AvroSchema.Null, member, AvroSchema.Null], true)));
-        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([AvroSchema.Null, AvroSchema.Null, AvroSchema.Null], true)));
-        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([member, AvroSchema.String], true)));
+        Assert.False(UnionTypeSchema.CanCreateObjectUnion(UnionSchema.Create([], true)));
+        Assert.False(UnionTypeSchema.CanCreateObjectUnion(UnionSchema.Create([member], true)));
+        Assert.False(UnionTypeSchema.CanCreateObjectUnion(UnionSchema.Create([AvroSchema.Null, member], true)));
+        Assert.False(UnionTypeSchema.CanCreateObjectUnion(UnionSchema.Create([member, AvroSchema.Null], true)));
+        Assert.False(UnionTypeSchema.CanCreateObjectUnion(UnionSchema.Create([AvroSchema.Null, member, AvroSchema.Null], true)));
+        Assert.False(UnionTypeSchema.CanCreateObjectUnion(UnionSchema.Create([AvroSchema.Null, AvroSchema.Null, AvroSchema.Null], true)));
+        Assert.False(UnionTypeSchema.CanCreateObjectUnion(UnionSchema.Create([member, AvroSchema.String], true)));
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public sealed class UnionObjectSchemaTests
         ];
 
         foreach (var member in unsupported)
-            Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([first, second, member, AvroSchema.Null], true)));
+            Assert.False(UnionTypeSchema.CanCreateObjectUnion(UnionSchema.Create([first, second, member, AvroSchema.Null], true)));
     }
 
     [Theory]
@@ -108,7 +108,7 @@ public sealed class UnionObjectSchemaTests
         Assert.True(file.IsValid);
         var field = Assert.Single(Assert.IsType<RecordSchema>(file.RootSchema).Fields);
         var union = Assert.IsType<UnionSchema>(field.Type);
-        var variant = Assert.IsType<UnionObjectSchema>(field.UnderlyingType);
+        var variant = Assert.IsType<UnionTypeSchema>(field.UnderlyingType);
 
         Assert.Equal(useNullableReferenceTypes, union.CSharpName.HasNullableAnnotation);
         Assert.Same(AvroSchema.Null, union.Schemas[nullFirst ? 0 : 2]);

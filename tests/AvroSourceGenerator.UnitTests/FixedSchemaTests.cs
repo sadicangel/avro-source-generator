@@ -42,7 +42,7 @@ public sealed class FixedSchemaTests
             ("keywords.avsc", source.ToJsonString()));
         Assert.True(compiled.Compilation.IsValid);
         var fixedSchema = Assert.Single(compiled.RenderableFiles[0].EmittedSchemas.OfType<FixedSchema>());
-        var variant = Assert.Single(compiled.RenderableFiles[0].EmittedSchemas.OfType<UnionObjectSchema>());
+        var variant = Assert.Single(compiled.RenderableFiles[0].EmittedSchemas.OfType<UnionTypeSchema>());
 
         Assert.False(fixedSchema.IsSubstituted);
         Assert.Equal(new CSharpName("@class", "@namespace.@event"), fixedSchema.CSharpName);

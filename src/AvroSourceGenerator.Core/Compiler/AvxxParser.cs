@@ -133,10 +133,10 @@ public abstract class AvxxParser(AvroParseOptions options)
                     var memberSchemas = union.Schemas.Canonicalize(includeNull: false).ToImmutableArray();
                     if (memberSchemas.Length > 1)
                     {
-                        var schemaName = UnionTaggedSchema.GetSchemaName(containingSchemaName, fieldName);
+                        var schemaName = UnionTypeSchema.GetSchemaName(containingSchemaName, fieldName, useUnions: true);
                         var csharpName = CSharpName.FromSchemaName(schemaName);
 
-                        var generatedUnion = new UnionTaggedSchema(schemaName, csharpName, memberSchemas);
+                        var generatedUnion = new UnionTypeSchema(schemaName, csharpName, memberSchemas);
                         Declare(generatedUnion, SourceSpan.None);
 
                         remarks = UnionSchemaHelpers.GetDocumentation(union.Schemas, includeNull: true);
@@ -152,9 +152,9 @@ public abstract class AvxxParser(AvroParseOptions options)
                     return union;
                 }
 
-            case UnionSchema union when UnionObjectSchema.CanCreate(union):
+            case UnionSchema union when UnionTypeSchema.CanCreateObjectUnion(union):
                 {
-                    var schemaName = UnionObjectSchema.GetSchemaName(containingSchemaName, fieldName);
+                    var schemaName = UnionTypeSchema.GetSchemaName(containingSchemaName, fieldName, useUnions: false);
                     var csharpName = CSharpName.FromSchemaName(schemaName);
                     var memberSchemas = union.Schemas
                         .Canonicalize(includeNull: false)
@@ -166,7 +166,7 @@ public abstract class AvxxParser(AvroParseOptions options)
                             return member;
                         }).ToImmutableArray();
 
-                    var generatedUnion = new UnionObjectSchema(schemaName, csharpName, memberSchemas);
+                    var generatedUnion = new UnionTypeSchema(schemaName, csharpName, memberSchemas);
                     Declare(generatedUnion, SourceSpan.None);
 
                     remarks = UnionSchemaHelpers.GetDocumentation(union.Schemas, includeNull: true);

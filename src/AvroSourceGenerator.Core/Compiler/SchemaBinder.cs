@@ -29,8 +29,7 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
             RecordSchema record => BindRecord(record),
             ErrorSchema error => BindError(error),
             ProtocolSchema protocol => BindProtocol(protocol),
-            UnionObjectSchema generatedUnion => BindUnionObject(generatedUnion),
-            UnionTaggedSchema generatedUnion => BindUnionTagged(generatedUnion),
+            UnionTypeSchema generatedUnion => BindUnionType(generatedUnion),
             PrimitiveSchema or EnumSchema or FixedSchema => schema,
             _ => throw new InvalidOperationException($"Unhandled Avro schema type: {schema.GetType()}"),
         };
@@ -70,7 +69,7 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
     private AvroSchema BindUnion(UnionSchema union)
     {
         var schemas = BindItems(union.Schemas, Bind, out var schemasChanged);
-        if (union.UnderlyingSchema is UnionObjectSchema or UnionTaggedSchema)
+        if (union.UnderlyingSchema is UnionTypeSchema)
         {
             var boundUnion = Bind(union.UnderlyingSchema);
             return schemasChanged || !ReferenceEquals(boundUnion, union.UnderlyingSchema)
@@ -122,16 +121,10 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
         NamedSchema NamedSchema(NamedSchema schema) => (NamedSchema)Bind(schema);
     }
 
-    private AvroSchema BindUnionObject(UnionObjectSchema generatedUnion)
+    private AvroSchema BindUnionType(UnionTypeSchema generatedUnion)
     {
         var memberSchemas = BindItems(generatedUnion.MemberSchemas, Bind, out var changed);
-        return changed ? new UnionObjectSchema(generatedUnion.SchemaName, generatedUnion.CSharpName, memberSchemas) : generatedUnion;
-    }
-
-    private AvroSchema BindUnionTagged(UnionTaggedSchema generatedUnion)
-    {
-        var memberSchemas = BindItems(generatedUnion.MemberSchemas, Bind, out var changed);
-        return changed ? new UnionTaggedSchema(generatedUnion.SchemaName, generatedUnion.CSharpName, [.. memberSchemas.Canonicalize(includeNull: false)]) : generatedUnion;
+        return changed ? new UnionTypeSchema(generatedUnion.SchemaName, generatedUnion.CSharpName, [.. memberSchemas.Canonicalize(includeNull: false)]) : generatedUnion;
     }
 
     private Field BindField(Field field)

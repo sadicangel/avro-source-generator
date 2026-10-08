@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace AvroSourceGenerator.UnitTests;
 
-public sealed class UnionTaggedSchemaTests
+public sealed class UnionTaggedGenerationTests
 {
     [Theory]
     [InlineData(LanguageVersion.CSharp13, null, "Unions", false)]
@@ -60,7 +60,7 @@ public sealed class UnionTaggedSchemaTests
             TestContext.Current.CancellationToken);
         var field = Assert.Single(Assert.IsType<RecordSchema>(bound.Declarations.Single(schema => schema.SchemaName.Name == "Envelope")).Fields);
         var union = Assert.IsType<UnionSchema>(field.Type);
-        var tagged = Assert.IsType<UnionTaggedSchema>(field.UnderlyingType);
+        var tagged = Assert.IsType<UnionTypeSchema>(field.UnderlyingType);
 
         Assert.True(field.AllowsNull);
         Assert.Equal("global::Demo.EnvelopeChoiceUnion?", field.Type.CSharpName.FullName);
@@ -69,7 +69,7 @@ public sealed class UnionTaggedSchemaTests
         Assert.Equal(AvroSchema.Bytes.CSharpName, union.Schemas[1].CSharpName);
         Assert.Contains(tagged.MemberSchemas, schema => schema.CSharpName == AvroSchema.Bytes.CSharpName);
         Assert.Equal([CSharpName.ByteArray, CSharpName.String], tagged.MemberSchemas.Select(schema => schema.CSharpName));
-        Assert.Same(tagged, bound.Declarations.Single(schema => schema is UnionTaggedSchema));
+        Assert.Same(tagged, bound.Declarations.Single(schema => schema is UnionTypeSchema));
     }
 
     [Fact]
@@ -88,13 +88,13 @@ public sealed class UnionTaggedSchemaTests
             }
             """), options, TestContext.Current.CancellationToken);
         var parsedField = Assert.Single(Assert.IsType<RecordSchema>(envelope.RootSchema).Fields);
-        var parsedUnion = Assert.IsType<UnionTaggedSchema>(parsedField.UnderlyingType);
+        var parsedUnion = Assert.IsType<UnionTypeSchema>(parsedField.UnderlyingType);
         Assert.Equal(["AEnum", "ZFixed"], parsedUnion.MemberSchemas.Select(schema => schema.SchemaName.Name));
 
         var symbols = SymbolTable.FromFiles([fixedSchema, enumSchema, envelope], TestContext.Current.CancellationToken);
         var bound = BoundAvroFile.Bind(LinkedAvroFile.Link(envelope, symbols, TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
         var field = Assert.Single(Assert.IsType<RecordSchema>(bound.RootSchema).Fields);
-        var tagged = Assert.IsType<UnionTaggedSchema>(field.UnderlyingType);
+        var tagged = Assert.IsType<UnionTypeSchema>(field.UnderlyingType);
 
         Assert.Equal(["ZFixed", "AEnum"], tagged.MemberSchemas.Select(schema => schema.SchemaName.Name));
         Assert.Equal([CSharpName.ByteArray, new CSharpName("AEnum", "Demo")], tagged.MemberSchemas.Select(schema => schema.CSharpName));
@@ -114,7 +114,7 @@ public sealed class UnionTaggedSchemaTests
 
         Assert.True(field.AllowsNull);
         Assert.True(field.Type.CSharpName.HasNullableAnnotation);
-        Assert.IsType<UnionTaggedSchema>(field.UnderlyingType);
+        Assert.IsType<UnionTypeSchema>(field.UnderlyingType);
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public sealed class UnionTaggedSchemaTests
             """),
             new AvroParseOptions(GenerationTarget.Chr, LanguageFeatures.CSharp15), TestContext.Current.CancellationToken);
         var field = Assert.Single(Assert.IsType<RecordSchema>(file.RootSchema).Fields);
-        var tagged = Assert.IsType<UnionTaggedSchema>(field.UnderlyingType);
+        var tagged = Assert.IsType<UnionTypeSchema>(field.UnderlyingType);
 
         Assert.Equal(3, Assert.IsType<UnionSchema>(field.Type).Schemas.Length);
         Assert.Equal([CSharpName.String, CSharpName.ByteArray], tagged.MemberSchemas.Select(schema => schema.CSharpName));

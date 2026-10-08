@@ -30,6 +30,7 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
             ErrorSchema error => BindError(error),
             ProtocolSchema protocol => BindProtocol(protocol),
             UnionObjectSchema generatedUnion => BindUnionObject(generatedUnion),
+            UnionTaggedSchema generatedUnion => BindUnionTagged(generatedUnion),
             PrimitiveSchema or EnumSchema or FixedSchema => schema,
             _ => throw new InvalidOperationException($"Unhandled Avro schema type: {schema.GetType()}"),
         };
@@ -69,7 +70,7 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
     private AvroSchema BindUnion(UnionSchema union)
     {
         var schemas = BindItems(union.Schemas, Bind, out var schemasChanged);
-        if (union.UnderlyingSchema is UnionObjectSchema)
+        if (union.UnderlyingSchema is UnionObjectSchema or UnionTaggedSchema)
         {
             var boundUnion = Bind(union.UnderlyingSchema);
             return schemasChanged || !ReferenceEquals(boundUnion, union.UnderlyingSchema)
@@ -125,6 +126,12 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
     {
         var memberSchemas = BindItems(generatedUnion.MemberSchemas, Bind, out var changed);
         return changed ? new UnionObjectSchema(generatedUnion.SchemaName, generatedUnion.CSharpName, memberSchemas) : generatedUnion;
+    }
+
+    private AvroSchema BindUnionTagged(UnionTaggedSchema generatedUnion)
+    {
+        var memberSchemas = BindItems(generatedUnion.MemberSchemas, Bind, out var changed);
+        return changed ? new UnionTaggedSchema(generatedUnion.SchemaName, generatedUnion.CSharpName, [.. memberSchemas.Canonicalize(includeNull: false)]) : generatedUnion;
     }
 
     private Field BindField(Field field)

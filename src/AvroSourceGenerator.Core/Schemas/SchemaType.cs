@@ -20,5 +20,6 @@ public enum SchemaType
     Logical,
     Protocol,
     UnionObject,
+    UnionTagged,
     Reference,
 }

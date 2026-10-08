@@ -86,6 +86,7 @@ function Invoke-DotNet([string[]]$Arguments) {
 }
 
 $passedConsumers = 0
+$expectedConsumers = 6
 $compilerVersion = $null
 $selectedApi = $null
 $reviewNote = $null
@@ -98,7 +99,10 @@ try {
   }
   Write-Host "Validating SDK $actualSdk with package $packageVersion."
   $sdkMajor = [int]($SdkVersion.Split('.')[0])
-  foreach ($mode in @('CSharp12', 'SdkDefault')) {
+  $modes = @('CSharp12', 'SdkDefault')
+  if ($sdkMajor -ge 11) { $modes += 'SdkUnions' }
+  $expectedConsumers = $modes.Count * 3
+  foreach ($mode in $modes) {
     $modeDirectory = Join-Path $workspace $mode
     [IO.Directory]::CreateDirectory($modeDirectory) | Out-Null
     Copy-Item -LiteralPath $PSScriptRoot -Destination (Join-Path $modeDirectory 'Consumers') -Recurse
@@ -108,7 +112,7 @@ try {
       Where-Object Extension -In @('.avsc', '.avpr', '.avdl') |
       Copy-Item -Destination $schemas
     $framework = if ($mode -eq 'CSharp12') { 'net10.0' } else { "net$sdkMajor.0" }
-    $language = if ($mode -eq 'CSharp12') { '12.0' } else { 'default' }
+    $language = if ($mode -eq 'CSharp12') { '12.0' } elseif ($mode -eq 'SdkUnions') { 'preview' } else { 'default' }
     foreach ($library in @('Apache', 'Chr', 'None')) {
       $project = Join-Path $modeDirectory "Consumers/$library/$library.csproj"
       $compilerApi = & dotnet msbuild $project -nologo -getProperty:CompilerApiVersion
@@ -131,6 +135,7 @@ try {
         "-p:ValidationPackageVersion=$packageVersion",
         "-p:ConsumerTargetFramework=$framework",
         "-p:ConsumerLanguageVersion=$language",
+        "-p:ConsumerPreviewFeatures=$(if ($mode -eq 'SdkUnions') { 'Unions' } else { 'None' })",
         "-p:ExpectedRoslynApiVersion=$selectedApi"
       )
       Invoke-DotNet -Arguments (@('restore', $project, '--configfile', $nugetConfig, '--packages', $cache) + $properties)
@@ -162,7 +167,7 @@ finally {
     CompilerRoslyn = if ($compilerVersion) { $compilerVersion.ToString(2) } else { 'Unknown' }
     GeneratorRoslyn = if ($selectedApi) { $selectedApi } else { 'Unknown' }
     PassedConsumers = $passedConsumers
-    ExpectedConsumers = 6
+    ExpectedConsumers = $expectedConsumers
     ReviewNote = $reviewNote
     Failure = $failure
   }

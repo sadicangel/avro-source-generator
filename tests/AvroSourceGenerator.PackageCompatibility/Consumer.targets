@@ -6,6 +6,8 @@
     <AvroSourceGeneratorAvroLibrary>$(ConsumerLibrary)</AvroSourceGeneratorAvroLibrary>
     <AvroSourceGeneratorRecordDeclaration>class</AvroSourceGeneratorRecordDeclaration>
     <AvroSourceGeneratorAccessModifier>internal</AvroSourceGeneratorAccessModifier>
+    <AvroSourceGeneratorPreviewFeatures>$(ConsumerPreviewFeatures)</AvroSourceGeneratorPreviewFeatures>
+    <DefineConstants Condition="'$(ConsumerPreviewFeatures)' == 'Unions'">$(DefineConstants);UNIONS</DefineConstants>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
     <WarningsAsErrors>$(WarningsAsErrors);CS8032;CS8784;CS8785;CS9057;AVROSG0004</WarningsAsErrors>

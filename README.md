@@ -266,6 +266,31 @@ This disables newer features such as records or nullable reference types.
 Supported values include `All`, `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, `CSharp12`, `CSharp13`, `CSharp14`, and `CSharp15`.
 Selecting a newer feature set cannot enable syntax unsupported by the project's language version.
 
+C# 15 in .NET 11 introduces [union types](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/union).
+Avro Source Generator can use them for Avro union fields as an opt-in preview feature.
+To enable them, use the .NET 11 preview SDK and add:
+
+```xml
+<PropertyGroup>
+  <TargetFramework>net11.0</TargetFramework>
+  <LangVersion>preview</LangVersion>
+  <AvroSourceGeneratorPreviewFeatures>Unions</AvroSourceGeneratorPreviewFeatures>
+</PropertyGroup>
+```
+
+Without this opt-in, the generator keeps its existing union representation, including `I…Variant` interfaces.
+If you also set `AvroSourceGeneratorLanguageFeatures`, choose `CSharp15` or `All` to allow union types.
+
+Current limitations:
+
+- Each non-null Avro union branch must map to a distinct C# type. For example, `bytes` and a `fixed` schema
+  that both map to `byte[]` cannot be distinguished.
+- Apache.Avro currently deserializes enums as integers rather than their generated enum types.
+  This prevents correct enum deserialization in native unions and makes enum branches indistinguishable
+  from other enums or an `int` branch. The fix is tracked in [Apache Avro PR #4031](https://github.com/apache/avro/pull/4031).
+
+With Chr.Avro, register the generated serializer and deserializer builder cases for each union.
+
 ---
 
 ### Avro Library Selection

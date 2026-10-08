@@ -9,6 +9,8 @@ The SDK matrix currently contains the fixed minimum SDK 10.0.100 and the latest 
 When .NET 11 is GA and .NET 12 enters preview, add a fixed .NET 11 SDK baseline alongside those checks.
 
 Each SDK runs every consumer twice: with C# 12 targeting .NET 10, and with its default C# version targeting its own .NET version.
+SDKs starting with .NET 11 also run each consumer with the preview language version and `AvroSourceGeneratorPreviewFeatures=Unions`,
+checking that the packaged generator emits usable native unions. The other runs verify that unions remain interface-based without that opt-in.
 The C# 12 runs emit source hashes for comparison across SDKs. Unit snapshots remain a single suite on the latest Roslyn;
 Kafka and Schema Registry tests live in the separate roundtrip projects and run once per library.
 

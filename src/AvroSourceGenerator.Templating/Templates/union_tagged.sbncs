@@ -1,0 +1,7 @@
+{{ AccessModifier }} readonly partial union {{ $.schema.CSharpName.Name }}(
+    {{~ for type in $.schema.MemberSchemas ~}}
+    {{ type }}{{ if !for.last }},{{ else }});{{ end }}
+    {{~ end ~}}
+{{ if GenerationTarget == 'Chr' }}
+{{ include 'chr.union_tagged' schema: $.schema }}
+{{- end }}

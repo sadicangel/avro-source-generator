@@ -1,1 +1,12 @@
-{{~ !field.AllowsNull ? $"({ field.Type }){ FieldValueExpression }" : $"{ FieldValueExpression } is null ? null : ({ field.UnderlyingType }){ FieldValueExpression }" ~}}
+{{- if field.UnderlyingType.Type != 'UnionTagged'}}
+{{- !field.AllowsNull ? $"({ field.Type }){ FieldValueExpression }" : $"{ FieldValueExpression } is null ? null : ({ field.UnderlyingType }){ FieldValueExpression }" -}}
+{{- else -}}
+{{- FieldValueExpression }} switch
+            {
+                {{ if field.AllowsNull }}null => null,{{ end }}
+                {{~ for type in field.PossibleTypes ~}}
+                {{ type }} x => x,
+                {{~ end ~}}
+                _ => throw new global::Avro.AvroRuntimeException({{"$"}}"Bad value {fieldValue} for field {{ field.Name.SchemaName }} in Put()")
+            }
+{{- end -}}

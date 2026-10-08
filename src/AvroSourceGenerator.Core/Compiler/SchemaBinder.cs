@@ -29,7 +29,7 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
             RecordSchema record => BindRecord(record),
             ErrorSchema error => BindError(error),
             ProtocolSchema protocol => BindProtocol(protocol),
-            VariantSchema variant => BindVariant(variant),
+            UnionObjectSchema generatedUnion => BindUnionObject(generatedUnion),
             PrimitiveSchema or EnumSchema or FixedSchema => schema,
             _ => throw new InvalidOperationException($"Unhandled Avro schema type: {schema.GetType()}"),
         };
@@ -68,22 +68,19 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
 
     private AvroSchema BindUnion(UnionSchema union)
     {
-        // The variant contains all the schemas of the union - which beans we can just bind that.
-        if (union.UnderlyingSchema is VariantSchema variant)
+        var schemas = BindItems(union.Schemas, Bind, out var schemasChanged);
+        if (union.UnderlyingSchema is UnionObjectSchema)
         {
-            var boundVariant = (VariantSchema)Bind(variant);
-            if (ReferenceEquals(boundVariant, variant))
-                return union;
-
-            return union with
-            {
-                CSharpName = union.CSharpName.HasNullableAnnotation ? boundVariant.CSharpName.WithNullableAnnotation() : boundVariant.CSharpName,
-                Schemas = boundVariant.DerivedSchemas,
-                UnderlyingSchema = boundVariant
-            };
+            var boundUnion = Bind(union.UnderlyingSchema);
+            return schemasChanged || !ReferenceEquals(boundUnion, union.UnderlyingSchema)
+                ? union with
+                {
+                    Schemas = schemas,
+                    UnderlyingSchema = boundUnion
+                }
+                : union;
         }
 
-        var schemas = BindItems(union.Schemas, Bind, out var schemasChanged);
         return schemasChanged
             ? UnionSchema.Create(schemas, _options.LanguageFeatures.HasNullableReferenceTypes)
             : union;
@@ -124,10 +121,10 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
         NamedSchema NamedSchema(NamedSchema schema) => (NamedSchema)Bind(schema);
     }
 
-    private AvroSchema BindVariant(VariantSchema variant)
+    private AvroSchema BindUnionObject(UnionObjectSchema generatedUnion)
     {
-        var derivedSchemas = BindItems(variant.DerivedSchemas, Bind, out var changed);
-        return changed ? new VariantSchema(variant.SchemaName, variant.CSharpName, derivedSchemas) : variant;
+        var memberSchemas = BindItems(generatedUnion.MemberSchemas, Bind, out var changed);
+        return changed ? new UnionObjectSchema(generatedUnion.SchemaName, generatedUnion.CSharpName, memberSchemas) : generatedUnion;
     }
 
     private Field BindField(Field field)

@@ -3,9 +3,8 @@
 namespace com.example.user
 {
     /// <summary>
-    /// Represents a union schema that can be one of the following:
+    /// Represents a union of the following types:
     /// <list type="bullet">
-    /// <item><see langword="null"/></item>
     /// <item><see cref="global::com.example.user.EmailContact"/></item>
     /// <item><see cref="global::com.example.user.PhoneContact"/></item>
     /// </list>

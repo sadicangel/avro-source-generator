@@ -6,7 +6,7 @@ using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.UnitTests;
 
-public sealed class VariantSchemaTests
+public sealed class UnionObjectSchemaTests
 {
     [Theory]
     [InlineData(GenerationTarget.Modern, "record", "error", true)]
@@ -18,8 +18,11 @@ public sealed class VariantSchemaTests
     [InlineData(GenerationTarget.Legacy, "record", "fixed", false)]
     [InlineData(GenerationTarget.Chr, "fixed", "fixed", false)]
     [InlineData(GenerationTarget.Apache, "error", "enum", false)]
-    public void Only_generated_named_members_implement_variants(
-        GenerationTarget target, string firstType, string secondType, bool supportsVariant)
+    public void Only_generated_named_members_support_object_unions(
+        GenerationTarget target,
+        string firstType,
+        string secondType,
+        bool supportsObjectUnion)
     {
         var file = SchemaCompilerTestHelpers.ParseJson(VariantGenerationAssertions.Schema(firstType, secondType), target);
         Assert.True(file.IsValid);
@@ -27,10 +30,10 @@ public sealed class VariantSchemaTests
         var field = Assert.Single(container.Fields);
         var union = Assert.IsType<UnionSchema>(field.Type);
 
-        Assert.Equal(supportsVariant, union.SupportsVariant());
-        if (supportsVariant)
+        Assert.Equal(supportsObjectUnion, UnionObjectSchema.CanCreate(union));
+        if (supportsObjectUnion)
         {
-            var variant = Assert.IsType<VariantSchema>(field.UnderlyingType);
+            var variant = Assert.IsType<UnionObjectSchema>(field.UnderlyingType);
             Assert.Equal("IEnvelopeChoiceVariant", variant.SchemaName.Name);
             Assert.Same(variant, union.UnderlyingSchema);
             Assert.Equal(variant.CSharpName, field.Type.CSharpName);
@@ -38,7 +41,7 @@ public sealed class VariantSchemaTests
             for (var i = 0; i < 2; i++)
             {
                 var member = Assert.IsAssignableFrom<NamedSchema>(union.Schemas[i]);
-                Assert.Same(member, variant.DerivedSchemas[i]);
+                Assert.Same(member, variant.MemberSchemas[i]);
                 Assert.Same(member, file.Declarations.Single(schema => schema.SchemaName == member.SchemaName));
                 Assert.Equal(variant.CSharpName, member.InheritsFrom);
                 Assert.Contains(member.SchemaName, file.Dependencies[container.SchemaName]);
@@ -46,7 +49,7 @@ public sealed class VariantSchemaTests
         }
         else
         {
-            Assert.DoesNotContain(file.Declarations, schema => schema is VariantSchema);
+            Assert.DoesNotContain(file.Declarations, schema => schema is UnionObjectSchema);
             Assert.All(file.Declarations.OfType<NamedSchema>(), schema => Assert.Null(schema.InheritsFrom));
         }
     }
@@ -55,17 +58,39 @@ public sealed class VariantSchemaTests
     [InlineData("record")]
     [InlineData("error")]
     [InlineData("fixed")]
-    public void Single_members_and_optional_members_do_not_need_variants(string type)
+    public void Single_members_and_optional_members_do_not_need_object_unions(string type)
     {
         var file = SchemaCompilerTestHelpers.ParseJson(VariantGenerationAssertions.Schema(type, "error"), GenerationTarget.Apache);
         var member = file.Declarations.OfType<NamedSchema>().First();
 
-        Assert.False(UnionSchema.Create([], true).SupportsVariant());
-        Assert.False(UnionSchema.Create([member], true).SupportsVariant());
-        Assert.False(UnionSchema.Create([AvroSchema.Null, member], true).SupportsVariant());
-        Assert.False(UnionSchema.Create([member, AvroSchema.Null], true).SupportsVariant());
-        Assert.False(UnionSchema.Create([AvroSchema.Null, AvroSchema.Null, AvroSchema.Null], true).SupportsVariant());
-        Assert.False(UnionSchema.Create([member, AvroSchema.String], true).SupportsVariant());
+        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([], true)));
+        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([member], true)));
+        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([AvroSchema.Null, member], true)));
+        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([member, AvroSchema.Null], true)));
+        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([AvroSchema.Null, member, AvroSchema.Null], true)));
+        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([AvroSchema.Null, AvroSchema.Null, AvroSchema.Null], true)));
+        Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([member, AvroSchema.String], true)));
+    }
+
+    [Fact]
+    public void Non_named_members_do_not_support_object_unions()
+    {
+        var properties = ImmutableSortedDictionary<string, JsonElement>.Empty;
+        var first = new RecordSchema(new SchemaName("First"), null, [], [], properties);
+        var second = new ErrorSchema(new SchemaName("Second"), null, [], [], properties);
+        AvroSchema[] unsupported =
+        [
+            AvroSchema.Boolean, AvroSchema.Int, AvroSchema.Long, AvroSchema.Float,
+            AvroSchema.Double, AvroSchema.Bytes, AvroSchema.String,
+            new ArraySchema(first, null, properties),
+            new MapSchema(first, null, properties),
+            new AvroSchemaReference(first.SchemaName),
+            new LogicalSchema(first, new SchemaName("logical"), first.CSharpName),
+            UnionSchema.Create([first, second], true),
+        ];
+
+        foreach (var member in unsupported)
+            Assert.False(UnionObjectSchema.CanCreate(UnionSchema.Create([first, second, member, AvroSchema.Null], true)));
     }
 
     [Theory]
@@ -83,11 +108,16 @@ public sealed class VariantSchemaTests
         Assert.True(file.IsValid);
         var field = Assert.Single(Assert.IsType<RecordSchema>(file.RootSchema).Fields);
         var union = Assert.IsType<UnionSchema>(field.Type);
-        var variant = Assert.IsType<VariantSchema>(field.UnderlyingType);
+        var variant = Assert.IsType<UnionObjectSchema>(field.UnderlyingType);
 
         Assert.Equal(useNullableReferenceTypes, union.CSharpName.HasNullableAnnotation);
-        Assert.Same(AvroSchema.Null, variant.DerivedSchemas[nullFirst ? 0 : 2]);
-        Assert.All(variant.DerivedSchemas.OfType<NamedSchema>(), member => Assert.Equal(variant.CSharpName, member.InheritsFrom));
+        Assert.Same(AvroSchema.Null, union.Schemas[nullFirst ? 0 : 2]);
+        Assert.True(field.AllowsNull);
+        Assert.Equal(["First", "Second"], variant.MemberSchemas.Select(member => member.SchemaName.Name));
+        Assert.DoesNotContain(variant.MemberSchemas, member => member.Type is SchemaType.Null);
+        Assert.Contains("<see langword=\"null\"/>", field.Remarks);
+        Assert.DoesNotContain("<see langword=\"null\"/>", variant.Documentation);
+        Assert.All(variant.MemberSchemas.OfType<NamedSchema>(), member => Assert.Equal(variant.CSharpName, member.InheritsFrom));
     }
 
     [Theory]
@@ -100,7 +130,9 @@ public sealed class VariantSchemaTests
         var source = JsonNode.Parse(VariantGenerationAssertions.Schema(type, type))!;
         source["fields"]![0]!["type"]![1]!["name"] = "First";
         var compiled = SchemaCompilerTestHelpers.Compile(
-            GenerationTarget.Apache, ReferenceResolution.Strict, resolution,
+            GenerationTarget.Apache,
+            ReferenceResolution.Strict,
+            resolution,
             ("duplicates.avsc", source.ToJsonString()));
 
         var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);

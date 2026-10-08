@@ -5,7 +5,7 @@ namespace AvroSourceGenerator.UnitTests;
 public sealed class FieldPossibleTypesTests
 {
     [Fact]
-    public void PossibleTypes_ReflectAvroSchemaBranchesInOrder()
+    public void PossibleTypes_UseCanonicalNonNullUnionBranches()
     {
         var parsed = SchemaCompilerTestHelpers.ParseJson(
             """
@@ -26,14 +26,18 @@ public sealed class FieldPossibleTypesTests
         var fields = record.Fields.ToDictionary(field => field.Name);
 
         AssertFieldMetadata(fields["ordinary"], allowsNull: false, hasNullableAnnotation: false, SchemaType.String);
-        AssertFieldMetadata(fields["nullableSingle"], allowsNull: true, hasNullableAnnotation: true, SchemaType.Null, SchemaType.String);
-        AssertFieldMetadata(fields["multi"], allowsNull: false, hasNullableAnnotation: false, SchemaType.String, SchemaType.Int);
-        AssertFieldMetadata(fields["nullableMulti"], allowsNull: true, hasNullableAnnotation: true, SchemaType.Long, SchemaType.Null, SchemaType.Boolean);
+        AssertFieldMetadata(fields["nullableSingle"], allowsNull: true, hasNullableAnnotation: true, SchemaType.String);
+        AssertFieldMetadata(fields["multi"], allowsNull: false, hasNullableAnnotation: false, SchemaType.Int, SchemaType.String);
+        AssertFieldMetadata(fields["nullableMulti"], allowsNull: true, hasNullableAnnotation: true, SchemaType.Boolean, SchemaType.Long);
         AssertFieldMetadata(fields["onlyNull"], allowsNull: true, hasNullableAnnotation: false, SchemaType.Null);
+
+        Assert.Equal(
+            [SchemaType.Long, SchemaType.Null, SchemaType.Boolean],
+            Assert.IsType<UnionSchema>(fields["nullableMulti"].Type).Schemas.Select(schema => schema.Type));
     }
 
     [Fact]
-    public void PossibleTypes_AvdlOptionalSyntaxIncludesNullBranch()
+    public void PossibleTypes_AvdlOptionalSyntaxExcludesNullBranch()
     {
         var parsed = SchemaCompilerTestHelpers.ParseSource(
             """
@@ -47,7 +51,7 @@ public sealed class FieldPossibleTypesTests
         var record = Assert.IsType<RecordSchema>(Assert.Single(parsed.Declarations));
         var field = Assert.Single(record.Fields);
 
-        AssertFieldMetadata(field, allowsNull: true, hasNullableAnnotation: true, SchemaType.Null, SchemaType.String);
+        AssertFieldMetadata(field, allowsNull: true, hasNullableAnnotation: true, SchemaType.String);
     }
 
     [Fact]
@@ -69,8 +73,8 @@ public sealed class FieldPossibleTypesTests
         var record = Assert.IsType<RecordSchema>(Assert.Single(parsed.Declarations));
         var fields = record.Fields.ToDictionary(field => field.Name);
 
-        AssertFieldMetadata(fields["reference"], allowsNull: true, hasNullableAnnotation: false, SchemaType.Null, SchemaType.String);
-        AssertFieldMetadata(fields["value"], allowsNull: true, hasNullableAnnotation: true, SchemaType.Null, SchemaType.Int);
+        AssertFieldMetadata(fields["reference"], allowsNull: true, hasNullableAnnotation: false, SchemaType.String);
+        AssertFieldMetadata(fields["value"], allowsNull: true, hasNullableAnnotation: true, SchemaType.Int);
     }
 
     [Fact]
@@ -90,8 +94,8 @@ public sealed class FieldPossibleTypesTests
         var record = Assert.IsType<RecordSchema>(Assert.Single(parsed.Declarations));
         var fields = record.Fields.ToDictionary(field => field.Name);
 
-        AssertFieldMetadata(fields["reference"], allowsNull: true, hasNullableAnnotation: false, SchemaType.Null, SchemaType.String);
-        AssertFieldMetadata(fields["value"], allowsNull: true, hasNullableAnnotation: true, SchemaType.Null, SchemaType.Int);
+        AssertFieldMetadata(fields["reference"], allowsNull: true, hasNullableAnnotation: false, SchemaType.String);
+        AssertFieldMetadata(fields["value"], allowsNull: true, hasNullableAnnotation: true, SchemaType.Int);
     }
 
     private static void AssertFieldMetadata(Field field, bool allowsNull, bool hasNullableAnnotation, params SchemaType[] possibleTypes)

@@ -12,8 +12,8 @@ public class {{ $serializer }}(global::Chr.Avro.Serialization.IBinarySerializerB
     {
         return schema switch
         {
-            {{~ for derived in $.schema.DerivedSchemas ~}}
-            global::Chr.Avro.Abstract.RecordSchema { Name: "{{ derived.SchemaName.Name }}" } => typeof({{ derived }}),
+            {{~ for member in $.schema.MemberSchemas ~}}
+            global::Chr.Avro.Abstract.RecordSchema { Name: "{{ member.SchemaName.Name }}" } => typeof({{ member }}),
             {{~ end ~}}
             _ => throw new global::Chr.Avro.UnsupportedSchemaException(schema),
         };
@@ -33,8 +33,8 @@ public class {{ $deserializer }}(global::Chr.Avro.Serialization.IBinaryDeseriali
     {
         return schema switch
         {
-            {{~ for derived in $.schema.DerivedSchemas ~}}
-            global::Chr.Avro.Abstract.RecordSchema { Name: "{{ derived.SchemaName.Name }}" } => typeof({{ derived }}),
+            {{~ for member in $.schema.MemberSchemas ~}}
+            global::Chr.Avro.Abstract.RecordSchema { Name: "{{ member.SchemaName.Name }}" } => typeof({{ member }}),
             {{~ end ~}}
             _ => throw new global::Chr.Avro.UnsupportedSchemaException(schema),
         };

@@ -1,4 +1,4 @@
-using AvroSourceGenerator.Compiler;
+﻿using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.UnitTests;
@@ -107,11 +107,11 @@ public sealed class BoundAvroFileTests
         var parsed = compiled.Files[1].Declarations;
         var parsedFirst = Assert.IsAssignableFrom<NamedSchema>(parsed.Single(schema => schema.SchemaName.Name == "First"));
         var parsedSecond = Assert.IsType<RecordSchema>(parsed.Single(schema => schema.SchemaName.Name == "Second"));
-        var parsedVariant = Assert.IsType<VariantSchema>(parsed.Single(schema => schema.Type is SchemaType.Variant));
+        var parsedVariant = Assert.IsType<UnionObjectSchema>(parsed.Single(schema => schema.Type is SchemaType.UnionObject));
         var bound = compiled.BoundFiles[1].Declarations;
         var boundFirst = Assert.IsAssignableFrom<NamedSchema>(bound.Single(schema => schema.SchemaName.Name == "First"));
         var boundSecond = Assert.IsType<RecordSchema>(bound.Single(schema => schema.SchemaName.Name == "Second"));
-        var boundVariant = Assert.IsType<VariantSchema>(bound.Single(schema => schema.Type is SchemaType.Variant));
+        var boundVariant = Assert.IsType<UnionObjectSchema>(bound.Single(schema => schema.Type is SchemaType.UnionObject));
         var envelope = Assert.IsType<RecordSchema>(bound.Single(schema => schema.SchemaName.Name == "Envelope"));
         var union = Assert.IsType<UnionSchema>(Assert.Single(envelope.Fields).Type);
 
@@ -123,8 +123,8 @@ public sealed class BoundAvroFileTests
         Assert.Equal(boundVariant.CSharpName, boundFirst.InheritsFrom);
         Assert.Equal(boundVariant.CSharpName, boundSecond.InheritsFrom);
         Assert.Same(boundVariant, union.UnderlyingSchema);
-        Assert.Same(boundFirst, boundVariant.DerivedSchemas[0]);
-        Assert.Same(boundSecond, boundVariant.DerivedSchemas[1]);
+        Assert.Same(boundFirst, boundVariant.MemberSchemas[0]);
+        Assert.Same(boundSecond, boundVariant.MemberSchemas[1]);
         var fields = boundFirst switch
         {
             RecordSchema record => record.Fields,

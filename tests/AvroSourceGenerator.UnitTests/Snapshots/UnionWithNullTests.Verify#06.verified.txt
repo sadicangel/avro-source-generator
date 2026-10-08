@@ -29,7 +29,7 @@ namespace com.example.user
         /// User can be contacted by email or phone; field is optional
         /// </summary>
         /// <remarks>
-        /// Represents a union schema that can be one of the following:
+        /// Represents a union of the following types:
         /// <list type="bullet">
         /// <item><see langword="null"/></item>
         /// <item><see cref="global::com.example.user.EmailContact"/></item>

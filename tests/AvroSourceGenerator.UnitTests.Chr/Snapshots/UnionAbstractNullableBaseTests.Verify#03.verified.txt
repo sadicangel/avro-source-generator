@@ -3,9 +3,8 @@
 namespace com.example.notifications
 {
     /// <summary>
-    /// Represents a union schema that can be one of the following:
+    /// Represents a union of the following types:
     /// <list type="bullet">
-    /// <item><see langword="null"/></item>
     /// <item><see cref="global::com.example.notifications.EmailContent"/></item>
     /// <item><see cref="global::com.example.notifications.PushContent"/></item>
     /// <item><see cref="global::com.example.notifications.SmsContent"/></item>
@@ -27,10 +26,9 @@ namespace com.example.notifications
         {
             return schema switch
             {
-                global::Chr.Avro.Abstract.RecordSchema { Name: "null" } => typeof(object),
                 global::Chr.Avro.Abstract.RecordSchema { Name: "EmailContent" } => typeof(global::com.example.notifications.EmailContent),
-                global::Chr.Avro.Abstract.RecordSchema { Name: "SmsContent" } => typeof(global::com.example.notifications.SmsContent),
                 global::Chr.Avro.Abstract.RecordSchema { Name: "PushContent" } => typeof(global::com.example.notifications.PushContent),
+                global::Chr.Avro.Abstract.RecordSchema { Name: "SmsContent" } => typeof(global::com.example.notifications.SmsContent),
                 _ => throw new global::Chr.Avro.UnsupportedSchemaException(schema),
             };
         }
@@ -49,10 +47,9 @@ namespace com.example.notifications
         {
             return schema switch
             {
-                global::Chr.Avro.Abstract.RecordSchema { Name: "null" } => typeof(object),
                 global::Chr.Avro.Abstract.RecordSchema { Name: "EmailContent" } => typeof(global::com.example.notifications.EmailContent),
-                global::Chr.Avro.Abstract.RecordSchema { Name: "SmsContent" } => typeof(global::com.example.notifications.SmsContent),
                 global::Chr.Avro.Abstract.RecordSchema { Name: "PushContent" } => typeof(global::com.example.notifications.PushContent),
+                global::Chr.Avro.Abstract.RecordSchema { Name: "SmsContent" } => typeof(global::com.example.notifications.SmsContent),
                 _ => throw new global::Chr.Avro.UnsupportedSchemaException(schema),
             };
         }

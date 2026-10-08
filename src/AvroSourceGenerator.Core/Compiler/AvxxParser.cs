@@ -128,37 +128,43 @@ public abstract class AvxxParser(AvroParseOptions options)
 
         switch (fieldType)
         {
-            case UnionSchema union:
-                if (union.SupportsVariant())
+            case UnionSchema union when UnionObjectSchema.CanCreate(union):
                 {
-                    var schemaName = VariantSchema.GetSchemaName(containingSchemaName, fieldName);
+                    var schemaName = UnionObjectSchema.GetSchemaName(containingSchemaName, fieldName);
                     var csharpName = CSharpName.FromSchemaName(schemaName);
-                    var derivedSchemas = ImmutableArray.CreateBuilder<AvroSchema>(union.Schemas.Length);
-                    foreach (var schema in union.Schemas)
-                    {
-                        if (schema is NamedSchema { Type: not SchemaType.Enum } named)
+                    var memberSchemas = union.Schemas
+                        .Canonicalize(includeNull: false)
+                        .Cast<NamedSchema>()
+                        .Select(AvroSchema (schema) =>
                         {
-                            named = named with { InheritsFrom = csharpName };
-                            Replace((TopLevelSchema)schema, named);
-                            derivedSchemas.Add(named);
-                        }
-                        else
-                        {
-                            derivedSchemas.Add(schema);
-                        }
-                    }
-                    var variant = new VariantSchema(schemaName, csharpName, derivedSchemas.DrainToImmutable());
-                    Declare(variant, SourceSpan.None);
+                            var member = schema with { InheritsFrom = csharpName };
+                            Replace(schema, member);
+                            return member;
+                        }).ToImmutableArray();
 
-                    remarks = variant.Documentation;
+                    var generatedUnion = new UnionObjectSchema(schemaName, csharpName, memberSchemas);
+                    Declare(generatedUnion, SourceSpan.None);
+
+                    remarks = UnionSchemaHelpers.GetDocumentation(union.Schemas, includeNull: true);
                     union = union with
                     {
-                        CSharpName = union.CSharpName.HasNullableAnnotation ? variant.CSharpName.WithNullableAnnotation() : variant.CSharpName,
-                        Schemas = variant.DerivedSchemas,
-                        UnderlyingSchema = variant
+                        CSharpName = union.Schemas.Any(static schema => schema.Type is SchemaType.Null) && Options.LanguageFeatures.HasNullableReferenceTypes
+                            ? generatedUnion.CSharpName.WithNullableAnnotation()
+                            : generatedUnion.CSharpName,
+                        UnderlyingSchema = generatedUnion,
+                        Schemas =
+                        [
+                            .. union.Schemas.Select(schema => schema.Type is SchemaType.Null
+                                ? schema
+                                : generatedUnion.MemberSchemas.Single(member => member.CSharpName == schema.CSharpName))
+                        ]
                     };
+
+                    underlyingType = union.UnderlyingSchema;
+                    return union;
                 }
 
+            case UnionSchema union:
                 underlyingType = union.UnderlyingSchema;
                 return union;
 

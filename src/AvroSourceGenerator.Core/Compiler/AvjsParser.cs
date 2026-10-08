@@ -132,13 +132,13 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
     private ImmutableArray<string> GetOptionalArrayStrings(JsonObjectSyntax syntax, string propertyName)
     {
         var property = GetOptionalProperty(syntax, propertyName);
-        return property is null ? ImmutableArray<string>.Empty : GetArrayStrings(property, normalize: false);
+        return property is null ? [] : GetArrayStrings(property, normalize: false);
     }
 
     private ImmutableArray<JsonSyntax> GetOptionalArrayItems(JsonObjectSyntax syntax, string propertyName)
     {
         var property = GetOptionalProperty(syntax, propertyName);
-        return property is null ? ImmutableArray<JsonSyntax>.Empty : GetArrayItems(property);
+        return property is null ? [] : GetArrayItems(property);
     }
 
     private ImmutableArray<JsonPropertySyntax> GetObjectProperties(JsonPropertySyntax property)
@@ -529,7 +529,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
             syntax.Items,
             (Parser: this, ContainingNamespace: containingNamespace),
             static (item, state) => state.Parser.Schema(item, state.ContainingNamespace));
-        return schemas.IsDefault ? null : UnionSchema.Create(schemas, Options.UseNullableReferenceTypes);
+        return schemas.IsDefault ? null : UnionSchema.Create(schemas, Options.LanguageFeatures.HasNullableReferenceTypes);
     }
 
 

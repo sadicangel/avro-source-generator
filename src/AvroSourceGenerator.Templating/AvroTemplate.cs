@@ -35,7 +35,7 @@ public static class AvroTemplate
 
     private static string GetSchemaJson(TopLevelSchema schema, IReadOnlyDictionary<SchemaName, TopLevelSchema> schemasByName, RenderOptions options)
     {
-        if (options.UseRawStringLiterals)
+        if (options.LanguageFeatures.HasRawStringLiterals)
         {
             return $""""
                 """

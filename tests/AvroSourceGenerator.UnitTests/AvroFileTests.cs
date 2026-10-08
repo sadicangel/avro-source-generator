@@ -224,6 +224,6 @@ public sealed class AvroFileTests
         AvroFile.Parse(
             (new SourceText(path, text), new AvroParseOptions(
                 GenerationTarget.Modern,
-                UseNullableReferenceTypes: true)),
+                LanguageFeatures: LanguageFeatures.NullableReferenceTypes)),
             TestContext.Current.CancellationToken);
 }

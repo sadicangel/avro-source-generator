@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Basic.Reference.Assemblies" />
+    <PackageReference Include="Basic.Reference.Assemblies.Net110" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

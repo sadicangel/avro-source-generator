@@ -1,10 +1,10 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Basic.Reference.Assemblies;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 
 namespace AvroSourceGenerator.UnitTests.Infrastructure;
@@ -18,10 +18,19 @@ public readonly record struct GeneratorInput(
     public static GeneratorInput Create(ImmutableArray<ProjectFile> projectFiles, ImmutableArray<MetadataReference> references, ProjectConfig projectConfig)
     {
         var parseOptions = new CSharpParseOptions(projectConfig.LanguageVersion);
+        var syntaxTrees = projectFiles.Where(f => f.IsSource)
+            .Select(source => CSharpSyntaxTree.ParseText(source.Content, parseOptions, source.Hash))
+            .ToImmutableArray();
+        // A compilation without syntax trees uses the compiler default rather than the requested language version.
+        if (syntaxTrees.IsEmpty)
+            syntaxTrees = [CSharpSyntaxTree.ParseText(string.Empty, parseOptions)];
+
         var compilation = CSharpCompilation.Create(
             "GeneratorAssemblyName",
-            projectFiles.Where(f => f.IsSource).Select(source => CSharpSyntaxTree.ParseText(source.Content, parseOptions, source.Hash)),
-            CompilerReferenceAssemblies.AddRange(references),
+            syntaxTrees,
+            (projectConfig.LanguageVersion == LanguageVersion.Preview || projectConfig.LanguageVersion >= (LanguageVersion)1500
+                ? PreviewCompilerReferenceAssemblies
+                : CompilerReferenceAssemblies).AddRange(references),
             new CSharpCompilationOptions(
                 outputKind: OutputKind.DynamicallyLinkedLibrary,
                 warningLevel: int.MaxValue));
@@ -44,12 +53,20 @@ public readonly record struct GeneratorInput(
 
     private static ImmutableArray<MetadataReference> CompilerReferenceAssemblies
     {
+        get => field.IsDefaultOrEmpty
+            ? field = Microsoft.CodeAnalysis.Testing.ReferenceAssemblies.Net.Net100
+                .ResolveAsync("C#", CancellationToken.None).GetAwaiter().GetResult()
+                .Add(MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location))
+            : field;
+    }
+
+    private static ImmutableArray<MetadataReference> PreviewCompilerReferenceAssemblies
+    {
         get
         {
             if (field.IsDefaultOrEmpty)
             {
-                field = ReferenceAssemblies.Net.Net100
-                    .ResolveAsync("C#", CancellationToken.None).GetAwaiter().GetResult()
+                field = Net110.References.All.CastArray<MetadataReference>()
                     .AddRange(MetadataReference.CreateFromFile(typeof(AvroSourceGenerator).Assembly.Location));
             }
 

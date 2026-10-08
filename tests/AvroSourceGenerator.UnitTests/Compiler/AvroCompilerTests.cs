@@ -7,7 +7,7 @@ namespace AvroSourceGenerator.UnitTests.Compiler;
 
 public sealed class AvroCompilerTests
 {
-    private static readonly AvroParseOptions s_parseOptions = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_parseOptions = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
 
     [Fact]
     public void Convenience_compiler_matches_independent_stages()

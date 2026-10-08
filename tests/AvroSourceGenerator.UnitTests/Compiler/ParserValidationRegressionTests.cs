@@ -8,7 +8,7 @@ namespace AvroSourceGenerator.UnitTests.Compiler;
 
 public sealed class ParserValidationRegressionTests
 {
-    private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
 
     [Theory]
     [InlineData("1")]
@@ -72,7 +72,7 @@ public sealed class ParserValidationRegressionTests
     public void Internal_invalid_operation_is_not_converted_to_a_diagnostic()
     {
         var source = new SourceText("test.avdl", "schema R; record R { date value; }");
-        var invalidOptions = new AvroParseOptions((GenerationTarget)int.MaxValue, true);
+        var invalidOptions = new AvroParseOptions((GenerationTarget)int.MaxValue, LanguageFeatures.NullableReferenceTypes);
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
             AvxxParser.Parse(source, invalidOptions, TestContext.Current.CancellationToken));

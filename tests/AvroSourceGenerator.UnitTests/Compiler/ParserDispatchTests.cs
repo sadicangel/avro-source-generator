@@ -8,7 +8,7 @@ namespace AvroSourceGenerator.UnitTests.Compiler;
 
 public sealed class ParserDispatchTests
 {
-    private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, true);
+    private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
 
     [Theory]
     [InlineData(".avsc", """{"protocol":"P"}""", AvroDiagnosticCode.SchemaExpected)]

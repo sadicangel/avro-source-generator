@@ -18,6 +18,11 @@ jobs:
       uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
+    - name: Setup .NET 11 preview
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 11.0.x
+        dotnet-quality: preview
     - name: Restore dependencies
       id: restore
       run: dotnet restore avro-source-generator.slnx
@@ -39,9 +44,9 @@ jobs:
       with:
         name: test-binaries
         path: |
-          tests/AvroSourceGenerator.UnitTests*/bin/Release/net10.0/
-          tests/AvroSourceGenerator.IntegrationTests.*/bin/Release/net10.0/
-          tests/AvroSourceGenerator.RoundtripTests.*/bin/Release/net10.0/
+          tests/AvroSourceGenerator.UnitTests*/bin/Release/net11.0/
+          tests/AvroSourceGenerator.IntegrationTests.*/bin/Release/net11.0/
+          tests/AvroSourceGenerator.RoundtripTests.*/bin/Release/net11.0/
         if-no-files-found: error
         retention-days: 1
 
@@ -78,6 +83,11 @@ jobs:
     - uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
+    - name: Setup .NET 11 preview
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 11.0.x
+        dotnet-quality: preview
     - uses: actions/download-artifact@v8
       with:
         name: test-binaries
@@ -89,7 +99,7 @@ jobs:
         $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'test-summary.md'
         $exitCode = 0
         foreach ($suite in 'UnitTests','UnitTests.Apache','UnitTests.Chr','IntegrationTests.Apache','IntegrationTests.Chr') {
-          dotnet "tests/AvroSourceGenerator.$suite/bin/Release/net10.0/AvroSourceGenerator.$suite.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
+          dotnet "tests/AvroSourceGenerator.$suite/bin/Release/net11.0/AvroSourceGenerator.$suite.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
           if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
         }
         exit $exitCode
@@ -184,6 +194,11 @@ jobs:
     - uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
+    - name: Setup .NET 11 preview
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 11.0.x
+        dotnet-quality: preview
     - uses: actions/download-artifact@v8
       with:
         name: test-binaries
@@ -197,7 +212,7 @@ jobs:
         $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'roundtrip-summary.md'
         $exitCode = 0
         foreach ($library in 'Apache','Chr') {
-          dotnet "tests/AvroSourceGenerator.RoundtripTests.$library/bin/Release/net10.0/AvroSourceGenerator.RoundtripTests.$library.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
+          dotnet "tests/AvroSourceGenerator.RoundtripTests.$library/bin/Release/net11.0/AvroSourceGenerator.RoundtripTests.$library.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
           if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
         }
         exit $exitCode

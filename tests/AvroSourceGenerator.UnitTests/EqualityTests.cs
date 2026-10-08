@@ -75,7 +75,7 @@ public class EqualityTests
     {
         var parseOptions = new AvroParseOptions(
             GenerationTarget.Modern,
-            UseNullableReferenceTypes: true);
+            LanguageFeatures: LanguageFeatures.NullableReferenceTypes);
         var source = new SourceText(
             "schema.avsc",
             TestSchemas.Get("record").ToJsonString());

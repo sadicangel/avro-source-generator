@@ -6,6 +6,7 @@
     <PackageVersion Include="Apache.Avro" Version="1.12.2" />
     <PackageVersion Include="AutoFixture" Version="4.18.1" />
     <PackageVersion Include="Basic.Reference.Assemblies" Version="1.8.12" />
+    <PackageVersion Include="Basic.Reference.Assemblies.Net110" Version="1.8.12" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Chr.Avro" Version="10.13.1" />
     <PackageVersion Include="Chr.Avro.Binary" Version="10.13.1" />

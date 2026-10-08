@@ -15,7 +15,7 @@ public sealed class AvroCompilationTests
     {
         var compilation = AvroCompiler.Compile(
             [new SourceText(path, text)],
-            new AvroParseOptions(GenerationTarget.Modern, true),
+            new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes),
             cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AvroDiagnosticCode.UnsupportedSourceType, Assert.Single(compilation.Diagnostics).Code);
         Assert.False(compilation.IsValid);

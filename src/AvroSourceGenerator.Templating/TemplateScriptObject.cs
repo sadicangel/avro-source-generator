@@ -1,4 +1,5 @@
-﻿using Scriban.Functions;
+﻿using AvroSourceGenerator.Compiler;
+using Scriban.Functions;
 
 namespace AvroSourceGenerator.Templating;
 
@@ -14,10 +15,11 @@ internal sealed class TemplateScriptObject : BuiltinFunctions
         SetValue("ObjectType", options.ObjectType, readOnly: true);
         SetValue("FieldValueExpression", options.FieldValueExpression, readOnly: true);
         SetValue("Setter", options.Setter, readOnly: true);
-        SetValue("UseNullableReferenceTypes", options.UseNullableReferenceTypes, readOnly: true);
-        SetValue("UseRequiredProperties", options.UseRequiredProperties, readOnly: true);
-        SetValue("UseInitOnlyProperties", options.UseInitOnlyProperties, readOnly: true);
-        SetValue("UseRawStringLiterals", options.UseRawStringLiterals, readOnly: true);
-        SetValue("UseUnsafeAccessors", options.UseUnsafeAccessors, readOnly: true);
+        SetValue("UseNullableReferenceTypes", options.LanguageFeatures.HasNullableReferenceTypes, readOnly: true);
+        SetValue("UseRequiredProperties", options.LanguageFeatures.HasRequiredProperties, readOnly: true);
+        SetValue("UseInitOnlyProperties", options.LanguageFeatures.HasInitOnlyProperties, readOnly: true);
+        SetValue("UseRawStringLiterals", options.LanguageFeatures.HasRawStringLiterals, readOnly: true);
+        SetValue("UseUnsafeAccessors", options.LanguageFeatures.HasUnsafeAccessors, readOnly: true);
+        SetValue("UseUnions", options.LanguageFeatures.HasUnions, readOnly: true);
     }
 }

@@ -85,7 +85,7 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
 
         var schemas = BindItems(union.Schemas, Bind, out var schemasChanged);
         return schemasChanged
-            ? UnionSchema.Create(schemas, _options.UseNullableReferenceTypes)
+            ? UnionSchema.Create(schemas, _options.LanguageFeatures.HasNullableReferenceTypes)
             : union;
     }
 

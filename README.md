@@ -252,7 +252,7 @@ By default, types are generated as `record` when possible. To use `class` instea
 
 ### Language Features
 
-By default, the generator matches the consuming project’s C# version.
+By default, the generator uses all features supported by the consuming project’s C# version.
 You can target an older version for broader compatibility:
 
 ```xml
@@ -263,7 +263,8 @@ You can target an older version for broader compatibility:
 
 This disables newer features such as records or nullable reference types.
 
-Supported values are `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, `CSharp12`, `CSharp13`.
+Supported values include `All`, `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, `CSharp12`, `CSharp13`, `CSharp14`, and `CSharp15`.
+Selecting a newer feature set cannot enable syntax unsupported by the project's language version.
 
 ---
 

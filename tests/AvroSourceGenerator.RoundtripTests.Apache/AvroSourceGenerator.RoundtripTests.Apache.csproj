@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <LangVersion>preview</LangVersion>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
   </PropertyGroup>
 
@@ -16,6 +17,7 @@
   <ItemGroup>
     <CompilerVisibleProperty Include="AvroSourceGeneratorAvroLibrary" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
+    <CompilerVisibleProperty Include="AvroSourceGeneratorPreviewFeatures" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
     <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />

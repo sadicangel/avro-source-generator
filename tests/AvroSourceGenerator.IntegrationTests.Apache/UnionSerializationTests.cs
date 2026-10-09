@@ -1,33 +1,25 @@
-﻿using Avro.IO;
-using Avro.Specific;
-using AvroSourceGenerator.IntegrationTests.Schemas;
+﻿using AvroSourceGenerator.IntegrationTests.Schemas;
 
-namespace AvroSourceGenerator.IntegrationTests.Apache;
+namespace AvroSourceGenerator.IntegrationTests;
 
-public sealed class UnionSerializationTests
+public sealed partial class UnionSerializationTests
 {
     [Theory]
-    [InlineData("email")]
-    [InlineData("sms")]
-    [InlineData("push")]
-    public void Interface_variants_survive_binary_serialization(string kind)
-    {
-        INotificationContentVariant content = kind switch
-        {
-            "email" => new EmailContent { subject = "Subject", body = "Body", recipientEmail = "user@example.com" },
-            "sms" => new SmsContent { message = "Message", phoneNumber = "+1234567890" },
-            "push" => new PushContent { title = "Title", message = "Message", deviceToken = "device" },
-            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
-        };
-        var expected = new Notification { content = content };
-        using var stream = new MemoryStream();
-        new SpecificDatumWriter<Notification>(Notification._SCHEMA).Write(expected, new BinaryEncoder(stream));
-        stream.Position = 0;
-        var actual = new SpecificDatumReader<Notification>(Notification._SCHEMA, Notification._SCHEMA)
-            .Read(null!, new BinaryDecoder(stream));
+    [InlineData("null")]
+    [InlineData("string")]
+    [InlineData("int")]
+    [InlineData("fixed")]
+    [InlineData("record")]
+    [InlineData("enum", Skip = "Apache.Avro returns enum ordinals in unions; awaiting Apache Avro PR #4031.")]
+    public void Mixed_union_variants_survive_binary_serialization(string kind) => VerifyPayment(kind);
 
-        Assert.Equal(content.GetType(), actual.content.GetType());
-        Assert.Equal(expected, actual);
-        Assert.Equal(stream.Length, stream.Position);
+    private static void VerifyNotificationRepresentation(Notification actual)
+    {
+        Assert.IsType<NotificationContentUnion>(actual.content);
+    }
+
+    private static void VerifyPaymentRepresentation(PaymentRecord actual)
+    {
+        Assert.Equal(typeof(PaymentRecordPaymentMethodUnion?), typeof(PaymentRecord).GetProperty(nameof(PaymentRecord.paymentMethod))!.PropertyType);
     }
 }

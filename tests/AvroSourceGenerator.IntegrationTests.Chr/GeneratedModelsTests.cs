@@ -33,12 +33,12 @@ public sealed class GeneratedModelsTests
     }
 
     [Fact]
-    public void Union_variant_can_be_assigned_to_its_generated_interface()
+    public void Union_variant_can_be_assigned_to_its_generated_tagged_union()
     {
         var content = new EmailContent { subject = "Subject", body = "Body", recipientEmail = "test@example.com" };
         var notification = new Notification { content = content };
 
-        Assert.IsAssignableFrom<INotificationContentVariant>(content);
-        Assert.Same(content, notification.content);
+        Assert.IsType<NotificationContentUnion>(notification.content);
+        Assert.Same(content, notification.content.Value);
     }
 }

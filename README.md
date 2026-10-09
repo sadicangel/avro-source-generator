@@ -181,7 +181,7 @@ partial record User : global::Avro.Specific.ISpecificRecord
 - [samples/AvroSourceGenerator.ConfluentKafka/AvroSourceGenerator.ConfluentKafka.csproj](samples/AvroSourceGenerator.ConfluentKafka/AvroSourceGenerator.ConfluentKafka.csproj) shows Kafka and Schema Registry integration using Confluent's Avro serializer.
 - [samples/AvroSourceGenerator.ChrAvroKafka/AvroSourceGenerator.ChrAvroKafka.csproj](samples/AvroSourceGenerator.ChrAvroKafka/AvroSourceGenerator.ChrAvroKafka.csproj) shows the same Kafka and Schema Registry container workflow using `Chr.Avro.Confluent`.
 
-The repository samples target .NET 10 and use the latest installed SDK, including previews, selected by [global.json](global.json) with a minimum of SDK 10.0.401.
+The repository samples target .NET 11 and use the latest installed SDK, including previews, selected by [global.json](global.json) with a minimum of SDK 10.0.401.
 The Kafka samples also require Docker to run their Kafka and Schema Registry containers.
 
 For example, run the Chr.Avro Kafka sample with:
@@ -281,6 +281,9 @@ Current limitations:
   from other enums or an `int` branch. The fix is tracked in [Apache Avro PR #4031](https://github.com/apache/avro/pull/4031).
 
 With Chr.Avro, register the generated serializer and deserializer builder cases for each union.
+The default Chr builders cannot reliably select branches of mixed unions represented as `object`: integers,
+fixed values, and records can fail serialization, while enums can become strings. The object-union integration
+suite records these limitations; tagged unions preserve the concrete branch types.
 
 ---
 
@@ -380,11 +383,9 @@ Supported values:
 Contributions are welcome!
 If you encounter bugs, want to propose features, or improve docs, please open an issue or submit a pull request on **GitHub**.
 
-The unsuffixed generator project tracks the latest supported Roslyn, while a separate project retains the 5.0 baseline.
-Both share source files and build targets. Build the solution, then pack `src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj`.
-Unit and snapshot tests run once against the latest variant. Fast package consumers check the minimum SDK 10.0.100
-and the latest preview SDK; Docker roundtrips run once per Avro library.
-See [package compatibility checks](tests/AvroSourceGenerator.PackageCompatibility/README.md) for local commands.
+Build and test the solution in Release before submitting a pull request.
+See [repository guidance](AGENTS.md) for build and test commands, and
+[package compatibility checks](tests/AvroSourceGenerator.PackageCompatibility/README.md) for SDK validation.
 
 ---
 

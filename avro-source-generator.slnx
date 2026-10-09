@@ -20,11 +20,13 @@
   </Folder>
   <Folder Name="/tests/">
     <File Path="tests/Directory.Build.props" />
-    <Project Path="tests/AvroSourceGenerator.RoundtripTests.Chr/AvroSourceGenerator.RoundtripTests.Chr.csproj" />
-    <Project Path="tests/AvroSourceGenerator.RoundtripTests.Apache/AvroSourceGenerator.RoundtripTests.Apache.csproj" />
-    <Project Path="tests/AvroSourceGenerator.RoundtripTests/AvroSourceGenerator.RoundtripTests.csproj" />
+    <Project Path="tests/AvroSourceGenerator.SmokeTests.Chr/AvroSourceGenerator.SmokeTests.Chr.csproj" />
+    <Project Path="tests/AvroSourceGenerator.SmokeTests.Apache/AvroSourceGenerator.SmokeTests.Apache.csproj" />
+    <Project Path="tests/AvroSourceGenerator.SmokeTests/AvroSourceGenerator.SmokeTests.csproj" />
     <Project Path="tests/AvroSourceGenerator.IntegrationTests.Apache/AvroSourceGenerator.IntegrationTests.Apache.csproj" />
     <Project Path="tests/AvroSourceGenerator.IntegrationTests.Chr/AvroSourceGenerator.IntegrationTests.Chr.csproj" />
+    <Project Path="tests/AvroSourceGenerator.IntegrationTests.ObjectUnions.Apache/AvroSourceGenerator.IntegrationTests.ObjectUnions.Apache.csproj" />
+    <Project Path="tests/AvroSourceGenerator.IntegrationTests.ObjectUnions.Chr/AvroSourceGenerator.IntegrationTests.ObjectUnions.Chr.csproj" />
     <Project Path="tests/AvroSourceGenerator.IntegrationTests/AvroSourceGenerator.IntegrationTests.csproj" />
     <Project Path="tests/AvroSourceGenerator.UnitTests.Apache/AvroSourceGenerator.UnitTests.Apache.csproj" />
     <Project Path="tests/AvroSourceGenerator.UnitTests.Chr/AvroSourceGenerator.UnitTests.Chr.csproj" Id="460c2e67-236f-443b-83f7-0a8634407824" />

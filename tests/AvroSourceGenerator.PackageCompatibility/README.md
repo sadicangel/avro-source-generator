@@ -12,7 +12,7 @@ Each SDK runs every consumer twice: with C# 12 targeting .NET 10, and with its d
 SDKs starting with .NET 11 also run each consumer with the preview language version and `AvroSourceGeneratorPreviewFeatures=Unions`,
 checking that the packaged generator emits usable native unions. The other runs verify that unions remain interface-based without that opt-in.
 The C# 12 runs emit source hashes for comparison across SDKs. Unit snapshots remain a single suite on the latest Roslyn;
-Kafka and Schema Registry tests live in the separate roundtrip projects and run once per library.
+Kafka and Schema Registry tests live in the separate smoke projects and run once per library.
 
 The unsuffixed generator uses the central `Microsoft.CodeAnalysis.CSharp` package version.
 Only the fixed Roslyn 5.0 baseline project overrides it. Package analyzer directories use the major and minor numbers of that configured version.
@@ -48,8 +48,8 @@ The script creates an isolated workspace, exact-version `global.json`, local pac
 External consumer dependencies restore from nuget.org. The generator itself must restore from the local package;
 a published package cannot satisfy the validation run. The main solution's SDK policy and NuGet configuration are unchanged.
 
-The build workflow builds and packs once. Unit and fast integration tests, Docker roundtrips, and package compatibility
-checks then run in parallel jobs using those build outputs. Compatibility checks use the minimum SDK 10.0.100 and resolve
+The build workflow builds and packs once. Unit tests, fast integration tests, Apache smoke tests, Chr smoke tests, and package compatibility
+checks then run in independent parallel jobs using those build outputs. Compatibility checks use the minimum SDK 10.0.100 and resolve
 the latest preview SDK on every push and pull request, comparing the generated sources in the same job.
 The Actions summary shows the SDK and compiler versions, selected generator variants, completed consumer checks,
 generated-source comparison status, and any Roslyn review reminders or failures.

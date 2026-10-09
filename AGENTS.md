@@ -13,9 +13,9 @@ The solution uses the latest installed development SDK, including previews, sele
 - `src/AvroSourceGenerator.Templating/` contains render models and Scriban templates.
 - `tests/AvroSourceGenerator.UnitTests/` contains library-neutral unit and snapshot tests.
 - `tests/AvroSourceGenerator.UnitTests.Apache/` and `tests/AvroSourceGenerator.UnitTests.Chr/` contain library-specific tests.
-- `tests/AvroSourceGenerator.IntegrationTests*/` contains fast generated-model integration tests without Docker.
+- `tests/AvroSourceGenerator.IntegrationTests*/` contains fast generated-model and binary serialization tests without Docker. The default suites use tagged unions; `IntegrationTests.ObjectUnions.*` explicitly tests interface and object unions.
 - `tests/AvroSourceGenerator.PackageCompatibility/` validates the packed generator against the minimum SDK 10.0.100 and the latest preview SDK.
-- `tests/AvroSourceGenerator.RoundtripTests*/` contains Docker-based Kafka and Schema Registry roundtrips, run once per library rather than once per SDK.
+- `tests/AvroSourceGenerator.SmokeTests*/` contains Docker-based Kafka and Schema Registry smoke tests, run once per library rather than once per SDK.
 - `tests/Schemas/` contains shared Avro fixtures.
 - `samples/` contains consumer examples.
 - `tools/` contains benchmarks and Windows ETW tracing utilities.
@@ -50,7 +50,7 @@ The solution uses the latest installed development SDK, including previews, sele
 
 ## Build and test
 
-Run commands from the repository root. For normal implementation work, build Release and run the three unit suites and both fast integration suites. Unit and snapshot tests run only against the latest generator variant:
+Run commands from the repository root. For normal implementation work, build Release and run the three unit suites and all four fast integration suites. Unit and snapshot tests run only against the latest generator variant:
 
 ```powershell
 dotnet restore avro-source-generator.slnx
@@ -60,16 +60,18 @@ dotnet test --project tests/AvroSourceGenerator.UnitTests.Apache/AvroSourceGener
 dotnet test --project tests/AvroSourceGenerator.UnitTests.Chr/AvroSourceGenerator.UnitTests.Chr.csproj --no-build --configuration Release
 dotnet test --project tests/AvroSourceGenerator.IntegrationTests.Apache/AvroSourceGenerator.IntegrationTests.Apache.csproj --no-build --configuration Release
 dotnet test --project tests/AvroSourceGenerator.IntegrationTests.Chr/AvroSourceGenerator.IntegrationTests.Chr.csproj --no-build --configuration Release
+dotnet test --project tests/AvroSourceGenerator.IntegrationTests.ObjectUnions.Apache/AvroSourceGenerator.IntegrationTests.ObjectUnions.Apache.csproj --no-build --configuration Release
+dotnet test --project tests/AvroSourceGenerator.IntegrationTests.ObjectUnions.Chr/AvroSourceGenerator.IntegrationTests.ObjectUnions.Chr.csproj --no-build --configuration Release
 ```
 
 For generator build, dependency, or packaging changes, also pack `src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj` and run the SDK consumer matrix described in `tests/AvroSourceGenerator.PackageCompatibility/README.md`.
 
-Before pushing code to `origin` or creating or updating a PR, also ensure Docker is available and run both roundtrip suites:
+Before pushing code to `origin` or creating or updating a PR, also ensure Docker is available and run both smoke suites:
 
 ```powershell
 docker info
-dotnet test --project tests/AvroSourceGenerator.RoundtripTests.Apache/AvroSourceGenerator.RoundtripTests.Apache.csproj --no-build --configuration Release
-dotnet test --project tests/AvroSourceGenerator.RoundtripTests.Chr/AvroSourceGenerator.RoundtripTests.Chr.csproj --no-build --configuration Release
+dotnet test --project tests/AvroSourceGenerator.SmokeTests.Apache/AvroSourceGenerator.SmokeTests.Apache.csproj --no-build --configuration Release
+dotnet test --project tests/AvroSourceGenerator.SmokeTests.Chr/AvroSourceGenerator.SmokeTests.Chr.csproj --no-build --configuration Release
 ```
 
 `global.json` opts into Microsoft.Testing.Platform, so use `--project` for individual projects. Add focused regression tests for changed behavior. Documentation-only changes need a content review and `git diff --check`; they do not require a full build unless requested.

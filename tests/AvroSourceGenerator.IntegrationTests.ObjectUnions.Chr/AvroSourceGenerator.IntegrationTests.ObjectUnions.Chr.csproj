@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <AvroSourceGeneratorPreviewFeatures>None</AvroSourceGeneratorPreviewFeatures>
     <AvroSourceGeneratorAvroLibrary>Chr</AvroSourceGeneratorAvroLibrary>
   </PropertyGroup>
 
@@ -41,10 +42,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Serialization\Common\**\*.cs" Exclude="..\Serialization\Common\**\*SmokeTests.cs" Link="Serialization\%(Filename)%(Extension)" />
+    <Compile Include="..\Serialization\Common\**\*.cs" Exclude="..\Serialization\Common\**\*SmokeTests.cs;..\Serialization\Common\**\*ModelTests.cs" Link="Serialization\%(Filename)%(Extension)" />
     <Compile Include="..\Serialization\Chr\**\*.cs" Link="Serialization\%(Filename)%(Extension)" />
-    <Compile Include="..\Serialization\ChrTaggedUnions\**\*.cs" Link="Serialization\%(Filename)%(Extension)" />
-    <Compile Include="..\Serialization\TaggedUnions\**\*.cs" Link="Serialization\%(Filename)%(Extension)" />
+    <Compile Include="..\Serialization\ChrObjectUnions\**\*.cs" Link="Serialization\%(Filename)%(Extension)" />
+    <Compile Include="..\Serialization\ObjectUnions\**\*.cs" Link="Serialization\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

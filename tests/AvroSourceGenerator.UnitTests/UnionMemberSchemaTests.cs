@@ -8,10 +8,8 @@ namespace AvroSourceGenerator.UnitTests;
 
 public sealed class UnionMemberSchemaTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Prepared_members_are_ordered_and_distinct_by_csharp_name_without_null(bool tagged)
+    [Fact]
+    public void Prepared_members_are_ordered_and_distinct_by_csharp_name_without_null()
     {
         var first = new RecordSchema(new SchemaName("First"), null, [], [], ImmutableSortedDictionary<string, JsonElement>.Empty);
         var second = first with
@@ -23,14 +21,12 @@ public sealed class UnionMemberSchemaTests
         var members = schemas.Canonicalize(includeNull: false).ToImmutableArray();
         var name = new SchemaName("Choice");
         var csharpName = new CSharpName("Choice");
-        var normalized = tagged
-            ? new UnionTaggedSchema(name, csharpName, members).MemberSchemas
-            : new UnionObjectSchema(name, csharpName, members).MemberSchemas;
+        var generatedUnion = new UnionTypeSchema(name, csharpName, members);
 
-        Assert.Equal([first, second], normalized);
-        Assert.Equal(
-            new UnionObjectSchema(name, csharpName, members).Documentation,
-            new UnionTaggedSchema(name, csharpName, members).Documentation);
+        Assert.Equal([first, second], generatedUnion.MemberSchemas);
+        Assert.Contains("cref=\"First\"", generatedUnion.Documentation);
+        Assert.Contains("cref=\"Second\"", generatedUnion.Documentation);
+        Assert.DoesNotContain("<see langword=\"null\"/>", generatedUnion.Documentation);
     }
 
     [Theory]
@@ -63,12 +59,7 @@ public sealed class UnionMemberSchemaTests
         var bound = BoundAvroFile.Bind(LinkedAvroFile.Link(file, symbols, TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
         var field = Assert.Single(Assert.IsType<RecordSchema>(bound.Declarations.Single(schema => schema.SchemaName.Name == "Envelope")).Fields);
         var union = Assert.IsType<UnionSchema>(field.Type);
-        var normalized = union.UnderlyingSchema switch
-        {
-            UnionObjectSchema generated => generated.MemberSchemas,
-            UnionTaggedSchema generated => generated.MemberSchemas,
-            _ => throw new InvalidOperationException(),
-        };
+        var normalized = Assert.IsType<UnionTypeSchema>(union.UnderlyingSchema).MemberSchemas;
 
         Assert.Equal(["Second", "null", "First"], union.Schemas.Select(member => member.SchemaName.Name));
         Assert.Equal(["First", "Second"], normalized.Select(member => member.SchemaName.Name));

@@ -19,7 +19,6 @@ public enum SchemaType
     Error,
     Logical,
     Protocol,
-    UnionObject,
-    UnionTagged,
+    UnionType,
     Reference,
 }

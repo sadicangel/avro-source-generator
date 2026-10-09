@@ -1,4 +1,4 @@
-{{- if field.UnderlyingType.Type != 'UnionTagged'}}
+{{- if !UseUnions || field.UnderlyingType.Type != 'UnionType'}}
 {{- !field.AllowsNull ? $"({ field.Type }){ FieldValueExpression }" : $"{ FieldValueExpression } is null ? null : ({ field.UnderlyingType }){ FieldValueExpression }" -}}
 {{- else -}}
 {{- FieldValueExpression }} switch

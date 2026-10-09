@@ -27,10 +27,8 @@ namespace {{ Schema.CSharpName.Namespace }}
             include 'error' schema: Schema
         when 'Protocol'
             include 'protocol' schema: Schema
-        when 'UnionObject'
-            include 'union_object' schema: Schema
-        when 'UnionTagged'
-            include 'union_tagged' schema: Schema
+        when 'UnionType'
+            include 'union' schema: Schema
         end
     ~}}
 {{~ if !string.whitespace Schema.CSharpName.Namespace ~}}

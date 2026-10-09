@@ -17,6 +17,10 @@ internal sealed class TemplateLoader(RenderOptions options) : ITemplateLoader
             "apache.put" when !options.LanguageFeatures.HasUnsafeAccessors => s_templatePaths["apache.put_immutable_reflection"],
             "apache.put" => s_templatePaths["apache.put_immutable_unsafe"],
             "fixed" => s_templatePaths["apache.fixed"],
+            "union" when options.LanguageFeatures.HasUnions => s_templatePaths["union_tagged"],
+            "union" => s_templatePaths["union_object"],
+            "chr.union" when options.LanguageFeatures.HasUnions => s_templatePaths["chr.union_tagged"],
+            "chr.union" => s_templatePaths["chr.union_object"],
             _ => s_templatePaths[templateName],
         };
 

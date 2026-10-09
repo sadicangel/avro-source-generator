@@ -3,15 +3,15 @@ using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
-public sealed record class UnionObjectSchema(SchemaName SchemaName, CSharpName CSharpName, ImmutableArray<AvroSchema> MemberSchemas)
+public sealed record class UnionTypeSchema(SchemaName SchemaName, CSharpName CSharpName, ImmutableArray<AvroSchema> MemberSchemas)
     : TopLevelSchema(
-        SchemaType.UnionObject,
+        SchemaType.UnionType,
         SchemaName,
         CSharpName,
         UnionSchemaHelpers.GetDocumentation(MemberSchemas),
         ImmutableSortedDictionary<string, JsonElement>.Empty)
 {
-    public static bool CanCreate(UnionSchema union)
+    public static bool CanCreateObjectUnion(UnionSchema union)
     {
         var memberCount = 0;
         // An object union member must be a record, error, fixed not substituted by another type, or null.
@@ -32,8 +32,8 @@ public sealed record class UnionObjectSchema(SchemaName SchemaName, CSharpName C
         return memberCount > 1;
     }
 
-    internal static SchemaName GetSchemaName(SchemaName typeName, FieldName fieldName) =>
-        UnionSchemaHelpers.GetSchemaName("I", typeName, fieldName.SchemaName, "Variant");
+    internal static SchemaName GetSchemaName(SchemaName typeName, FieldName fieldName, bool useUnions) =>
+        UnionSchemaHelpers.GetSchemaName(useUnions ? "" : "I", typeName, fieldName.SchemaName, useUnions ? "Union" : "Variant");
 
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace) { }
 }

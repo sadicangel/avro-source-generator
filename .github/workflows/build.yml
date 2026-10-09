@@ -4,7 +4,6 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -46,7 +45,7 @@ jobs:
         path: |
           tests/AvroSourceGenerator.UnitTests*/bin/Release/net11.0/
           tests/AvroSourceGenerator.IntegrationTests.*/bin/Release/net11.0/
-          tests/AvroSourceGenerator.RoundtripTests.*/bin/Release/net11.0/
+          tests/AvroSourceGenerator.SmokeTests.*/bin/Release/net11.0/
         if-no-files-found: error
         retention-days: 1
 
@@ -75,7 +74,7 @@ jobs:
         }
         if ($env:TEST_BINARY_URL) { "`n[Test binaries]($env:TEST_BINARY_URL)" >> $env:GITHUB_STEP_SUMMARY }
 
-  tests:
+  unit-tests:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -92,13 +91,13 @@ jobs:
       with:
         name: test-binaries
         path: tests
-    - name: Unit and fast integration tests
+    - name: Unit tests
       id: run_tests
       shell: pwsh
       run: |
         $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'test-summary.md'
         $exitCode = 0
-        foreach ($suite in 'UnitTests','UnitTests.Apache','UnitTests.Chr','IntegrationTests.Apache','IntegrationTests.Chr') {
+        foreach ($suite in 'UnitTests','UnitTests.Apache','UnitTests.Chr') {
           dotnet "tests/AvroSourceGenerator.$suite/bin/Release/net11.0/AvroSourceGenerator.$suite.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
           if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
         }
@@ -110,7 +109,46 @@ jobs:
         TEST_RESULT: ${{ steps.run_tests.outcome }}
       run: |
         $report = Join-Path $env:RUNNER_TEMP 'test-summary.md'
-        "## Unit and fast integration tests`n`nTest step: **$env:TEST_RESULT**.`n" >> $env:GITHUB_STEP_SUMMARY
+        "## Unit tests`n`nTest step: **$env:TEST_RESULT**.`n" >> $env:GITHUB_STEP_SUMMARY
+        if (Test-Path -LiteralPath $report) { Get-Content -LiteralPath $report >> $env:GITHUB_STEP_SUMMARY }
+        else { 'No test report was produced.' >> $env:GITHUB_STEP_SUMMARY }
+
+  integration-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+    - name: Setup .NET 11 preview
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 11.0.x
+        dotnet-quality: preview
+    - uses: actions/download-artifact@v8
+      with:
+        name: test-binaries
+        path: tests
+    - name: Integration tests
+      id: run_tests
+      shell: pwsh
+      run: |
+        $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'test-summary.md'
+        $exitCode = 0
+        foreach ($suite in 'IntegrationTests.Apache','IntegrationTests.Chr','IntegrationTests.ObjectUnions.Apache','IntegrationTests.ObjectUnions.Chr') {
+          dotnet "tests/AvroSourceGenerator.$suite/bin/Release/net11.0/AvroSourceGenerator.$suite.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
+          if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
+        }
+        exit $exitCode
+    - name: Test summary
+      if: always()
+      shell: pwsh
+      env:
+        TEST_RESULT: ${{ steps.run_tests.outcome }}
+      run: |
+        $report = Join-Path $env:RUNNER_TEMP 'test-summary.md'
+        "## Integration tests`n`nTest step: **$env:TEST_RESULT**.`n" >> $env:GITHUB_STEP_SUMMARY
         if (Test-Path -LiteralPath $report) { Get-Content -LiteralPath $report >> $env:GITHUB_STEP_SUMMARY }
         else { 'No test report was produced.' >> $env:GITHUB_STEP_SUMMARY }
 
@@ -186,9 +224,14 @@ jobs:
         }
         if ($notes.Count) { "`n$($notes -join "`n`n")" >> $env:GITHUB_STEP_SUMMARY }
 
-  roundtrips:
+  smoke-tests:
     needs: build
     runs-on: ubuntu-latest
+    name: Smoke ${{ matrix.library }}
+    strategy:
+      fail-fast: false
+      matrix:
+        library: [Apache, Chr]
     steps:
     - uses: actions/checkout@v5
     - uses: actions/setup-dotnet@v6
@@ -205,24 +248,20 @@ jobs:
         path: tests
     - name: Docker
       run: docker info
-    - name: Kafka roundtrips once per library
+    - name: Kafka smoke test
       id: run_tests
       shell: pwsh
       run: |
-        $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'roundtrip-summary.md'
-        $exitCode = 0
-        foreach ($library in 'Apache','Chr') {
-          dotnet "tests/AvroSourceGenerator.RoundtripTests.$library/bin/Release/net11.0/AvroSourceGenerator.RoundtripTests.$library.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
-          if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
-        }
-        exit $exitCode
-    - name: Roundtrip summary
+        $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'smoke-summary.md'
+        dotnet "tests/AvroSourceGenerator.SmokeTests.${{ matrix.library }}/bin/Release/net11.0/AvroSourceGenerator.SmokeTests.${{ matrix.library }}.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
+        exit $LASTEXITCODE
+    - name: Smoke summary
       if: always()
       shell: pwsh
       env:
         TEST_RESULT: ${{ steps.run_tests.outcome }}
       run: |
-        $report = Join-Path $env:RUNNER_TEMP 'roundtrip-summary.md'
-        "## Kafka and Schema Registry roundtrips`n`nTest step: **$env:TEST_RESULT**.`n" >> $env:GITHUB_STEP_SUMMARY
+        $report = Join-Path $env:RUNNER_TEMP 'smoke-summary.md'
+        "## Smoke ${{ matrix.library }} — Kafka and Schema Registry`n`nTest step: **$env:TEST_RESULT**.`n" >> $env:GITHUB_STEP_SUMMARY
         if (Test-Path -LiteralPath $report) { Get-Content -LiteralPath $report >> $env:GITHUB_STEP_SUMMARY }
         else { 'No test report was produced.' >> $env:GITHUB_STEP_SUMMARY }

@@ -10,15 +10,8 @@
     <PackageReference Include="Testcontainers" />
   </ItemGroup>
 
-  <ItemGroup>
-    <CompilerVisibleProperty Include="AvroSourceGeneratorAvroLibrary" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorPreviewFeatures" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorReferenceResolution" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />
-  </ItemGroup>
+  <!--Required since we're referencing the generator through the csproj instead of the package -->
+  <Import Project="..\..\AvroSourceGenerator.props" />
 
   <ItemGroup>
     <AdditionalFiles Include="*.avsc" />

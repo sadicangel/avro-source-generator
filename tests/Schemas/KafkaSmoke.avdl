@@ -1,0 +1,31 @@
+namespace AvroSourceGenerator.IntegrationTests.Schemas;
+
+import schema "Primitives.avsc";
+import schema "Collections.avsc";
+import schema "Enums.avsc";
+import schema "LogicalTypes.avsc";
+import schema "TransactionEvent.avsc";
+import idl "ImportedEnvelope.avdl";
+import schema "JavaExtensions.avsc";
+import schema "Notification.avsc";
+import schema "PaymentRecord.avsc";
+
+schema KafkaSmoke;
+
+record KafkaSmoke {
+    Primitives primitives;
+    Collections collections;
+    Enums enums;
+    LogicalTypes logicalTypes;
+    TransactionEvent transaction;
+    ImportedEnvelope imported;
+    JavaExtensions javaExtensions;
+    Notification email;
+    Notification sms;
+    Notification push;
+    PaymentRecord nullPayment;
+    PaymentRecord stringPayment;
+    PaymentRecord intPayment;
+    PaymentRecord fixedPayment;
+    PaymentRecord recordPayment;
+}

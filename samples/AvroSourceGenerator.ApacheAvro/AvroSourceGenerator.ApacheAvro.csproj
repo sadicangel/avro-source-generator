@@ -4,17 +4,12 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
-  <!--Required since we're referencing the generator through the csproj instead of the package -->
   <ItemGroup>
-    <CompilerVisibleProperty Include="AvroSourceGeneratorAvroLibrary" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorPreviewFeatures" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorReferenceResolution" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />
     <PackageReference Include="Apache.Avro" />
   </ItemGroup>
+
+  <!--Required since we're referencing the generator through the csproj instead of the package -->
+  <Import Project="..\..\AvroSourceGenerator.props" />
 
   <ItemGroup>
     <AdditionalFiles Include="*.avdl" />

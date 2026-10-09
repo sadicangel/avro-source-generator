@@ -14,18 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <CompilerVisibleProperty Include="AvroSourceGeneratorAvroLibrary" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorLanguageFeatures" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorPreviewFeatures" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorAccessModifier" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorRecordDeclaration" />
-    <CompilerVisibleProperty Include="AvroSourceGeneratorDuplicateResolution" />
-    <AdditionalFiles Include="..\Schemas\*.avdl" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
-    <AdditionalFiles Include="..\Schemas\*.avsc" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
-    <AdditionalFiles Include="..\Schemas\*.avpr" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Apache.Avro" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.Testing.Extensions.GitHubActionsReport" PrivateAssets="all" />
@@ -39,6 +27,20 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\AvroSourceGenerator\AvroSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\AvroSourceGenerator.IntegrationTests\AvroSourceGenerator.IntegrationTests.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\AvroSourceGenerator.props" />
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\Schemas\*.avdl" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
+    <AdditionalFiles Include="..\Schemas\*.avsc" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
+    <AdditionalFiles Include="..\Schemas\*.avpr" CopyToOutputDirectory="PreserveNewest" Link="Schemas\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Serialization\Common\**\*.cs" Exclude="..\Serialization\Common\**\*SmokeTests.cs" Link="Serialization\%(Filename)%(Extension)" />
+    <Compile Include="..\Serialization\Apache\**\*.cs" Link="Serialization\%(Filename)%(Extension)" />
+    <Compile Include="..\Serialization\TaggedUnions\**\*.cs" Link="Serialization\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

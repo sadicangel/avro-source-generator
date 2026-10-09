@@ -1,8 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <LangVersion>preview</LangVersion>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <!-- Chr.Avro.Confluent references Apache.Avro so we need to specify which library we want to avoid AVROSG0004 -->
     <AvroSourceGeneratorAvroLibrary>Chr</AvroSourceGeneratorAvroLibrary>
   </PropertyGroup>
 
@@ -15,11 +17,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Chr.Avro.Binary" />
     <PackageReference Include="Chr.Avro.Codegen" />
-    <PackageReference Include="Chr.Avro.Json" />
+    <PackageReference Include="Chr.Avro.Confluent" />
+    <!-- Chr.Avro.Confluent 10.13.1 requires Confluent packages >= 2.14.0 and < 2.15.0. -->
+    <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" VersionOverride="2.14.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.Testing.Extensions.GitHubActionsReport" PrivateAssets="all" />
+    <PackageReference Include="Testcontainers" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
@@ -29,7 +33,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AvroSourceGenerator\AvroSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\AvroSourceGenerator.IntegrationTests\AvroSourceGenerator.IntegrationTests.csproj" />
+    <ProjectReference Include="..\AvroSourceGenerator.SmokeTests\AvroSourceGenerator.SmokeTests.csproj" />
   </ItemGroup>
 
   <Import Project="..\..\AvroSourceGenerator.props" />
@@ -41,10 +45,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Serialization\Common\**\*.cs" Exclude="..\Serialization\Common\**\*SmokeTests.cs" Link="Serialization\%(Filename)%(Extension)" />
+    <Compile Include="..\Serialization\Common\**\*.cs" Exclude="..\Serialization\Common\**\*ModelTests.cs;..\Serialization\Common\**\*SerializationTests.cs" Link="Serialization\%(Filename)%(Extension)" />
     <Compile Include="..\Serialization\Chr\**\*.cs" Link="Serialization\%(Filename)%(Extension)" />
     <Compile Include="..\Serialization\ChrTaggedUnions\**\*.cs" Link="Serialization\%(Filename)%(Extension)" />
     <Compile Include="..\Serialization\TaggedUnions\**\*.cs" Link="Serialization\%(Filename)%(Extension)" />
+    <ProjectReference Include="..\AvroSourceGenerator.IntegrationTests\AvroSourceGenerator.IntegrationTests.csproj" />
   </ItemGroup>
 
 </Project>

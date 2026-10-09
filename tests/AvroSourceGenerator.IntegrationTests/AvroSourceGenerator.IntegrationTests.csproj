@@ -2,6 +2,12 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3.extensibility.core" />
+    <!-- Core keeps its analyzer dependencies private; its JSON implementation needs the central interface assembly at runtime. -->
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
   </ItemGroup>
   
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AvroSourceGenerator.Core\AvroSourceGenerator.Core.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <AvroSourceGeneratorPreviewFeatures>None</AvroSourceGeneratorPreviewFeatures>
     <LastGaVersion>0.6.0</LastGaVersion>
   </PropertyGroup>
 

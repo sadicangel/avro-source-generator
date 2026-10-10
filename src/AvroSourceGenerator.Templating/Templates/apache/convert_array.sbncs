@@ -1,0 +1,9 @@
+{{- $value = string.remove_last $.value '!' -}}
+{{- $schema = $.schema.UnderlyingSchema ?? $.schema -}}
+{{- if $.nested || (apache.requires_collection_conversion $schema.ItemSchema) -}}
+{{- $item = UseNullableReferenceTypes ? 'item' : $"item_{$value}" -}}
+{{- $itemSchema = $schema.ItemSchema.UnderlyingSchema ?? $schema.ItemSchema -}}
+__ApacheConvertArray<{{ $.schema }}, {{ $schema.ItemSchema }}>({{ $value }}{{ if apache.requires_collection_conversion $schema.ItemSchema }}, {{ $item }} => {{ include ('apache.convert_' + ($itemSchema.Type | string.downcase)) schema: $schema.ItemSchema value: $item nested: true }}{{ end }}{{ ')' -}}
+{{- else -}}
+({{ $.schema }}){{ $.value }}
+{{- end -}}

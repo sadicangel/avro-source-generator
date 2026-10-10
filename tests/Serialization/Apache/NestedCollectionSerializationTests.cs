@@ -1,4 +1,5 @@
-﻿using Avro;
+﻿using System.Collections;
+using Avro;
 using Avro.Generic;
 using Avro.IO;
 using Avro.Specific;
@@ -82,6 +83,70 @@ public sealed class NestedCollectionSerializationTests
         Assert.Equal(2, converted.Count);
         Assert.Same(populated, converted[0]);
         Assert.Same(empty, converted[1]);
+    }
+
+    [Fact]
+    public void Put_accepts_enumerable_array_sources_and_reuses_compatible_items()
+    {
+        var record = (ISpecificRecord)Activator.CreateInstance(typeof(NestedCollections))!;
+        List<float> compatible = [1.25f];
+
+        IEnumerable<object> Items()
+        {
+            yield return compatible;
+            yield return Enumerable.Range(1, 2).Select(value => (float)value);
+        }
+
+        record.Put(0, Items());
+
+        var converted = Assert.IsType<List<List<float>>>(record.Get(0));
+        Assert.Same(compatible, converted[0]);
+        Assert.Equal([1f, 2f], converted[1]);
+    }
+
+    [Fact]
+    public void Put_preserves_compatible_maps_at_every_level()
+    {
+        var record = (ISpecificRecord)Activator.CreateInstance(typeof(NestedCollections))!;
+        var field = ((RecordSchema)record.Schema).Fields.Single(field => field.Name == "Maps");
+        var inner = new Dictionary<string, float> { ["value"] = 1.25f };
+        var compatible = new Dictionary<string, Dictionary<string, float>> { ["inner"] = inner };
+
+        record.Put(field.Pos, compatible);
+        Assert.Same(compatible, record.Get(field.Pos));
+
+        var source = new Dictionary<string, IDictionary<string, float>> { ["inner"] = inner };
+        record.Put(field.Pos, source);
+
+        var converted = Assert.IsType<Dictionary<string, Dictionary<string, float>>>(record.Get(field.Pos));
+        Assert.Same(inner, converted["inner"]);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Put_reads_each_map_entry_once_and_disposes_the_enumerator(bool invalidValue)
+    {
+        var record = (ISpecificRecord)Activator.CreateInstance(typeof(NestedCollections))!;
+        var field = ((RecordSchema)record.Schema).Fields.Single(field => field.Name == "Maps");
+        var source = new EntryDictionary
+        {
+            { "inner", invalidValue ? (object)"invalid map" : new Hashtable { { "value", 1.25f } } },
+        };
+
+        if (invalidValue)
+        {
+            Assert.Throws<InvalidCastException>(() => record.Put(field.Pos, source));
+        }
+        else
+        {
+            record.Put(field.Pos, source);
+            var converted = Assert.IsType<Dictionary<string, Dictionary<string, float>>>(record.Get(field.Pos));
+            Assert.Equal(1.25f, converted["inner"]["value"]);
+        }
+
+        Assert.Equal(1, source.EntryReads);
+        Assert.Equal(1, source.Disposals);
     }
 
     [Theory]
@@ -222,5 +287,42 @@ public sealed class NestedCollectionSerializationTests
         }
 
         return [IntegerArrays(depth - 1, mode), Array.Empty<object>()];
+    }
+
+    private sealed class EntryDictionary : Hashtable
+    {
+        public int EntryReads { get; private set; }
+        public int Disposals { get; private set; }
+        public override ICollection Keys => throw new InvalidOperationException("Enumerate entries directly.");
+        public override object? this[object key]
+        {
+            get => throw new InvalidOperationException("Read the enumerator entry directly.");
+            set => base[key] = value;
+        }
+
+        public override IDictionaryEnumerator GetEnumerator() => new EntryEnumerator(this, base.GetEnumerator());
+
+        private sealed class EntryEnumerator(EntryDictionary owner, IDictionaryEnumerator inner) : IDictionaryEnumerator, IDisposable
+        {
+            public DictionaryEntry Entry
+            {
+                get
+                {
+                    owner.EntryReads++;
+                    return inner.Entry;
+                }
+            }
+
+            public object Key => throw new InvalidOperationException("Read Entry once.");
+            public object? Value => throw new InvalidOperationException("Read Entry once.");
+            public object Current => throw new InvalidOperationException("Read Entry once.");
+            public bool MoveNext() => inner.MoveNext();
+            public void Reset() => inner.Reset();
+            public void Dispose()
+            {
+                owner.Disposals++;
+                (inner as IDisposable)?.Dispose();
+            }
+        }
     }
 }

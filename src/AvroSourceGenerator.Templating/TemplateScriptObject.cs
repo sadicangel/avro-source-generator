@@ -1,15 +1,14 @@
 ﻿using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Schemas;
 using Scriban.Functions;
-using Scriban.Runtime;
 
 namespace AvroSourceGenerator.Templating;
 
 internal sealed class TemplateScriptObject : BuiltinFunctions
 {
+    private static readonly ApacheFunctions s_apacheFunctions = new ApacheFunctions();
+
     public TemplateScriptObject(RenderOptions options)
     {
-        this.Import("ApacheCollectionValue", new Func<Field, string?>(field => ApacheCollectionValue.Render(field, options)));
         SetValue("GenerationTarget", options.GenerationTarget, readOnly: true);
         SetValue("AccessModifier", options.AccessModifier.Keyword, readOnly: true);
         SetValue("Record", options.Record, readOnly: true);
@@ -24,5 +23,6 @@ internal sealed class TemplateScriptObject : BuiltinFunctions
         SetValue("UseRawStringLiterals", options.LanguageFeatures.HasRawStringLiterals, readOnly: true);
         SetValue("UseUnsafeAccessors", options.LanguageFeatures.HasUnsafeAccessors, readOnly: true);
         SetValue("UseUnions", options.LanguageFeatures.HasUnions, readOnly: true);
+        SetValue("apache", s_apacheFunctions, readOnly: true);
     }
 }

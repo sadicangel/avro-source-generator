@@ -1,18 +1,25 @@
-{{- $collectionValue = ApacheCollectionValue field -}}
-{{- if $collectionValue -}}
-{{- $collectionValue -}}
-{{- else -}}
-{{- if !UseUnions || field.UnderlyingType.Type != 'UnionType'}}
-{{- !field.AllowsNull ? $"({ field.Type }){ FieldValueExpression }" : $"{ FieldValueExpression } is null ? null : ({ field.UnderlyingType }){ FieldValueExpression }" -}}
-{{- else -}}
+{{- if field.UnderlyingType.Type == 'Array' -}}
+{{- ret include 'apache.convert_array' schema: field.Type value: FieldValueExpression -}}
+{{- end -}}
+{{- if field.UnderlyingType.Type == 'Map' -}}
+{{- ret include 'apache.convert_map' schema: field.Type value: FieldValueExpression -}}
+{{- end -}}
+{{- if UseUnions && field.UnderlyingType.Type == 'UnionType' -}}
 {{- FieldValueExpression }} switch
             {
                 {{ if field.AllowsNull }}null => null,{{ end }}
                 {{~ for type in field.PossibleTypes ~}}
+                {{~ case type.Type ~}}
+                {{~ when 'Array' ~}}
+                global::System.Collections.IList x when x is not byte[] => {{ include 'apache.convert_array' schema: type value: 'x' }},
+                {{~ when 'Map' ~}}
+                global::System.Collections.IDictionary x => {{ include 'apache.convert_map' schema: type value: 'x' }},
+                {{~ else ~}}
                 {{ type }} x => x,
+                {{~ end ~}}
                 {{~ end ~}}
                 _ => throw new global::Avro.AvroRuntimeException({{"$"}}"Bad value {fieldValue} for field {{ field.Name.SchemaName }} in Put()")
             }
+{{- ret -}}
 {{- end -}}
-
-{{- end -}}
+{{- if field.AllowsNull }}{{ FieldValueExpression }} is null ? null : {{ end }}({{ field.UnderlyingType }}){{ FieldValueExpression -}}

@@ -1,0 +1,176 @@
+{
+  "type": "record",
+  "name": "NestedCollections",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
+  "fields": [
+    {
+      "name": "Arrays",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": "float"
+          }
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "ArrayMaps",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": {
+            "type": "map",
+            "values": "float"
+          }
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "MapArrays",
+      "type": [
+        "null",
+        {
+          "type": "map",
+          "values": {
+            "type": "array",
+            "items": "float"
+          }
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "Maps",
+      "type": [
+        "null",
+        {
+          "type": "map",
+          "values": {
+            "type": "map",
+            "values": "float"
+          }
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "Deep",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": {
+            "type": "map",
+            "values": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": "float"
+              }
+            }
+          }
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "NullableItems",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": [
+            "null",
+            {
+              "type": "array",
+              "items": "float"
+            }
+          ]
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "NullableValues",
+      "type": [
+        "null",
+        {
+          "type": "map",
+          "values": [
+            "null",
+            {
+              "type": "array",
+              "items": "float"
+            }
+          ]
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "Mixed",
+      "type": [
+        "null",
+        "string",
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": "float"
+          }
+        },
+        {
+          "type": "map",
+          "values": {
+            "type": "array",
+            "items": "float"
+          }
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "TripleArrays",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": "int"
+            }
+          }
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "QuadrupleArrays",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": "int"
+              }
+            }
+          }
+        }
+      ],
+      "default": null
+    }
+  ]
+}

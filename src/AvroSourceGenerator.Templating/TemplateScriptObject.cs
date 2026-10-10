@@ -1,5 +1,7 @@
 ﻿using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Schemas;
 using Scriban.Functions;
+using Scriban.Runtime;
 
 namespace AvroSourceGenerator.Templating;
 
@@ -7,6 +9,7 @@ internal sealed class TemplateScriptObject : BuiltinFunctions
 {
     public TemplateScriptObject(RenderOptions options)
     {
+        this.Import("ApacheCollectionValue", new Func<Field, string?>(field => ApacheCollectionValue.Render(field, options)));
         SetValue("GenerationTarget", options.GenerationTarget, readOnly: true);
         SetValue("AccessModifier", options.AccessModifier.Keyword, readOnly: true);
         SetValue("Record", options.Record, readOnly: true);

@@ -1,3 +1,7 @@
+{{- $collectionValue = ApacheCollectionValue field -}}
+{{- if $collectionValue -}}
+{{- $collectionValue -}}
+{{- else -}}
 {{- if !UseUnions || field.UnderlyingType.Type != 'UnionType'}}
 {{- !field.AllowsNull ? $"({ field.Type }){ FieldValueExpression }" : $"{ FieldValueExpression } is null ? null : ({ field.UnderlyingType }){ FieldValueExpression }" -}}
 {{- else -}}
@@ -9,4 +13,6 @@
                 {{~ end ~}}
                 _ => throw new global::Avro.AvroRuntimeException({{"$"}}"Bad value {fieldValue} for field {{ field.Name.SchemaName }} in Put()")
             }
+{{- end -}}
+
 {{- end -}}

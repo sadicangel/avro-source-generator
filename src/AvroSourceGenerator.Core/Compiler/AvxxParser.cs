@@ -142,7 +142,7 @@ public abstract class AvxxParser(AvroParseOptions options)
                         remarks = UnionSchemaHelpers.GetDocumentation(union.Schemas, includeNull: true);
                         union = union with
                         {
-                            CSharpName = union.Schemas.Any(static schema => schema.Type is SchemaType.Null)
+                            CSharpName = union.Schemas.Any(static schema => schema.SchemaType is SchemaType.Null)
                                 ? generatedUnion.CSharpName.WithNullableAnnotation()
                                 : generatedUnion.CSharpName,
                             UnderlyingSchema = generatedUnion
@@ -172,13 +172,13 @@ public abstract class AvxxParser(AvroParseOptions options)
                     remarks = UnionSchemaHelpers.GetDocumentation(union.Schemas, includeNull: true);
                     union = union with
                     {
-                        CSharpName = union.Schemas.Any(static schema => schema.Type is SchemaType.Null) && Options.LanguageFeatures.HasNullableReferenceTypes
+                        CSharpName = union.Schemas.Any(static schema => schema.SchemaType is SchemaType.Null) && Options.LanguageFeatures.HasNullableReferenceTypes
                             ? generatedUnion.CSharpName.WithNullableAnnotation()
                             : generatedUnion.CSharpName,
                         UnderlyingSchema = generatedUnion,
                         Schemas =
                         [
-                            .. union.Schemas.Select(schema => schema.Type is SchemaType.Null
+                            .. union.Schemas.Select(schema => schema.SchemaType is SchemaType.Null
                                 ? schema
                                 : generatedUnion.MemberSchemas.Single(member => member.CSharpName == schema.CSharpName))
                         ]

@@ -33,7 +33,7 @@ public sealed class FieldPossibleTypesTests
 
         Assert.Equal(
             [SchemaType.Long, SchemaType.Null, SchemaType.Boolean],
-            Assert.IsType<UnionSchema>(fields["nullableMulti"].Type).Schemas.Select(schema => schema.Type));
+            Assert.IsType<UnionSchema>(fields["nullableMulti"].Type).Schemas.Select(schema => schema.SchemaType));
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public sealed class FieldPossibleTypesTests
 
     private static void AssertFieldMetadata(Field field, bool allowsNull, bool hasNullableAnnotation, params SchemaType[] possibleTypes)
     {
-        Assert.Equal(possibleTypes, field.PossibleTypes.Select(schema => schema.Type));
+        Assert.Equal(possibleTypes, field.PossibleTypes.Select(schema => schema.SchemaType));
         Assert.Equal(allowsNull, field.AllowsNull);
         Assert.Equal(hasNullableAnnotation, field.Type.CSharpName.HasNullableAnnotation);
     }

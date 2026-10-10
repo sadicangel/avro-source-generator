@@ -4,9 +4,9 @@ using System.Text.Json;
 namespace AvroSourceGenerator.Schemas;
 
 public abstract record class TopLevelSchema(
-    SchemaType Type,
+    SchemaType SchemaType,
     SchemaName SchemaName,
     CSharpName CSharpName,
     string? Documentation,
     ImmutableSortedDictionary<string, JsonElement> Properties)
-    : AvroSchema(Type, SchemaName, CSharpName, Documentation, Properties);
+    : AvroSchema(SchemaType, SchemaName, CSharpName, Documentation, Properties);

@@ -996,7 +996,7 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         var response = ProtocolResponse(syntax.Type, containingNamespace);
         var errors = ProtocolErrors(syntax.ThrowsErrorClause, containingNamespace);
         var oneWay = syntax.OneWayClause is not null ? true : default(bool?);
-        if (oneWay is true && response is not null && !errors.IsDefault && (response.Type.Type is not SchemaType.Null || errors.Length > 0))
+        if (oneWay is true && response is not null && !errors.IsDefault && (response.Type.SchemaType is not SchemaType.Null || errors.Length > 0))
             Report(AvroDiagnostic.InvalidIdlOneWayMessage(syntax.OneWayClause!.OneWayKeyword.SourceSpan, syntax.Name.FullName));
         if (requestParameters.IsDefault || response is null || errors.IsDefault || tracker.HasNewDiagnostics)
             return null;

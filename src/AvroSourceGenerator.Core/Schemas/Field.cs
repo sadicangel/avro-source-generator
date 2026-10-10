@@ -31,8 +31,8 @@ public sealed record class Field(
     }
 
     public bool AllowsNull => Type is UnionSchema union
-        ? union.Schemas.Any(static schema => schema.Type is SchemaType.Null)
-        : Type.Type is SchemaType.Null;
+        ? union.Schemas.Any(static schema => schema.SchemaType is SchemaType.Null)
+        : Type.SchemaType is SchemaType.Null;
 
     public void WriteTo(Utf8JsonWriter writer, HashSet<SchemaName> writtenSchemas, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, string? containingNamespace)
     {

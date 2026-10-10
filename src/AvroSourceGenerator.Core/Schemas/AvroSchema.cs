@@ -5,14 +5,14 @@ using System.Text.Json;
 namespace AvroSourceGenerator.Schemas;
 
 public abstract record class AvroSchema(
-    SchemaType Type,
+    SchemaType SchemaType,
     SchemaName SchemaName,
     CSharpName CSharpName,
     string? Documentation,
     ImmutableSortedDictionary<string, JsonElement> Properties)
 {
     // ReSharper disable once UnusedMember.Global
-    public bool RequiresNullability => Type is SchemaType.Record or SchemaType.Error or SchemaType.Protocol;
+    public bool RequiresNullability => SchemaType is SchemaType.Record or SchemaType.Error or SchemaType.Protocol;
 
     public sealed override string ToString() => CSharpName.FullName;
 

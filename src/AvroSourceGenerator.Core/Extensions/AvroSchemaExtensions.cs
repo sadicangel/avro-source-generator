@@ -38,7 +38,7 @@ internal static class AvroSchemaExtensions
                 "double" => value.GetRawText(),
                 "byte[]" => $"[{string.Join(", ", value.GetBytesFromBase64().Select(bytes => $"0x{bytes:X2}"))}]",
                 "string" => value.GetRawText(),
-                _ when schema.Type is SchemaType.Enum => $"{schema}.{value.GetString()}",
+                _ when schema.SchemaType is SchemaType.Enum => $"{schema}.{value.GetString()}",
 
                 // TODO: Do we need to handle complex types? Should they be supported?
                 _ => null,

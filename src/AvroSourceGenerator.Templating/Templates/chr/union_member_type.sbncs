@@ -1,11 +1,11 @@
-{{- case $.schema.Type -}}
+{{- case $.schema.SchemaType -}}
 {{- when 'Reference' -}}
 global::Chr.Avro.Abstract.NamedSchema
 {{- when 'Logical' -}}
-global::Chr.Avro.Abstract.{{ $.schema.UnderlyingSchema.Type }}Schema
+global::Chr.Avro.Abstract.{{ $.schema.UnderlyingSchema.SchemaType }}Schema
 {{- when 'Error' -}}
 global::Chr.Avro.Abstract.RecordSchema
 {{- else -}}
-global::Chr.Avro.Abstract.{{ $.schema.Type }}Schema
+global::Chr.Avro.Abstract.{{ $.schema.SchemaType }}Schema
 {{- end -}}
-{{- if $.schema.Type == 'Reference' || $.schema.Type == 'Record' || $.schema.Type == 'Error' || $.schema.Type == 'Fixed' || $.schema.Type == 'Enum' }} { Name: "{{ $.schema.SchemaName.Name }}"{{ if $.schema.SchemaName.Namespace }}, Namespace: "{{ $.schema.SchemaName.Namespace }}"{{ end }} }{{ end -}}
+{{- if $.schema.SchemaType == 'Reference' || $.schema.SchemaType == 'Record' || $.schema.SchemaType == 'Error' || $.schema.SchemaType == 'Fixed' || $.schema.SchemaType == 'Enum' }} { Name: "{{ $.schema.SchemaName.Name }}"{{ if $.schema.SchemaName.Namespace }}, Namespace: "{{ $.schema.SchemaName.Namespace }}"{{ end }} }{{ end -}}

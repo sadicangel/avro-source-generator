@@ -107,11 +107,11 @@ public sealed class BoundAvroFileTests
         var parsed = compiled.Files[1].Declarations;
         var parsedFirst = Assert.IsAssignableFrom<NamedSchema>(parsed.Single(schema => schema.SchemaName.Name == "First"));
         var parsedSecond = Assert.IsType<RecordSchema>(parsed.Single(schema => schema.SchemaName.Name == "Second"));
-        var parsedVariant = Assert.IsType<UnionTypeSchema>(parsed.Single(schema => schema.Type is SchemaType.UnionType));
+        var parsedVariant = Assert.IsType<UnionTypeSchema>(parsed.Single(schema => schema.SchemaType is SchemaType.UnionType));
         var bound = compiled.BoundFiles[1].Declarations;
         var boundFirst = Assert.IsAssignableFrom<NamedSchema>(bound.Single(schema => schema.SchemaName.Name == "First"));
         var boundSecond = Assert.IsType<RecordSchema>(bound.Single(schema => schema.SchemaName.Name == "Second"));
-        var boundVariant = Assert.IsType<UnionTypeSchema>(bound.Single(schema => schema.Type is SchemaType.UnionType));
+        var boundVariant = Assert.IsType<UnionTypeSchema>(bound.Single(schema => schema.SchemaType is SchemaType.UnionType));
         var envelope = Assert.IsType<RecordSchema>(bound.Single(schema => schema.SchemaName.Name == "Envelope"));
         var union = Assert.IsType<UnionSchema>(Assert.Single(envelope.Fields).Type);
 

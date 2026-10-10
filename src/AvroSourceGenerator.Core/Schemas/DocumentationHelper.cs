@@ -22,7 +22,8 @@ internal static class DocumentationHelper
         PrimitiveSchema { SchemaType: SchemaType.Bytes } => "<see cref=\"byte\"/>[]",
         ArraySchema array => $"<see cref=\"global::System.Collections.Generic.List{{T}}\">List</see>&lt;{GetSeeElement(array.ItemSchema)}&gt;",
         MapSchema map => $"<see cref=\"global::System.Collections.Generic.Dictionary{{TKey, TValue}}\">Dictionary</see>&lt;<see cref=\"string\"/>, {GetSeeElement(map.ValueSchema)}&gt;",
+        LogicalSchema logical when logical.CSharpName == logical.UnderlyingSchema.CSharpName => GetSeeElement(logical.UnderlyingSchema),
         UnionSchema { SchemaType: not SchemaType.UnionType } union => string.Join(" | ", union.Schemas.Canonicalize(includeNull: true).Select(GetSeeElement)),
-        _ => $"<see cref=\"{schema.CSharpName.FullName.Replace('<', '{').Replace('>', '}')}\"/>"
+        _ => $"<see cref=\"{schema.CSharpName.FullName}\"/>"
     };
 }

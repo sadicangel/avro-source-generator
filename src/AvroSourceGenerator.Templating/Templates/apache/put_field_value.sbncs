@@ -11,9 +11,9 @@
                 {{~ for type in field.PossibleTypes ~}}
                 {{~ case type.Type ~}}
                 {{~ when 'Array' ~}}
-                global::System.Collections.IList x when x is not byte[] => ({{ field.Type }}){{ include 'apache.convert_array' schema: type value: 'x' }},
+                global::System.Collections.IList x when x is not byte[] => {{ include 'apache.convert_array' schema: type value: 'x' }},
                 {{~ when 'Map' ~}}
-                global::System.Collections.IDictionary x => ({{ field.Type }}){{ include 'apache.convert_map' schema: type value: 'x' }},
+                global::System.Collections.IDictionary x => {{ include 'apache.convert_map' schema: type value: 'x' }},
                 {{~ else ~}}
                 {{ type }} x => x,
                 {{~ end ~}}

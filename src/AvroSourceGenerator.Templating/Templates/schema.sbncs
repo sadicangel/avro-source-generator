@@ -16,7 +16,7 @@ namespace {{ Schema.CSharpName.Namespace }}
     {{~ end ~}}
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     {{
-        case Schema.Type
+        case Schema.SchemaType
         when 'Enum'
             include 'enum' schema: Schema
         when 'Fixed'

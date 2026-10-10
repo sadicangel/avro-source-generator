@@ -114,7 +114,7 @@ public sealed class UnionObjectGenerationTests
         Assert.Same(AvroSchema.Null, union.Schemas[nullFirst ? 0 : 2]);
         Assert.True(field.AllowsNull);
         Assert.Equal(["First", "Second"], variant.MemberSchemas.Select(member => member.SchemaName.Name));
-        Assert.DoesNotContain(variant.MemberSchemas, member => member.Type is SchemaType.Null);
+        Assert.DoesNotContain(variant.MemberSchemas, member => member.SchemaType is SchemaType.Null);
         Assert.Contains("<see langword=\"null\"/>", field.Remarks);
         Assert.DoesNotContain("<see langword=\"null\"/>", variant.Documentation);
         Assert.All(variant.MemberSchemas.OfType<NamedSchema>(), member => Assert.Equal(variant.CSharpName, member.InheritsFrom));

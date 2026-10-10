@@ -1,15 +1,15 @@
-{{- if field.UnderlyingType.Type == 'Array' -}}
+{{- if field.UnderlyingType.SchemaType == 'Array' -}}
 {{- ret include 'apache.convert_array' schema: field.Type value: FieldValueExpression -}}
 {{- end -}}
-{{- if field.UnderlyingType.Type == 'Map' -}}
+{{- if field.UnderlyingType.SchemaType == 'Map' -}}
 {{- ret include 'apache.convert_map' schema: field.Type value: FieldValueExpression -}}
 {{- end -}}
-{{- if UseUnions && field.UnderlyingType.Type == 'UnionType' -}}
+{{- if UseUnions && field.UnderlyingType.SchemaType == 'UnionType' -}}
 {{- FieldValueExpression }} switch
             {
                 {{ if field.AllowsNull }}null => null,{{ end }}
                 {{~ for type in field.PossibleTypes ~}}
-                {{~ case type.Type ~}}
+                {{~ case type.SchemaType ~}}
                 {{~ when 'Array' ~}}
                 global::System.Collections.IList x when x is not byte[] => {{ include 'apache.convert_array' schema: type value: 'x' }},
                 {{~ when 'Map' ~}}

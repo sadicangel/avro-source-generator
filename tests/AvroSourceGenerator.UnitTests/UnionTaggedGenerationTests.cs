@@ -65,7 +65,7 @@ public sealed class UnionTaggedGenerationTests
         Assert.True(field.AllowsNull);
         Assert.Equal("global::Demo.EnvelopeChoiceUnion?", field.Type.CSharpName.FullName);
         Assert.Same(tagged, union.UnderlyingSchema);
-        Assert.Equal([SchemaType.Null, SchemaType.Reference, SchemaType.String, SchemaType.Bytes], union.Schemas.Select(schema => schema.Type));
+        Assert.Equal([SchemaType.Null, SchemaType.Reference, SchemaType.String, SchemaType.Bytes], union.Schemas.Select(schema => schema.SchemaType));
         Assert.Equal(AvroSchema.Bytes.CSharpName, union.Schemas[1].CSharpName);
         Assert.Contains(tagged.MemberSchemas, schema => schema.CSharpName == AvroSchema.Bytes.CSharpName);
         Assert.Equal([CSharpName.ByteArray, CSharpName.String], tagged.MemberSchemas.Select(schema => schema.CSharpName));

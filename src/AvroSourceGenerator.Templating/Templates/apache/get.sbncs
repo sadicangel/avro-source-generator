@@ -3,7 +3,7 @@
     switch (fieldPos)
     {
         {{~ for field in $.schema.Fields ~}}
-        case {{ for.index }}: return this.{{ field.Name }}{{ if UseUnions && field.UnderlyingType.Type == 'UnionType' }}{{ if field.AllowsNull }}?{{ end }}.Value{{ end }};
+        case {{ for.index }}: return this.{{ field.Name }}{{ if UseUnions && field.UnderlyingType.SchemaType == 'UnionType' }}{{ if field.AllowsNull }}?{{ end }}.Value{{ end }};
         {{~ end ~}}
         default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
     }

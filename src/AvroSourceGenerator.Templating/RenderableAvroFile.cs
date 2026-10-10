@@ -71,7 +71,7 @@ public sealed class RenderableAvroFile(
                 return Invalid(file);
         }
         var emittedSchemas = compilation.GetOwnedDeclarations(file, cancellationToken)
-            .Where(static schema => schema.Type is not SchemaType.Fixed || !((FixedSchema)schema).IsSubstituted)
+            .Where(static schema => schema.SchemaType is not SchemaType.Fixed || !((FixedSchema)schema).IsSubstituted)
             .ToImmutableArray();
         return new RenderableAvroFile(file, emittedSchemas, compilation.Schemas, contributingFiles, options);
     }

@@ -17,7 +17,7 @@ internal sealed class ApacheFunctions : ScriptObject
     public static bool RequiresCollectionConversion(AvroSchema schema) => schema switch
     {
         ArraySchema or MapSchema => true,
-        UnionSchema union => union.UnderlyingSchema.Type != SchemaType.Null && union.Schemas.Any(RequiresCollectionConversion),
+        UnionSchema union => union.UnderlyingSchema.SchemaType != SchemaType.Null && union.Schemas.Any(RequiresCollectionConversion),
         _ => false,
     };
 
@@ -66,14 +66,14 @@ internal sealed class ApacheFunctions : ScriptObject
                         nested = true;
                         schema = map.ValueSchema;
                         continue;
-                    case UnionSchema { UnderlyingSchema.Type: SchemaType.UnionType } union:
+                    case UnionSchema { UnderlyingSchema.SchemaType: SchemaType.UnionType } union:
                         foreach (var member in union.Schemas)
                         {
                             CollectRequiredConverters(member, nested, ref needsArray, ref needsMap);
                             if (needsArray && needsMap) return;
                         }
                         return;
-                    case UnionSchema union when union.UnderlyingSchema.Type != SchemaType.Null:
+                    case UnionSchema union when union.UnderlyingSchema.SchemaType != SchemaType.Null:
                         schema = union.UnderlyingSchema;
                         continue;
                     default:

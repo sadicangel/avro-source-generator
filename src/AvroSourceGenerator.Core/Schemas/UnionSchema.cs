@@ -12,8 +12,8 @@ public sealed record class UnionSchema(
     public static UnionSchema Create(ImmutableArray<AvroSchema> schemas, bool useNullableReferenceTypes)
     {
         var underlyingSchema = GetUnderlyingSchema(schemas);
-        var useNullableAnnotation = schemas.Any(static schema => schema.Type is SchemaType.Null)
-            && (useNullableReferenceTypes || MapsToValueType(underlyingSchema.Type));
+        var useNullableAnnotation = schemas.Any(static schema => schema.SchemaType is SchemaType.Null)
+            && (useNullableReferenceTypes || MapsToValueType(underlyingSchema.SchemaType));
         var csharpName = useNullableAnnotation
             ? underlyingSchema.CSharpName.WithNullableAnnotation()
             : underlyingSchema.CSharpName.WithoutNullableAnnotation();
@@ -39,9 +39,9 @@ public sealed record class UnionSchema(
             // T1
             [var t1] => t1,
             // T1 | "null"
-            [{ Type: not SchemaType.Null } t1, { Type: SchemaType.Null }] => t1,
+            [{ SchemaType: not SchemaType.Null } t1, { SchemaType: SchemaType.Null }] => t1,
             // "null" | T2
-            [{ Type: SchemaType.Null }, { Type: not SchemaType.Null } t2] => t2,
+            [{ SchemaType: SchemaType.Null }, { SchemaType: not SchemaType.Null } t2] => t2,
             // T1 | T2 | ... | Tn
             _ => Null,
         };

@@ -597,7 +597,7 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         var documentation = GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
         if (tracker.HasNewDiagnostics || parameters.IsDefault || response is null || errors.IsDefault)
             return null;
-        if (oneWay is true && (response.Type.Type is not SchemaType.Null || !errors.IsEmpty))
+        if (oneWay is true && (response.Type.SchemaType is not SchemaType.Null || !errors.IsEmpty))
             return Invalid<ProtocolMessage?>(null, AvroDiagnostic.InvalidOneWayMessage(message.Value, message.Name.Value));
         return new ProtocolMessage(message.Name.Value.ToValidName(), documentation, parameters, response, errors, oneWay);
     }

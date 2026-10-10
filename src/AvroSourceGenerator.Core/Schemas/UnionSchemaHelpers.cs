@@ -35,7 +35,7 @@ internal static class UnionSchemaHelpers
             "Represents a union of the following types:",
             "<list type=\"bullet\">",
             .. memberSchemas.Canonicalize(includeNull)
-                .Select(static schema => schema.Type is SchemaType.Null
+                .Select(static schema => schema.SchemaType is SchemaType.Null
                     ? "<item><see langword=\"null\"/></item>"
                     : $"<item><see cref=\"{schema.CSharpName.FullName}\"/></item>"),
             "</list>"

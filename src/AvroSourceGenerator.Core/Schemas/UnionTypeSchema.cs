@@ -19,7 +19,7 @@ public sealed record class UnionTypeSchema(SchemaName SchemaName, CSharpName CSh
         {
             switch (schema)
             {
-                case { Type: SchemaType.Null }:
+                case { SchemaType: SchemaType.Null }:
                     break;
                 case RecordSchema or ErrorSchema or FixedSchema { IsSubstituted: false }:
                     memberCount++;

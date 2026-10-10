@@ -1,0 +1,41 @@
+﻿using Scriban;
+using Scriban.Syntax;
+
+namespace AvroSourceGenerator.Templating;
+
+internal sealed class TemplateRenderer
+{
+    private static readonly ScriptVariableGlobal s_schema = new ScriptVariableGlobal("Schema");
+    private static readonly ScriptVariableGlobal s_schemaJson = new ScriptVariableGlobal("SchemaJson");
+    private readonly TemplateContext _context;
+    private readonly Template _template;
+
+    public TemplateRenderer(RenderOptions options)
+    {
+        var templateLoader = new TemplateLoader(options);
+        _context = new TemplateContext(new TemplateScriptObject(options))
+        {
+            MemberRenamer = member => member.Name,
+            TemplateLoader = templateLoader,
+        };
+
+        var templatePath = _context.GetTemplatePathFromName("schema", callerContext: null)
+            ?? throw new InvalidOperationException("Unreachable code");
+        _template = _context.GetOrCreateTemplate(templatePath, callerContext: null);
+    }
+
+    public string Render(object schema, string? schemaJson)
+    {
+        _context.SetValue(s_schema, schema);
+        _context.SetValue(s_schemaJson, schemaJson);
+        return _template.Render(_context);
+    }
+
+    public void ClearSchemaValues()
+    {
+        // Context.Reset clears the parsed-template cache in Scriban. Retain that cache, but remove the values which
+        // otherwise retain the current project's schema graph and generated Apache JSON between generator runs.
+        _context.SetValue(s_schema, null);
+        _context.SetValue(s_schemaJson, null);
+    }
+}

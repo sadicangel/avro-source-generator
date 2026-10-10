@@ -162,8 +162,8 @@ namespace Demo
                     Set_collection(this, fieldValue! switch
                     {
                         
-                        global::System.Collections.Generic.Dictionary<string, long> x => x,
-                        global::System.Collections.Generic.List<string> x => x,
+                        global::System.Collections.IDictionary x => (global::Demo.EnvelopeCollectionUnion)(global::System.Collections.Generic.Dictionary<string, long>)x,
+                        global::System.Collections.IList x when x is not byte[] => (global::Demo.EnvelopeCollectionUnion)(global::System.Collections.Generic.List<string>)x,
                         _ => throw new global::Avro.AvroRuntimeException($"Bad value {fieldValue} for field collection in Put()")
                     }); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_collection")]

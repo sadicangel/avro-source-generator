@@ -3,4 +3,5 @@ partial {{ Error }} {{ $.schema.CSharpName.Name }} : global::Avro.Specific.Speci
     {{ include 'apache.schema' schema: $.schema override: true }}
     {{ include 'apache.get' schema: $.schema override: true }}
     {{ include 'apache.put' schema: $.schema override: true ~}}
+    {{~ include 'apache.converters' schema: $.schema ~}}
 }

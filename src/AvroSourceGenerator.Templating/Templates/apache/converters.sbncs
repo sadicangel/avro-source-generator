@@ -1,0 +1,37 @@
+{{~ for helper in (apache.required_collection_converters $.schema) ~}}
+{{~ case helper ~}}
+{{~ when 'array' ~}}
+    private static TList ConvertArray<TList, TItem>({{ ObjectType }} value, global::System.Func<{{ ObjectType }}, TItem>{{ UseNullableReferenceTypes ? '?' : '' }} convertItem = null)
+        where TList : class{{ UseNullableReferenceTypes ? '?' : '' }}, global::System.Collections.Generic.IList<TItem>{{ UseNullableReferenceTypes ? '?' : '' }}, new()
+    {
+        if (value is null) return null{{ UseNullableReferenceTypes ? '!' : '' }};
+        if (value is TList compatible) return compatible;
+        var result = new TList();
+        foreach (var item in (global::System.Collections.IEnumerable)value)
+            result.Add(convertItem is null ? (TItem)item{{ UseNullableReferenceTypes ? '!' : '' }} : convertItem(item));
+        return result;
+    }
+{{~ when 'map' ~}}
+    private static TDictionary ConvertMap<TDictionary, TItem>({{ ObjectType }} value, global::System.Func<{{ ObjectType }}, TItem>{{ UseNullableReferenceTypes ? '?' : '' }} convertItem = null)
+        where TDictionary : class{{ UseNullableReferenceTypes ? '?' : '' }}, global::System.Collections.Generic.IDictionary<string, TItem>{{ UseNullableReferenceTypes ? '?' : '' }}, new()
+    {
+        if (value is null) return null{{ UseNullableReferenceTypes ? '!' : '' }};
+        if (value is TDictionary compatible) return compatible;
+        var result = new TDictionary();
+        var enumerator = ((global::System.Collections.IDictionary)value).GetEnumerator();
+        try
+        {
+            while (enumerator.MoveNext())
+            {
+                var entry = enumerator.Entry;
+                result.Add((string)entry.Key, convertItem is null ? (TItem)entry.Value{{ UseNullableReferenceTypes ? '!' : '' }} : convertItem(entry.Value));
+            }
+        }
+        finally
+        {
+            (enumerator as global::System.IDisposable)?.Dispose();
+        }
+        return result;
+    }
+{{~ end ~}}
+{{~ end ~}}

@@ -30,10 +30,20 @@ namespace NestedRegression
         {
             switch (fieldPos)
             {
-                case 0: this.Arrays = (fieldValue! is global::System.Collections.Generic.List<global::System.Collections.Generic.List<float>> collection_Arrays_0 ? collection_Arrays_0 : global::System.Linq.Enumerable.ToList(global::System.Linq.Enumerable.Select(global::System.Linq.Enumerable.Cast<object?>((global::System.Collections.IEnumerable)fieldValue!), item_Arrays_0 => (item_Arrays_0 is global::System.Collections.Generic.List<float> collection_Arrays_1 ? collection_Arrays_1 : global::System.Linq.Enumerable.ToList(global::System.Linq.Enumerable.Select(global::System.Linq.Enumerable.Cast<object?>((global::System.Collections.IEnumerable)item_Arrays_0!), item_Arrays_1 => (float)item_Arrays_1!)))))); break;
-                case 1: this.NullableArrays = (fieldValue! is null ? (global::System.Collections.Generic.List<global::System.Collections.Generic.List<float>>?)null : (fieldValue! is global::System.Collections.Generic.List<global::System.Collections.Generic.List<float>> collection_NullableArrays_0 ? collection_NullableArrays_0 : global::System.Linq.Enumerable.ToList(global::System.Linq.Enumerable.Select(global::System.Linq.Enumerable.Cast<object?>((global::System.Collections.IEnumerable)fieldValue!), item_NullableArrays_0 => (item_NullableArrays_0 is global::System.Collections.Generic.List<float> collection_NullableArrays_1 ? collection_NullableArrays_1 : global::System.Linq.Enumerable.ToList(global::System.Linq.Enumerable.Select(global::System.Linq.Enumerable.Cast<object?>((global::System.Collections.IEnumerable)item_NullableArrays_0!), item_NullableArrays_1 => (float)item_NullableArrays_1!))))))); break;
+                case 0: this.Arrays = ConvertArray<global::System.Collections.Generic.List<global::System.Collections.Generic.List<float>>, global::System.Collections.Generic.List<float>>(fieldValue, item => ConvertArray<global::System.Collections.Generic.List<float>, float>(item)); break;
+                case 1: this.NullableArrays = ConvertArray<global::System.Collections.Generic.List<global::System.Collections.Generic.List<float>>?, global::System.Collections.Generic.List<float>>(fieldValue, item => ConvertArray<global::System.Collections.Generic.List<float>, float>(item)); break;
                 default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }
+        }
+        private static TList ConvertArray<TList, TItem>(object? value, global::System.Func<object?, TItem>? convertItem = null)
+            where TList : class?, global::System.Collections.Generic.IList<TItem>?, new()
+        {
+            if (value is null) return null!;
+            if (value is TList compatible) return compatible;
+            var result = new TList();
+            foreach (var item in (global::System.Collections.IEnumerable)value)
+                result.Add(convertItem is null ? (TItem)item! : convertItem(item));
+            return result;
         }
     }
 }

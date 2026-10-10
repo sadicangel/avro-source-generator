@@ -56,6 +56,48 @@ public sealed class NestedCollectionGenerationTests
             output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void Nested_array_and_bytes_union_compiles_in_either_branch_order(bool bytesFirst, bool allowsNull)
+    {
+        const string array = """{"type":"array","items":{"type":"array","items":"float"}}""";
+        var branches = bytesFirst ? $"\"bytes\", {array}" : $"{array}, \"bytes\"";
+        if (allowsNull)
+        {
+            branches = $"\"null\", {branches}";
+        }
+
+        var schema = $$"""
+            {
+              "type": "record",
+              "name": "ArrayAndBytesRecord",
+              "namespace": "NestedRegression",
+              "fields": [{ "name": "Value", "type": [{{branches}}] }]
+            }
+            """;
+        var input = GeneratorInput.Create(
+            [ProjectFile.Schema(schema)],
+            [MetadataReference.CreateFromFile(typeof(Avro.Schema).Assembly.Location)],
+            new ProjectConfig
+            {
+                AvroLibrary = "Apache",
+                LanguageVersion = LanguageVersion.Preview,
+                LanguageFeatures = "Latest",
+                RecordDeclaration = "class",
+                PreviewFeatures = "Unions",
+            });
+
+        input.GeneratorDriver.RunGeneratorsAndUpdateCompilation(
+            input.Compilation, out var compilation, out var diagnostics, TestContext.Current.CancellationToken);
+
+        Assert.Empty(diagnostics);
+        Assert.Empty(compilation.GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning));
+    }
+
     private const string Schema = """
         {
           "type": "record",

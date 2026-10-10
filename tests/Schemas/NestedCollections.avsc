@@ -171,6 +171,36 @@
         }
       ],
       "default": null
+    },
+    {
+      "name": "ArrayBeforeBytes",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": "float"
+          }
+        },
+        "bytes"
+      ],
+      "default": null
+    },
+    {
+      "name": "BytesBeforeArray",
+      "type": [
+        "null",
+        "bytes",
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": "float"
+          }
+        }
+      ],
+      "default": null
     }
   ]
 }

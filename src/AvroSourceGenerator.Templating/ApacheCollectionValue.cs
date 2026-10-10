@@ -73,8 +73,10 @@ internal static class ApacheCollectionValue
                         MapSchema => "global::System.Collections.IDictionary",
                         _ => member.ToString(),
                     };
+                    // byte[] also implements IList, but belongs to the bytes branch of the union.
+                    var guard = member is ArraySchema ? $" when {name} is not byte[]" : string.Empty;
                     var converted = Convert(member, name, $"{prefix}_{index}", depth + 1, options);
-                    arms.Add($"{pattern} {name} => ({union}){converted}");
+                    arms.Add($"{pattern} {name}{guard} => ({union}){converted}");
                 }
                 arms.Add("_ => throw new global::Avro.AvroRuntimeException(\"Bad collection union value in Put()\")");
                 return $"({value} switch {{ {string.Join(", ", arms)} }})";

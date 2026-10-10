@@ -84,6 +84,24 @@ public sealed class NestedCollectionSerializationTests
         Assert.Same(empty, converted[1]);
     }
 
+    [Theory]
+    [InlineData("ArrayBeforeBytes", false)]
+    [InlineData("ArrayBeforeBytes", true)]
+    [InlineData("BytesBeforeArray", false)]
+    [InlineData("BytesBeforeArray", true)]
+    public void Put_preserves_bytes_in_array_and_bytes_unions(string fieldName, bool empty)
+    {
+        // Apache's specific writer also matches byte[] as IList when an array branch comes first.
+        // Exercise Put directly to isolate generated branch selection from that writer limitation.
+        var record = (ISpecificRecord)Activator.CreateInstance(typeof(NestedCollections))!;
+        var field = ((RecordSchema)record.Schema).Fields.Single(field => field.Name == fieldName);
+        byte[] value = empty ? [] : [0, 1, 255];
+
+        record.Put(field.Pos, value);
+
+        Assert.Same(value, record.Get(field.Pos));
+    }
+
     public static TheoryData<string, string, int> Cases()
     {
         var cases = new TheoryData<string, string, int>();
@@ -92,6 +110,7 @@ public sealed class NestedCollectionSerializationTests
         [
             "Arrays", "ArrayMaps", "MapArrays", "Maps", "Deep",
             "NullableItems", "NullableValues", "Mixed", "TripleArrays", "QuadrupleArrays",
+            "ArrayBeforeBytes", "BytesBeforeArray",
         ];
 
         foreach (var reader in readers)
@@ -129,7 +148,7 @@ public sealed class NestedCollectionSerializationTests
 
         return field switch
         {
-            "Arrays" or "Mixed" when mode < 3 => mode == 1
+            "Arrays" or "Mixed" or "ArrayBeforeBytes" or "BytesBeforeArray" when mode < 3 => mode == 1
                 ? Array.Empty<object>()
                 : (object[])[values, Array.Empty<object>()],
 

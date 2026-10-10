@@ -30,12 +30,12 @@ namespace NestedRegression
         {
             switch (fieldPos)
             {
-                case 0: this.Arrays = ConvertArray<global::System.Collections.Generic.List<global::System.Collections.Generic.List<float>>, global::System.Collections.Generic.List<float>>(fieldValue, item => ConvertArray<global::System.Collections.Generic.List<float>, float>(item)); break;
-                case 1: this.NullableArrays = ConvertArray<global::System.Collections.Generic.List<global::System.Collections.Generic.List<float>>?, global::System.Collections.Generic.List<float>>(fieldValue, item => ConvertArray<global::System.Collections.Generic.List<float>, float>(item)); break;
+                case 0: this.Arrays = __ApacheConvertArray<global::System.Collections.Generic.List<global::System.Collections.Generic.List<float>>, global::System.Collections.Generic.List<float>>(fieldValue, item => __ApacheConvertArray<global::System.Collections.Generic.List<float>, float>(item)); break;
+                case 1: this.NullableArrays = __ApacheConvertArray<global::System.Collections.Generic.List<global::System.Collections.Generic.List<float>>?, global::System.Collections.Generic.List<float>>(fieldValue, item => __ApacheConvertArray<global::System.Collections.Generic.List<float>, float>(item)); break;
                 default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }
         }
-        private static TList ConvertArray<TList, TItem>(object? value, global::System.Func<object?, TItem>? convertItem = null)
+        private static TList __ApacheConvertArray<TList, TItem>(object? value, global::System.Func<object?, TItem>? convertItem = null)
             where TList : class?, global::System.Collections.Generic.IList<TItem>?, new()
         {
             if (value is null) return null!;

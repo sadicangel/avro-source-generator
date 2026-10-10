@@ -3,7 +3,7 @@
 {{- if $.nested || (apache.requires_collection_conversion $schema.ValueSchema) -}}
 {{- $item = UseNullableReferenceTypes ? 'item' : $"item_{$value}" -}}
 {{- $valueSchema = $schema.ValueSchema.UnderlyingSchema ?? $schema.ValueSchema -}}
-ConvertMap<{{ $.schema }}, {{ $schema.ValueSchema }}>({{ $value }}{{ if apache.requires_collection_conversion $schema.ValueSchema }}, {{ $item }} => {{ include ('apache.convert_' + ($valueSchema.Type | string.downcase)) schema: $schema.ValueSchema value: $item nested: true }}{{ end }}{{ ')' -}}
+__ApacheConvertMap<{{ $.schema }}, {{ $schema.ValueSchema }}>({{ $value }}{{ if apache.requires_collection_conversion $schema.ValueSchema }}, {{ $item }} => {{ include ('apache.convert_' + ($valueSchema.Type | string.downcase)) schema: $schema.ValueSchema value: $item nested: true }}{{ end }}{{ ')' -}}
 {{- else -}}
 ({{ $.schema }}){{ $.value }}
 {{- end -}}

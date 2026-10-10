@@ -30,8 +30,8 @@ namespace NestedRegression
         {
             switch (fieldPos)
             {
-                case 0: NestedMapErrorReflection.Set_Maps(this, ConvertMap<global::System.Collections.Generic.Dictionary<string, global::System.Collections.Generic.Dictionary<string, float>>, global::System.Collections.Generic.Dictionary<string, float>>(fieldValue, item => ConvertMap<global::System.Collections.Generic.Dictionary<string, float>, float>(item))); break;
-                case 1: NestedMapErrorReflection.Set_NullableArrays(this, ConvertMap<global::System.Collections.Generic.Dictionary<string, global::System.Collections.Generic.List<float>?>, global::System.Collections.Generic.List<float>?>(fieldValue, item => ConvertArray<global::System.Collections.Generic.List<float>?, float>(item))); break;
+                case 0: NestedMapErrorReflection.Set_Maps(this, __ApacheConvertMap<global::System.Collections.Generic.Dictionary<string, global::System.Collections.Generic.Dictionary<string, float>>, global::System.Collections.Generic.Dictionary<string, float>>(fieldValue, item => __ApacheConvertMap<global::System.Collections.Generic.Dictionary<string, float>, float>(item))); break;
+                case 1: NestedMapErrorReflection.Set_NullableArrays(this, __ApacheConvertMap<global::System.Collections.Generic.Dictionary<string, global::System.Collections.Generic.List<float>?>, global::System.Collections.Generic.List<float>?>(fieldValue, item => __ApacheConvertArray<global::System.Collections.Generic.List<float>?, float>(item))); break;
                 default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }
         }
@@ -51,7 +51,7 @@ namespace NestedRegression
                 return lambda.Compile();
             }
         }
-        private static TList ConvertArray<TList, TItem>(object? value, global::System.Func<object?, TItem>? convertItem = null)
+        private static TList __ApacheConvertArray<TList, TItem>(object? value, global::System.Func<object?, TItem>? convertItem = null)
             where TList : class?, global::System.Collections.Generic.IList<TItem>?, new()
         {
             if (value is null) return null!;
@@ -61,7 +61,7 @@ namespace NestedRegression
                 result.Add(convertItem is null ? (TItem)item! : convertItem(item));
             return result;
         }
-        private static TDictionary ConvertMap<TDictionary, TItem>(object? value, global::System.Func<object?, TItem>? convertItem = null)
+        private static TDictionary __ApacheConvertMap<TDictionary, TItem>(object? value, global::System.Func<object?, TItem>? convertItem = null)
             where TDictionary : class?, global::System.Collections.Generic.IDictionary<string, TItem>?, new()
         {
             if (value is null) return null!;

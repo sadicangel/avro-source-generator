@@ -7,6 +7,43 @@ namespace AvroSourceGenerator.UnitTests.Apache;
 public sealed class NestedCollectionGenerationTests
 {
     [Theory]
+    [InlineData(LanguageVersion.CSharp7_3, "CSharp7_3", "record")]
+    [InlineData(LanguageVersion.CSharp12, "CSharp12", "record")]
+    [InlineData(LanguageVersion.CSharp7_3, "CSharp7_3", "error")]
+    [InlineData(LanguageVersion.CSharp12, "CSharp12", "error")]
+    public void Collection_helpers_do_not_conflict_with_schema_fields(LanguageVersion version, string features, string schemaType)
+    {
+        var schema = $$"""
+            {
+              "type": "{{schemaType}}",
+              "name": "CollectionFields",
+              "fields": [
+                { "name": "ConvertArray", "type": { "type": "array", "items": { "type": "array", "items": "float" } } },
+                { "name": "ConvertMap", "type": { "type": "map", "values": { "type": "map", "values": "float" } } }
+              ]
+            }
+            """;
+        var input = GeneratorInput.Create(
+            [ProjectFile.Schema(schema)],
+            [MetadataReference.CreateFromFile(typeof(Avro.Schema).Assembly.Location)],
+            new ProjectConfig
+            {
+                AvroLibrary = "Apache",
+                LanguageVersion = version,
+                LanguageFeatures = features,
+                RecordDeclaration = "class",
+                PreviewFeatures = "None",
+            });
+
+        input.GeneratorDriver.RunGeneratorsAndUpdateCompilation(
+            input.Compilation, out var compilation, out var diagnostics, TestContext.Current.CancellationToken);
+
+        Assert.Empty(diagnostics);
+        Assert.Empty(compilation.GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning));
+    }
+
+    [Theory]
     [InlineData(LanguageVersion.CSharp7_3, "CSharp7_3", "class", "None", "record")]
     [InlineData(LanguageVersion.CSharp8, "CSharp8", "class", "None", "record")]
     [InlineData(LanguageVersion.CSharp9, "CSharp9", "record", "None", "record")]
@@ -45,10 +82,10 @@ public sealed class NestedCollectionGenerationTests
 
         var source = driver.GetRunResult().GeneratedTrees.Single(tree => tree.FilePath.EndsWith("CollectionRecord.Avro.g.cs"));
         Assert.DoesNotContain(source.GetRoot(TestContext.Current.CancellationToken).DescendantNodes()
-            .OfType<LocalFunctionStatementSyntax>(), function => function.Identifier.ValueText is "ConvertArray" or "ConvertMap");
+            .OfType<LocalFunctionStatementSyntax>(), function => function.Identifier.ValueText is "__ApacheConvertArray" or "__ApacheConvertMap");
         var helpers = source.GetRoot(TestContext.Current.CancellationToken).DescendantNodes()
-            .OfType<MethodDeclarationSyntax>().Where(method => method.Identifier.ValueText is "ConvertArray" or "ConvertMap").ToArray();
-        Assert.Equal(["ConvertArray", "ConvertMap"], helpers.Select(function => function.Identifier.ValueText));
+            .OfType<MethodDeclarationSyntax>().Where(method => method.Identifier.ValueText is "__ApacheConvertArray" or "__ApacheConvertMap").ToArray();
+        Assert.Equal(["__ApacheConvertArray", "__ApacheConvertMap"], helpers.Select(function => function.Identifier.ValueText));
         Assert.All(helpers, helper =>
         {
             Assert.True(helper.Modifiers.Any(SyntaxKind.PrivateKeyword));
@@ -191,8 +228,8 @@ public sealed class NestedCollectionGenerationTests
         var source = driver.GetRunResult().GeneratedTrees.Single(tree => tree.FilePath.EndsWith("HelperRecord.Avro.g.cs"));
         var helpers = source.GetRoot(TestContext.Current.CancellationToken).DescendantNodes()
             .OfType<MethodDeclarationSyntax>().ToArray();
-        Assert.Equal(needsArray ? 1 : 0, helpers.Count(helper => helper.Identifier.ValueText == "ConvertArray"));
-        Assert.Equal(needsMap ? 1 : 0, helpers.Count(helper => helper.Identifier.ValueText == "ConvertMap"));
+        Assert.Equal(needsArray ? 1 : 0, helpers.Count(helper => helper.Identifier.ValueText == "__ApacheConvertArray"));
+        Assert.Equal(needsMap ? 1 : 0, helpers.Count(helper => helper.Identifier.ValueText == "__ApacheConvertMap"));
         Assert.DoesNotContain("global::System.Linq.Enumerable", source.ToString());
     }
 
@@ -240,8 +277,8 @@ public sealed class NestedCollectionGenerationTests
             .Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning));
 
         var source = driver.GetRunResult().GeneratedTrees.Single(tree => tree.FilePath.EndsWith("FlatCollectionRecord.Avro.g.cs"));
-        Assert.DoesNotContain("ConvertArray", source.ToString());
-        Assert.DoesNotContain("ConvertMap", source.ToString());
+        Assert.DoesNotContain("__ApacheConvertArray", source.ToString());
+        Assert.DoesNotContain("__ApacheConvertMap", source.ToString());
 
         using var assemblyStream = new MemoryStream();
         var emitted = compilation.Emit(assemblyStream, cancellationToken: TestContext.Current.CancellationToken);
@@ -311,9 +348,9 @@ public sealed class NestedCollectionGenerationTests
         var sources = driver.GetRunResult().GeneratedTrees;
         var parentConversions = sources.Single(tree => tree.FilePath.EndsWith("Parent.Avro.g.cs"))
             .GetRoot(TestContext.Current.CancellationToken).DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Where(invocation => invocation.Expression is GenericNameSyntax { Identifier.ValueText: "ConvertArray" });
+            .Where(invocation => invocation.Expression is GenericNameSyntax { Identifier.ValueText: "__ApacheConvertArray" });
         Assert.Empty(parentConversions);
-        Assert.Contains("ConvertArray", sources.Single(tree => tree.FilePath.EndsWith("Child.Avro.g.cs")).ToString());
+        Assert.Contains("__ApacheConvertArray", sources.Single(tree => tree.FilePath.EndsWith("Child.Avro.g.cs")).ToString());
     }
 
     [Theory]

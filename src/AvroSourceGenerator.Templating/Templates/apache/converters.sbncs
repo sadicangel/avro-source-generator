@@ -1,7 +1,7 @@
 {{~ for helper in (apache.required_collection_converters $.schema) ~}}
 {{~ case helper ~}}
 {{~ when 'array' ~}}
-    private static TList ConvertArray<TList, TItem>({{ ObjectType }} value, global::System.Func<{{ ObjectType }}, TItem>{{ UseNullableReferenceTypes ? '?' : '' }} convertItem = null)
+    private static TList __ApacheConvertArray<TList, TItem>({{ ObjectType }} value, global::System.Func<{{ ObjectType }}, TItem>{{ UseNullableReferenceTypes ? '?' : '' }} convertItem = null)
         where TList : class{{ UseNullableReferenceTypes ? '?' : '' }}, global::System.Collections.Generic.IList<TItem>{{ UseNullableReferenceTypes ? '?' : '' }}, new()
     {
         if (value is null) return null{{ UseNullableReferenceTypes ? '!' : '' }};
@@ -12,7 +12,7 @@
         return result;
     }
 {{~ when 'map' ~}}
-    private static TDictionary ConvertMap<TDictionary, TItem>({{ ObjectType }} value, global::System.Func<{{ ObjectType }}, TItem>{{ UseNullableReferenceTypes ? '?' : '' }} convertItem = null)
+    private static TDictionary __ApacheConvertMap<TDictionary, TItem>({{ ObjectType }} value, global::System.Func<{{ ObjectType }}, TItem>{{ UseNullableReferenceTypes ? '?' : '' }} convertItem = null)
         where TDictionary : class{{ UseNullableReferenceTypes ? '?' : '' }}, global::System.Collections.Generic.IDictionary<string, TItem>{{ UseNullableReferenceTypes ? '?' : '' }}, new()
     {
         if (value is null) return null{{ UseNullableReferenceTypes ? '!' : '' }};

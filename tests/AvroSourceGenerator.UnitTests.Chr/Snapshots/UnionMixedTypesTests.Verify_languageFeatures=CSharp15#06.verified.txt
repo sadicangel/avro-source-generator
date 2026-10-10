@@ -30,8 +30,8 @@ namespace Demo
         /// <remarks>
         /// Represents a union of the following types:
         /// <list type="bullet">
-        /// <item><see cref="global::System.Collections.Generic.Dictionary<string, long>"/></item>
-        /// <item><see cref="global::System.Collections.Generic.List<string>"/></item>
+        /// <item><see cref="global::System.Collections.Generic.Dictionary{TKey, TValue}">Dictionary</see>&lt;<see cref="string"/>, <see cref="long"/>&gt;</item>
+        /// <item><see cref="global::System.Collections.Generic.List{T}">List</see>&lt;<see cref="string"/>&gt;</item>
         /// </list>
         /// </remarks>
         public required global::Demo.EnvelopeCollectionUnion collection { get; init; }

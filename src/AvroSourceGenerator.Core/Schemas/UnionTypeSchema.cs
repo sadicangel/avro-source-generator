@@ -8,7 +8,7 @@ public sealed record class UnionTypeSchema(SchemaName SchemaName, CSharpName CSh
         SchemaType.UnionType,
         SchemaName,
         CSharpName,
-        UnionSchemaHelpers.GetDocumentation(MemberSchemas),
+        DocumentationHelper.GetDocumentation(MemberSchemas),
         ImmutableSortedDictionary<string, JsonElement>.Empty)
 {
     public static bool CanCreateObjectUnion(UnionSchema union)
@@ -32,8 +32,27 @@ public sealed record class UnionTypeSchema(SchemaName SchemaName, CSharpName CSh
         return memberCount > 1;
     }
 
-    internal static SchemaName GetSchemaName(SchemaName typeName, FieldName fieldName, bool useUnions) =>
-        UnionSchemaHelpers.GetSchemaName(useUnions ? "" : "I", typeName, fieldName.SchemaName, useUnions ? "Union" : "Variant");
+    internal static SchemaName GetSchemaName(SchemaName typeName, FieldName fieldName, bool useUnions)
+    {
+        var (prefix, suffix) = useUnions ? ("", "Union") : ("I", "Variant");
+        var name = string.Create(
+            prefix.Length + typeName.Name.Length + fieldName.SchemaName.Length + suffix.Length,
+            (prefix, fieldName.SchemaName, typeName.Name, suffix),
+            static (span, state) =>
+            {
+                var (prefix, fieldName, typeName, suffix) = state;
+                prefix.AsSpan().CopyTo(span);
+                span = span[prefix.Length..];
+                typeName.AsSpan().CopyTo(span);
+                span = span[typeName.Length..];
+                fieldName.AsSpan().CopyTo(span);
+                span[0] = char.ToUpperInvariant(span[0]);
+                span = span[fieldName.Length..];
+                suffix.AsSpan().CopyTo(span);
+            });
+
+        return new SchemaName(name, typeName.Namespace);
+    }
 
     public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace) { }
 }

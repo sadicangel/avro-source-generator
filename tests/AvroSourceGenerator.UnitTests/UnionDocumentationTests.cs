@@ -61,6 +61,7 @@ public sealed class UnionDocumentationTests
         var nullableChild = Nullable("\"Child\"", nullFirst);
         var nullableArray = Nullable($$"""{"type":"array","items":{{nullableInt}}}""", nullFirst);
         var nullableMap = Nullable($$"""{"type":"map","values":{{nullableBytes}}}""", nullFirst);
+        var nullableScalars = nullFirst ? """["null","string","int"]""" : """["int","string","null"]""";
         (string Schema, string Documentation)[] cases =
         [
             ("\"bytes\"", bytesElement),
@@ -71,6 +72,9 @@ public sealed class UnionDocumentationTests
             ($$"""{"type":"array","items":{{nullableMap}}}""", List($"{nullElement} | {Map($"{nullElement} | {bytesElement}")}")),
             ($$"""{"type":"map","values":{{nullableArray}}}""", Map($"{nullElement} | {List($"{nullElement} | {intElement}")}")),
             ($$"""{"type":"array","items":{{nullableChild}}}""", List($"{nullElement} | {childElement}")),
+            ("""{"type":"array","items":["string","int"]}""", List($"{intElement} | {stringElement}")),
+            ("""{"type":"map","values":["string","bytes"]}""", Map($"{bytesElement} | {stringElement}")),
+            ($$$"""{"type":"array","items":{"type":"map","values":{{{nullableScalars}}}}}""", List(Map($"{nullElement} | {intElement} | {stringElement}"))),
         ];
         var fields = cases.Select((test, index) =>
         {

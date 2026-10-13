@@ -1,9 +1,0 @@
-﻿namespace AvroSourceGenerator.Configuration;
-
-internal enum AvroLibrary
-{
-    None,
-    Apache,
-    Chr,
-    Auto = 2147483647,
-}

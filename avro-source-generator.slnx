@@ -40,6 +40,7 @@
     <Project Path="tools/AvroSourceGenerator.Tracing/AvroSourceGenerator.Tracing.csproj" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/AvroSourceGenerator.Cli/AvroSourceGenerator.Cli.csproj" />
     <File Path="src/Directory.Build.props" />
     <Project Path="src/AvroSourceGenerator.Core/AvroSourceGenerator.Core.csproj" />
     <Project Path="src/AvroSourceGenerator.Templating/AvroSourceGenerator.Templating.csproj" Id="b55b3c23-829c-471e-b5f0-6c571e5dba65" />

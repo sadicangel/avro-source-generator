@@ -27,10 +27,12 @@ jobs:
       run: dotnet restore avro-source-generator.slnx
     - name: Build
       id: compile
-      run: dotnet build avro-source-generator.slnx --no-restore --configuration Release
+      run: dotnet build avro-source-generator.slnx --no-restore --configuration Release -p:PackageVersion=0.0.0-development
     - name: Pack
       id: pack
-      run: dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-validation --output artifacts/packages
+      run: |
+        dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-development --output artifacts/packages
+        dotnet pack src/AvroSourceGenerator.Cli/AvroSourceGenerator.Cli.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-development --output artifacts/packages
     - uses: actions/upload-artifact@v7
       id: package_artifact
       with:
@@ -69,8 +71,9 @@ jobs:
           "| Pack | $env:PACK_RESULT |", ''
         ) >> $env:GITHUB_STEP_SUMMARY
         if ($env:PACKAGE_URL) {
-          $package = Get-ChildItem artifacts/packages/*.nupkg | Select-Object -First 1
-          "Package: [$($package.Name)]($env:PACKAGE_URL)" >> $env:GITHUB_STEP_SUMMARY
+          foreach ($package in Get-ChildItem artifacts/packages/*.nupkg) {
+            "Package: [$($package.Name)]($env:PACKAGE_URL)" >> $env:GITHUB_STEP_SUMMARY
+          }
         }
         if ($env:TEST_BINARY_URL) { "`n[Test binaries]($env:TEST_BINARY_URL)" >> $env:GITHUB_STEP_SUMMARY }
 
@@ -179,10 +182,10 @@ jobs:
         MINIMUM_SDK: ${{ steps.minimum.outputs.dotnet-version }}
         PREVIEW_SDK: ${{ steps.preview.outputs.dotnet-version }}
       run: |
-        $packages = @(Get-ChildItem artifacts/packages/*.nupkg)
-        if ($packages.Count -ne 1) { throw 'Expected one validation package.' }
-        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $packages[0].FullName -SdkVersion $env:MINIMUM_SDK -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
-        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $packages[0].FullName -SdkVersion $env:PREVIEW_SDK -ExpectedRoslynApiVersion latest -OutputDirectory artifacts/manifests/preview
+        $generator = Get-Item artifacts/packages/AvroSourceGenerator.0.0.0-development.nupkg
+        $cli = Get-Item artifacts/packages/AvroSourceGenerator.Cli.0.0.0-development.nupkg
+        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $generator.FullName -CliPackagePath $cli.FullName -SdkVersion $env:MINIMUM_SDK -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
+        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $generator.FullName -CliPackagePath $cli.FullName -SdkVersion $env:PREVIEW_SDK -ExpectedRoslynApiVersion latest -OutputDirectory artifacts/manifests/preview
     - name: Compare generated contracts across SDKs
       id: parity
       shell: pwsh

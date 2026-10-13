@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Compiler;
+﻿using System.Reflection;
+using AvroSourceGenerator.Compiler;
 using Scriban.Functions;
 
 namespace AvroSourceGenerator.Templating;
@@ -6,9 +7,13 @@ namespace AvroSourceGenerator.Templating;
 internal sealed class TemplateScriptObject : BuiltinFunctions
 {
     private static readonly ApacheFunctions s_apacheFunctions = new ApacheFunctions();
+    private static readonly string s_generatorVersion = typeof(AvroTemplate).Assembly
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        ?? throw new InvalidOperationException("The templating assembly has no informational version.");
 
     public TemplateScriptObject(RenderOptions options)
     {
+        SetValue("GeneratorVersion", s_generatorVersion, readOnly: true);
         SetValue("GenerationTarget", options.GenerationTarget, readOnly: true);
         SetValue("AccessModifier", options.AccessModifier.Keyword, readOnly: true);
         SetValue("Record", options.Record, readOnly: true);

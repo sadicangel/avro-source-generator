@@ -14,7 +14,7 @@ namespace {{ Schema.CSharpName.Namespace }}
     {{~ end ~}}
     /// </summary>
     {{~ end ~}}
-    [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", {{ GeneratorVersion | string.literal }})]
     {{
         case Schema.SchemaType
         when 'Enum'

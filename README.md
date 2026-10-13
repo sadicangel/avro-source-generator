@@ -107,6 +107,10 @@ The Apache target also generates the `ISpecificRecord` implementation. Read abou
 | Build diagnostics and common fixes | [Troubleshooting](https://sadicangel.github.io/avro-source-generator/0.7.0/troubleshooting/) |
 | Preview packages and native unions | [0.8.0 preview guide](https://sadicangel.github.io/avro-source-generator/preview/generated-models/#native-c-unions) |
 
+## Command-line tool
+
+An on-demand .NET tool, `AvroSourceGenerator.Cli` (`avro-sg compile`), is in development. See the [preview CLI guide](https://sadicangel.github.io/avro-source-generator/preview/cli/); the CLI is not yet available in the documented package releases.
+
 ## Samples
 
 - [Apache.Avro](https://github.com/sadicangel/avro-source-generator/tree/v0.7.0/samples/AvroSourceGenerator.ApacheAvro) — model generation and IDL.

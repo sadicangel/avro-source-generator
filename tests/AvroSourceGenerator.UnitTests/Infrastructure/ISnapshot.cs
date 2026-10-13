@@ -1,7 +1,9 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using AvroSourceGenerator.Templating;
 using Microsoft.CodeAnalysis;
 
 namespace AvroSourceGenerator.UnitTests.Infrastructure;
@@ -20,6 +22,9 @@ public delegate ProjectConfig ConfigureProject(ProjectConfig config);
 
 public static class SnapshotExtensions
 {
+    private static readonly string s_generatedCodeAttribute =
+        $"[global::System.CodeDom.Compiler.GeneratedCode(\"AvroSourceGenerator\", \"{typeof(AvroTemplate).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion}\")]";
+
     extension<TSnapshot>(TSnapshot) where TSnapshot : ISnapshot<TSnapshot>
     {
         private static GeneratorOutput Run(ImmutableArray<ProjectFile> projectFiles, ConfigureProject? configure = null) =>
@@ -48,7 +53,8 @@ public static class SnapshotExtensions
                         diagnostics.Select(d => $"{d.Id}: {d.GetMessage(CultureInfo.InvariantCulture)}")));
             }
 
-            return Verify(documents.Select(document => new Target("txt", document.Content)), sourceFile: sourceFile);
+            return Verify(documents.Select(document => new Target("txt", document.Content)), sourceFile: sourceFile)
+                .ScrubReplace(s_generatedCodeAttribute, "[global::System.CodeDom.Compiler.GeneratedCode(\"AvroSourceGenerator\", \"1.0.0.0\")]");
         }
 
         public static SettingsTask Diagnostic([StringSyntax(StringSyntaxAttribute.Json)] string schema, ConfigureProject? configure = null, [CallerFilePath] string sourceFile = "") =>

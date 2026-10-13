@@ -1,4 +1,6 @@
-﻿namespace AvroSourceGenerator.Configuration;
+﻿using AvroSourceGenerator.Compiler;
+
+namespace AvroSourceGenerator.Configuration;
 
 internal enum AvroLibraryReference
 {

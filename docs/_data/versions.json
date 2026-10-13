@@ -1,0 +1,16 @@
+[
+  {
+    "id": "0.7.0",
+    "label": "0.7.0",
+    "channel": "Stable",
+    "package_version": "0.7.0",
+    "source_ref": "v0.7.0"
+  },
+  {
+    "id": "preview",
+    "label": "0.8.0",
+    "channel": "Preview",
+    "package_version": "0.8.0-preview.2.main.11",
+    "source_ref": "v0.8.0-preview.2.main.11"
+  }
+]

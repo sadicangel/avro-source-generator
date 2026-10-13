@@ -32,6 +32,8 @@ The solution uses the latest installed development SDK, including previews, sele
 - Imports resolve only among supplied sources and relative to the importing file. Do not add implicit filesystem reads.
 - Treat repository implementation APIs as internal, regardless of visibility or project. Refactor them directly and update callers and tests; do not retain compatibility wrappers solely because a type or member is public.
 - Keep consumer-facing contracts—generated code, MSBuild properties, package integration, and diagnostics—compatible when practical. Update documentation and regression coverage when those contracts change.
+- When features change usage, generated models, configuration, diagnostics, or SDK/runtime requirements, update `docs/versions/preview/` and its examples in the same change. Clearly mark behavior not yet available in the documented package; keep stable and archived guides accurate for their releases.
+- When advancing package versions or preparing a release, review `docs/_data/versions.json`, the matching guides and examples, and README package versions and source links. On stable releases, snapshot the complete matching preview guide, including examples, retain previous versioned URLs, and refresh the rolling preview guide. Follow `docs/README.md` for version promotion and documentation validation.
 - Do not include agent or AI attribution in branches, commits, PR titles, or PR descriptions.
 - Do not prefix branches.
 

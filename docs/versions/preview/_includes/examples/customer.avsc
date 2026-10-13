@@ -1,0 +1,6 @@
+{
+  "type": "record",
+  "name": "Customer",
+  "namespace": "example",
+  "fields": [{ "name": "Id", "type": "string" }]
+}

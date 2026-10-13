@@ -1,0 +1,12 @@
+{
+  "protocol": "Orders",
+  "namespace": "example",
+  "types": [
+    {
+      "type": "record",
+      "name": "Order",
+      "fields": [{ "name": "Customer", "type": "example.Customer" }]
+    }
+  ],
+  "messages": {}
+}

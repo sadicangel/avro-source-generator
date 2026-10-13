@@ -1,0 +1,9 @@
+{
+  "type": "record",
+  "name": "User",
+  "namespace": "example",
+  "fields": [
+    { "name": "Name", "type": "string" },
+    { "name": "Email", "type": ["null", "string"], "default": null }
+  ]
+}

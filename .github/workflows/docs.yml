@@ -1,0 +1,71 @@
+name: docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/**
+      - tools/docs/**
+      - .github/workflows/docs.yml
+      - README.md
+      - icon.png
+  pull_request:
+    paths:
+      - docs/**
+      - tools/docs/**
+      - .github/workflows/docs.yml
+      - README.md
+      - icon.png
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+          working-directory: docs
+      - name: Build documentation
+        env:
+          JEKYLL_ENV: production
+        run: bundle exec --gemfile docs/Gemfile ruby tools/docs/build.rb
+      - name: Validate links and assets
+        run: |
+          bundle exec --gemfile docs/Gemfile ruby tools/docs/test_check_links.rb
+          bundle exec --gemfile docs/Gemfile ruby tools/docs/check_links.rb artifacts/docs-site --baseurl /avro-source-generator
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Verify package-based examples on .NET 10
+        shell: pwsh
+        run: ./tools/docs/Verify-Examples.ps1
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: artifacts/docs-site
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - name: Deploy documentation
+        id: deployment
+        uses: actions/deploy-pages@v4

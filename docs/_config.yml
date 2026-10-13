@@ -1,0 +1,50 @@
+title: Avro Source Generator
+description: Generate C# models from Avro schemas, protocols, and IDL. A practical guide for .NET developers.
+url: https://sadicangel.github.io
+baseurl: /avro-source-generator
+theme: just-the-docs
+permalink: pretty
+lang: en
+
+logo: /assets/images/icon.png
+favicon_ico: /assets/images/icon.png
+color_scheme: light
+search_enabled: true
+heading_anchors: true
+enable_copy_code_button: true
+
+aux_links:
+  GitHub: https://github.com/sadicangel/avro-source-generator
+  NuGet: https://www.nuget.org/packages/AvroSourceGenerator
+
+gh_edit_link: true
+gh_edit_link_text: Edit this page on GitHub
+gh_edit_repository: https://github.com/sadicangel/avro-source-generator
+gh_edit_branch: main
+gh_edit_source: docs
+gh_edit_view_mode: edit
+
+callouts:
+  note:
+    title: Note
+    color: blue
+  warning:
+    title: Warning
+    color: yellow
+  preview:
+    title: Preview
+    color: purple
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: versioned
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - PLAN.md
+  - releases
+  - vendor

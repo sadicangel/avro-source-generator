@@ -7,53 +7,42 @@
 
 ![Avro Source Generator](https://raw.githubusercontent.com/sadicangel/avro-source-generator/refs/heads/main/icon.png)
 
-**Avro Source Generator** is a modern .NET source generator that produces strongly typed C# models from [Avro](https://avro.apache.org/) schema, protocol, and IDL files (`.avsc`, `.avpr`, and `.avdl`).
-It’s designed to be **fast**, **incremental**, and **compatible** with Apache Avro.
+**Avro Source Generator** generates strongly typed C# models from [Avro](https://avro.apache.org/) schemas (`.avsc`), protocols (`.avpr`), and IDL files (`.avdl`) during your normal build.
 
-Generated code takes advantage of modern C# language features, including **nullable reference types**, **init-only and required properties**, and **partial records or classes** — ensuring clean, idiomatic C# output.
+- Integrate with **Apache.Avro**, **Chr.Avro**, or generate standalone models.
+- Use partial records or classes, nullable properties, and modern C# features.
+- Share named types across inputs and resolve IDL imports.
+- Keep models up to date without a separate code-generation command.
 
----
+**[Check out the documentation](https://sadicangel.github.io/avro-source-generator/)** — setup, configuration, Kafka, and troubleshooting.
 
 ## Prerequisites
 
-- **.NET SDK 10.0.100 or later, with [Roslyn 5.0 or later](https://github.com/dotnet/roslyn/blob/main/docs/wiki/NuGet-packages.md)**. Visual Studio builds require Visual Studio 2026 18.0 or later; see the [SDK and Visual Studio version mapping](https://learn.microsoft.com/en-us/dotnet/core/porting/versioning-sdk-msbuild-vs).
-- Optional runtime integration with one of the following Avro libraries:
-  - [Apache.Avro](https://www.nuget.org/packages/Apache.Avro) — official Avro implementation for C#
-  - [Chr.Avro](https://www.nuget.org/packages/Chr.Avro) — designed to serve as a flexible alternative to the Apache implementation
+Use **.NET SDK 10.0.100 or later**. Visual Studio users should use **Visual Studio 2026 18.0 or later** with .NET 10 support.
 
-> [!NOTE]
-> You can use the generator without an Avro library, but library-specific features (e.g., `ISpecificRecord`) won’t be emitted.
-
----
+The quick start below uses stable **AvroSourceGenerator 0.7.0** and targets `net10.0`. [0.8.0 preview features](https://sadicangel.github.io/avro-source-generator/preview/generated-models/#native-c-unions), including native C# unions, have separate requirements.
 
 ## Installation & Basic Usage
 
-Install the package:
+From your existing project directory, install the generator and Apache runtime:
 
 ```bash
-dotnet add package AvroSourceGenerator
+dotnet add package AvroSourceGenerator --version 0.7.0
+dotnet add package Apache.Avro --version 1.12.2
 ```
 
-Mark it as a build-only dependency in your `.csproj` file:
-
-```xml
-<PackageReference Include="AvroSourceGenerator"
-                  Version="*"
-                  PrivateAssets="all"
-                  ExcludeAssets="runtime" />
-```
-
-Include your `.avsc` schema files, `.avpr` protocol files, and `.avdl` IDL files as `AdditionalFiles`:
+In your `.csproj`, update the installed generator reference to a build-only dependency and include your schemas (keep one reference per package):
 
 ```xml
 <ItemGroup>
+  <PackageReference Include="AvroSourceGenerator" Version="0.7.0"
+                    PrivateAssets="all" ExcludeAssets="runtime" />
+  <PackageReference Include="Apache.Avro" Version="1.12.2" />
   <AdditionalFiles Include="schemas/*.avsc" />
-  <AdditionalFiles Include="schemas/*.avpr" />
-  <AdditionalFiles Include="schemas/*.avdl" />
 </ItemGroup>
 ```
 
-Add a schema file under `schemas/`, e.g. `schemas/user.avsc`:
+Create `schemas/user.avsc`:
 
 ```json
 {
@@ -62,332 +51,94 @@ Add a schema file under `schemas/`, e.g. `schemas/user.avsc`:
   "namespace": "example",
   "fields": [
     { "name": "Name", "type": "string" },
-    { "name": "Email", "type": ["null", "string"] },
-    { "name": "CreatedAt", "type": { "type": "long", "logicalType": "timestamp-millis" } }
+    { "name": "Email", "type": ["null", "string"], "default": null }
   ]
 }
 ```
 
-Or add an Avro IDL file under `schemas/`, e.g. `schemas/user.avdl`:
+Use the generated model in your application:
 
-```avdl
-namespace example;
+```csharp
+using example;
 
-schema UserFromIdl;
+var user = new User
+{
+    Name = "Ada",
+    Email = "ada@example.com",
+};
 
-/** Example user */
-record UserFromIdl {
-    string Name;
-    string? Email = null;
-    timestamp_ms CreatedAt;
-}
+Console.WriteLine($"{user.Name} <{user.Email}>");
 ```
 
-> [!NOTE]
-> The file extension selects the parser: `.avsc` for JSON schemas, `.avpr` for JSON protocols, and `.avdl` for IDL.
-> A protocol supplied as a schema reports `AVROSG2000` (schema expected); a schema supplied as a protocol reports `AVROSG2001` (protocol expected).
+Run `dotnet build`. The generator creates `example.User` during compilation. The code above prints `Ada <ada@example.com>`.
 
-> [!NOTE]
-> AVDL imports are resolved relative to the importing file. Every imported `.avdl`, `.avsc`, or `.avpr` file,
-> including transitive imports, must also be included explicitly as an `<AdditionalFiles>` item. Import cycles,
-> missing files, and import kind/file type mismatches are reported as errors. Unused imports produce warnings.
-
-Build your project — the generator will create C# types matching your schemas and IDL definitions.
-
-If an input contains errors, the generator reports diagnostics and continues generating independent valid files.
-Files that depend on invalid schemas are suppressed until those errors are resolved.
-
----
+You can also use [Chr.Avro or standalone models](https://sadicangel.github.io/avro-source-generator/0.7.0/libraries/), and include [protocols, IDL, and imports](https://sadicangel.github.io/avro-source-generator/0.7.0/schemas/).
 
 ## Example Output
 
-For the `User` schema above, targeting `Apache.Avro` with C# 12 language features produces (abridged):
+The quick-start model has this public shape (abridged):
 
 ```csharp
-// <auto-generated/>
-#pragma warning disable CS8618, CS8633, CS8714, CS8775, CS8981
-#nullable enable
-
 namespace example;
 
-[global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
 public partial record User
 {
     public required string Name { get; init; }
     public string? Email { get; init; }
-    public required global::System.DateTime CreatedAt { get; init; }
 }
-
-partial record User : global::Avro.Specific.ISpecificRecord
-{
-    global::Avro.Schema global::Avro.Specific.ISpecificRecord.Schema { get => User._SCHEMA; }
-
-    public static readonly global::Avro.Schema _SCHEMA = global::Avro.Schema.Parse("""
-    {
-      "type": "record",
-      "name": "User",
-      "namespace": "example",
-      "fields": [
-        { "name": "Name", "type": "string" },
-        { "name": "Email", "type": ["null", "string"] },
-        { "name": "CreatedAt", "type": { "type": "long", "logicalType": "timestamp-millis" } }
-      ]
-    }
-    """);
-
-    object? global::Avro.Specific.ISpecificRecord.Get(int fieldPos)
-    {
-        switch (fieldPos)
-        {
-            case 0: return this.Name;
-            case 1: return this.Email;
-            case 2: return this.CreatedAt;
-            default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Get()");
-        }
-    }
-
-    void global::Avro.Specific.ISpecificRecord.Put(int fieldPos, object? fieldValue)
-    {
-        switch (fieldPos)
-        {
-            case 0:
-                Set_Name(this, (string)fieldValue!); break;
-                [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Name")]
-                extern static void Set_Name(global::example.User obj, string value);
-            case 1:
-                Set_Email(this, fieldValue! is null ? null : (string)fieldValue!); break;
-                [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_Email")]
-                extern static void Set_Email(global::example.User obj, string? value);
-            case 2:
-                Set_CreatedAt(this, (global::System.DateTime)fieldValue!); break;
-                [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_CreatedAt")]
-                extern static void Set_CreatedAt(global::example.User obj, global::System.DateTime value);
-            default:
-                throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
-        }
-    }
-}
-#nullable restore
-#pragma warning restore CS8618, CS8633, CS8714, CS8775, CS8981
 ```
 
-> The exact shape depends on configuration and the selected Avro library.
+The Apache target also generates the `ISpecificRecord` implementation. Read about [generated models](https://sadicangel.github.io/avro-source-generator/0.7.0/generated-models/) and [extending partial types](https://sadicangel.github.io/avro-source-generator/0.7.0/generated-models/#extending-generated-types).
 
----
+## Documentation
+
+| Topic | Guide |
+|:---|:---|
+| First generated model | [Getting started](https://sadicangel.github.io/avro-source-generator/0.7.0/getting-started/) |
+| Input formats, imports, and shared types | [Schemas and imports](https://sadicangel.github.io/avro-source-generator/0.7.0/schemas/) |
+| Types, nullability, and partial declarations | [Generated models](https://sadicangel.github.io/avro-source-generator/0.7.0/generated-models/) |
+| Apache.Avro, Chr.Avro, or no runtime | [Avro libraries](https://sadicangel.github.io/avro-source-generator/0.7.0/libraries/) |
+| MSBuild properties and defaults | [Configuration](https://sadicangel.github.io/avro-source-generator/0.7.0/configuration/) |
+| Typed producers, consumers, and schema registration | [Kafka and Schema Registry](https://sadicangel.github.io/avro-source-generator/0.7.0/kafka/) |
+| Build diagnostics and common fixes | [Troubleshooting](https://sadicangel.github.io/avro-source-generator/0.7.0/troubleshooting/) |
+| Preview packages and native unions | [0.8.0 preview guide](https://sadicangel.github.io/avro-source-generator/preview/generated-models/#native-c-unions) |
 
 ## Samples
 
-- [samples/AvroSourceGenerator.ApacheAvro/AvroSourceGenerator.ApacheAvro.csproj](samples/AvroSourceGenerator.ApacheAvro/AvroSourceGenerator.ApacheAvro.csproj) shows a minimal `Apache.Avro` model generation flow.
-- [samples/AvroSourceGenerator.ConfluentKafka/AvroSourceGenerator.ConfluentKafka.csproj](samples/AvroSourceGenerator.ConfluentKafka/AvroSourceGenerator.ConfluentKafka.csproj) shows Kafka and Schema Registry integration using Confluent's Avro serializer.
-- [samples/AvroSourceGenerator.ChrAvroKafka/AvroSourceGenerator.ChrAvroKafka.csproj](samples/AvroSourceGenerator.ChrAvroKafka/AvroSourceGenerator.ChrAvroKafka.csproj) shows the same Kafka and Schema Registry container workflow using `Chr.Avro.Confluent`.
+- [Apache.Avro](https://github.com/sadicangel/avro-source-generator/tree/v0.7.0/samples/AvroSourceGenerator.ApacheAvro) — model generation and IDL.
+- [Confluent Kafka](https://github.com/sadicangel/avro-source-generator/tree/v0.7.0/samples/AvroSourceGenerator.ConfluentKafka) — Apache serializers with Kafka and Schema Registry.
+- [Chr.Avro Kafka](https://github.com/sadicangel/avro-source-generator/tree/v0.7.0/samples/AvroSourceGenerator.ChrAvroKafka) — Chr serializers with Kafka and Schema Registry.
 
-The repository samples target .NET 11 and use the latest installed SDK, including previews, selected by [global.json](global.json) with a minimum of SDK 10.0.401.
-The Kafka samples also require Docker to run their Kafka and Schema Registry containers.
-
-For example, run the Chr.Avro Kafka sample with:
-
-```bash
-dotnet run --project samples/AvroSourceGenerator.ChrAvroKafka/AvroSourceGenerator.ChrAvroKafka.csproj
-```
-
----
+These links target stable examples. Samples in the current `main` checkout target .NET 11 and use the development SDK selected by [global.json](global.json). Kafka samples also require Docker. See [running repository samples](https://sadicangel.github.io/avro-source-generator/0.7.0/kafka/#complete-examples-with-local-containers) for details.
 
 ## Extending Generated Types
 
-Generated records, classes, and variant interfaces are declared as `partial`, allowing you to add members or behavior.
-Generated enums cannot be extended with partial declarations.
-
-```csharp
-namespace example;
-
-public partial record User
-{
-    public override string ToString() => $"{Name} <{Email}>";
-}
-```
-
----
+Add members in your own matching partial record or class; generated enums cannot be extended with partial declarations. See [the partial-type example](https://sadicangel.github.io/avro-source-generator/0.7.0/generated-models/#extending-generated-types).
 
 ## Configuration
 
-Configure the generator via MSBuild properties in your `.csproj` file.
+Set MSBuild properties in your `.csproj`. The [configuration guide](https://sadicangel.github.io/avro-source-generator/0.7.0/configuration/) documents defaults and examples.
 
-### Access Modifier
+<!-- Keep existing configuration deep links useful after moving the detailed guide. -->
+<a id="access-modifier"></a>
+<a id="record-vs-class-generation"></a>
+<a id="language-features"></a>
+<a id="avro-library-selection"></a>
+<a id="no-supported-package-detected"></a>
+<a id="multiple-supported-packages-detected"></a>
+<a id="apacheavro-logical-type-compatibility"></a>
+<a id="duplicate-resolution"></a>
+<a id="reference-resolution"></a>
 
-Generated types are `public` by default. To make them `internal`:
-
-```xml
-<PropertyGroup>
-  <AvroSourceGeneratorAccessModifier>internal</AvroSourceGeneratorAccessModifier>
-</PropertyGroup>
-```
-
-Supported values: `public` (default), `internal`.
-
----
-
-### Record vs Class Generation
-
-By default, types are generated as `record` when possible. To use `class` instead:
-
-```xml
-<PropertyGroup>
-  <AvroSourceGeneratorRecordDeclaration>class</AvroSourceGeneratorRecordDeclaration>
-</PropertyGroup>
-```
-
-> [!NOTE]
-> Some schema kinds (e.g., `fixed`, `error` for `Apache.Avro`) require classes due to inheritance constraints.
-
----
-
-### Language Features
-
-By default, the generator uses all features supported by the consuming project’s C# version.
-You can target an older version for broader compatibility:
-
-```xml
-<PropertyGroup>
-  <AvroSourceGeneratorLanguageFeatures>CSharp7_3</AvroSourceGeneratorLanguageFeatures>
-</PropertyGroup>
-```
-
-This disables newer features such as records or nullable reference types.
-
-Supported values include `All`, `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, `CSharp12`, `CSharp13`, `CSharp14`, and `CSharp15`.
-Selecting a newer feature set cannot enable syntax unsupported by the project's language version.
-
-C# 15 in .NET 11 introduces [union types](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/union).
-Avro Source Generator can use them for Avro union fields as an opt-in preview feature.
-To enable them, use the .NET 11 preview SDK and add:
-
-```xml
-<PropertyGroup>
-  <TargetFramework>net11.0</TargetFramework>
-  <LangVersion>preview</LangVersion>
-  <AvroSourceGeneratorPreviewFeatures>Unions</AvroSourceGeneratorPreviewFeatures>
-</PropertyGroup>
-```
-
-Without this opt-in, the generator keeps its existing union representation, including `I…Variant` interfaces.
-If you also set `AvroSourceGeneratorLanguageFeatures`, choose `CSharp15` or `All` to allow union types.
-
-Current limitations:
-
-- Each non-null Avro union branch must map to a distinct C# type. For example, `bytes` and a `fixed` schema
-  that both map to `byte[]` cannot be distinguished.
-- Apache.Avro currently deserializes enums as integers rather than their generated enum types.
-  This prevents correct enum deserialization in native unions and makes enum branches indistinguishable
-  from other enums or an `int` branch. The fix is tracked in [Apache Avro PR #4031](https://github.com/apache/avro/pull/4031).
-
-With Chr.Avro, register the generated serializer and deserializer builder cases for each union.
-The default Chr builders cannot reliably select branches of mixed unions represented as `object`: integers,
-fixed values, and records can fail serialization, while enums can become strings. The object-union integration
-suite records these limitations; tagged unions preserve the concrete branch types.
-
----
-
-### Avro Library Selection
-
-The generator tries to detect the Avro library automatically from referenced packages.
-You can override this behavior by specifying the target library explicitly.
-
-#### No Supported Package Detected
-
-Code still generates, but without library-specific features. To suppress the warning and explicitly disable integration:
-
-```xml
-<PropertyGroup>
-  <AvroSourceGeneratorAvroLibrary>None</AvroSourceGeneratorAvroLibrary>
-</PropertyGroup>
-```
-
-#### Multiple Supported Packages Detected
-
-Specify one explicitly:
-
-```xml
-<PropertyGroup>
-  <AvroSourceGeneratorAvroLibrary>Apache</AvroSourceGeneratorAvroLibrary>
-</PropertyGroup>
-```
-
-Supported values:
-
-- `Auto` (default) — detect automatically
-- `None` — no library-specific code
-- `Apache` — target `Apache.Avro`
-- `Chr` — target `Chr.Avro`
-
----
-
-### Apache.Avro Logical Type Compatibility
-
-The Apache target preserves unknown logical-type annotations in generated schema JSON and uses the underlying C# type for their fields.
-Support depends on the Apache.Avro runtime version: `Avro.Schema.Parse` in 1.12.1 rejects unknown logical types, which can fail when a generated `_SCHEMA` field is initialized; 1.12.2 accepts them.
-The generator does not check the Apache.Avro version, so use a runtime that can parse the logical types in your schemas.
-
-Parsing and serialization support can differ. Apache.Avro 1.12.2 can parse fixed-backed decimal schemas, but its specific-record writer fails when serializing those decimal values.
-Successful code generation or schema parsing therefore does not guarantee that every logical type can be serialized or accepted by Schema Registry.
-
----
-
-### Duplicate Resolution
-
-By default, duplicate schema declarations produce an error.
-A duplicate occurs when Avro input files (`.avsc`, `.avpr`, or `.avdl`) declare the same fully qualified schema name.
-
-This behavior can be configured using the following MSBuild property:
-
-```xml
-<PropertyGroup>
-  <AvroSourceGeneratorDuplicateResolution>Ignore</AvroSourceGeneratorDuplicateResolution>
-</PropertyGroup>
-```
-Supported values:
-
-- `Error` (default) — reports a duplicate-schema diagnostic and suppresses affected files; independent valid files still generate.
-- `Ignore` — keeps the first declaration in the supplied file order and ignores later declarations with the same name in other files.
-
-Duplicate declarations within the same file are always errors, including when `Ignore` is selected.
-Including the same file through equivalent source paths also produces a duplicate-source-path error.
-
-> [!WARNING]
-> With `Ignore`, input order determines which definition is used. Use it only when duplicate declarations are intentional and safe.
-
----
-
-### Reference Resolution
-
-By default, the generator follows Avro's schema resolution rules and requires named schemas to be defined before they are referenced.
-
-If your project keeps related schemas in separate Avro input files, you can defer reference checks until all supported inputs have been read:
-
-```xml
-<PropertyGroup>
-  <AvroSourceGeneratorReferenceResolution>Deferred</AvroSourceGeneratorReferenceResolution>
-</PropertyGroup>
-```
-
-Supported values:
-
-- `Strict` (default) — references must resolve to an earlier declaration in the same file or to a declaration in
-  the file's transitive AVDL import closure
-- `Deferred` — unresolved references are collected and resolved after all `.avsc`, `.avpr`, and `.avdl` inputs are read;
-  declared import paths are still validated
-
----
+- [Access modifier](https://sadicangel.github.io/avro-source-generator/0.7.0/configuration/#access-modifier), [records or classes](https://sadicangel.github.io/avro-source-generator/0.7.0/configuration/#records-or-classes), and [language features](https://sadicangel.github.io/avro-source-generator/0.7.0/configuration/#language-features).
+- [Library selection](https://sadicangel.github.io/avro-source-generator/0.7.0/libraries/) and [logical type compatibility](https://sadicangel.github.io/avro-source-generator/0.7.0/libraries/#logical-type-compatibility).
+- [Duplicate resolution](https://sadicangel.github.io/avro-source-generator/0.7.0/configuration/#duplicate-resolution) and [reference resolution](https://sadicangel.github.io/avro-source-generator/0.7.0/configuration/#reference-resolution).
 
 ## Contributing
 
-Contributions are welcome!
-If you encounter bugs, want to propose features, or improve docs, please open an issue or submit a pull request on **GitHub**.
+Bug reports, feature suggestions, and documentation improvements are welcome through [GitHub issues](https://github.com/sadicangel/avro-source-generator/issues) and pull requests.
 
-Build and test the solution in Release before submitting a pull request.
-See [repository guidance](AGENTS.md) for build and test commands, and
-[package compatibility checks](tests/AvroSourceGenerator.PackageCompatibility/README.md) for SDK validation.
-
----
+See [repository guidance](AGENTS.md) for build and test commands, [package compatibility checks](tests/AvroSourceGenerator.PackageCompatibility/README.md) for SDK validation, and [documentation maintenance](docs/README.md) for site preview and publishing instructions.
 
 ## License
 

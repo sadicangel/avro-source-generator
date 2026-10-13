@@ -1,0 +1,140 @@
+:root {
+  --docs-code-background: #edf1f7;
+  --docs-code-color: #182b45;
+  --docs-code-border: #c5cfde;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-docs-theme="light"]) {
+    --docs-code-background: #353b49;
+    --docs-code-color: #f1f5ff;
+    --docs-code-border: #586276;
+  }
+}
+
+:root[data-docs-theme="dark"] {
+  --docs-code-background: #353b49;
+  --docs-code-color: #f1f5ff;
+  --docs-code-border: #586276;
+}
+
+.main-content :not(pre, figure) > code {
+  padding: 0.12em 0.32em;
+  color: var(--docs-code-color);
+  font-size: 0.9em;
+  font-weight: 500;
+  background-color: var(--docs-code-background);
+  border: 1px solid var(--docs-code-border);
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+.docs-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.docs-controls select {
+  max-width: 11rem;
+  padding: 0.3rem;
+  color: var(--docs-code-color);
+  background-color: var(--docs-code-background);
+  border: 1px solid var(--docs-code-border);
+  border-radius: 4px;
+}
+
+.docs-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-right: 0.75rem;
+}
+
+.aux-nav .docs-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  padding: 0.4rem;
+}
+
+.docs-icon-link svg {
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.docs-theme-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 62px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  color: var(--docs-code-color);
+  background: var(--docs-code-background);
+  border: 1px solid var(--docs-code-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.docs-theme-toggle[hidden] {
+  display: none;
+}
+
+.docs-theme-toggle svg {
+  position: absolute;
+  top: 6px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.docs-theme-sun {
+  left: 7px;
+}
+
+.docs-theme-moon {
+  right: 7px;
+}
+
+.docs-theme-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px #0003;
+  transition: transform 140ms ease;
+}
+
+.docs-theme-toggle[aria-checked="false"] .docs-theme-thumb {
+  transform: translateX(32px);
+}
+
+.docs-theme-toggle:focus-visible {
+  outline: 2px solid #4e92df;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docs-theme-thumb {
+    transition: none;
+  }
+}
+
+.docs-version-label {
+  margin-bottom: 1.25rem;
+  color: inherit;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}

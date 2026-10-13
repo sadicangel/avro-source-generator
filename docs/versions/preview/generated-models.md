@@ -1,0 +1,127 @@
+---
+title: Generated models
+nav_order: 4
+---
+
+# Generated models
+
+The generated public model shape depends on your schema, C# language version, configuration, and selected Avro library.
+
+For the [quick-start schema]({{ '/getting-started/' | relative_url }}), the important members look like this:
+
+```csharp
+namespace example;
+
+public partial record User
+{
+    public required string Name { get; init; }
+    public string? Email { get; init; }
+}
+```
+
+This is an abridged illustration. The Apache target also generates the members needed by `Avro.Specific.ISpecificRecord`; you do not write them yourself.
+
+## Records, classes, and properties
+
+Records are used by default when supported. Choose [class generation]({{ '/configuration/#records-or-classes' | relative_url }}) if your application needs classes. Some schema kinds require classes because of runtime inheritance constraints, including Apache fixed types and errors.
+
+The generator uses the consuming project's language version to select features such as nullable reference types, `init` accessors, and `required` properties. Configure a reduced [language feature set]({{ '/configuration/#language-features' | relative_url }}) when needed.
+
+Avro field names determine the generated property names. For example, a field named `displayName` remains `displayName`; it is not automatically renamed to `DisplayName`.
+
+## Common type mappings
+
+| Avro type | C# model type |
+|:---|:---|
+| `boolean` | `bool` |
+| `int` | `int` |
+| `long` | `long` |
+| `float` | `float` |
+| `double` | `double` |
+| `string` | `string` |
+| `bytes` | `byte[]` |
+| `enum` | A generated enum |
+| `record` | A generated record or class |
+| `array` | A typed collection |
+| `map` | A string-keyed dictionary |
+| `fixed` | An Apache fixed model for Apache.Avro; **`byte[]`** otherwise |
+
+Logical types use library-specific mappings. For example, `timestamp-millis` maps to `DateTime` with Apache.Avro and `DateTimeOffset` with Chr.Avro. Choose your runtime before writing application code around logical types. See [runtime compatibility]({{ '/libraries/#logical-type-compatibility' | relative_url }}) for serialization limitations.
+
+## Nullability and unions
+
+An Avro union with `null` and one other type represents an optional value:
+
+```json
+{ "name": "Email", "type": ["null", "string"], "default": null }
+```
+
+In the quick-start project this becomes `string? Email`. Supply Avro defaults in the schema when your data contract requires them; C# nullability alone does not change the Avro schema.
+
+Unions of multiple record types can use generated `I…Variant` interfaces. Other unions can be represented as `object`. Code consuming an object union must handle its possible runtime types, for example with pattern matching.
+
+## Native C# unions
+
+The generator can represent Avro union fields with [C# union types](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/union). This is opt-in. Use **.NET 11** with C# 15 union support and configure:
+
+```xml
+<PropertyGroup>
+  <TargetFramework>net11.0</TargetFramework>
+  <LangVersion>preview</LangVersion>
+  <AvroSourceGeneratorPreviewFeatures>Unions</AvroSourceGeneratorPreviewFeatures>
+</PropertyGroup>
+```
+
+If you also set `AvroSourceGeneratorLanguageFeatures`, choose `CSharp15` or `All`. Without the union opt-in, the generator retains the existing interface/object representation.
+
+Supported feature-set values include `All`, `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, `CSharp12`, `CSharp13`, `CSharp14`, and `CSharp15`. The selected set is limited by the consuming project's language version.
+
+### Limitations
+
+- Each non-null Avro branch must map to a distinct C# type. For example, `bytes` and a `fixed` type that both map to `byte[]` cannot be distinguished.
+- Apache.Avro returns enum ordinals rather than generated enum values in these unions. This prevents correct enum deserialization and can make enum branches indistinguishable from each other or an `int` branch. The fix is tracked in [Apache Avro PR #4031](https://github.com/apache/avro/pull/4031).
+- Test the serializer with every branch in your schema before relying on the feature in an application.
+
+### Chr.Avro builder registration
+
+Register the generated serializer and deserializer cases for each native union before Chr's default cases. For a union generated as `NotificationContentUnion`, the setup is:
+
+```csharp
+var serializerBuilder = new BinarySerializerBuilder(
+    BinarySerializerBuilder.CreateDefaultCaseBuilders()
+        .Prepend(builder => new NotificationContentUnionSerializerBuilderCase(builder)));
+
+var deserializerBuilder = new BinaryDeserializerBuilder(
+    BinaryDeserializerBuilder.CreateDefaultCaseBuilders()
+        .Prepend(builder => new NotificationContentUnionDeserializerBuilderCase(builder)));
+```
+
+Use the actual generated names from your schema and pass these builders to your binary or Schema Registry serializers. The [preview integration tests](https://github.com/sadicangel/avro-source-generator/tree/{{ site.docs_version.source_ref }}/tests/AvroSourceGenerator.IntegrationTests.Chr) demonstrate native union serialization. Chr's default builders cannot reliably select all branches of mixed unions represented as `object`.
+
+## Extending generated types
+
+Add your own partial declaration in a normal `.cs` file. Match the generated namespace and declaration kind:
+
+```csharp
+namespace example;
+
+public partial record User
+{
+    public string DisplayLabel => Email is null ? Name : $"{Name} <{Email}>";
+}
+```
+
+Generated records, classes, and variant interfaces are partial. Enums cannot be extended with partial declarations. Avoid declaring members with the same names as generated properties or runtime integration members.
+
+## Inspecting generated source
+
+In Visual Studio, expand the generator beneath your project's analyzer dependencies to inspect its generated files. To write copies to disk for inspection, use standard compiler properties:
+
+```xml
+<PropertyGroup>
+  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+</PropertyGroup>
+```
+
+Keep this output under the intermediate directory so it is not compiled again as ordinary project source. Edit your schemas, configuration, or partial declarations to change behavior; generated files are replaced on subsequent builds.

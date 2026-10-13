@@ -1,0 +1,12 @@
+<div class="docs-controls">
+  <label for="docs-version">Version</label>
+  <select id="docs-version" aria-label="Documentation version">
+    {% assign topic = page.name | remove: '.md' %}
+    {% for version in site.docs_versions %}
+      {% assign target_topic = topic %}
+      {% unless version.topics contains topic %}{% assign target_topic = 'index' %}{% endunless %}
+      <option value="{{ site.repository_baseurl }}/{{ version.id }}/{% unless target_topic == 'index' %}{{ target_topic }}/{% endunless %}"
+              {% if version.id == site.docs_version.id %}selected{% endif %}>{{ version.label }} · {{ version.channel }}</option>
+    {% endfor %}
+  </select>
+</div>

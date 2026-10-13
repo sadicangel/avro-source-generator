@@ -1,0 +1,6 @@
+<ItemGroup>
+  <PackageReference Include="AvroSourceGenerator" Version="{{ site.docs_version.package_version }}"
+                    PrivateAssets="all" ExcludeAssets="runtime" />
+  <PackageReference Include="Apache.Avro" Version="1.12.2" />
+  <AdditionalFiles Include="schemas/*.avsc" />
+</ItemGroup>

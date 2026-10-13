@@ -6,5 +6,8 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <DevelopmentDependency>true</DevelopmentDependency>
+    <Version>0.0.0-development</Version>
+    <Version Condition="'$(PackageVersion)' != ''">$(PackageVersion)</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 </Project>

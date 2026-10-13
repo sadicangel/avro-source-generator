@@ -32,12 +32,14 @@ jobs:
         dotnet-version: 11.0.x
         dotnet-quality: preview
     - name: Build
-      run: dotnet build --configuration Release
+      run: dotnet build --configuration Release -p:PackageVersion="${VERSION}"
     - name: Test
       run: dotnet test --no-build --configuration Release --verbosity normal
       if: (!contains(env.VERSION, '-'))
     - name: Pack
-      run: dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion="${VERSION}" --output ./nupkg
+      run: |
+        dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion="${VERSION}" --output ./nupkg
+        dotnet pack src/AvroSourceGenerator.Cli/AvroSourceGenerator.Cli.csproj --no-build --configuration Release -p:PackageVersion="${VERSION}" --output ./nupkg
     - name: Publish to GitHub
       run: dotnet nuget push ./nupkg/*.nupkg --source "https://nuget.pkg.github.com/sadicangel/index.json" --api-key "${GITHUB_TOKEN}"
       env:

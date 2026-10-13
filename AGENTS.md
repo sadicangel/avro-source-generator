@@ -4,13 +4,14 @@
 
 Avro Source Generator is a C# incremental source generator for Avro schema (`.avsc`), protocol (`.avpr`), and IDL (`.avdl`) files. It can generate models for Apache Avro, Chr.Avro, or without a runtime library.
 
-The solution uses the latest installed development SDK, including previews, selected by `global.json` with a minimum of SDK 10.0.401. The packaged generator supports consumers starting with SDK 10.0.100. Source projects target `netstandard2.0`; tests and tools use the target configured in the root `Directory.Build.props`. Package versions are managed centrally in `Directory.Packages.props`.
+The solution uses the latest installed development SDK, including previews, selected by `global.json` with a minimum of SDK 10.0.401. The packaged generator supports consumers starting with SDK 10.0.100. Source libraries target `netstandard2.0`; the packaged CLI targets `net10.0`. Tests and development tools use the target configured in the root `Directory.Build.props`. Package versions are managed centrally in `Directory.Packages.props`.
 
 ## Repository layout
 
 - `src/AvroSourceGenerator.Core/` contains parsing, schemas, diagnostics, and the compiler pipeline. Keep it independent of Roslyn and rendering.
 - `src/AvroSourceGenerator/` contains the Roslyn incremental generator, the latest Roslyn project, and shared build targets. `src/AvroSourceGenerator.Roslyn5_0/` builds the same sources against the minimum supported baseline; `src/AvroSourceGenerator.Pack/` packages both variants.
 - `src/AvroSourceGenerator.Templating/` contains render models and Scriban templates.
+- `src/AvroSourceGenerator.Cli/` packages the .NET 10 `avro-sg` tool, using Core and Templating directly. It shares the generator package version and release cycle; do not add separate CLI configuration types.
 - `tests/AvroSourceGenerator.UnitTests/` contains library-neutral unit and snapshot tests.
 - `tests/AvroSourceGenerator.UnitTests.Apache/` and `tests/AvroSourceGenerator.UnitTests.Chr/` contain library-specific tests.
 - `tests/AvroSourceGenerator.IntegrationTests*/` contains fast generated-model and binary serialization tests without Docker. The default suites use tagged unions; `IntegrationTests.ObjectUnions.*` explicitly tests interface and object unions.
@@ -66,7 +67,7 @@ dotnet test --project tests/AvroSourceGenerator.IntegrationTests.ObjectUnions.Ap
 dotnet test --project tests/AvroSourceGenerator.IntegrationTests.ObjectUnions.Chr/AvroSourceGenerator.IntegrationTests.ObjectUnions.Chr.csproj --no-build --configuration Release
 ```
 
-For generator build, dependency, or packaging changes, also pack `src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj` and run the SDK consumer matrix described in `tests/AvroSourceGenerator.PackageCompatibility/README.md`.
+For generator or CLI build, dependency, or packaging changes, also pack `src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj` and `src/AvroSourceGenerator.Cli/AvroSourceGenerator.Cli.csproj` at the same version and run the SDK consumer/tool matrix described in `tests/AvroSourceGenerator.PackageCompatibility/README.md`. Build once with `PackageVersion`, then pack both projects with `--no-build` and the same version. Source DLLs, generated attributes, and CLI version output must match that version. Normal development builds use `0.0.0-development`; snapshots normalize only the generated version annotation, with separate tests verifying actual versions.
 
 Before pushing code to `origin` or creating or updating a PR, also ensure Docker is available and run both smoke suites:
 

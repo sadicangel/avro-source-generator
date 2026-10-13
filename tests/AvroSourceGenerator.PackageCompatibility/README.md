@@ -21,20 +21,30 @@ The package stores Core, Templating, and nine common runtime dependencies, inclu
 Each `analyzers/dotnet/roslynX.Y/cs/` folder contains only the generator.
 The checks verify all 13 packaged DLLs and that each consumer receives the 11 shared dependencies plus exactly one generator variant.
 
-All source projects use the central `System.Collections.Immutable` version without overrides.
+All source libraries use the central `System.Collections.Immutable` version without overrides. The .NET 10 CLI uses the shared framework's JSON and Immutable assemblies.
 The package consumers verify that the shared assemblies and Immutable APIs work with every supported compiler host,
 including SDK 10.0.100. Increasing Immutable's major version requires checking that minimum host again.
 
 Install SDK 10.0.100 and the latest preview SDK, plus the .NET 10 runtime.
-Run from the repository root after a Release solution build:
+Build once with the package version, then pack both projects without rebuilding from the repository root:
 
 ```powershell
-dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-validation --output artifacts/packages
-$package = 'artifacts/packages/AvroSourceGenerator.0.0.0-validation.nupkg'
-./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $package -SdkVersion 10.0.100 -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
+dotnet build avro-source-generator.slnx --configuration Release -p:PackageVersion=0.0.0-development
+dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-development --output artifacts/packages
+$package = 'artifacts/packages/AvroSourceGenerator.0.0.0-development.nupkg'
+dotnet pack src/AvroSourceGenerator.Cli/AvroSourceGenerator.Cli.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-development --output artifacts/packages
+$cli = 'artifacts/packages/AvroSourceGenerator.Cli.0.0.0-development.nupkg'
+./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $package -CliPackagePath $cli -SdkVersion 10.0.100 -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
 ```
 
 Run the same script for the exact installed latest preview SDK version, writing to a separate manifest directory.
+Pass the same `PackageVersion` to build and pack. `src/Directory.Build.props` stamps every source assembly during compilation.
+Normal development builds use `0.0.0-development`; explicit package builds use the full package version as the informational version without a commit hash.
+Verify's `ScrubReplace` normalizes only the generated version annotation to the existing `1.0.0.0` snapshot baseline. Separate tests check assembly-version consistency and the raw generated-code version; package validation checks these against the supplied package version.
+The runner checks numeric assembly/file versions, full informational versions, and the `GeneratedCodeAttribute` version in every generated model.
+With `-CliPackagePath`, the runner validates matching package versions and tool contents, installs the CLI in an isolated local-tool manifest/cache,
+and compares its generated files with the generator for every library and language mode. It also verifies `--check` on each output.
+Omit `-CliPackagePath` only when validating the generator package independently.
 For the preview SDK, pass `-ExpectedRoslynApiVersion latest` to require selection of the latest packaged generator variant.
 A newer compiler API emits a Roslyn update review warning; compatibility is established by analyzer selection,
 compilation, consumer execution, and generated-source comparison. The minimum SDK must select the Roslyn 5.0 variant.
@@ -48,12 +58,13 @@ The script creates an isolated workspace, exact-version `global.json`, local pac
 External consumer dependencies restore from nuget.org. The generator itself must restore from the local package;
 a published package cannot satisfy the validation run. The main solution's SDK policy and NuGet configuration are unchanged.
 
-The build workflow builds and packs once. Unit tests, fast integration tests, Apache smoke tests, Chr smoke tests, and package compatibility
-checks then run in independent parallel jobs using those build outputs. Compatibility checks use the minimum SDK 10.0.100 and resolve
+The build workflow builds the solution once with `PackageVersion=0.0.0-development`, then packs both projects with `--no-build`.
+Unit tests, fast integration tests, Apache smoke tests, Chr smoke tests, and package compatibility
+checks then run in independent parallel jobs using the corresponding build outputs. Compatibility checks use the minimum SDK 10.0.100 and resolve
 the latest preview SDK on every push and pull request, comparing the generated sources in the same job.
 The Actions summary shows the SDK and compiler versions, selected generator variants, completed consumer checks,
 generated-source comparison status, and any Roslyn review reminders or failures.
 Test jobs run the prebuilt assemblies directly with the Microsoft.Testing.Platform runner and use Microsoft's GitHub
 Actions reporter for counts, durations, failure details, and source annotations, including when tests fail. Direct
 execution preserves the reporter's workflow commands for GitHub; `dotnet test` remains available for local runs.
-The release workflow builds, tests stable releases, and packs the release version separately before publishing.
+The release workflow builds once with the release version, tests stable releases using those binaries, then packs both projects with `--no-build` before publishing.

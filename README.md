@@ -1,9 +1,13 @@
 # Avro Source Generator
 
-[![NuGet](https://img.shields.io/nuget/v/AvroSourceGenerator.svg)](https://www.nuget.org/packages/AvroSourceGenerator)
-[![NuGet (pre-release)](https://img.shields.io/nuget/vpre/AvroSourceGenerator.svg)](https://www.nuget.org/packages/AvroSourceGenerator)
-[![License: MIT](https://img.shields.io/github/license/sadicangel/avro-source-generator)](LICENSE)
-[![Build](https://img.shields.io/github/actions/workflow/status/sadicangel/avro-source-generator/build.yml?label=build)](https://github.com/sadicangel/avro-source-generator/actions)
+[![NuGet stable](https://img.shields.io/nuget/v/AvroSourceGenerator?style=flat&logo=nuget&logoColor=white&label=stable&color=blue)](https://www.nuget.org/packages/AvroSourceGenerator)
+[![NuGet preview](https://img.shields.io/nuget/vpre/AvroSourceGenerator?style=flat&logo=nuget&logoColor=white&label=preview&color=orange)](https://www.nuget.org/packages/AvroSourceGenerator#versions-body-tab)
+[![NuGet downloads](https://img.shields.io/nuget/dt/AvroSourceGenerator?style=flat&logo=nuget&logoColor=white&label=downloads&color=blueviolet)](https://www.nuget.org/packages/AvroSourceGenerator)
+
+[![CI pipeline](https://img.shields.io/github/actions/workflow/status/sadicangel/avro-source-generator/build.yml?branch=main&event=push&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/sadicangel/avro-source-generator/actions/workflows/build.yml?query=branch%3Amain+event%3Apush)
+[![Documentation](https://img.shields.io/badge/docs-online-blue?style=flat&logo=githubpages&logoColor=white)](https://sadicangel.github.io/avro-source-generator/)
+[![Minimum .NET SDK: 10.0.100](https://img.shields.io/badge/.NET%20SDK-10.0.100%2B-512BD4?style=flat&logo=dotnet&logoColor=white)](#prerequisites)
+[![License: MIT](https://img.shields.io/github/license/sadicangel/avro-source-generator?style=flat&label=license&color=green)](LICENSE)
 
 ![Avro Source Generator](https://raw.githubusercontent.com/sadicangel/avro-source-generator/refs/heads/main/icon.png)
 

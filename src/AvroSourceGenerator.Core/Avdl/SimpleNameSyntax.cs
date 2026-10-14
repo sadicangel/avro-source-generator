@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl;
 
-public sealed record class SimpleNameSyntax(SyntaxToken Identifier) : INameSyntax
+internal sealed record class SimpleNameSyntax(SyntaxToken Identifier) : INameSyntax
 {
     public SyntaxKind SyntaxKind => SyntaxKind.SimpleName;
 

@@ -1,3 +1,3 @@
 ﻿namespace AvroSourceGenerator.Avdl.Types;
 
-public interface ITypeSyntax : ISyntaxNode;
+internal interface ITypeSyntax : ISyntaxNode;

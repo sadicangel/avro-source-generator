@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl;
 
-public interface INameSyntax : ISyntaxNode
+internal interface INameSyntax : ISyntaxNode
 {
     string FullName { get; }
 }

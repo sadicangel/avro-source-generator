@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Compiler;
 
-public sealed class AvscParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken) : AvjsParser(sourceText, options, cancellationToken)
+internal sealed class AvscParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken) : AvjsParser(sourceText, options, cancellationToken)
 {
     public static AvroFile ParseFile(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken)
     {

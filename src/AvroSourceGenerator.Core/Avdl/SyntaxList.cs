@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace AvroSourceGenerator.Avdl;
 
 [CollectionBuilder(typeof(SyntaxListBuilder), nameof(SyntaxListBuilder.Create))]
-public readonly record struct SyntaxList<T>(ImmutableArray<T> SyntaxNodes) : IReadOnlyList<T> where T : ISyntaxNode
+internal readonly record struct SyntaxList<T>(ImmutableArray<T> SyntaxNodes) : IReadOnlyList<T> where T : ISyntaxNode
 {
     public T this[int index] => SyntaxNodes[index];
 
@@ -26,7 +26,7 @@ public readonly record struct SyntaxList<T>(ImmutableArray<T> SyntaxNodes) : IRe
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
-public static class SyntaxListBuilder
+internal static class SyntaxListBuilder
 {
     public static SyntaxList<T> Create<T>(ReadOnlySpan<T> nodes) where T : ISyntaxNode => new SyntaxList<T>([.. nodes]);
 }

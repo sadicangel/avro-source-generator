@@ -64,7 +64,7 @@ internal static class CliApplication
                 .SetUnions(enabled.HasUnions && (result.GetValue(preview) & PreviewFeatures.Unions) != 0);
             return await CompilationRunner.RunAsync(
                 result.GetValue(inputs)!, result.GetValue(destination)!,
-                new AvroParseOptions(target, enabled),
+                new AvroParseOptions(target, enabled, RequireTopLevelSchema: true),
                 new AvroCompilationOptions(result.GetValue(references), result.GetValue(duplicates)),
                 new RenderOptions(target, enabled, result.GetValue(access)),
                 result.GetValue(force), result.GetValue(check), output, error, token);

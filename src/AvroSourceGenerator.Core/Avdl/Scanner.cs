@@ -5,7 +5,7 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avdl;
 
-public sealed class Scanner(SourceText sourceText, CancellationToken cancellationToken)
+internal sealed class Scanner(SourceText sourceText, CancellationToken cancellationToken)
 {
     private const int CancellationCheckInterval = 1024;
 

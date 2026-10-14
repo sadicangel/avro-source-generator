@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Avdl;
 
-public sealed record class JsonValueSyntax(SyntaxList<SyntaxToken> SyntaxTokens, JsonNode? JsonNode) : ISyntaxNode
+internal sealed record class JsonValueSyntax(SyntaxList<SyntaxToken> SyntaxTokens, JsonNode? JsonNode) : ISyntaxNode
 {
     public SyntaxKind SyntaxKind => SyntaxKind.JsonValue;
 

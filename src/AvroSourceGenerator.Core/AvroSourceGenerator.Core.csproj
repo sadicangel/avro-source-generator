@@ -2,6 +2,15 @@
 
   <PropertyGroup>
     <RootNamespace>AvroSourceGenerator</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <DevelopmentDependency>false</DevelopmentDependency>
+    <PackageId>AvroSourceGenerator.Core</PackageId>
+    <Authors>sadicangel</Authors>
+    <Description>Avro parsing and compilation APIs for advanced integrations. These implementation APIs carry no compatibility guarantees and may change or be removed in any release. Pin an exact package version and validate upgrades.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/sadicangel/avro-source-generator</RepositoryUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>avro;schema;parser;compiler;avsc;avpr;avdl</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -9,9 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" PrivateAssets="all" />
-    <PackageReference Include="System.Text.Json" PrivateAssets="all" />
+    <PackageReference Include="System.Collections.Immutable" />
+    <PackageReference Include="System.Text.Json" />
     <PackageReference Include="Meziantou.Polyfill" PrivateAssets="all" />
+    <None Include="../../icon.png" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>

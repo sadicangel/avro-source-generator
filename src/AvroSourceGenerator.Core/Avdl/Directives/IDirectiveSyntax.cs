@@ -1,3 +1,3 @@
 ﻿namespace AvroSourceGenerator.Avdl.Directives;
 
-public interface IDirectiveSyntax : ISyntaxNode;
+internal interface IDirectiveSyntax : ISyntaxNode;

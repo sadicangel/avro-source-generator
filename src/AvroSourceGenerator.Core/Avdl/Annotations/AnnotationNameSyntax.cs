@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Annotations;
 
-public sealed record class AnnotationNameSyntax(SeparatedSyntaxList<SyntaxToken> Identifiers) : ISyntaxNode
+internal sealed record class AnnotationNameSyntax(SeparatedSyntaxList<SyntaxToken> Identifiers) : ISyntaxNode
 {
     public SyntaxKind SyntaxKind => SyntaxKind.AnnotationName;
 

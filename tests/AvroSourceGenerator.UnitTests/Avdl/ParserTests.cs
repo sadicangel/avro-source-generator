@@ -49,7 +49,7 @@ public sealed class ParserTests
     [InlineData("schema array<string>;", SyntaxKind.ArrayType)]
     [InlineData("schema union { null, string };", SyntaxKind.UnionType)]
     [InlineData("schema Message;", SyntaxKind.NamedType)]
-    public void Parse_SchemaDirective_ReturnsMainSchemaType(string text, SyntaxKind expectedTypeKind)
+    public void Parse_SchemaDirective_ReturnsMainSchemaType(string text, object expectedTypeKind)
     {
         var unit = Parse(text);
 

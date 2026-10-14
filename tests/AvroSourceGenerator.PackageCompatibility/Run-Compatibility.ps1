@@ -2,6 +2,7 @@ param(
   [Parameter(Mandatory)][string]$PackagePath,
   [Parameter(Mandatory)][string]$SdkVersion,
   [string]$CliPackagePath,
+  [string]$CorePackagePath,
   [string]$ExpectedRoslynApiVersion,
   [string]$OutputDirectory
 )
@@ -95,6 +96,27 @@ if ($CliPackagePath) {
   finally { $archive.Dispose() }
 }
 
+if ($CorePackagePath) {
+  $CorePackagePath = (Resolve-Path -LiteralPath $CorePackagePath).Path
+  $archive = [IO.Compression.ZipFile]::OpenRead($CorePackagePath)
+  try {
+    $nuspec = @($archive.Entries | Where-Object FullName -Like '*.nuspec')
+    if ($nuspec.Count -ne 1) { throw 'Expected one Core package manifest.' }
+    $reader = [IO.StreamReader]::new($nuspec[0].Open())
+    try { $coreManifest = [xml]$reader.ReadToEnd() } finally { $reader.Dispose() }
+    if ($coreManifest.package.metadata.id -ne 'AvroSourceGenerator.Core' -or
+        $coreManifest.package.metadata.version -cne $packageVersion) { throw 'Core and generator package versions must match.' }
+    $dependencies = @($coreManifest.package.metadata.dependencies.group.dependency | ForEach-Object id | Sort-Object)
+    if (Compare-Object $dependencies @('System.Collections.Immutable', 'System.Text.Json')) { throw 'Core must expose exactly its JSON and Immutable runtime dependencies.' }
+    if ($coreManifest.package.metadata.developmentDependency -eq 'true') { throw 'Core must be a normal runtime dependency.' }
+    $libraries = @($archive.Entries | Where-Object FullName -Match '\.dll$' | ForEach-Object FullName)
+    if (Compare-Object $libraries @('lib/netstandard2.0/AvroSourceGenerator.Core.dll')) { throw 'Unexpected Core package assemblies.' }
+    if (!$archive.GetEntry('icon.png')) { throw 'Missing Core package icon.' }
+    Assert-AssemblyVersion $archive 'lib/netstandard2.0/AvroSourceGenerator.Core.dll' $packageVersion
+  }
+  finally { $archive.Dispose() }
+}
+
 # Each run gets its own SDK policy, projects, feed, and cache; root global.json cannot override it.
 if (!$OutputDirectory) { $OutputDirectory = Join-Path $workspace 'manifests' }
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
@@ -106,6 +128,7 @@ $feed = Join-Path $workspace 'feed'
 [IO.Directory]::CreateDirectory($feed) | Out-Null
 Copy-Item -LiteralPath $PackagePath -Destination $feed
 if ($CliPackagePath) { Copy-Item -LiteralPath $CliPackagePath -Destination $feed }
+if ($CorePackagePath) { Copy-Item -LiteralPath $CorePackagePath -Destination $feed }
 $cache = Join-Path $workspace 'packages'
 $nugetConfig = Join-Path $workspace 'NuGet.Config'
 $escapedFeed = [Security.SecurityElement]::Escape($feed)
@@ -118,7 +141,7 @@ $configuration = @"
   </packageSources>
   <packageSourceMapping>
     <clear />
-    <packageSource key="validation"><package pattern="AvroSourceGenerator" /><package pattern="AvroSourceGenerator.Cli" /></packageSource>
+    <packageSource key="validation"><package pattern="AvroSourceGenerator" /><package pattern="AvroSourceGenerator.Cli" /><package pattern="AvroSourceGenerator.Core" /></packageSource>
     <packageSource key="nuget.org"><package pattern="*" /></packageSource>
   </packageSourceMapping>
 </configuration>
@@ -157,7 +180,7 @@ try {
   $sdkMajor = [int]($SdkVersion.Split('.')[0])
   $modes = @('CSharp12', 'SdkDefault')
   if ($sdkMajor -ge 11) { $modes += 'SdkUnions' }
-  $expectedConsumers = $modes.Count * 2
+  $expectedConsumers = $modes.Count * (2 + [int][bool]$CorePackagePath)
   foreach ($mode in $modes) {
     $modeDirectory = Join-Path $workspace $mode
     [IO.Directory]::CreateDirectory($modeDirectory) | Out-Null
@@ -169,6 +192,22 @@ try {
       Copy-Item -Destination $schemas
     $framework = if ($mode -eq 'CSharp12') { 'net10.0' } else { "net$sdkMajor.0" }
     $language = if ($mode -eq 'CSharp12') { '12.0' } elseif ($mode -eq 'SdkUnions') { 'preview' } else { 'default' }
+    if ($CorePackagePath) {
+      $coreProject = Join-Path $modeDirectory 'Consumers/Core/Core.csproj'
+      $coreProperties = @(
+        "-p:ValidationPackageVersion=$packageVersion",
+        "-p:ConsumerTargetFramework=$framework",
+        "-p:ConsumerLanguageVersion=$language"
+      )
+      Invoke-DotNet -Arguments (@('restore', $coreProject, '--configfile', $nugetConfig, '--packages', $cache) + $coreProperties)
+      Invoke-DotNet -Arguments (@('run', '--project', $coreProject, '--configuration', 'Release', '--no-restore') + $coreProperties + @('--', $packageVersion))
+      $inheritanceOutput = & dotnet build $coreProject --configuration Release --no-restore @coreProperties -p:CheckExternalInheritance=true 2>&1 | Out-String
+      $inheritanceExitCode = $LASTEXITCODE
+      if ($inheritanceExitCode -eq 0 -or $inheritanceOutput -notmatch 'ClosedClasses|closed (class|type)|cannot (inherit|derive).*closed') {
+        throw "External Core schema inheritance must fail with a closed-class diagnostic: $inheritanceOutput"
+      }
+      $passedConsumers++
+    }
     foreach ($library in @('Apache', 'None')) {
       $project = Join-Path $modeDirectory "Consumers/$library/$library.csproj"
       $compilerApi = & dotnet msbuild $project -nologo -getProperty:CompilerApiVersion
@@ -254,6 +293,7 @@ finally {
     ReviewNote = $reviewNote
     Failure = $failure
     CliPackageValidated = [bool]$CliPackagePath
+    CorePackageValidated = [bool]$CorePackagePath
   }
   [IO.File]::WriteAllText((Join-Path $OutputDirectory 'summary.json'), ($summary | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
 }

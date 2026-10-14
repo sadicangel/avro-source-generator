@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Avdl.Directives;
 
-public sealed record class SchemaDirectiveSyntax(
+internal sealed record class SchemaDirectiveSyntax(
     SyntaxToken SchemaKeyword,
     ITypeSyntax MainSchemaType,
     SyntaxToken SemicolonToken)

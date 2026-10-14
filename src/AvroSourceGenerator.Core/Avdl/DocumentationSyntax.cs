@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl;
 
-public sealed record class DocumentationSyntax(SyntaxToken DocumentationTrivia) : ISyntaxNode
+internal sealed record class DocumentationSyntax(SyntaxToken DocumentationTrivia) : ISyntaxNode
 {
     public SyntaxKind SyntaxKind => SyntaxKind.Documentation;
 

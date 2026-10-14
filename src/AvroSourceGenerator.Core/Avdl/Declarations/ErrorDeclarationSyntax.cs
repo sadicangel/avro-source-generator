@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Avdl.Declarations;
 
-public sealed record class ErrorDeclarationSyntax(
+internal sealed record class ErrorDeclarationSyntax(
     SyntaxToken ErrorKeyword,
     SimpleNameSyntax Name,
     SyntaxList<DocumentationSyntax> Documentation,

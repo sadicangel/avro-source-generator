@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Types;
 
-public sealed record class ArrayTypeSyntax(
+internal sealed record class ArrayTypeSyntax(
     SyntaxToken ArrayKeyword,
     SyntaxToken LessThanToken,
     ITypeSyntax ItemType,

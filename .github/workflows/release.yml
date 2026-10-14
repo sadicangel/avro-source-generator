@@ -40,6 +40,7 @@ jobs:
       run: |
         dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion="${VERSION}" --output ./nupkg
         dotnet pack src/AvroSourceGenerator.Cli/AvroSourceGenerator.Cli.csproj --no-build --configuration Release -p:PackageVersion="${VERSION}" --output ./nupkg
+        dotnet pack src/AvroSourceGenerator.Core/AvroSourceGenerator.Core.csproj --no-build --configuration Release -p:PackageVersion="${VERSION}" --output ./nupkg
     - name: Publish to GitHub
       run: dotnet nuget push ./nupkg/*.nupkg --source "https://nuget.pkg.github.com/sadicangel/index.json" --api-key "${GITHUB_TOKEN}"
       env:

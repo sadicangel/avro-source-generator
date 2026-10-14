@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Avdl.Declarations;
 
-public sealed record class ThrowsErrorClauseSyntax(SyntaxToken ThrowsKeyword, SeparatedSyntaxList<NamedTypeSyntax> Errors)
+internal sealed record class ThrowsErrorClauseSyntax(SyntaxToken ThrowsKeyword, SeparatedSyntaxList<NamedTypeSyntax> Errors)
     : ISyntaxNode
 {
     public SyntaxKind SyntaxKind => SyntaxKind.ThrowsErrorClause;

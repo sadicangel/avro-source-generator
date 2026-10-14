@@ -5,8 +5,8 @@ namespace AvroSourceGenerator.UnitTests.Avdl;
 
 public sealed class ScannerTests
 {
-    public static TheoryData<string, SyntaxKind> Punctuation =>
-        new TheoryData<string, SyntaxKind>
+    public static TheoryData<string, object> Punctuation =>
+        new TheoryData<string, object>
         {
             { "{", SyntaxKind.BraceOpenToken },
             { "}", SyntaxKind.BraceCloseToken },
@@ -25,8 +25,8 @@ public sealed class ScannerTests
             { "?", SyntaxKind.QuestionMarkToken },
         };
 
-    public static TheoryData<string, SyntaxKind> Keywords =>
-        new TheoryData<string, SyntaxKind>
+    public static TheoryData<string, object> Keywords =>
+        new TheoryData<string, object>
         {
             { "true", SyntaxKind.TrueKeyword },
             { "false", SyntaxKind.FalseKeyword },
@@ -106,7 +106,7 @@ public sealed class ScannerTests
 
     [Theory]
     [MemberData(nameof(Punctuation))]
-    public void Scan_ReturnsPunctuationToken(string text, SyntaxKind expected)
+    public void Scan_ReturnsPunctuationToken(string text, object expected)
     {
         var scanner = CreateScanner(text);
 
@@ -119,7 +119,7 @@ public sealed class ScannerTests
 
     [Theory]
     [MemberData(nameof(Keywords))]
-    public void Scan_ReturnsKeywordToken(string text, SyntaxKind expected)
+    public void Scan_ReturnsKeywordToken(string text, object expected)
     {
         var scanner = CreateScanner(text);
 

@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
-public abstract record class TopLevelSchema(
+public closed record class TopLevelSchema(
     SchemaType SchemaType,
     SchemaName SchemaName,
     CSharpName CSharpName,

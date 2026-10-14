@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Avdl;
 
-public sealed record class SyntaxToken(SyntaxKind SyntaxKind, SourceSpan SourceSpan, object? Value = null) : ISyntaxNode
+internal sealed record class SyntaxToken(SyntaxKind SyntaxKind, SourceSpan SourceSpan, object? Value = null) : ISyntaxNode
 {
     public string ValueText => Value?.ToString() ?? SourceSpan.ToString();
 

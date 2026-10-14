@@ -1,7 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Text.Json;
-using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Diagnostics;
+﻿using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
@@ -12,96 +9,62 @@ public sealed class ParserBaseTests
     [Fact]
     public void References_use_the_latest_declaration_and_keep_declaration_order()
     {
-        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes));
-        var first = Record("Shared") with { CSharpName = new CSharpName("First") };
-        var latest = Record("Shared") with { CSharpName = new CSharpName("Latest") };
-        context.Declare(first, SourceSpan.None);
-        context.Declare(latest, SourceSpan.None);
+        var file = Parse("""
+            schema Container;
+            record Shared { string first; }
+            record Shared { long latest; }
+            record Container { Shared value; }
+            """);
 
-        var reference = context.Reference(new SchemaName("Shared"), "Example", SourceSpan.None);
-
-        Assert.Equal(latest.CSharpName, reference.CSharpName);
-        var result = context.Complete(Source, latest, [], []);
-        Assert.Equal([first, latest], result.Declarations);
-        Assert.Empty(result.References);
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Variant_replacement_preserves_the_latest_duplicate(bool replaceLatest)
-    {
-        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes));
-        var first = Record("Shared") with { CSharpName = new CSharpName("First") };
-        var latest = Record("Shared") with { CSharpName = new CSharpName("Latest") };
-        var other = Record("Other");
-        context.Declare(first, SourceSpan.None);
-        context.Declare(latest, SourceSpan.None);
-        context.Declare(other, SourceSpan.None);
-        var replaced = replaceLatest ? latest : first;
-        var union = UnionSchema.Create([replaced, other], true);
-
-        context.ApplyFieldType(union, "Choice", new SchemaName("Container", "Example"));
-
-        var result = context.Complete(Source, union, [], []);
-        var updated = Assert.IsType<RecordSchema>(result.Declarations[replaceLatest ? 1 : 0]);
-        Assert.NotNull(updated.InheritsFrom);
-        Assert.NotSame(replaced, updated);
-        Assert.Equal(latest.CSharpName, context.Reference(new SchemaName("Shared"), "Example", SourceSpan.None).CSharpName);
-        Assert.Same(replaceLatest ? first : latest, result.Declarations[replaceLatest ? 0 : 1]);
+        Assert.True(file.IsValid);
+        Assert.Equal(["Shared", "Shared", "Container"], file.Declarations.Select(schema => schema.SchemaName.Name));
+        var latest = Assert.IsType<RecordSchema>(file.Declarations[1]);
+        Assert.Equal("latest", Assert.Single(latest.Fields).Name.SchemaName);
+        var container = Assert.IsType<RecordSchema>(file.Declarations[2]);
+        Assert.Equal(latest.CSharpName, Assert.Single(container.Fields).Type.CSharpName);
+        Assert.Empty(file.References);
     }
 
     [Fact]
-    public void Replacement_rejects_an_equal_but_unregistered_instance()
+    public void Variant_replacement_preserves_duplicate_declarations()
     {
-        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes));
-        var original = Record("Shared");
-        context.Declare(original, SourceSpan.None);
-        var clone = original with { };
+        var file = AvroFile.Parse(
+            new SourceText("test.avsc", """
+                {"type":"record","name":"Container","fields":[
+                    {"name":"first","type":{"type":"record","name":"Shared","fields":[{"name":"first","type":"string"}]}},
+                    {"name":"choice","type":[
+                        {"type":"record","name":"Shared","fields":[{"name":"latest","type":"long"}]},
+                        {"type":"record","name":"Other","fields":[]}
+                    ]},
+                    {"name":"value","type":"Shared"}
+                ]}
+                """),
+            new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes),
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(original, clone);
-        Assert.Throws<InvalidOperationException>(() => context.Replace(clone, clone with { InheritsFrom = new CSharpName("IVariant") }));
-        Assert.Same(original, Assert.Single(context.Complete(Source, original, [], []).Declarations));
+        Assert.True(file.IsValid);
+        var shared = file.Declarations.OfType<RecordSchema>().Where(schema => schema.SchemaName.Name == "Shared").ToArray();
+        Assert.Equal(2, shared.Length);
+        Assert.Null(shared[0].InheritsFrom);
+        Assert.NotNull(shared[1].InheritsFrom);
+        var container = file.Declarations.OfType<RecordSchema>().Single(schema => schema.SchemaName.Name == "Container");
+        Assert.Equal(shared[1].CSharpName, container.Fields[2].Type.CSharpName);
     }
 
     [Fact]
     public void Recursive_references_record_dependencies_without_external_references()
     {
-        var context = new TestParser(new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes));
-        var record = Record("Node");
-        using (context.EnterRecursionScope(record.SchemaName))
-        {
-            Assert.Equal(record.SchemaName, context.Reference(new SchemaName("Node"), "Example", SourceSpan.None).SchemaName);
-            context.Declare(record, SourceSpan.None);
-        }
+        var file = Parse("schema Node; record Node { Node next; }");
 
-        var result = context.Complete(Source, record, [], []);
-        Assert.Empty(result.References);
-        Assert.Equal([record.SchemaName], result.Dependencies[record.SchemaName]);
+        Assert.True(file.IsValid);
+        var node = Assert.IsType<RecordSchema>(Assert.Single(file.Declarations));
+        Assert.Equal(node.SchemaName, Assert.Single(node.Fields).Type.SchemaName);
+        Assert.Empty(file.References);
+        Assert.Equal([node.SchemaName], file.Dependencies[node.SchemaName]);
     }
 
-    private static RecordSchema Record(string name) => new RecordSchema(new SchemaName(name, "Example"), null, [], [], ImmutableSortedDictionary<string, JsonElement>.Empty);
-
-    private static SourceText Source { get; } = new SourceText("test.avsc", "{}");
-
-    private sealed class TestParser(AvroParseOptions options) : AvxxParser(options)
-    {
-        public new void Declare(TopLevelSchema schema, SourceSpan span) => base.Declare(schema, span);
-        public new void Replace(TopLevelSchema original, TopLevelSchema replacement) => base.Replace(original, replacement);
-        public new AvroSchema Reference(SchemaName name, string? containingNamespace, SourceSpan span) => base.Reference(name, containingNamespace, span);
-
-        public void ApplyFieldType(AvroSchema type, FieldName name, SchemaName containingSchema) =>
-            _ = base.ResolveFieldType(type, name, containingSchema, out _, out _);
-
-        private RecursionScope EnterScope(SchemaName name) => base.EnterRecursionScope(name);
-        public new TestScope EnterRecursionScope(SchemaName name) => new TestScope(this, name);
-
-        public readonly ref struct TestScope(TestParser parser, SchemaName name)
-        {
-            private readonly RecursionScope _scope = parser.EnterScope(name);
-            public void Dispose() => _scope.Dispose();
-        }
-
-        public AvroFile Complete(SourceText source, AvroSchema root, ImmutableArray<AvroImport> imports, ImmutableArray<AvroDiagnostic> diagnostics) => new AvroFile(source, root, [.. Declarations], [.. DeclarationSpans], GetReferences(), GetReferenceSpans(), GetDependencies(), imports, diagnostics, Options);
-    }
+    private static AvroFile Parse(string text) => AvroFile.Parse(
+        new SourceText("test.avdl", text),
+        new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes),
+        TestContext.Current.CancellationToken);
 }

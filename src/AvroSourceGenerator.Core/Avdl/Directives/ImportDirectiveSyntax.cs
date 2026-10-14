@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Directives;
 
-public sealed record class ImportDirectiveSyntax(
+internal sealed record class ImportDirectiveSyntax(
     SyntaxToken ImportKeyword,
     SyntaxToken ImportTypeKeyword,
     SyntaxToken ImportPathLiteralToken,

@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl;
 
-public sealed record class QualifiedNameSyntax(SeparatedSyntaxList<SyntaxToken> Identifiers) : INameSyntax
+internal sealed record class QualifiedNameSyntax(SeparatedSyntaxList<SyntaxToken> Identifiers) : INameSyntax
 {
     public SyntaxKind SyntaxKind => SyntaxKind.QualifiedName;
 

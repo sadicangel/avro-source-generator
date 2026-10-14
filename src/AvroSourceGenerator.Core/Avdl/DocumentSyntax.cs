@@ -3,7 +3,7 @@ using AvroSourceGenerator.Avdl.Directives;
 
 namespace AvroSourceGenerator.Avdl;
 
-public sealed record class DocumentSyntax(
+internal sealed record class DocumentSyntax(
     SyntaxList<IDirectiveSyntax> Directives,
     SyntaxList<ITopLevelDeclarationSyntax> Declarations
 ) : ISyntaxNode

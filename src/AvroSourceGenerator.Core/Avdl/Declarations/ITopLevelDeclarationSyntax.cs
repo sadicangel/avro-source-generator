@@ -1,3 +1,3 @@
 ﻿namespace AvroSourceGenerator.Avdl.Declarations;
 
-public interface ITopLevelDeclarationSyntax : IDeclarationSyntax;
+internal interface ITopLevelDeclarationSyntax : IDeclarationSyntax;

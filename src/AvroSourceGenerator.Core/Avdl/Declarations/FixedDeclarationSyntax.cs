@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Avdl.Declarations;
 
-public sealed record class FixedDeclarationSyntax(
+internal sealed record class FixedDeclarationSyntax(
     SyntaxToken FixedKeyword,
     SimpleNameSyntax Name,
     SyntaxList<DocumentationSyntax> Documentation,

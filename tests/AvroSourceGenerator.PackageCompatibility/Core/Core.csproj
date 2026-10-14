@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(ConsumerTargetFramework)</TargetFramework>
+    <LangVersion>$(ConsumerLanguageVersion)</LangVersion>
+    <DefineConstants Condition="'$(CheckExternalInheritance)' == 'true'">$(DefineConstants);CHECK_EXTERNAL_INHERITANCE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AvroSourceGenerator.Core" VersionOverride="$(ValidationPackageVersion)" />
+  </ItemGroup>
+</Project>

@@ -1,3 +1,3 @@
 ﻿namespace AvroSourceGenerator.Avdl.Types;
 
-public interface ILogicalTypeSyntax : ITypeSyntax;
+internal interface ILogicalTypeSyntax : ITypeSyntax;

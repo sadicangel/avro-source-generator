@@ -4,4 +4,4 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avdl;
 
-public sealed record class SyntaxTree(SourceText SourceText, DocumentSyntax Document, ImmutableArray<AvroDiagnostic> Diagnostics);
+internal sealed record class SyntaxTree(SourceText SourceText, DocumentSyntax Document, ImmutableArray<AvroDiagnostic> Diagnostics);

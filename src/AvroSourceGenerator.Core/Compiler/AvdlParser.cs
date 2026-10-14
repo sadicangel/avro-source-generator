@@ -14,7 +14,7 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
-public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken)
+internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken)
     : AvxxParser(options)
 {
     private readonly SyntaxTokenStream _stream = new SyntaxTokenStream(sourceText, cancellationToken);
@@ -571,16 +571,19 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
         }
     }
 
-    public static AvroFile ParseFile(SourceText source, AvroParseOptions options, CancellationToken cancellationToken) =>
+    public static (AvroFile File, SourceSpan RootSpan) ParseFile(SourceText source, AvroParseOptions options, CancellationToken cancellationToken) =>
         new AvdlParser(source, options, cancellationToken).ParseFile();
 
-    public AvroFile ParseFile()
+    public (AvroFile File, SourceSpan RootSpan) ParseFile()
     {
         var syntaxTree = Parse();
         if (!syntaxTree.Diagnostics.IsEmpty)
-            return AvroFile.Invalid(sourceText, syntaxTree.Diagnostics, Options);
+            return (AvroFile.Invalid(sourceText, syntaxTree.Diagnostics, Options), sourceText.GetSourceSpan());
 
-        return ParseCore(syntaxTree);
+        var rootSpan = syntaxTree.Document.SchemaDirective?.MainSchemaType is { } mainSchemaType
+            ? mainSchemaType.GetSourceSpan()
+            : syntaxTree.Document.GetSourceSpan();
+        return (ParseCore(syntaxTree), rootSpan);
     }
 
     private AvroFile ParseCore(SyntaxTree syntaxTree)
@@ -606,14 +609,6 @@ public sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, 
             .ToImmutableArray();
         var rootSchema = Document(syntaxTree);
         if (rootSchema is null || Diagnostics.HasErrors) return AvroFile.Invalid(source, [.. Diagnostics], Options);
-        if (imports.IsEmpty && !rootSchema.ContainsTopLevelSchema())
-        {
-            var sourceSpan = syntaxTree.Document.SchemaDirective?.MainSchemaType is { } mainSchemaType
-                ? mainSchemaType.GetSourceSpan()
-                : syntaxTree.Document.GetSourceSpan();
-            Report(AvroDiagnostic.MissingIdlRoot(sourceSpan));
-            return AvroFile.Invalid(source, [.. Diagnostics], Options);
-        }
 
         return new AvroFile(
             source,

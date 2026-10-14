@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Declarations;
 
-public sealed record class DefaultValueClauseSyntax(SyntaxToken EqualsToken, JsonValueSyntax JsonValue) : ISyntaxNode
+internal sealed record class DefaultValueClauseSyntax(SyntaxToken EqualsToken, JsonValueSyntax JsonValue) : ISyntaxNode
 {
     public SyntaxKind SyntaxKind => SyntaxKind.DefaultValueClause;
 

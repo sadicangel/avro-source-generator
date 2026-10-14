@@ -2,4 +2,4 @@
 
 namespace AvroSourceGenerator.Avjs;
 
-public readonly record struct JsonPropertyNameSyntax(string Value, SourceSpan SourceSpan);
+internal readonly record struct JsonPropertyNameSyntax(string Value, SourceSpan SourceSpan);

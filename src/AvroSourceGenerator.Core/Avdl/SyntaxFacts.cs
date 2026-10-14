@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl;
 
-public static class SyntaxFacts
+internal static class SyntaxFacts
 {
     public static string? GetText(SyntaxKind syntaxKind)
     {

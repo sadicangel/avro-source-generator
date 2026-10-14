@@ -3,7 +3,7 @@ using AvroSourceGenerator.Avdl.Types;
 
 namespace AvroSourceGenerator.Avdl.Declarations;
 
-public sealed record class MessageDeclarationSyntax(
+internal sealed record class MessageDeclarationSyntax(
     ITypeSyntax Type,
     SimpleNameSyntax Name,
     SyntaxList<DocumentationSyntax> Documentation,

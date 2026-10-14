@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
-public abstract record class AvroSchema(
+public closed record class AvroSchema(
     SchemaType SchemaType,
     SchemaName SchemaName,
     CSharpName CSharpName,

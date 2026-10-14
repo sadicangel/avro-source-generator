@@ -5,5 +5,4 @@ public enum GenerationTarget
     Modern,
     Legacy,
     Apache,
-    Chr,
 }

@@ -69,7 +69,8 @@ public static class MessageTemplate
     public const string InvalidImportTarget = "Import '{0}' does not contain a valid {1}";
     public const string UnusedImport = "Import '{0}' is unused";
     public const string NoAvroLibraryDetected = "AvroSourceGeneratorAvroLibrary is 'Auto', but no supported Avro library was found";
-    public const string MultipleAvroLibrariesDetected = "Multiple Avro libraries are referenced: {0}; set AvroSourceGeneratorAvroLibrary to 'Apache' or 'Chr'";
+    public const string MultipleAvroLibrariesDetected = "Multiple Avro libraries are referenced: {0}; set AvroSourceGeneratorAvroLibrary explicitly";
+    public const string ChrAvroSupportRemoved = "Chr.Avro support was removed in AvroSourceGenerator 0.8.0; migrate to Apache.Avro and select Apache, select None for standalone models, or stay on AvroSourceGenerator 0.7.x";
 
     public static string Get(AvroDiagnosticCode code) => code switch
     {
@@ -142,6 +143,7 @@ public static class MessageTemplate
         AvroDiagnosticCode.UnusedImport => UnusedImport,
         AvroDiagnosticCode.NoAvroLibraryDetected => NoAvroLibraryDetected,
         AvroDiagnosticCode.MultipleAvroLibrariesDetected => MultipleAvroLibrariesDetected,
+        AvroDiagnosticCode.ChrAvroSupportRemoved => ChrAvroSupportRemoved,
         _ => throw new ArgumentOutOfRangeException(nameof(code), code, null)
     };
 }

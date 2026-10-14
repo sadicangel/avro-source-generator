@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Templating;
 
 namespace AvroSourceGenerator.Cli;
@@ -14,8 +15,13 @@ internal static class CliApplication
             Arity = ArgumentArity.OneOrMore,
         };
         var destination = new Option<string>("--output", "-o") { Description = "Destination directory.", Required = true };
-        var library = EnumOption("--library", AvroLibrary.None, "Runtime library. Auto requires a consuming compilation and is not supported.",
-            value => value == AvroLibrary.Auto ? "--library Auto requires a consuming compilation. Select None, Apache, or Chr explicitly." : null);
+        var library = EnumOption("--library", AvroLibrary.None, "Runtime library. Chr support was removed in 0.8.0. Auto requires a consuming compilation.",
+            value => value switch
+            {
+                AvroLibrary.Chr => MessageTemplate.ChrAvroSupportRemoved,
+                AvroLibrary.Auto => "--library Auto requires a consuming compilation. Select None or Apache explicitly.",
+                _ => null,
+            });
         var language = new Option<string>("--language-version")
         {
             Description = "C# syntax ceiling: 7.3, 8 through 15, or preview.",
@@ -49,7 +55,6 @@ internal static class CliApplication
             var target = result.GetValue(library) switch
             {
                 AvroLibrary.Apache => GenerationTarget.Apache,
-                AvroLibrary.Chr => GenerationTarget.Chr,
                 _ when result.GetValue(language) is "7.3" or "8" or "9" => GenerationTarget.Legacy,
                 _ => GenerationTarget.Modern,
             };

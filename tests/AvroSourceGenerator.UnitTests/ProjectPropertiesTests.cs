@@ -45,7 +45,7 @@ public sealed class ProjectPropertiesTests
     public void All_features_resolve_against_the_project_language_version(
         LanguageVersion version, LanguageFeatures features)
     {
-        var properties = Read(new ProjectConfig() { AvroLibrary = "Chr", PreviewFeatures = "Unions" });
+        var properties = Read(new ProjectConfig() { AvroLibrary = "Apache", PreviewFeatures = "Unions" });
         var configuration = GeneratorConfiguration.Resolve((properties, new CompilationEnvironment([], version)), TestContext.Current.CancellationToken);
 
         Assert.Equal(LanguageFeatures.All, properties.LanguageFeatures);
@@ -124,7 +124,7 @@ public sealed class ProjectPropertiesTests
     {
         var properties = Read(new ProjectConfig()
         {
-            AvroLibrary = "Chr",
+            AvroLibrary = "Apache",
             LanguageFeatures = features,
             RecordDeclaration = declaration,
         });

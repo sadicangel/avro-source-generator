@@ -26,7 +26,7 @@ dotnet add package AvroSourceGenerator --version {{ site.docs_version.package_ve
 dotnet add package Apache.Avro --version 1.12.2
 ```
 
-If your project already uses Chr.Avro, follow [the Chr setup]({{ '/libraries/#chravro' | relative_url }}) instead.
+If your project already uses Chr.Avro, review [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}) before upgrading to 0.8.0.
 
 Update the generator package reference created by installation with `PrivateAssets` and `ExcludeAssets`, and add the `AdditionalFiles` entry. Keep a single reference to each package:
 

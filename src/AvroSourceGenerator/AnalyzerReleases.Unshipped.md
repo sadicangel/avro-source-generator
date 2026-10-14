@@ -73,3 +73,4 @@ AVROSG5003  | Compiler      | Error    | Invalid import target
 AVROSG5004  | Compiler      | Warning  | Unused import
 AVROSG6000  | Configuration | Warning  | No Avro library detected
 AVROSG6001  | Configuration | Warning  | Multiple Avro libraries detected
+AVROSG6002  | Configuration | Error    | Chr.Avro support removed

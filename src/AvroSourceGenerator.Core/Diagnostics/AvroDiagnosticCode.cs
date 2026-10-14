@@ -20,7 +20,7 @@ public enum AvroDiagnosticCode
     InvalidIdlNamespace = 4002, InvalidIdlAliases = 4003, InvalidIdlLogicalTypeAnnotation = 4004, InvalidIdlOrder = 4005, InvalidIdlEnumDefault = 4006,
     InvalidIdlFixedSize = 4010, InvalidIdlDecimalPrecision = 4011, InvalidIdlDecimalScale = 4012, InvalidIdlOneWayMessage = 4014,
     ImportCycle = 5000, InvalidImportFileExtension = 5001, MissingImport = 5002, InvalidImportTarget = 5003, UnusedImport = 5004,
-    NoAvroLibraryDetected = 6000, MultipleAvroLibrariesDetected = 6001,
+    NoAvroLibraryDetected = 6000, MultipleAvroLibrariesDetected = 6001, ChrAvroSupportRemoved = 6002,
 }
 
 public static class AvroDiagnosticCodeExtensions

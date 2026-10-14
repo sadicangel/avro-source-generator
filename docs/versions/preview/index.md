@@ -26,7 +26,7 @@ var user = new User
 
 ## Runtime targets
 
-The generator supports **Apache.Avro**, **Chr.Avro**, and **library-neutral models**. Select the target that matches your application's serialization library. The Apache and Chr targets include their respective runtime integration members.
+The generator supports **Apache.Avro** and **library-neutral models**. The Apache target includes runtime integration members. The upcoming 0.8.0 removes Chr.Avro support. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}).
 
 ## Schema handling and build behavior
 
@@ -43,7 +43,7 @@ The generator supports **Apache.Avro**, **Chr.Avro**, and **library-neutral mode
 | Add the generator to an existing project | [Getting started]({{ '/getting-started/' | relative_url }}) |
 | Share definitions and import schemas | [Schemas and imports]({{ '/schemas/' | relative_url }}) |
 | Understand properties, types, and unions | [Generated models]({{ '/generated-models/' | relative_url }}) |
-| Choose Apache.Avro, Chr.Avro, or standalone models | [Avro libraries]({{ '/libraries/' | relative_url }}) |
+| Choose Apache.Avro or standalone models | [Avro libraries]({{ '/libraries/' | relative_url }}) |
 | Customize generated code | [Configuration]({{ '/configuration/' | relative_url }}) |
 | Produce and consume generated models | [Kafka and Schema Registry]({{ '/kafka/' | relative_url }}) |
 | Fix a warning or error | [Troubleshooting]({{ '/troubleshooting/' | relative_url }}) |

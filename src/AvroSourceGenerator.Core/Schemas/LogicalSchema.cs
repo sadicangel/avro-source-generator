@@ -23,9 +23,6 @@ public sealed record class LogicalSchema(
             GenerationTarget.Apache =>
                 LogicalSchema.ForApache(logicalType, underlyingSchema),
 
-            GenerationTarget.Chr =>
-                LogicalSchema.ForChr(logicalType, underlyingSchema),
-
             GenerationTarget.Legacy =>
                 LogicalSchema.ForLegacy(logicalType, underlyingSchema),
 

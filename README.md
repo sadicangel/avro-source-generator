@@ -24,6 +24,8 @@
 
 Use **.NET SDK 10.0.100 or later**. Visual Studio users should use **Visual Studio 2026 18.0 or later** with .NET 10 support.
 
+The upcoming 0.8.0 preview removes Chr.Avro support. See the [migration guide](https://sadicangel.github.io/avro-source-generator/preview/libraries/#migrating-from-chravro); this removal is not yet included in published packages.
+
 The quick start below uses stable **AvroSourceGenerator 0.7.0** and targets `net10.0`. [0.8.0 preview features](https://sadicangel.github.io/avro-source-generator/preview/generated-models/#native-c-unions), including native C# unions, have separate requirements.
 
 ## Installation & Basic Usage

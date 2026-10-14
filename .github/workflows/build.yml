@@ -100,7 +100,7 @@ jobs:
       run: |
         $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'test-summary.md'
         $exitCode = 0
-        foreach ($suite in 'UnitTests','UnitTests.Apache','UnitTests.Chr') {
+        foreach ($suite in 'UnitTests','UnitTests.Apache') {
           dotnet "tests/AvroSourceGenerator.$suite/bin/Release/net11.0/AvroSourceGenerator.$suite.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
           if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
         }
@@ -139,7 +139,7 @@ jobs:
       run: |
         $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'test-summary.md'
         $exitCode = 0
-        foreach ($suite in 'IntegrationTests.Apache','IntegrationTests.Chr','IntegrationTests.ObjectUnions.Apache','IntegrationTests.ObjectUnions.Chr') {
+        foreach ($suite in 'IntegrationTests.Apache','IntegrationTests.ObjectUnions.Apache') {
           dotnet "tests/AvroSourceGenerator.$suite/bin/Release/net11.0/AvroSourceGenerator.$suite.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
           if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
         }
@@ -230,11 +230,6 @@ jobs:
   smoke-tests:
     needs: build
     runs-on: ubuntu-latest
-    name: Smoke ${{ matrix.library }}
-    strategy:
-      fail-fast: false
-      matrix:
-        library: [Apache, Chr]
     steps:
     - uses: actions/checkout@v5
     - uses: actions/setup-dotnet@v6
@@ -256,7 +251,7 @@ jobs:
       shell: pwsh
       run: |
         $env:GITHUB_STEP_SUMMARY = Join-Path $env:RUNNER_TEMP 'smoke-summary.md'
-        dotnet "tests/AvroSourceGenerator.SmokeTests.${{ matrix.library }}/bin/Release/net11.0/AvroSourceGenerator.SmokeTests.${{ matrix.library }}.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
+        dotnet "tests/AvroSourceGenerator.SmokeTests.Apache/bin/Release/net11.0/AvroSourceGenerator.SmokeTests.Apache.dll" --report-gh --report-gh-step-summary-sections test-results --report-gh-slow-test-notices off
         exit $LASTEXITCODE
     - name: Smoke summary
       if: always()
@@ -265,6 +260,6 @@ jobs:
         TEST_RESULT: ${{ steps.run_tests.outcome }}
       run: |
         $report = Join-Path $env:RUNNER_TEMP 'smoke-summary.md'
-        "## Smoke ${{ matrix.library }} — Kafka and Schema Registry`n`nTest step: **$env:TEST_RESULT**.`n" >> $env:GITHUB_STEP_SUMMARY
+        "## Smoke Apache — Kafka and Schema Registry`n`nTest step: **$env:TEST_RESULT**.`n" >> $env:GITHUB_STEP_SUMMARY
         if (Test-Path -LiteralPath $report) { Get-Content -LiteralPath $report >> $env:GITHUB_STEP_SUMMARY }
         else { 'No test report was produced.' >> $env:GITHUB_STEP_SUMMARY }

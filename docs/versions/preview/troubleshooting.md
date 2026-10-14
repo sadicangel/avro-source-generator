@@ -38,7 +38,8 @@ If the command-line build succeeds but the editor still shows stale errors, relo
 | `AVROSG5003` | Wrong imported definition kind | Ensure the target contains the kind declared by the import. |
 | `AVROSG5004` | Unused import | Remove the import or reference a type it supplies. |
 | `AVROSG6000` | No supported runtime detected | Install a runtime or select `AvroSourceGeneratorAvroLibrary=None`. |
-| `AVROSG6001` | Multiple runtimes detected | Explicitly select `Apache` or `Chr`. |
+| `AVROSG6001` | Multiple supported runtimes detected | Select the intended runtime explicitly. |
+| `AVROSG6002` | Chr support removed in 0.8.0 (unreleased) | Migrate to `Apache`, explicitly select `None`, or remain on 0.7.x. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}). |
 
 Other schema and IDL diagnostics identify the invalid property, declaration, or token. Use the location and message in the build output to correct that input.
 
@@ -56,7 +57,7 @@ Independent valid inputs still generate after another input fails. Files that de
 
 Confirm that the generator target matches your runtime and serializer. Test the writer and reader with the same schema first, then check schema evolution, logical type support, union branches, and your message format.
 
-Apache schema parsing and serialization can support different sets of logical types. Chr mixed unions may need custom builder cases. See [Avro libraries]({{ '/libraries/#logical-type-compatibility' | relative_url }}) and [Kafka and Schema Registry]({{ '/kafka/' | relative_url }}).
+Apache schema parsing and serialization can support different sets of logical types. See [Avro libraries]({{ '/libraries/#logical-type-compatibility' | relative_url }}) and [Kafka and Schema Registry]({{ '/kafka/' | relative_url }}).
 
 ## Reporting a problem
 

@@ -2,10 +2,6 @@
 #if APACHE
 using Avro;
 using Avro.Specific;
-#elif CHR
-using Chr.Avro.Abstract;
-using Chr.Avro.Representation;
-using Chr.Avro.Serialization;
 #endif
 
 var nested = new NestedType { displayName = "Imported" };
@@ -37,22 +33,6 @@ Check(ReferenceEquals(record.Get(0), nested), "Apache record accessor must work.
 var protocol = (Protocol)typeof(UserDirectory).GetField("protocol",
     System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!.GetValue(null)!;
 Check(protocol.Messages.Count == 2, "Apache protocol must contain both messages.");
-#elif CHR
-var builder = new SchemaBuilder();
-var schema = (RecordSchema)builder.BuildSchema<ImportedEnvelope>();
-Check(((RecordSchema)schema.Fields.Single().Type).Name == nameof(NestedType), "Chr imported schema must match.");
-Check(((RecordSchema)builder.BuildSchema<Collections>()).Fields.Count == 2, "Chr collection schema must build.");
-Check(((RecordSchema)builder.BuildSchema<CreateUserRequest>()).Name == nameof(CreateUserRequest), "Chr protocol model must build.");
-var unionSchema = new JsonSchemaReader().Read(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Schemas", "Notification.avsc")));
-var casePrefix = $"{typeof(Notification).Namespace}.NotificationContent{(unionValue is null ? "Variant" : "Union")}";
-var serializer = new BinarySerializerBuilder(BinarySerializerBuilder.CreateDefaultCaseBuilders()
-    .Prepend(b => (IBinarySerializerBuilderCase)Activator.CreateInstance(
-        typeof(Notification).Assembly.GetType(casePrefix + "SerializerBuilderCase", throwOnError: true)!, b)!));
-var deserializer = new BinaryDeserializerBuilder(BinaryDeserializerBuilder.CreateDefaultCaseBuilders()
-    .Prepend(b => (IBinaryDeserializerBuilderCase)Activator.CreateInstance(
-        typeof(Notification).Assembly.GetType(casePrefix + "DeserializerBuilderCase", throwOnError: true)!, b)!));
-Check(serializer.BuildDelegate<Notification>(unionSchema) is not null, "Chr union serializer must build.");
-Check(deserializer.BuildDelegate<Notification>(unionSchema) is not null, "Chr union deserializer must build.");
 #endif
 
 Console.WriteLine("Package consumer checks passed.");

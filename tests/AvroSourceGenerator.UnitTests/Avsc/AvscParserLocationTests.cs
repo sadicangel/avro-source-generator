@@ -11,7 +11,6 @@ public sealed class AvscParserLocationTests
 {
     [Theory]
     [InlineData(GenerationTarget.Apache, false)]
-    [InlineData(GenerationTarget.Chr, true)]
     [InlineData(GenerationTarget.Legacy, false)]
     [InlineData(GenerationTarget.Modern, true)]
     public void Matches_existing_semantics_for_representative_schemas(GenerationTarget target, bool nullableReferences)

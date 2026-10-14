@@ -85,9 +85,12 @@ foreach ($version in $versions) {
   Copy-Item -LiteralPath (Join-Path $examples 'ApacheKafka.cs') -Destination (Join-Path $consumer 'Program.cs')
   Invoke-Consumer $consumer -BuildOnly
 
-  $consumer = New-Consumer 'ChrKafka' 'Chr' (@{ 'Chr.Avro.Confluent' = '10.13.1' }) @('user.avsc')
-  Copy-Item -LiteralPath (Join-Path $examples 'ChrKafka.cs') -Destination (Join-Path $consumer 'Program.cs')
-  Invoke-Consumer $consumer -BuildOnly
+  # Published guides retain their own examples, including the Chr integration in 0.7.x.
+  if (Test-Path -LiteralPath (Join-Path $examples 'ChrKafka.cs')) {
+    $consumer = New-Consumer 'ChrKafka' 'Chr' (@{ 'Chr.Avro.Confluent' = '10.13.1' }) @('user.avsc')
+    Copy-Item -LiteralPath (Join-Path $examples 'ChrKafka.cs') -Destination (Join-Path $consumer 'Program.cs')
+    Invoke-Consumer $consumer -BuildOnly
+  }
 
   $program = 'var order = new example.Order { Customer = new example.Customer { Id = "42" } }; Console.WriteLine(order.Customer.Id);'
   $consumer = New-Consumer 'ProtocolInternalStrict' 'Apache' $apache @('standalone-protocol.avpr')

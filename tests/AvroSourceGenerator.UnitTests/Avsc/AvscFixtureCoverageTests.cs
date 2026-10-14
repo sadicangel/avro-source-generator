@@ -15,8 +15,6 @@ public sealed class AvscFixtureCoverageTests
     [InlineData(GenerationTarget.Legacy, true)]
     [InlineData(GenerationTarget.Apache, false)]
     [InlineData(GenerationTarget.Apache, true)]
-    [InlineData(GenerationTarget.Chr, false)]
-    [InlineData(GenerationTarget.Chr, true)]
     public void Matches_semantics_binding_and_rendering_for_all_json_fixtures(
         GenerationTarget target,
         bool nullableReferences)

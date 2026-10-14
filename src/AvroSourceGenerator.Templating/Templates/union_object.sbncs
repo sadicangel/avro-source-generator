@@ -1,4 +1,1 @@
 {{ AccessModifier }} partial interface {{ $.schema.CSharpName.Name }};
-{{ if GenerationTarget == 'Chr' }}
-{{ include 'chr.union' schema: $.schema }}
-{{- end ~}}

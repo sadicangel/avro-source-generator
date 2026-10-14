@@ -145,12 +145,14 @@ public sealed class AvroDiagnosticTests
         Assert.Equal("b", span.ToString());
     }
 
-    [Fact]
-    public void Diagnostics_expose_warning_severity_without_roslyn()
+    [Theory]
+    [InlineData(AvroDiagnosticCode.NoAvroLibraryDetected, "AvroSourceGeneratorAvroLibrary is 'Auto', but no supported Avro library was found")]
+    [InlineData(AvroDiagnosticCode.MultipleAvroLibrariesDetected, "Multiple Avro libraries are referenced: 'Apache.Avro', 'Future.Avro'; set AvroSourceGeneratorAvroLibrary explicitly")]
+    public void Diagnostics_expose_warning_severity_without_roslyn(AvroDiagnosticCode code, string expectedMessage)
     {
-        var diagnostic = new AvroDiagnostic(AvroDiagnosticCode.NoAvroLibraryDetected, SourceSpan.None, "Apache.Avro");
+        var diagnostic = new AvroDiagnostic(code, SourceSpan.None, "'Apache.Avro', 'Future.Avro'");
         Assert.Equal(AvroDiagnosticSeverity.Warning, diagnostic.Severity);
-        Assert.Equal("AvroSourceGeneratorAvroLibrary is 'Auto', but no supported Avro library was found", diagnostic.GetMessage());
+        Assert.Equal(expectedMessage, diagnostic.GetMessage());
     }
 
     [Fact]

@@ -2,6 +2,3 @@
     {{~ for type in $.schema.MemberSchemas ~}}
     {{ type }}{{ if !for.last }},{{ else }});{{ end }}
     {{~ end ~}}
-{{ if GenerationTarget == 'Chr' }}
-{{ include 'chr.union' schema: $.schema }}
-{{- end }}

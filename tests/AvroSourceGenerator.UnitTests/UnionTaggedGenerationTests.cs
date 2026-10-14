@@ -131,7 +131,7 @@ public sealed class UnionTaggedGenerationTests
               ]}]
             }
             """),
-            new AvroParseOptions(GenerationTarget.Chr, LanguageFeatures.CSharp15), TestContext.Current.CancellationToken);
+            new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.CSharp15), TestContext.Current.CancellationToken);
         var field = Assert.Single(Assert.IsType<RecordSchema>(file.RootSchema).Fields);
         var tagged = Assert.IsType<UnionTypeSchema>(field.UnderlyingType);
 

@@ -1,6 +1,6 @@
 # Avro Source Generator CLI
 
-Generate C# models from Avro schema (`.avsc`), protocol (`.avpr`), and IDL (`.avdl`) files on demand. Supports Apache.Avro, Chr.Avro, and standalone models using the same compiler and templates as AvroSourceGenerator.
+Generate C# models from Avro schema (`.avsc`), protocol (`.avpr`), and IDL (`.avdl`) files on demand. Supports Apache.Avro and standalone models using the same compiler and templates as AvroSourceGenerator.
 
 Requires the .NET 10 runtime. The CLI and source generator are released with the same NuGet version.
 
@@ -13,7 +13,7 @@ Use the actual package version in place of `<package-version>`. Commit the local
 
 ```powershell
 dotnet tool install --global AvroSourceGenerator.Cli --version <package-version>
-avro-sg compile ./schemas --output ./Generated --library Chr
+avro-sg compile ./schemas --output ./Generated --library Apache
 ```
 
 Quote glob patterns so the tool expands them consistently across shells. Directories include supported files recursively. All imported files must be selected as inputs; imports do not discover additional files automatically.
@@ -31,3 +31,5 @@ Neither command removes stale or unrelated files. `--check` ignores extra files 
 Defaults are standalone models, C# 14, public records when supported, strict references, duplicate errors, and no preview opt-ins. Use `--language-version` to match the consuming compiler; preview unions additionally require `--preview-features Unions` and a capable consuming compiler.
 
 See the [preview CLI guide](https://sadicangel.github.io/avro-source-generator/preview/cli/) for every option and diagnostic/exit-code behavior. C# to Avro reverse compilation is future work.
+
+Chr.Avro support is removed in 0.8.0. `--library Chr` is rejected before writing files; migrate to Apache.Avro, explicitly select `None` for standalone models, or remain on 0.7.x.

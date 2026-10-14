@@ -11,12 +11,10 @@ public sealed class UnionObjectGenerationTests
     [Theory]
     [InlineData(GenerationTarget.Modern, "record", "error", true)]
     [InlineData(GenerationTarget.Legacy, "error", "error", true)]
-    [InlineData(GenerationTarget.Chr, "error", "record", true)]
     [InlineData(GenerationTarget.Apache, "error", "fixed", true)]
     [InlineData(GenerationTarget.Apache, "fixed", "fixed", true)]
     [InlineData(GenerationTarget.Modern, "error", "fixed", false)]
     [InlineData(GenerationTarget.Legacy, "record", "fixed", false)]
-    [InlineData(GenerationTarget.Chr, "fixed", "fixed", false)]
     [InlineData(GenerationTarget.Apache, "error", "enum", false)]
     public void Only_generated_named_members_support_object_unions(
         GenerationTarget target,

@@ -15,7 +15,7 @@ public sealed class CliTests : IDisposable
     [InlineData("--library", "Auto")]
     [InlineData("--library", "2147483647")]
     [InlineData("--library", "unknown")]
-    [InlineData("--library", "Apache,Chr")]
+    [InlineData("--library", "Apache,None")]
     [InlineData("--access-modifier", "1")]
     [InlineData("--language-features", "Records,64")]
     [InlineData("--preview-features", "Unions,invalid")]
@@ -29,6 +29,22 @@ public sealed class CliTests : IDisposable
         var (code, _, error) = await Run("compile", input, "-o", Output, option, value);
         Assert.Equal(2, code);
         Assert.Contains(value, error);
+        Assert.False(Directory.Exists(Output));
+    }
+
+    [Theory]
+    [InlineData("Chr")]
+    [InlineData("chr")]
+    public async Task Removed_runtime_reports_migration_advice_without_writing(string library)
+    {
+        var input = Write("schema.avsc", Schema("Example"));
+        var (code, _, error) = await Run("compile", input, "-o", Output, "--library", library);
+
+        Assert.Equal(2, code);
+        Assert.Contains("support was removed", error);
+        Assert.Contains("Apache", error);
+        Assert.Contains("None", error);
+        Assert.Contains("0.7.x", error);
         Assert.False(Directory.Exists(Output));
     }
 
@@ -237,12 +253,12 @@ public sealed class CliTests : IDisposable
 
     public static IEnumerable<object[]> ParityCases()
     {
-        foreach (var library in new[] { "None", "Apache", "Chr" })
+        foreach (var library in new[] { "None", "Apache" })
             foreach (var version in new[] { "7.3", "8", "9", "10", "11", "12", "13", "14", "15", "preview" })
                 yield return [library, version, "All", "None", "record"];
         foreach (var features in Enum.GetNames<LanguageFeatures>())
             yield return ["None", "14", features, "None", "record"];
-        yield return ["Chr", "preview", "All", "Unions", "record"];
+        yield return ["Apache", "preview", "All", "Unions", "record"];
         yield return ["None", "preview", "CSharp15", "Unions", "class"];
         yield return ["Apache", "12", "NullableReferenceTypes,InitOnlyProperties", "None", "class"];
     }

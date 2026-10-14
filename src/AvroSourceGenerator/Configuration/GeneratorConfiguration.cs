@@ -43,7 +43,9 @@ internal sealed record GeneratorConfiguration(
         cancellationToken.ThrowIfCancellationRequested();
 
         var (projectProperties, compilationEnvironment) = input;
-        var generationTarget = GetGenerationTarget(projectProperties.AvroLibrary, compilationEnvironment.LanguageVersion, compilationEnvironment.AvroLibraries, out var diagnostics);
+        var removedChr = projectProperties.AvroLibrary is AvroLibrary.Chr || (projectProperties.AvroLibrary is AvroLibrary.Auto && compilationEnvironment.AvroLibraries.Contains(AvroLibraryReference.Chr));
+        var generationTarget = GetGenerationTarget(removedChr ? AvroLibrary.None : projectProperties.AvroLibrary, compilationEnvironment.LanguageVersion, compilationEnvironment.AvroLibraries, out var diagnostics);
+        if (removedChr) diagnostics = [new AvroDiagnostic(AvroDiagnosticCode.ChrAvroSupportRemoved, SourceSpan.None)];
         var languageFeatures = GetLanguageFeatures(projectProperties, generationTarget) & MapVersionToFeatures(compilationEnvironment.LanguageVersion);
         return new GeneratorConfiguration(generationTarget, languageFeatures, projectProperties.AccessModifier, projectProperties.ReferenceResolution, projectProperties.DuplicateResolution, diagnostics);
     }
@@ -75,7 +77,6 @@ internal sealed record GeneratorConfiguration(
         return avroLibrary switch
         {
             AvroLibrary.Apache => GenerationTarget.Apache,
-            AvroLibrary.Chr => GenerationTarget.Chr,
             _ when languageVersion < LanguageVersion.CSharp10 => GenerationTarget.Legacy,
             _ => GenerationTarget.Modern,
         };

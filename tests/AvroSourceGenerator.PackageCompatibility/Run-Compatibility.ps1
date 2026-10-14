@@ -131,7 +131,7 @@ function Invoke-DotNet([string[]]$Arguments) {
 }
 
 $passedConsumers = 0
-$expectedConsumers = 6
+$expectedConsumers = 4
 $compilerVersion = $null
 $selectedApi = $null
 $reviewNote = $null
@@ -157,7 +157,7 @@ try {
   $sdkMajor = [int]($SdkVersion.Split('.')[0])
   $modes = @('CSharp12', 'SdkDefault')
   if ($sdkMajor -ge 11) { $modes += 'SdkUnions' }
-  $expectedConsumers = $modes.Count * 3
+  $expectedConsumers = $modes.Count * 2
   foreach ($mode in $modes) {
     $modeDirectory = Join-Path $workspace $mode
     [IO.Directory]::CreateDirectory($modeDirectory) | Out-Null
@@ -169,7 +169,7 @@ try {
       Copy-Item -Destination $schemas
     $framework = if ($mode -eq 'CSharp12') { 'net10.0' } else { "net$sdkMajor.0" }
     $language = if ($mode -eq 'CSharp12') { '12.0' } elseif ($mode -eq 'SdkUnions') { 'preview' } else { 'default' }
-    foreach ($library in @('Apache', 'Chr', 'None')) {
+    foreach ($library in @('Apache', 'None')) {
       $project = Join-Path $modeDirectory "Consumers/$library/$library.csproj"
       $compilerApi = & dotnet msbuild $project -nologo -getProperty:CompilerApiVersion
       if ($LASTEXITCODE -ne 0) { throw 'Cannot determine the consumer compiler API version.' }

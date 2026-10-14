@@ -23,7 +23,7 @@ internal readonly record struct CompilationEnvironment(ImmutableArray<AvroLibrar
 
     public static CompilationEnvironment FromCompilation(Compilation compilation, CancellationToken cancellationToken)
     {
-        _ = cancellationToken;
+        cancellationToken.ThrowIfCancellationRequested();
 
         var csharpCompilation = (CSharpCompilation)compilation;
 

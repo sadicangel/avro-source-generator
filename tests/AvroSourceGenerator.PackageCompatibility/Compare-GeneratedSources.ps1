@@ -1,7 +1,7 @@
 param([Parameter(Mandatory)][string]$ManifestDirectory)
 
 $ErrorActionPreference = 'Stop'
-foreach ($library in @('Apache', 'Chr', 'None')) {
+foreach ($library in @('Apache', 'None')) {
   $manifests = @(Get-ChildItem -LiteralPath $ManifestDirectory -Recurse -Filter "$library.json")
   if ($manifests.Count -lt 2) { throw "Need at least two SDK manifests for $library." }
   $expected = (Get-Content -LiteralPath $manifests[0].FullName -Raw | ConvertFrom-Json -AsHashtable)
@@ -13,4 +13,4 @@ foreach ($library in @('Apache', 'Chr', 'None')) {
     }
   }
 }
-Write-Host 'Generated sources match across SDKs for Apache, Chr, and library-free generation.'
+Write-Host 'Generated sources match across SDKs for Apache and library-free generation.'

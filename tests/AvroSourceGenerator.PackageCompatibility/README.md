@@ -2,7 +2,7 @@
 
 These consumers restore the locally packed NuGet package, rather than referencing a generator project.
 They verify the exact analyzer files and dependencies in the package, selection of exactly one compatible generator,
-compiler-visible package properties, and generated models for Apache.Avro, Chr.Avro, and no runtime library.
+compiler-visible package properties, and generated models for Apache.Avro and no runtime library.
 Shared fixtures exercise schemas, protocols, IDL imports, collections, and union interfaces without Docker.
 
 The SDK matrix currently contains the fixed minimum SDK 10.0.100 and the latest preview SDK.
@@ -59,7 +59,7 @@ External consumer dependencies restore from nuget.org. The generator itself must
 a published package cannot satisfy the validation run. The main solution's SDK policy and NuGet configuration are unchanged.
 
 The build workflow builds the solution once with `PackageVersion=0.0.0-development`, then packs both projects with `--no-build`.
-Unit tests, fast integration tests, Apache smoke tests, Chr smoke tests, and package compatibility
+Unit tests, fast integration tests, Apache smoke tests, and package compatibility
 checks then run in independent parallel jobs using the corresponding build outputs. Compatibility checks use the minimum SDK 10.0.100 and resolve
 the latest preview SDK on every push and pull request, comparing the generated sources in the same job.
 The Actions summary shows the SDK and compiler versions, selected generator variants, completed consumer checks,

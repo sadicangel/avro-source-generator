@@ -42,7 +42,7 @@ Select every imported file, including transitive imports. Imports resolve only a
 | Option | Default | Values |
 |:---|:---|:---|
 | `--output`, `-o` | Required | Output directory |
-| `--library` | `None` | `None`, `Apache`, `Chr`; `Auto` is explicitly rejected |
+| `--library` | `None` | `None`, `Apache`; `Auto` is explicitly rejected |
 | `--language-version` | `14` | `7.3`, `8` through `15`, `preview` |
 | `--language-features` | `All` | Existing presets or comma-separated feature names |
 | `--preview-features` | `None` | `None`, `Unions` |
@@ -57,6 +57,8 @@ Select every imported file, including transitive imports. Imports resolve only a
 Root `--version` reports the package version from the tool assembly. Generated models also record that package version in `GeneratedCodeAttribute`, matching the source generator.
 
 Enum names are case-insensitive; unknown names and numeric enum values are rejected. `Auto` requires a consuming compilation, which the standalone CLI does not have.
+
+The next 0.8.0 preview removes Chr support. `--library Chr` fails before writing files and explains the supported alternatives. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}).
 
 Language presets are `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, `CSharp12`, `CSharp13`, `CSharp14`, and `CSharp15`. Individual flags are `NullableReferenceTypes`, `Records`, `InitOnlyProperties`, `RequiredProperties`, `RawStringLiterals`, `UnsafeAccessors`, and `Unions`; `None`, `All`, and `Latest` are also supported. Requested features are capped by the C# version. For example:
 

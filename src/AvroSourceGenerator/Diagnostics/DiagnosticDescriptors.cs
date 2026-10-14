@@ -81,6 +81,7 @@ internal static class DiagnosticDescriptors
 
     internal static readonly DiagnosticDescriptor NoAvroLibraryDetected = new DiagnosticDescriptor("AVROSG6000", "No Avro Library Detected", MessageTemplate.Get(AvroDiagnosticCode.NoAvroLibraryDetected), ConfigurationCategory, DiagnosticSeverity.Warning, true, "AvroLibrary is Auto, but no supported runtime library was detected. Install one, select one explicitly, or configure None for library-neutral generation.");
     internal static readonly DiagnosticDescriptor MultipleAvroLibrariesDetected = new DiagnosticDescriptor("AVROSG6001", "Multiple Avro Libraries Detected", MessageTemplate.Get(AvroDiagnosticCode.MultipleAvroLibrariesDetected), ConfigurationCategory, DiagnosticSeverity.Warning, true, "AvroLibrary is Auto, but multiple supported runtime libraries were detected. Select the intended library explicitly or remove extra package references.");
+    internal static readonly DiagnosticDescriptor ChrAvroSupportRemoved = new DiagnosticDescriptor("AVROSG6002", "Chr.Avro Support Removed", MessageTemplate.Get(AvroDiagnosticCode.ChrAvroSupportRemoved), ConfigurationCategory, DiagnosticSeverity.Error, true, "Chr.Avro is no longer supported. Explicitly select Apache or None, or continue using AvroSourceGenerator 0.7.x. Chr.Avro selection falls back to library-neutral models.");
 
     internal static DiagnosticDescriptor ToDiagnosticDescriptor(this AvroDiagnosticCode code) => code switch
     {
@@ -158,6 +159,7 @@ internal static class DiagnosticDescriptors
 
         AvroDiagnosticCode.NoAvroLibraryDetected => NoAvroLibraryDetected,
         AvroDiagnosticCode.MultipleAvroLibrariesDetected => MultipleAvroLibrariesDetected,
+        AvroDiagnosticCode.ChrAvroSupportRemoved => ChrAvroSupportRemoved,
 
         _ => throw new ArgumentOutOfRangeException(nameof(code), code, null),
     };

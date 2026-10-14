@@ -12,10 +12,12 @@ Configure the generator with MSBuild properties in your consuming project's `.cs
 | `AvroSourceGeneratorAccessModifier` | `public` | `public`, `internal` |
 | `AvroSourceGeneratorRecordDeclaration` | Records when supported | `record`, `class` |
 | `AvroSourceGeneratorLanguageFeatures` | `All`, limited by the project's C# version | `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, `CSharp12`, `CSharp13`, `CSharp14`, `CSharp15`, `All` |
-| `AvroSourceGeneratorAvroLibrary` | `Auto` | `Auto`, `None`, `Apache`, `Chr` |
+| `AvroSourceGeneratorAvroLibrary` | `Auto` | `Auto`, `None`, `Apache` |
 | `AvroSourceGeneratorDuplicateResolution` | `Error` | `Error`, `Ignore` |
 | `AvroSourceGeneratorReferenceResolution` | `Strict` | `Strict`, `Deferred` |
 | `AvroSourceGeneratorPreviewFeatures` | `None` | `None`, `Unions` |
+
+Chr support is removed in the next 0.8.0 preview. Explicit `Chr` settings or automatic Chr detection report `AVROSG6002` and generate standalone fallback models. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}).
 
 ## Access modifier
 

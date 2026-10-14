@@ -46,7 +46,7 @@ Avro field names determine the generated property names. For example, a field na
 | `map` | A string-keyed dictionary |
 | `fixed` | An Apache fixed model for Apache.Avro; **`byte[]`** otherwise |
 
-Logical types use library-specific mappings. For example, `timestamp-millis` maps to `DateTime` with Apache.Avro and `DateTimeOffset` with Chr.Avro. Choose your runtime before writing application code around logical types. See [runtime compatibility]({{ '/libraries/#logical-type-compatibility' | relative_url }}) for serialization limitations.
+Logical types use library-specific mappings. For example, `timestamp-millis` maps to `DateTime` with Apache.Avro and `DateTimeOffset` with standalone models. Choose your runtime before writing application code around logical types. See [runtime compatibility]({{ '/libraries/#logical-type-compatibility' | relative_url }}) for serialization limitations.
 
 ## Nullability and unions
 
@@ -81,22 +81,6 @@ Supported feature-set values include `All`, `CSharp7_3`, `CSharp8`, `CSharp9`, `
 - Each non-null Avro branch must map to a distinct C# type. For example, `bytes` and a `fixed` type that both map to `byte[]` cannot be distinguished.
 - Apache.Avro returns enum ordinals rather than generated enum values in these unions. This prevents correct enum deserialization and can make enum branches indistinguishable from each other or an `int` branch. The fix is tracked in [Apache Avro PR #4031](https://github.com/apache/avro/pull/4031).
 - Test the serializer with every branch in your schema before relying on the feature in an application.
-
-### Chr.Avro builder registration
-
-Register the generated serializer and deserializer cases for each native union before Chr's default cases. For a union generated as `NotificationContentUnion`, the setup is:
-
-```csharp
-var serializerBuilder = new BinarySerializerBuilder(
-    BinarySerializerBuilder.CreateDefaultCaseBuilders()
-        .Prepend(builder => new NotificationContentUnionSerializerBuilderCase(builder)));
-
-var deserializerBuilder = new BinaryDeserializerBuilder(
-    BinaryDeserializerBuilder.CreateDefaultCaseBuilders()
-        .Prepend(builder => new NotificationContentUnionDeserializerBuilderCase(builder)));
-```
-
-Use the actual generated names from your schema and pass these builders to your binary or Schema Registry serializers. The [preview integration tests](https://github.com/sadicangel/avro-source-generator/tree/{{ site.docs_version.source_ref }}/tests/AvroSourceGenerator.IntegrationTests.Chr) demonstrate native union serialization. Chr's default builders cannot reliably select all branches of mixed unions represented as `object`.
 
 ## Extending generated types
 

@@ -5,6 +5,8 @@ namespace AvroSourceGenerator.Configuration;
 internal enum AvroLibraryReference
 {
     Apache,
+
+    // Chr.Avro support was removed in 0.8.0. Retained only for migration diagnostics.
     Chr
 }
 

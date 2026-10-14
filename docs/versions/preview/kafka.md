@@ -17,7 +17,7 @@ If you have the Kafka CLI installed, create the topic with:
 kafka-topics --bootstrap-server localhost:9092 --create --topic users --partitions 1 --replication-factor 1
 ```
 
-Choose one of the following integrations.
+Use the Apache.Avro integration below.
 
 ## Apache.Avro
 
@@ -33,28 +33,7 @@ The generated `User` implements `ISpecificRecord`, which is the contract this se
 {% include examples/ApacheKafka.cs %}
 ```
 
-## Chr.Avro
-
-Use this integration when your application uses Chr.Avro. Remove Apache.Avro if it was only installed for the quick start, install the Chr Kafka integration, and select the generator target:
-
-```bash
-dotnet remove package Apache.Avro
-dotnet add package Chr.Avro.Confluent --version 10.13.1
-```
-
-```xml
-<PropertyGroup>
-  <AvroSourceGeneratorAvroLibrary>Chr</AvroSourceGeneratorAvroLibrary>
-</PropertyGroup>
-```
-
-The Chr producer registers its value schema under `users-value`. The consumer resolves the writer schema through the same registry:
-
-```csharp
-{% include examples/ChrKafka.cs %}
-```
-
-Both examples print:
+The example prints:
 
 ```text
 Round trip: Ada <ada@example.com>
@@ -64,15 +43,12 @@ The unique message key lets the consumer find the message sent by this run. A 45
 
 ## Schemas and registration
 
-These development examples allow automatic schema registration. If schemas are provisioned separately in your environment, configure the serializer's registration behavior accordingly. Producer and consumer must agree on the Avro schema contract, and the runtime must support your logical types and union branches.
-
-For Chr unions represented by generated variant interfaces, register the generated serializer and deserializer builder cases before the default Chr cases. See the [version's union examples](https://github.com/sadicangel/avro-source-generator/tree/{{ site.docs_version.source_ref }}/tests) and [generated union types]({{ '/generated-models/#nullability-and-unions' | relative_url }}).
+This development example allows automatic schema registration. If schemas are provisioned separately in your environment, configure the serializer's registration behavior accordingly. Producer and consumer must agree on the Avro schema contract, and the runtime must support your logical types and union branches.
 
 ## Complete examples with local containers
 
 The repository includes complete Kafka and Schema Registry examples, including Testcontainers setup:
 
 - [Apache.Avro Kafka sample](https://github.com/sadicangel/avro-source-generator/tree/{{ site.docs_version.source_ref }}/samples/AvroSourceGenerator.ConfluentKafka).
-- [Chr.Avro Kafka sample](https://github.com/sadicangel/avro-source-generator/tree/{{ site.docs_version.source_ref }}/samples/AvroSourceGenerator.ChrAvroKafka).
 
-These links match the selected package version. Repository samples reference the generator project and use the SDK selected by their checkout's `global.json`; their build requirements can differ from an application consuming the NuGet package. Docker with Linux containers is required for the container examples.
+This link matches the selected package version. Repository samples reference the generator project and use the SDK selected by their checkout's `global.json`; their build requirements can differ from an application consuming the NuGet package. Docker with Linux containers is required for the container examples.

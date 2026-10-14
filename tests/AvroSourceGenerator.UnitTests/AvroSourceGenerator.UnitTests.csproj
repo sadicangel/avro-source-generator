@@ -16,6 +16,7 @@
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Soenneker.Utils.AutoBogus" />
     <PackageReference Include="System.CodeDom" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
     <PackageReference Include="Verify.DiffPlex" />
     <PackageReference Include="Verify.SourceGenerators" />
     <PackageReference Include="Verify.XunitV3" />

@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Types;
 
-public sealed record class DecimalLogicalTypeSyntax(
+internal sealed record class DecimalLogicalTypeSyntax(
     SyntaxToken DecimalKeyword,
     SyntaxToken ParenthesisOpenToken,
     SyntaxToken PrecisionLiteralToken,

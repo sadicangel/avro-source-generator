@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Types;
 
-public sealed record class LogicalTypeSyntax(SyntaxToken LogicalTypeNameKeyword) : ILogicalTypeSyntax
+internal sealed record class LogicalTypeSyntax(SyntaxToken LogicalTypeNameKeyword) : ILogicalTypeSyntax
 {
     public SyntaxKind SyntaxKind => SyntaxKind.LogicalType;
 

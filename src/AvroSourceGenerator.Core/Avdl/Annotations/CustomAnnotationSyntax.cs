@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Annotations;
 
-public sealed record class CustomAnnotationSyntax(
+internal sealed record class CustomAnnotationSyntax(
     SyntaxToken AtSignToken,
     AnnotationNameSyntax AnnotationName,
     SyntaxToken ParenthesisOpenToken,

@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace AvroSourceGenerator.Schemas;
 
-public abstract record class NamedSchema(
+public closed record class NamedSchema(
     SchemaType SchemaType,
     SchemaName SchemaName,
     string? Documentation,

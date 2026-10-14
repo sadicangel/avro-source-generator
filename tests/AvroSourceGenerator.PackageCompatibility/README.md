@@ -26,7 +26,7 @@ The package consumers verify that the shared assemblies and Immutable APIs work 
 including SDK 10.0.100. Increasing Immutable's major version requires checking that minimum host again.
 
 Install SDK 10.0.100 and the latest preview SDK, plus the .NET 10 runtime.
-Build once with the package version, then pack both projects without rebuilding from the repository root:
+Build once with the package version, then pack all three projects without rebuilding from the repository root:
 
 ```powershell
 dotnet build avro-source-generator.slnx --configuration Release -p:PackageVersion=0.0.0-development
@@ -34,7 +34,9 @@ dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-bu
 $package = 'artifacts/packages/AvroSourceGenerator.0.0.0-development.nupkg'
 dotnet pack src/AvroSourceGenerator.Cli/AvroSourceGenerator.Cli.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-development --output artifacts/packages
 $cli = 'artifacts/packages/AvroSourceGenerator.Cli.0.0.0-development.nupkg'
-./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $package -CliPackagePath $cli -SdkVersion 10.0.100 -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
+dotnet pack src/AvroSourceGenerator.Core/AvroSourceGenerator.Core.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-development --output artifacts/packages
+$core = 'artifacts/packages/AvroSourceGenerator.Core.0.0.0-development.nupkg'
+./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $package -CliPackagePath $cli -CorePackagePath $core -SdkVersion 10.0.100 -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
 ```
 
 Run the same script for the exact installed latest preview SDK version, writing to a separate manifest directory.
@@ -45,6 +47,10 @@ The runner checks numeric assembly/file versions, full informational versions, a
 With `-CliPackagePath`, the runner validates matching package versions and tool contents, installs the CLI in an isolated local-tool manifest/cache,
 and compares its generated files with the generator for every library and language mode. It also verifies `--check` on each output.
 Omit `-CliPackagePath` only when validating the generator package independently.
+With `-CorePackagePath`, the runner checks Core's matching package and assembly versions, its .NET Standard 2.0 library layout,
+and its transitive JSON and Immutable dependencies. A standalone consumer exercises primitive-root parsing and compilation,
+checks that parser machinery is internal and verifies that external schema inheritance fails.
+Core runs in every language/framework mode alongside the generator consumers. Pass all three package paths for normal validation.
 For the preview SDK, pass `-ExpectedRoslynApiVersion latest` to require selection of the latest packaged generator variant.
 A newer compiler API emits a Roslyn update review warning; compatibility is established by analyzer selection,
 compilation, consumer execution, and generated-source comparison. The minimum SDK must select the Roslyn 5.0 variant.
@@ -58,7 +64,7 @@ The script creates an isolated workspace, exact-version `global.json`, local pac
 External consumer dependencies restore from nuget.org. The generator itself must restore from the local package;
 a published package cannot satisfy the validation run. The main solution's SDK policy and NuGet configuration are unchanged.
 
-The build workflow builds the solution once with `PackageVersion=0.0.0-development`, then packs both projects with `--no-build`.
+The build workflow builds the solution once with `PackageVersion=0.0.0-development`, then packs all three projects with `--no-build`.
 Unit tests, fast integration tests, Apache smoke tests, and package compatibility
 checks then run in independent parallel jobs using the corresponding build outputs. Compatibility checks use the minimum SDK 10.0.100 and resolve
 the latest preview SDK on every push and pull request, comparing the generated sources in the same job.
@@ -67,4 +73,4 @@ generated-source comparison status, and any Roslyn review reminders or failures.
 Test jobs run the prebuilt assemblies directly with the Microsoft.Testing.Platform runner and use Microsoft's GitHub
 Actions reporter for counts, durations, failure details, and source annotations, including when tests fail. Direct
 execution preserves the reporter's workflow commands for GitHub; `dotnet test` remains available for local runs.
-The release workflow builds once with the release version, tests stable releases using those binaries, then packs both projects with `--no-build` before publishing.
+The release workflow builds once with the release version, tests stable releases using those binaries, then packs all three projects with `--no-build` before publishing.

@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Avdl.Types;
 
-public sealed record class AnnotatedTypeSyntax(SyntaxList<IAnnotationSyntax> Annotations, ITypeSyntax Type) : ITypeSyntax
+internal sealed record class AnnotatedTypeSyntax(SyntaxList<IAnnotationSyntax> Annotations, ITypeSyntax Type) : ITypeSyntax
 {
     public SyntaxKind SyntaxKind => SyntaxKind.AnnotatedType;
 

@@ -33,6 +33,7 @@ jobs:
       run: |
         dotnet pack src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-development --output artifacts/packages
         dotnet pack src/AvroSourceGenerator.Cli/AvroSourceGenerator.Cli.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-development --output artifacts/packages
+        dotnet pack src/AvroSourceGenerator.Core/AvroSourceGenerator.Core.csproj --no-build --configuration Release -p:PackageVersion=0.0.0-development --output artifacts/packages
     - uses: actions/upload-artifact@v7
       id: package_artifact
       with:
@@ -184,8 +185,9 @@ jobs:
       run: |
         $generator = Get-Item artifacts/packages/AvroSourceGenerator.0.0.0-development.nupkg
         $cli = Get-Item artifacts/packages/AvroSourceGenerator.Cli.0.0.0-development.nupkg
-        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $generator.FullName -CliPackagePath $cli.FullName -SdkVersion $env:MINIMUM_SDK -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
-        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $generator.FullName -CliPackagePath $cli.FullName -SdkVersion $env:PREVIEW_SDK -ExpectedRoslynApiVersion latest -OutputDirectory artifacts/manifests/preview
+        $core = Get-Item artifacts/packages/AvroSourceGenerator.Core.0.0.0-development.nupkg
+        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $generator.FullName -CliPackagePath $cli.FullName -CorePackagePath $core.FullName -SdkVersion $env:MINIMUM_SDK -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
+        ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $generator.FullName -CliPackagePath $cli.FullName -CorePackagePath $core.FullName -SdkVersion $env:PREVIEW_SDK -ExpectedRoslynApiVersion latest -OutputDirectory artifacts/manifests/preview
     - name: Compare generated contracts across SDKs
       id: parity
       shell: pwsh

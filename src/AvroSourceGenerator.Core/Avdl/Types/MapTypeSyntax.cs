@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Types;
 
-public sealed record class MapTypeSyntax(
+internal sealed record class MapTypeSyntax(
     SyntaxToken MapKeyword,
     SyntaxToken LessThanToken,
     ITypeSyntax ValueType,

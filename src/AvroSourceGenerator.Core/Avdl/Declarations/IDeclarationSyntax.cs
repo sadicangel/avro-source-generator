@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Avdl.Declarations;
 
-public interface IDeclarationSyntax : ISyntaxNode
+internal interface IDeclarationSyntax : ISyntaxNode
 {
     SimpleNameSyntax Name { get; }
     SyntaxList<DocumentationSyntax> Documentation { get; }

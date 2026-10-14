@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Types;
 
-public sealed record class PrimitiveTypeSyntax(SyntaxToken TypeKeyword) : ITypeSyntax
+internal sealed record class PrimitiveTypeSyntax(SyntaxToken TypeKeyword) : ITypeSyntax
 {
     public SyntaxKind SyntaxKind { get; } = GetKindFromKeyword(TypeKeyword.SyntaxKind);
 

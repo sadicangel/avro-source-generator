@@ -1,12 +1,13 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
 using AvroSourceGenerator.Diagnostics;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
-public abstract class AvxxParser(AvroParseOptions options)
+internal closed class AvxxParser(AvroParseOptions options)
 {
     public static AvroFile Parse(SourceText sourceText, AvroParseOptions parseOptions, CancellationToken cancellationToken)
     {
@@ -23,12 +24,16 @@ public abstract class AvxxParser(AvroParseOptions options)
                 parseOptions);
         }
 
-        return sourceType switch
+        var (file, rootSpan) = sourceType switch
         {
             SourceType.Avdl => AvdlParser.ParseFile(sourceText, parseOptions, cancellationToken),
-            SourceType.Avpr => AvprParser.ParseFile(sourceText, parseOptions, cancellationToken),
-            _ => AvscParser.ParseFile(sourceText, parseOptions, cancellationToken)
+            SourceType.Avpr => (AvprParser.ParseFile(sourceText, parseOptions, cancellationToken), sourceText.GetSourceSpan()),
+            _ => (AvscParser.ParseFile(sourceText, parseOptions, cancellationToken), sourceText.GetSourceSpan())
         };
+        cancellationToken.ThrowIfCancellationRequested();
+        if (parseOptions.RequireTopLevelSchema && file.IsValid && file.Imports.IsEmpty && !file.RootSchema.ContainsTopLevelSchema())
+            return AvroFile.Invalid(sourceText, [.. file.Diagnostics, AvroDiagnostic.MissingRootSchema(rootSpan)], parseOptions);
+        return file;
     }
 
     protected List<TopLevelSchema> Declarations => field ??= [];

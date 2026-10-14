@@ -4,7 +4,7 @@
 
 Avro Source Generator is a C# incremental source generator for Avro schema (`.avsc`), protocol (`.avpr`), and IDL (`.avdl`) files. It can generate models for Apache Avro or without a runtime library.
 
-The solution uses the latest installed development SDK, including previews, selected by `global.json` with a minimum of SDK 10.0.401. The packaged generator supports consumers starting with SDK 10.0.100. Source libraries target `netstandard2.0`; the packaged CLI targets `net10.0`. Tests and development tools use the target configured in the root `Directory.Build.props`. Package versions are managed centrally in `Directory.Packages.props`.
+The solution uses the latest installed development SDK, including previews, selected by `global.json` with a minimum of SDK 11.0.100-preview.6.26359.118. The packaged generator supports consumers starting with SDK 10.0.100. Source libraries target `netstandard2.0`; the packaged CLI targets `net10.0`. Tests and development tools use the target configured in the root `Directory.Build.props`. Package versions are managed centrally in `Directory.Packages.props`.
 
 ## Repository layout
 
@@ -64,7 +64,7 @@ dotnet test --project tests/AvroSourceGenerator.IntegrationTests.Apache/AvroSour
 dotnet test --project tests/AvroSourceGenerator.IntegrationTests.ObjectUnions.Apache/AvroSourceGenerator.IntegrationTests.ObjectUnions.Apache.csproj --no-build --configuration Release
 ```
 
-For generator or CLI build, dependency, or packaging changes, also pack `src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj` and `src/AvroSourceGenerator.Cli/AvroSourceGenerator.Cli.csproj` at the same version and run the SDK consumer/tool matrix described in `tests/AvroSourceGenerator.PackageCompatibility/README.md`. Build once with `PackageVersion`, then pack both projects with `--no-build` and the same version. Source DLLs, generated attributes, and CLI version output must match that version. Normal development builds use `0.0.0-development`; snapshots normalize only the generated version annotation, with separate tests verifying actual versions.
+For generator, Core, or CLI build, dependency, or packaging changes, also pack `src/AvroSourceGenerator.Pack/AvroSourceGenerator.Pack.csproj`, `src/AvroSourceGenerator.Core/AvroSourceGenerator.Core.csproj`, and `src/AvroSourceGenerator.Cli/AvroSourceGenerator.Cli.csproj` at the same version and run the SDK consumer/tool matrix described in `tests/AvroSourceGenerator.PackageCompatibility/README.md`. Build once with `PackageVersion`, then pack all three projects with `--no-build` and the same version. Source DLLs, generated attributes, and CLI version output must match that version. Normal development builds use `0.0.0-development`; snapshots normalize only the generated version annotation, with separate tests verifying actual versions.
 
 Before pushing code to `origin` or creating or updating a PR, also ensure Docker is available and run the Apache smoke suite:
 

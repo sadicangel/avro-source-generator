@@ -9,7 +9,7 @@ internal static class AvroParseOptionsExtensions
         public static AvroParseOptions FromGeneratorConfiguration(GeneratorConfiguration configuration, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return new AvroParseOptions(configuration.GenerationTarget, configuration.LanguageFeatures);
+            return new AvroParseOptions(configuration.GenerationTarget, configuration.LanguageFeatures, RequireTopLevelSchema: true);
         }
     }
 }

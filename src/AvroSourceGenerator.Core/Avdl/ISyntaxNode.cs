@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl;
 
-public interface ISyntaxNode
+internal interface ISyntaxNode
 {
     SyntaxKind SyntaxKind { get; }
     IEnumerable<ISyntaxNode> Children();

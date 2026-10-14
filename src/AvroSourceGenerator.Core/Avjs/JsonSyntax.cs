@@ -3,8 +3,7 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avjs;
 
-// TODO: Change abstract -> closed.
-public abstract record class JsonSyntax(SourceSpan SourceSpan, JsonTokenType TokenType)
+internal closed record class JsonSyntax(SourceSpan SourceSpan, JsonTokenType TokenType)
 {
     private JsonElement? _element;
 

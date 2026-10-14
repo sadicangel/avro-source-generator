@@ -14,7 +14,6 @@ public sealed class SemanticResultTests
     [InlineData("record R {}", AvroDiagnosticCode.InvalidIdlDocument)]
     [InlineData("protocol P {} protocol Q {}", AvroDiagnosticCode.InvalidIdlDocument)]
     [InlineData("schema R; protocol P {}", AvroDiagnosticCode.InvalidIdlDeclaration)]
-    [InlineData("schema string;", AvroDiagnosticCode.MissingRootSchema)]
     [InlineData("schema F; fixed F(0);", AvroDiagnosticCode.InvalidIdlFixedSize)]
     [InlineData("schema F; fixed F(-1);", AvroDiagnosticCode.InvalidIdlFixedSize)]
     [InlineData("schema F; fixed F(2147483648);", AvroDiagnosticCode.InvalidIdlFixedSize)]
@@ -174,7 +173,7 @@ public sealed class SemanticResultTests
     {
         var source = new SourceText("test.avdl", "schema R; fixed F(0); record R { @logicalType(1) string f; }");
         var expected = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
-        var actual = new AvdlParser(source, s_options, TestContext.Current.CancellationToken).ParseFile();
+        var actual = new AvdlParser(source, s_options, TestContext.Current.CancellationToken).ParseFile().File;
         AssertInvalid(actual);
         Assert.Equal(expected.Diagnostics, actual.Diagnostics);
     }

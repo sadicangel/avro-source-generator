@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Directives;
 
-public sealed record class NamespaceDirectiveSyntax(
+internal sealed record class NamespaceDirectiveSyntax(
     SyntaxToken NamespaceKeyword,
     INameSyntax NamespaceName,
     SyntaxToken SemicolonToken)

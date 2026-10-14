@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Avdl.Declarations;
 
-public sealed record class EnumDeclarationSyntax(
+internal sealed record class EnumDeclarationSyntax(
     SyntaxToken EnumKeyword,
     SimpleNameSyntax Name,
     SyntaxList<DocumentationSyntax> Documentation,

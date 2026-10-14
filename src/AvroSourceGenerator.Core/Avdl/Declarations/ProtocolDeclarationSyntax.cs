@@ -3,7 +3,7 @@ using AvroSourceGenerator.Avdl.Directives;
 
 namespace AvroSourceGenerator.Avdl.Declarations;
 
-public sealed record class ProtocolDeclarationSyntax(
+internal sealed record class ProtocolDeclarationSyntax(
     SyntaxToken ProtocolKeyword,
     SimpleNameSyntax Name,
     SyntaxList<DocumentationSyntax> Documentation,

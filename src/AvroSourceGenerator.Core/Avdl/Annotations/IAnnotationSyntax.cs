@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Annotations;
 
-public interface IAnnotationSyntax : ISyntaxNode
+internal interface IAnnotationSyntax : ISyntaxNode
 {
     public AnnotationNameSyntax AnnotationName { get; }
 

@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Declarations;
 
-public sealed record class OneWayClauseSyntax(SyntaxToken OneWayKeyword) : ISyntaxNode
+internal sealed record class OneWayClauseSyntax(SyntaxToken OneWayKeyword) : ISyntaxNode
 {
     public SyntaxKind SyntaxKind => SyntaxKind.OneWayClause;
 

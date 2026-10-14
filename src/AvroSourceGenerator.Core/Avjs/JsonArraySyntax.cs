@@ -4,7 +4,7 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avjs;
 
-public sealed record class JsonArraySyntax(SourceSpan SourceSpan, ImmutableArray<JsonSyntax> Items)
+internal sealed record class JsonArraySyntax(SourceSpan SourceSpan, ImmutableArray<JsonSyntax> Items)
     : JsonSyntax(SourceSpan, JsonTokenType.StartArray)
 {
     public ImmutableArray<JsonSyntax>.Enumerator GetEnumerator() => Items.GetEnumerator();

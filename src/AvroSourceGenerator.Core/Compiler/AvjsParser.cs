@@ -9,7 +9,7 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
-public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken) : AvxxParser(options)
+internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken) : AvxxParser(options)
 {
     protected AvroSchema? ParseSchema()
     {
@@ -17,12 +17,6 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         if (root is null) return null;
         var schema = Schema(root, containingNamespace: null);
         if (schema is null || Diagnostics.HasErrors) return null;
-
-        if (!schema.ContainsTopLevelSchema())
-        {
-            Report(AvroDiagnostic.MissingRootSchema(sourceText.GetSourceSpan()));
-            return null;
-        }
 
         return schema;
     }
@@ -35,12 +29,6 @@ public abstract class AvjsParser(SourceText sourceText, AvroParseOptions options
         if (syntax is null) return null;
         var protocol = Protocol(syntax, containingNamespace: null);
         if (protocol is null || Diagnostics.HasErrors) return null;
-
-        if (!protocol.ContainsTopLevelSchema())
-        {
-            Report(AvroDiagnostic.MissingRootSchema(sourceText.GetSourceSpan()));
-            return null;
-        }
 
         return protocol;
     }

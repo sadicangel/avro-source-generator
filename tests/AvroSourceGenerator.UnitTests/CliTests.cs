@@ -12,6 +12,31 @@ public sealed class CliTests : IDisposable
     private string Output => Path.Combine(_directory, "output");
 
     [Theory]
+    [InlineData("key.avsc", "\"string\"")]
+    [InlineData("key.avsc", """{"type":"array","items":"string"}""")]
+    [InlineData("key.avsc", """{"type":"int","logicalType":"date"}""")]
+    [InlineData("key.avdl", "schema string;")]
+    public async Task Primitive_roots_keep_the_generator_diagnostic(string path, string text)
+    {
+        var inputPath = Write(path, text);
+        var input = GeneratorInput.Create(
+            [ProjectFile.Source(text, inputPath)],
+            [],
+            new ProjectConfig { AvroLibrary = "None", LanguageVersion = LanguageVersion.CSharp10 });
+        var result = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("AVROSG2002", diagnostic.Id);
+        var (code, output, error) = await Run("compile", inputPath, "-o", Output);
+        var span = diagnostic.Location.GetLineSpan();
+        Assert.Equal(1, code);
+        Assert.Empty(output);
+        Assert.Equal(
+            $"{span.Path}({span.StartLinePosition.Line + 1},{span.StartLinePosition.Character + 1}): error {diagnostic.Id}: {diagnostic.GetMessage()}" + Environment.NewLine,
+            error);
+        Assert.False(Directory.Exists(Output));
+    }
+
+    [Theory]
     [InlineData("--library", "Auto")]
     [InlineData("--library", "2147483647")]
     [InlineData("--library", "unknown")]

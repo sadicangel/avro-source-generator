@@ -8,6 +8,34 @@ namespace AvroSourceGenerator.UnitTests;
 public sealed class CachingTests
 {
     [Theory]
+    [InlineData("key.avsc", "\"string\"", """{"type":"record","name":"Key","fields":[]}""")]
+    [InlineData("key.avdl", "schema string;", "schema Key; record Key {}")]
+    public void Primitive_root_diagnostics_are_cached_and_refresh_after_an_edit(string path, string primitive, string named)
+    {
+        var input = GeneratorInput.Create(
+            [ProjectFile.Source(primitive, path)],
+            [],
+            new ProjectConfig { AvroLibrary = "None", LanguageVersion = LanguageVersion.CSharp10 });
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        var diagnostic = Assert.Single(driver.GetRunResult().Diagnostics);
+        Assert.Equal("AVROSG2002", diagnostic.Id);
+        Assert.Empty(driver.GetRunResult().GeneratedTrees);
+        driver = driver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        Assert.Equal(diagnostic, Assert.Single(driver.GetRunResult().Diagnostics));
+        var tracked = StepTracking.GetTrackedSteps(driver.GetRunResult());
+        Assert.All(tracked["AvroFile"].SelectMany(step => step.Outputs), output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
+        var changed = new ChangedAdditionalText(input.AdditionalTexts[0].Path, named);
+        driver = driver.ReplaceAdditionalText(input.AdditionalTexts[0], changed)
+            .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        Assert.Empty(driver.GetRunResult().Diagnostics);
+        Assert.Single(driver.GetRunResult().GeneratedTrees);
+        driver = driver.ReplaceAdditionalText(changed, input.AdditionalTexts[0])
+            .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
+        Assert.Equal(diagnostic, Assert.Single(driver.GetRunResult().Diagnostics));
+        Assert.Empty(driver.GetRunResult().GeneratedTrees);
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void Document_kind_diagnostics_are_cached_and_refresh_after_an_edit(bool protocol)

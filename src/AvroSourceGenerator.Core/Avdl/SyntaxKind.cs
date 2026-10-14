@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl;
 
-public enum SyntaxKind
+internal enum SyntaxKind
 {
     InvalidSyntax,
 

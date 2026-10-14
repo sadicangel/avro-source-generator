@@ -7,7 +7,7 @@ using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avjs;
 
-public sealed record class JsonObjectSyntax(
+internal sealed record class JsonObjectSyntax(
     SourceSpan SourceSpan,
     ImmutableArray<JsonPropertySyntax> Properties,
     FrozenDictionary<string, int> NameLookup,

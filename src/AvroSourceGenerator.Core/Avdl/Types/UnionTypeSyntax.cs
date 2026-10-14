@@ -1,6 +1,6 @@
 ﻿namespace AvroSourceGenerator.Avdl.Types;
 
-public sealed record class UnionTypeSyntax(
+internal sealed record class UnionTypeSyntax(
     SyntaxToken UnionKeyword,
     SyntaxToken BraceOpenToken,
     SeparatedSyntaxList<ITypeSyntax> Types,

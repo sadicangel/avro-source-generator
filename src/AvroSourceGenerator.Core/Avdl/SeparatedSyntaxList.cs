@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 
 namespace AvroSourceGenerator.Avdl;
 
-public readonly record struct SeparatedSyntaxList<T>(ImmutableArray<ISyntaxNode> SyntaxNodes)
+internal readonly record struct SeparatedSyntaxList<T>(ImmutableArray<ISyntaxNode> SyntaxNodes)
     : IReadOnlyList<T> where T : ISyntaxNode
 {
     public int Count { get => (SyntaxNodes.Length + 1) / 2; }

@@ -34,26 +34,38 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
     {
         var directives = ParseDirectives();
         var declarations = ParseDeclarations();
-        // TODO: Check if protocol or schema IDL and validate directives.
         return new DocumentSyntax(directives, declarations);
     }
 
     private SyntaxList<IDirectiveSyntax> ParseDirectives()
     {
         var directives = ImmutableArray.CreateBuilder<IDirectiveSyntax>();
+        var hasNamespace = false;
+        var hasSchema = false;
         while (_stream.Current.SyntaxKind is SyntaxKind.NamespaceKeyword or SyntaxKind.SchemaKeyword or SyntaxKind.ImportKeyword)
         {
-            if (_stream.Current.SyntaxKind is SyntaxKind.NamespaceKeyword)
+            cancellationToken.ThrowIfCancellationRequested();
+            switch (_stream.Current.SyntaxKind)
             {
-                directives.Add(ParseNamespaceDirective());
-            }
-            else if (_stream.Current.SyntaxKind is SyntaxKind.SchemaKeyword)
-            {
-                directives.Add(ParseSchemaDirective());
-            }
-            else
-            {
-                directives.Add(ParseImportDirective());
+                case SyntaxKind.NamespaceKeyword:
+                    {
+                        var directive = ParseNamespaceDirective();
+                        if (hasNamespace)
+                            Report(AvroDiagnostic.DuplicateIdlDirective(directive.GetSourceSpan(), "namespace"));
+                        hasNamespace = true;
+                        directives.Add(directive);
+                        break;
+                    }
+                case SyntaxKind.SchemaKeyword:
+                    {
+                        var directive = ParseSchemaDirective();
+                        if (hasSchema)
+                            Report(AvroDiagnostic.DuplicateIdlDirective(directive.GetSourceSpan(), "schema"));
+                        hasSchema = true;
+                        directives.Add(directive);
+                        break;
+                    }
+                default: directives.Add(ParseImportDirective()); break;
             }
         }
 
@@ -580,6 +592,11 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         if (!syntaxTree.Diagnostics.IsEmpty)
             return (AvroFile.Invalid(sourceText, syntaxTree.Diagnostics, Options), sourceText.GetSourceSpan());
 
+        // Multiplicity is validated while parsing, before accessing the singular directives.
+        // Without a main schema, only a single protocol declaration is a complete document.
+        if (syntaxTree.Document.SchemaDirective is null && syntaxTree.Document.Declarations is not [ProtocolDeclarationSyntax])
+            return (AvroFile.Invalid(sourceText, [AvroDiagnostic.InvalidIdlDocument(syntaxTree.Document.GetSourceSpan())], Options), sourceText.GetSourceSpan());
+
         var rootSpan = syntaxTree.Document.SchemaDirective?.MainSchemaType is { } mainSchemaType
             ? mainSchemaType.GetSourceSpan()
             : syntaxTree.Document.GetSourceSpan();
@@ -630,8 +647,7 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         var mainSchema = document.SchemaDirective?.MainSchemaType;
         if (mainSchema is null)
         {
-            if (document.Declarations is not [ProtocolDeclarationSyntax protocol])
-                return Invalid<AvroSchema?>(null, AvroDiagnostic.InvalidIdlDocument(document.GetSourceSpan()));
+            var protocol = (ProtocolDeclarationSyntax)document.Declarations[0];
             return Protocol(protocol, containingNamespace);
         }
 

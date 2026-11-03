@@ -12,6 +12,31 @@ public sealed class CliTests : IDisposable
     private string Output => Path.Combine(_directory, "output");
 
     [Theory]
+    [MemberData(nameof(AvdlDirectiveTests.DuplicateDirectives), MemberType = typeof(AvdlDirectiveTests))]
+    public async Task Repeated_idl_directives_match_generator_diagnostics_without_writing(string text, string[] repeated)
+    {
+        var path = Write("invalid.avdl", text);
+        var input = GeneratorInput.Create(
+            [ProjectFile.Source(text, path)], [],
+            new ProjectConfig { AvroLibrary = "None", LanguageVersion = LanguageVersion.CSharp10 });
+        var result = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
+        Assert.Equal(repeated.Length, result.Diagnostics.Length);
+        Assert.All(result.Diagnostics, diagnostic => Assert.Equal("AVROSG4007", diagnostic.Id));
+        var expected = string.Concat(result.Diagnostics.Select(diagnostic =>
+        {
+            var span = diagnostic.Location.GetLineSpan();
+            return $"{span.Path}({span.StartLinePosition.Line + 1},{span.StartLinePosition.Character + 1}): error {diagnostic.Id}: {diagnostic.GetMessage()}" + Environment.NewLine;
+        }));
+
+        var (code, output, error) = await Run("compile", path, "-o", Output);
+
+        Assert.Equal(1, code);
+        Assert.Empty(output);
+        Assert.Equal(expected, error);
+        Assert.False(Directory.Exists(Output));
+    }
+
+    [Theory]
     [InlineData("key.avsc", "\"string\"")]
     [InlineData("key.avsc", """{"type":"array","items":"string"}""")]
     [InlineData("key.avsc", """{"type":"int","logicalType":"date"}""")]

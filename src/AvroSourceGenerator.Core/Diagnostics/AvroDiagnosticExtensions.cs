@@ -66,6 +66,7 @@ internal static class AvroDiagnosticExtensions
         public static AvroDiagnostic MissingIdlRoot(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.MissingRootSchema, span);
         public static AvroDiagnostic InvalidIdlDocument(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.InvalidIdlDocument, span);
         public static AvroDiagnostic InvalidIdlDeclaration(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.InvalidIdlDeclaration, span);
+        public static AvroDiagnostic DuplicateIdlDirective(SourceSpan span, string directive) => new AvroDiagnostic(AvroDiagnosticCode.DuplicateIdlDirective, span, directive);
         public static AvroDiagnostic InvalidIdlProperty(AvroDiagnosticCode code, SourceSpan span) => new AvroDiagnostic(code, span);
         public static AvroDiagnostic InvalidIdlFixedSize(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.InvalidIdlFixedSize, span);
         public static AvroDiagnostic InvalidIdlDecimalPrecision(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.InvalidIdlDecimalPrecision, span);

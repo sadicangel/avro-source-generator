@@ -62,6 +62,7 @@ AVROSG4003  | Compiler      | Error    | Invalid IDL aliases annotation
 AVROSG4004  | Compiler      | Error    | Invalid IDL logical type annotation
 AVROSG4005  | Compiler      | Error    | Invalid IDL order annotation
 AVROSG4006  | Compiler      | Error    | Invalid IDL enum default
+AVROSG4007  | Compiler      | Error    | Duplicate IDL directive
 AVROSG4010  | Compiler      | Error    | Invalid IDL fixed size
 AVROSG4011  | Compiler      | Error    | Invalid IDL decimal precision
 AVROSG4012  | Compiler      | Error    | Invalid IDL decimal scale

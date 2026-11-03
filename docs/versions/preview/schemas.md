@@ -88,6 +88,10 @@ record Customer {
 }
 ```
 
+A schema document has one `schema` directive followed by any schema declarations. A protocol document has exactly one `protocol` block and no `schema` directive. Either form can use an optional top-level `namespace` directive. Protocol blocks cannot appear among a schema document's declarations.
+
+Repeated `schema` or `namespace` directives produce `AVROSG4007` at each repeated directive, even if the values are identical. For example, correct `schema Customer; schema Customer;` by removing the second directive. The source generator and CLI report the same diagnostic.
+
 For related records, IDL also supports protocol blocks:
 
 ```text

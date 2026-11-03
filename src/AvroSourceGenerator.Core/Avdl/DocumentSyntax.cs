@@ -10,6 +10,7 @@ internal sealed record class DocumentSyntax(
 {
     public SyntaxKind SyntaxKind => SyntaxKind.Document;
 
+    // Only access singular directives after checking the syntax tree's diagnostics.
     public NamespaceDirectiveSyntax? NamespaceDirective => Directives.OfType<NamespaceDirectiveSyntax>().SingleOrDefault();
 
     public SchemaDirectiveSyntax? SchemaDirective => Directives.OfType<SchemaDirectiveSyntax>().SingleOrDefault();

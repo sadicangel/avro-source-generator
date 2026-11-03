@@ -68,6 +68,7 @@ internal static class DiagnosticDescriptors
     internal static readonly DiagnosticDescriptor InvalidIdlLogicalTypeAnnotation = new DiagnosticDescriptor("AVROSG4004", "Invalid IDL Logical Type Annotation", MessageTemplate.Get(AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation), CompilerCategory, DiagnosticSeverity.Error, true, "An Avro IDL logicalType annotation requires a string value.");
     internal static readonly DiagnosticDescriptor InvalidIdlOrder = new DiagnosticDescriptor("AVROSG4005", "Invalid IDL Order", MessageTemplate.Get(AvroDiagnosticCode.InvalidIdlOrder), CompilerCategory, DiagnosticSeverity.Error, true, "An Avro IDL order annotation requires a string value.");
     internal static readonly DiagnosticDescriptor InvalidIdlEnumDefault = new DiagnosticDescriptor("AVROSG4006", "Invalid IDL Enum Default", MessageTemplate.Get(AvroDiagnosticCode.InvalidIdlEnumDefault), CompilerCategory, DiagnosticSeverity.Error, true, "An Avro IDL enum default requires a string or null.");
+    internal static readonly DiagnosticDescriptor DuplicateIdlDirective = new DiagnosticDescriptor("AVROSG4007", "Duplicate IDL Directive", MessageTemplate.Get(AvroDiagnosticCode.DuplicateIdlDirective), CompilerCategory, DiagnosticSeverity.Error, true, "An Avro IDL document contains a repeated schema or namespace directive. Keep at most one directive of each kind, even when their values are identical.");
     internal static readonly DiagnosticDescriptor InvalidIdlFixedSize = new DiagnosticDescriptor("AVROSG4010", "Invalid IDL Fixed Size", MessageTemplate.Get(AvroDiagnosticCode.InvalidIdlFixedSize), CompilerCategory, DiagnosticSeverity.Error, true, "Fixed size must be a positive 32-bit integer.");
     internal static readonly DiagnosticDescriptor InvalidIdlDecimalPrecision = new DiagnosticDescriptor("AVROSG4011", "Invalid IDL Decimal Precision", MessageTemplate.Get(AvroDiagnosticCode.InvalidIdlDecimalPrecision), CompilerCategory, DiagnosticSeverity.Error, true, "Decimal precision must be a 32-bit integer.");
     internal static readonly DiagnosticDescriptor InvalidIdlDecimalScale = new DiagnosticDescriptor("AVROSG4012", "Invalid IDL Decimal Scale", MessageTemplate.Get(AvroDiagnosticCode.InvalidIdlDecimalScale), CompilerCategory, DiagnosticSeverity.Error, true, "Decimal scale must be a 32-bit integer.");
@@ -146,6 +147,7 @@ internal static class DiagnosticDescriptors
         AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation => InvalidIdlLogicalTypeAnnotation,
         AvroDiagnosticCode.InvalidIdlOrder => InvalidIdlOrder,
         AvroDiagnosticCode.InvalidIdlEnumDefault => InvalidIdlEnumDefault,
+        AvroDiagnosticCode.DuplicateIdlDirective => DuplicateIdlDirective,
         AvroDiagnosticCode.InvalidIdlFixedSize => InvalidIdlFixedSize,
         AvroDiagnosticCode.InvalidIdlDecimalPrecision => InvalidIdlDecimalPrecision,
         AvroDiagnosticCode.InvalidIdlDecimalScale => InvalidIdlDecimalScale,

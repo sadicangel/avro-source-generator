@@ -8,6 +8,44 @@ namespace AvroSourceGenerator.UnitTests;
 public sealed class CachingTests
 {
     [Theory]
+    [InlineData("schema R; schema R; record R {}", "schema R;\n\nschema S; record R {}", "schema R; record R {}")]
+    [InlineData("namespace a; namespace a; schema R; record R {}", "namespace a;\n\nnamespace b; schema R; record R {}", "namespace a; schema R; record R {}")]
+    public void Duplicate_idl_directive_diagnostics_are_cached_and_refresh_after_edits(string invalid, string edited, string valid)
+    {
+        var input = GeneratorInput.Create(
+            [ProjectFile.Source(invalid, "schemas/directives.avdl")], [],
+            new ProjectConfig { AvroLibrary = "None", LanguageVersion = LanguageVersion.CSharp10 });
+        var token = TestContext.Current.CancellationToken;
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, token);
+        var diagnostic = Assert.Single(driver.GetRunResult().Diagnostics);
+        Assert.Equal("AVROSG4007", diagnostic.Id);
+        Assert.Empty(driver.GetRunResult().GeneratedTrees);
+
+        driver = driver.RunGenerators(input.Compilation, token);
+        Assert.Equal(diagnostic, Assert.Single(driver.GetRunResult().Diagnostics));
+        Assert.All(StepTracking.GetTrackedSteps(driver.GetRunResult())["AvroFile"].SelectMany(step => step.Outputs),
+            output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
+
+        var changed = new ChangedAdditionalText(input.AdditionalTexts[0].Path, edited);
+        driver = driver.ReplaceAdditionalText(input.AdditionalTexts[0], changed).RunGenerators(input.Compilation, token);
+        var updated = Assert.Single(driver.GetRunResult().Diagnostics);
+        Assert.Equal("AVROSG4007", updated.Id);
+        Assert.Equal(2, updated.Location.GetLineSpan().StartLinePosition.Line);
+        Assert.NotEqual(diagnostic.Location.SourceSpan, updated.Location.SourceSpan);
+        Assert.Empty(driver.GetRunResult().GeneratedTrees);
+
+        var fixedText = new ChangedAdditionalText(changed.Path, valid);
+        driver = driver.ReplaceAdditionalText(changed, fixedText).RunGenerators(input.Compilation, token);
+        Assert.Empty(driver.GetRunResult().Diagnostics);
+        Assert.Single(driver.GetRunResult().GeneratedTrees);
+
+        driver = driver.ReplaceAdditionalText(fixedText, input.AdditionalTexts[0]).RunGenerators(input.Compilation, token);
+        Assert.Equal(diagnostic, Assert.Single(driver.GetRunResult().Diagnostics));
+        Assert.Empty(driver.GetRunResult().GeneratedTrees);
+        Assert.All(driver.GetRunResult().Results, result => Assert.Null(result.Exception));
+    }
+
+    [Theory]
     [InlineData("key.avsc", "\"string\"", """{"type":"record","name":"Key","fields":[]}""")]
     [InlineData("key.avdl", "schema string;", "schema Key; record Key {}")]
     public void Primitive_root_diagnostics_are_cached_and_refresh_after_an_edit(string path, string primitive, string named)

@@ -55,6 +55,7 @@ public static class MessageTemplate
     public const string MisplacedDocumentation = "Documentation comment is not permitted on {0}";
     public const string InvalidIdlDocument = "IDL document must contain a main schema directive or exactly one protocol declaration";
     public const string InvalidIdlDeclaration = "Protocol declarations are not permitted in a schema document";
+    public const string DuplicateIdlDirective = "IDL document permits only one '{0}' directive; remove the repeated directive";
     public const string InvalidIdlNamespace = "Annotation '@namespace' must have a string value";
     public const string InvalidIdlAliases = "Annotation '@aliases' must have an array of strings as its value";
     public const string InvalidIdlLogicalTypeAnnotation = "Annotation '@logicalType' must have a string value";
@@ -127,6 +128,7 @@ public static class MessageTemplate
         AvroDiagnosticCode.MisplacedDocumentation => MisplacedDocumentation,
         AvroDiagnosticCode.InvalidIdlDocument => InvalidIdlDocument,
         AvroDiagnosticCode.InvalidIdlDeclaration => InvalidIdlDeclaration,
+        AvroDiagnosticCode.DuplicateIdlDirective => DuplicateIdlDirective,
         AvroDiagnosticCode.InvalidIdlNamespace => InvalidIdlNamespace,
         AvroDiagnosticCode.InvalidIdlAliases => InvalidIdlAliases,
         AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation => InvalidIdlLogicalTypeAnnotation,

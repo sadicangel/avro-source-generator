@@ -32,6 +32,9 @@ If the command-line build succeeds but the editor still shows stale errors, relo
 | `AVROSG1000` | Invalid JSON | Correct the JSON syntax at the reported location. |
 | `AVROSG2000` | Schema expected | Use a schema in `.avsc`; protocols belong in `.avpr`. |
 | `AVROSG2001` | Protocol expected | Supply a JSON protocol with a `protocol` property in `.avpr`. |
+| `AVROSG4000` | Invalid IDL document form | Supply one main `schema` directive with schema declarations, or exactly one `protocol` block. |
+| `AVROSG4001` | Protocol in an IDL schema document | Move the protocol to its own document, or use schema declarations after the `schema` directive. |
+| `AVROSG4007` | Repeated IDL directive | Keep only one `schema` directive and at most one top-level `namespace` directive; identical repetitions are also errors. Each repeated directive is reported. |
 | `AVROSG5000` | Import cycle | Remove the circular dependency between imports. |
 | `AVROSG5001` | Import extension mismatch | Match `schema`, `protocol`, or `idl` to the target file's extension. |
 | `AVROSG5002` | Missing import | Include the target as an `AdditionalFiles` item and correct its path relative to the importing file. |
@@ -39,7 +42,7 @@ If the command-line build succeeds but the editor still shows stale errors, relo
 | `AVROSG5004` | Unused import | Remove the import or reference a type it supplies. |
 | `AVROSG6000` | No supported runtime detected | Install a runtime or select `AvroSourceGeneratorAvroLibrary=None`. |
 | `AVROSG6001` | Multiple supported runtimes detected | Select the intended runtime explicitly. |
-| `AVROSG6002` | Chr support removed in 0.8.0 (unreleased) | Migrate to `Apache`, explicitly select `None`, or remain on 0.7.x. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}). |
+| `AVROSG6002` | Chr support removed in 0.8.0 | Migrate to `Apache`, explicitly select `None`, or remain on 0.7.x. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}). |
 
 Other schema and IDL diagnostics identify the invalid property, declaration, or token. Use the location and message in the build output to correct that input.
 

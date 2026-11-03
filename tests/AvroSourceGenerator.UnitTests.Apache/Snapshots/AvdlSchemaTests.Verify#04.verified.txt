@@ -13,7 +13,7 @@ namespace Avdl.Acceptance.Schema
         /// Identifier documentation
         /// </summary>
         public required global::System.Guid id { get; init; }
-        public string name { get; init; } = "Ada";
+        public required string name { get; init; }
         public required global::Avdl.Acceptance.Schema.Status status { get; init; }
         public required global::Avdl.Acceptance.Schema.Md5Hash checksum { get; init; }
         public required global::Avdl.Acceptance.Schema.Address address { get; init; }
@@ -23,16 +23,16 @@ namespace Avdl.Acceptance.Schema
         public string? nickname { get; init; }
         public string? deletedReason { get; init; }
         public required byte[] payload { get; init; }
-        public bool active { get; init; } = true;
-        public float ratio { get; init; } = 1.5f;
-        public double weight { get; init; } = 2.5;
+        public required bool active { get; init; }
+        public required float ratio { get; init; }
+        public required double weight { get; init; }
         public required global::System.DateTime birthDate { get; init; }
         public required global::System.TimeSpan wakeUp { get; init; }
         public required global::System.DateTime createdAt { get; init; }
         public required global::System.DateTime localCreatedAt { get; init; }
         public required global::Avro.AvroDecimal balance { get; init; }
         public required global::Avdl.Acceptance.Schema.Problem lastProblem { get; init; }
-        public string ignoredOrder { get; init; } = "ignored";
+        public required string ignoredOrder { get; init; }
         public required string noted { get; init; }
     }
     
@@ -126,9 +126,7 @@ namespace Avdl.Acceptance.Schema
                       "type": "map",
                       "values": "string"
                     },
-                    "default": {
-                      "kind": "home"
-                    }
+                    "default": {"kind":"home"}
                   }
                 ]
               }
@@ -139,10 +137,7 @@ namespace Avdl.Acceptance.Schema
                 "type": "array",
                 "items": "string"
               },
-              "default": [
-                "admin",
-                "active"
-              ]
+              "default": ["admin","active"]
             },
             {
               "name": "scores",
@@ -150,9 +145,7 @@ namespace Avdl.Acceptance.Schema
                 "type": "map",
                 "values": "int"
               },
-              "default": {
-                "reputation": 42
-              }
+              "default": {"reputation":42}
             },
             {
               "name": "searchKey",
@@ -329,15 +322,15 @@ namespace Avdl.Acceptance.Schema
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_scores")]
                     extern static void Set_scores(global::Avdl.Acceptance.Schema.User obj, global::System.Collections.Generic.Dictionary<string, int> value);
                 case 7:
-                    Set_searchKey(this, fieldValue! is null ? null : (object)fieldValue!); break;
+                    Set_searchKey(this, fieldValue! is null ? (object?)null : (object)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_searchKey")]
                     extern static void Set_searchKey(global::Avdl.Acceptance.Schema.User obj, object? value);
                 case 8:
-                    Set_nickname(this, fieldValue! is null ? null : (string)fieldValue!); break;
+                    Set_nickname(this, fieldValue! is null ? (string?)null : (string)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_nickname")]
                     extern static void Set_nickname(global::Avdl.Acceptance.Schema.User obj, string? value);
                 case 9:
-                    Set_deletedReason(this, fieldValue! is null ? null : (string)fieldValue!); break;
+                    Set_deletedReason(this, fieldValue! is null ? (string?)null : (string)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_deletedReason")]
                     extern static void Set_deletedReason(global::Avdl.Acceptance.Schema.User obj, string? value);
                 case 10:

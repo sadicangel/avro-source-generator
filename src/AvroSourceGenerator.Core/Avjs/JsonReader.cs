@@ -90,7 +90,16 @@ internal ref struct JsonReader
                     while (Read() && _reader.TokenType != JsonTokenType.EndObject)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        var propertyName = new JsonPropertyNameSyntax(_reader.GetString()!, CurrentSpan);
+                        string name;
+                        try
+                        {
+                            name = _reader.GetString()!;
+                        }
+                        catch (InvalidOperationException exception)
+                        {
+                            throw new JsonException(exception.Message, exception);
+                        }
+                        var propertyName = new JsonPropertyNameSyntax(name, CurrentSpan);
                         Read();
                         var propertyValue = Parse(cancellationToken);
                         var property = new JsonPropertySyntax(propertyName, propertyValue);

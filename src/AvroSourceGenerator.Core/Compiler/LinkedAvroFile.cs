@@ -1,4 +1,5 @@
 ﻿using System.Collections.Frozen;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
@@ -8,7 +9,7 @@ public sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>, ISourceFile
 {
     private readonly Lazy<int> _hashCode;
 
-    private LinkedAvroFile(AvroFile file, FrozenDictionary<SchemaName, CSharpName?> references)
+    private LinkedAvroFile(AvroFile file, FrozenDictionary<SchemaName, TopLevelSchema?> references)
     {
         File = file;
         References = references;
@@ -24,7 +25,9 @@ public sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>, ISourceFile
 
     public bool IsValid => File.IsValid;
 
-    public FrozenDictionary<SchemaName, CSharpName?> References { get; }
+    public FrozenDictionary<SchemaName, TopLevelSchema?> References { get; }
+
+    public IEnumerable<AvroDiagnostic> GetDiagnostics() => File.GetDiagnostics();
 
     public bool Equals(LinkedAvroFile? other) =>
         ReferenceEquals(this, other) ||
@@ -32,8 +35,8 @@ public sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>, ISourceFile
         File.Equals(other.File) &&
         References.Count == other.References.Count &&
         References.All(reference =>
-            other.References.TryGetValue(reference.Key, out var csharpName) &&
-            reference.Value == csharpName);
+            other.References.TryGetValue(reference.Key, out var schema) &&
+            SchemaSymbolComparer.Instance.Equals(reference.Value, schema));
 
     public override bool Equals(object? obj) => Equals(obj as LinkedAvroFile);
 
@@ -46,14 +49,14 @@ public sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>, ISourceFile
         foreach (var reference in References.OrderBy(static reference => reference.Key.FullName, StringComparer.Ordinal))
         {
             hash.Add(reference.Key);
-            hash.Add(reference.Value);
+            hash.Add(reference.Value, SchemaSymbolComparer.Instance);
         }
         return hash.ToHashCode();
     }
 
     public static LinkedAvroFile Link(AvroFile file, SymbolTable symbolTable, CancellationToken cancellationToken)
     {
-        var references = new Dictionary<SchemaName, CSharpName?>(file.References.Length);
+        var references = new Dictionary<SchemaName, TopLevelSchema?>(file.References.Length);
 
         foreach (var reference in file.References)
         {

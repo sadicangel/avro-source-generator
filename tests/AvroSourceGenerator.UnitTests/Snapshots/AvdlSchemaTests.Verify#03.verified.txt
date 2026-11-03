@@ -13,7 +13,7 @@ namespace Avdl.Acceptance.Schema
         /// Identifier documentation
         /// </summary>
         public required global::System.Guid id { get; init; }
-        public string name { get; init; } = "Ada";
+        public required string name { get; init; }
         public required global::Avdl.Acceptance.Schema.Status status { get; init; }
         public required byte[] checksum { get; init; }
         public required global::Avdl.Acceptance.Schema.Address address { get; init; }
@@ -23,16 +23,16 @@ namespace Avdl.Acceptance.Schema
         public string? nickname { get; init; }
         public string? deletedReason { get; init; }
         public required byte[] payload { get; init; }
-        public bool active { get; init; } = true;
-        public float ratio { get; init; } = 1.5f;
-        public double weight { get; init; } = 2.5;
+        public required bool active { get; init; }
+        public required float ratio { get; init; }
+        public required double weight { get; init; }
         public required global::System.DateOnly birthDate { get; init; }
         public required global::System.TimeOnly wakeUp { get; init; }
         public required global::System.DateTimeOffset createdAt { get; init; }
         public required global::System.DateTimeOffset localCreatedAt { get; init; }
         public required decimal balance { get; init; }
         public required global::Avdl.Acceptance.Schema.Problem lastProblem { get; init; }
-        public string ignoredOrder { get; init; } = "ignored";
+        public required string ignoredOrder { get; init; }
         public required string noted { get; init; }
     }
 }

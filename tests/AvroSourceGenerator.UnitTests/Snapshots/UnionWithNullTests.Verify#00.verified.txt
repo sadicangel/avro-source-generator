@@ -7,7 +7,7 @@ namespace com.example.user
     public partial record Preferences
     {
         public required string language { get; init; }
-        public bool darkMode { get; init; } = false;
+        public required bool darkMode { get; init; }
     }
 }
 #nullable restore

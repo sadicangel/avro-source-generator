@@ -103,11 +103,11 @@ namespace Demo
             switch (fieldPos)
             {
                 case 0:
-                    Set_choice(this, fieldValue! is null ? null : (object)fieldValue!); break;
+                    Set_choice(this, fieldValue! is null ? (object?)null : (object)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_choice")]
                     extern static void Set_choice(global::Demo.Envelope obj, object? value);
                 case 1:
-                    Set_reference(this, fieldValue! is null ? null : (object)fieldValue!); break;
+                    Set_reference(this, fieldValue! is null ? (object?)null : (object)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_reference")]
                     extern static void Set_reference(global::Demo.Envelope obj, object? value);
                 case 2:

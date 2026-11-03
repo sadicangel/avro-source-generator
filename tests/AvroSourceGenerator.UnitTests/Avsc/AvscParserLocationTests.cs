@@ -2,6 +2,7 @@
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Schemas.Defaults;
 using AvroSourceGenerator.Templating;
 using AvroSourceGenerator.Text;
 
@@ -36,13 +37,13 @@ public sealed class AvscParserLocationTests
 
         var actual = AvxxParser.Parse(source, options, TestContext.Current.CancellationToken);
 
-        Assert.True(actual.IsValid, string.Join("; ", actual.Diagnostics));
+        Assert.True(actual.IsValid, string.Join("; ", actual.GetDiagnostics()));
         var actualSchemas = actual.Declarations.ToDictionary(static schema => schema.SchemaName);
         Assert.Equal(actual.Declarations.Length, actualSchemas.Count);
         Assert.All(actual.Declarations, schema => Assert.NotEmpty(schema.ToJsonString(actualSchemas)));
         Assert.Equal("{\"x\":[2,false,null]}", actual.RootSchema.Properties["custom"].GetRawText());
         var actualRecord = Assert.IsType<RecordSchema>(actual.RootSchema);
-        Assert.Equal("\"00000000-0000-0000-0000-000000000000\"", actualRecord.Fields[0].DefaultJson?.GetRawText());
+        Assert.Equal("\"00000000-0000-0000-0000-000000000000\"", Assert.IsType<UnboundDefaultValue>(actualRecord.Fields[0].Default).Json.GetRawText());
     }
 
     [Fact]
@@ -55,9 +56,9 @@ public sealed class AvscParserLocationTests
 
         Assert.False(file.IsValid);
         Assert.NotNull(file.RootSchema);
-        Assert.Equal(2, file.Diagnostics.Length);
+        Assert.Equal(2, file.GetDiagnostics().Count());
         Assert.Collection(
-            file.Diagnostics,
+            file.GetDiagnostics(),
             diagnostic => AssertDiagnostic(
                 diagnostic,
                 source,
@@ -82,7 +83,7 @@ public sealed class AvscParserLocationTests
 
         var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
-        var diagnostic = Assert.Single(file.Diagnostics);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.MissingSchemaProperty, diagnostic.Code);
         Assert.Equal($"Required property '{propertyName}' is missing", diagnostic.GetMessage());
         Assert.StartsWith("{", diagnostic.SourceSpan.ToString(), StringComparison.Ordinal);
@@ -136,7 +137,7 @@ public sealed class AvscParserLocationTests
 
         var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
-        var diagnostic = Assert.Single(file.Diagnostics);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
         var offset = Text.LastIndexOf("false", StringComparison.Ordinal);
         Assert.Equal(source.GetSourceSpan(offset, "false".Length), diagnostic.SourceSpan);
         Assert.Equal(

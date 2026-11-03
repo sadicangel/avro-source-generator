@@ -1,8 +1,10 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
+using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Schemas.Defaults;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
@@ -32,7 +34,7 @@ internal closed class AvxxParser(AvroParseOptions options)
         };
         cancellationToken.ThrowIfCancellationRequested();
         if (parseOptions.RequireTopLevelSchema && file.IsValid && file.Imports.IsEmpty && !file.RootSchema.ContainsTopLevelSchema())
-            return AvroFile.Invalid(sourceText, [.. file.Diagnostics, AvroDiagnostic.MissingRootSchema(rootSpan)], parseOptions);
+            return AvroFile.Invalid(sourceText, [.. file.GetDiagnostics(), AvroDiagnostic.MissingRootSchema(rootSpan)], parseOptions);
         return file;
     }
 
@@ -204,6 +206,13 @@ internal closed class AvxxParser(AvroParseOptions options)
             default:
                 return fieldType;
         }
+    }
+
+    protected DefaultValue? GetDefaultValue(JsonElement? json, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (json is null) return null;
+        return new UnboundDefaultValue(json.Value);
     }
 
     protected bool IsInRecursionScope(SchemaName schemaName) => RecursionStack.Contains(schemaName);

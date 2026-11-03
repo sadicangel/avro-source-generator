@@ -45,7 +45,7 @@ public sealed class PropertyDiagnosticTests
         string json, string extension, AvroDiagnosticCode code, string value, string message)
     {
         var source = new SourceText("test" + extension, json);
-        var diagnostic = Assert.Single(AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken).Diagnostics);
+        var diagnostic = Assert.Single(AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken).GetDiagnostics());
 
         Assert.Equal(code, diagnostic.Code);
         Assert.Equal($"AVROSG{(int)code:D4}", diagnostic.ToDiagnostic().Id);
@@ -62,7 +62,7 @@ public sealed class PropertyDiagnosticTests
     public void Schema_name_failure_modes_share_one_diagnostic(string value)
     {
         var json = "{\"type\":\"record\",\"name\":" + value + ",\"fields\":[]}";
-        var diagnostic = Assert.Single(Parse(json, ".avsc").Diagnostics);
+        var diagnostic = Assert.Single(Parse(json, ".avsc").GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.InvalidSchemaName, diagnostic.Code);
         Assert.Equal(value, diagnostic.SourceSpan.ToString());
         Assert.Equal("Property 'name' must be a non-empty string containing a valid Avro name, optionally prefixed with its namespace", diagnostic.GetMessage());
@@ -75,7 +75,7 @@ public sealed class PropertyDiagnosticTests
     [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[false],"response":"null"}}}""", ".avpr", AvroDiagnosticCode.InvalidRequest)]
     public void Direct_invalid_elements_use_the_containing_property_code(string json, string extension, AvroDiagnosticCode code)
     {
-        var diagnostic = Assert.Single(Parse(json, extension).Diagnostics);
+        var diagnostic = Assert.Single(Parse(json, extension).GetDiagnostics());
         Assert.Equal(code, diagnostic.Code);
         Assert.Equal("false", diagnostic.SourceSpan.ToString());
     }
@@ -84,7 +84,7 @@ public sealed class PropertyDiagnosticTests
     public void Nested_property_errors_keep_their_own_code()
     {
         const string Json = """{"type":"array","items":{"type":"record","name":false,"fields":[]}}""";
-        var diagnostic = Assert.Single(Parse(Json, ".avsc").Diagnostics);
+        var diagnostic = Assert.Single(Parse(Json, ".avsc").GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.InvalidSchemaName, diagnostic.Code);
         Assert.Equal("false", diagnostic.SourceSpan.ToString());
     }
@@ -105,7 +105,7 @@ public sealed class PropertyDiagnosticTests
     public void Union_elements_and_nested_definitions_use_their_owning_property(
         string json, string extension, AvroDiagnosticCode code, string value)
     {
-        var diagnostic = Assert.Single(Parse(json, extension).Diagnostics);
+        var diagnostic = Assert.Single(Parse(json, extension).GetDiagnostics());
         Assert.Equal(code, diagnostic.Code);
         Assert.Equal(value, diagnostic.SourceSpan.ToString());
     }
@@ -113,7 +113,7 @@ public sealed class PropertyDiagnosticTests
     [Fact]
     public void Missing_required_property_remains_separate()
     {
-        var diagnostic = Assert.Single(Parse("""{"type":"record","fields":[]}""", ".avsc").Diagnostics);
+        var diagnostic = Assert.Single(Parse("""{"type":"record","fields":[]}""", ".avsc").GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.MissingSchemaProperty, diagnostic.Code);
         Assert.Equal("Required property 'name' is missing", diagnostic.GetMessage());
     }

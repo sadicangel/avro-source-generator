@@ -55,7 +55,7 @@ namespace ex
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_value")]
                     extern static void Set_value(global::ex.Node obj, int value);
                 case 1:
-                    Set_next(this, fieldValue! is null ? null : (global::ex.Node)fieldValue!); break;
+                    Set_next(this, fieldValue! is null ? (global::ex.Node?)null : (global::ex.Node)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_next")]
                     extern static void Set_next(global::ex.Node obj, global::ex.Node? value);
                 default:

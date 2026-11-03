@@ -25,7 +25,7 @@ public sealed class AvscFixtureCoverageTests
             .Select(source => AvxxParser.Parse(source, options, TestContext.Current.CancellationToken))
             .ToImmutableArray();
 
-        Assert.All(files, file => Assert.True(file.IsValid, $"{file.Path}: {string.Join("; ", file.Diagnostics)}"));
+        Assert.All(files, file => Assert.True(file.IsValid, $"{file.Path}: {string.Join("; ", file.GetDiagnostics())}"));
         Assert.NotEmpty(files.SelectMany(static file => file.Declarations));
 
         var pipeline = BuildPipeline(files, target, nullableReferences);
@@ -52,7 +52,7 @@ public sealed class AvscFixtureCoverageTests
 
         var protocol = Assert.IsType<ProtocolSchema>(file.RootSchema);
         Assert.Equal("second", Assert.Single(protocol.Messages).Documentation);
-        Assert.Empty(file.Diagnostics);
+        Assert.Empty(file.GetDiagnostics());
     }
 
     private static PipelineResult BuildPipeline(

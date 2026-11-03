@@ -22,6 +22,10 @@ public readonly record struct CSharpName(string Name, string? Namespace)
 
     public static CSharpName FromSchemaName(SchemaName schemaName) => new CSharpName(schemaName.Name.ToValidName(), schemaName.Namespace?.ToValidNamespace());
 
+    public CSharpName Add(string name) => new CSharpName(name.ToValidName(), WithoutNullableAnnotation().ToString(includeGlobalPrefix: false));
+
+    public static CSharpName operator +(CSharpName left, string right) => left.Add(right);
+
     public static CSharpName Null => new CSharpName("object");
     public static CSharpName Bool => new CSharpName("bool");
     public static CSharpName Int => new CSharpName("int");

@@ -44,7 +44,7 @@ public sealed class UnionAbstractNullableBaseTests
                     }
                   ],
                   "doc": "The type-specific notification payload",
-                  "default": "null"
+                  "default": null
                 }
               ]
             }

@@ -5,6 +5,31 @@ namespace AvroSourceGenerator.UnitTests;
 public sealed class CSharpNameTests
 {
     [Theory]
+    [InlineData("Type", null, "Member", "global::Type.Member")]
+    [InlineData("Type", "Example.Contracts", "Member", "global::Example.Contracts.Type.Member")]
+    [InlineData("Type", "Example", "class", "global::Example.Type.@class")]
+    [InlineData("Type?", "Example", "Member", "global::Example.Type.Member")]
+    [InlineData("@event?", "@namespace.@class", "namespace", "global::@namespace.@class.@event.@namespace")]
+    public void Add_builds_a_qualified_member_and_escapes_its_name(string name, string? @namespace, string member, string expected)
+    {
+        var type = new CSharpName(name, @namespace);
+        var result = type.Add(member);
+
+        Assert.Equal(expected, result.FullName);
+        Assert.Equal(result, type + member);
+        Assert.Equal(name, type.Name);
+        Assert.Equal(@namespace, type.Namespace);
+        Assert.False(result.HasNullableAnnotation);
+    }
+
+    [Fact]
+    public void Add_can_chain_members_without_repeating_the_global_prefix()
+    {
+        var type = new CSharpName("Outer?", "Example");
+        Assert.Equal("global::Example.Outer.Nested.@class", (type + "Nested" + "class").FullName);
+    }
+
+    [Theory]
     [InlineData("Example.Contracts")]
     [InlineData("Example")]
     [InlineData("Example..Contracts.")]

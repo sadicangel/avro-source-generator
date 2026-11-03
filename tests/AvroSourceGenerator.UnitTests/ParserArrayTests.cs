@@ -52,7 +52,7 @@ public sealed class ParserArrayTests
     {
         var schema = JsonNode.Parse("""{"protocol":"Service","types":[],"messages":{}}""")!;
         schema[property] = JsonNode.Parse(value);
-        var diagnostic = Assert.Single(SchemaCompilerTestHelpers.ParseJson(schema.ToJsonString(), extension: ".avpr").Diagnostics);
+        var diagnostic = Assert.Single(SchemaCompilerTestHelpers.ParseJson(schema.ToJsonString(), extension: ".avpr").GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.InvalidTypes, diagnostic.Code);
         Assert.Contains("must be an array of record, error, enum, or fixed definitions", diagnostic.GetMessage(), StringComparison.Ordinal);
     }

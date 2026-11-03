@@ -48,6 +48,12 @@ Avro field names determine the generated property names. For example, a field na
 
 Logical types use library-specific mappings. For example, `timestamp-millis` maps to `DateTime` with Apache.Avro and `DateTimeOffset` with standalone models. Choose your runtime before writing application code around logical types. See [runtime compatibility]({{ '/libraries/#logical-type-compatibility' | relative_url }}) for serialization limitations.
 
+## Schema defaults
+
+In the unreleased preview, field and protocol-parameter defaults are preserved as JSON in emitted Avro schemas. They do not initialize generated C# properties. Set property values explicitly when constructing a model; non-nullable properties follow the usual `required` rules when supported.
+
+Opt-in C# initialization is tracked in [issue #191](https://github.com/sadicangel/avro-source-generator/issues/191).
+
 ## Nullability and unions
 
 An Avro union with `null` and one other type represents an optional value:

@@ -1,7 +1,7 @@
 {{ AccessModifier }} partial {{ Error }} {{ $.schema.CSharpName.Name }}{{ if $.schema.InheritsFrom }} : {{ $.schema.InheritsFrom }}{{ end }}
 {
     {{~ for field in $.schema.Fields ~}}
-    {{ include 'field' field: field }}
+    {{ include 'field' field: field ~}}
     {{~ end ~}}
 }
 {{ if GenerationTarget == 'Apache' }}

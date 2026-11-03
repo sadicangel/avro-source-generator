@@ -8,6 +8,12 @@ namespace AvroSourceGenerator.UnitTests;
 
 internal static class SchemaCompilerTestHelpers
 {
+    public static BoundAvroFile Bind(AvroFile file)
+    {
+        var token = TestContext.Current.CancellationToken;
+        return BoundAvroFile.Bind(LinkedAvroFile.Link(file, SymbolTable.FromFiles([file], token), token), token);
+    }
+
     public static AvroFile ParseJson(
         string json,
         GenerationTarget generationTarget = GenerationTarget.Modern,

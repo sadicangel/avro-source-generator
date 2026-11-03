@@ -21,7 +21,7 @@ public sealed class LinkedAvroFileTests
             [Name("Missing"), Name("Shared")],
             linked.References.Keys.OrderBy(static name => name.FullName, StringComparer.Ordinal));
         Assert.Null(linked.References[Name("Missing")]);
-        Assert.Equal(CSharpName.FromSchemaName(Name("Shared")), linked.References[Name("Shared")]);
+        Assert.Same(shared.Declarations.Single(), linked.References[Name("Shared")]);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public sealed class LinkedAvroFileTests
 
         Assert.Equal(
             CSharpName.FromSchemaName(Name("Later")),
-            linked.References[Name("Later")]);
+            linked.References[Name("Later")]?.CSharpName);
     }
 
     [Fact]

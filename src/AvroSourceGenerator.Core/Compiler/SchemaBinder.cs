@@ -1,5 +1,6 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
+using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 
@@ -7,8 +8,9 @@ namespace AvroSourceGenerator.Compiler;
 
 internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken cancellationToken)
 {
+    private readonly AvroFile _file = linkedFile.File;
     private readonly AvroParseOptions _options = linkedFile.File.ParseOptions;
-    private readonly FrozenDictionary<SchemaName, CSharpName?> _references = linkedFile.References;
+    private readonly FrozenDictionary<SchemaName, TopLevelSchema?> _references = linkedFile.References;
     private readonly Dictionary<AvroSchema, AvroSchema> _boundSchemas = [with(ReferenceEqualityComparer.Instance)];
 
     public AvroSchema Bind(AvroSchema schema)
@@ -40,15 +42,16 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
 
     private AvroSchema BindReference(AvroSchemaReference reference)
     {
-        if (!_references.TryGetValue(reference.SchemaName, out var csharpName) ||
-            csharpName is not { } resolved ||
-            reference.CSharpName == resolved)
+        if (ResolveReference(reference.SchemaName) is not { } resolved || reference.CSharpName == resolved.CSharpName)
         {
             return reference;
         }
 
-        return reference with { CSharpName = resolved };
+        return reference with { CSharpName = resolved.CSharpName };
     }
+
+    private TopLevelSchema? ResolveReference(SchemaName name) =>
+        _references.GetValueOrDefault(name) ?? _file.Declarations.WithCancellation(cancellationToken).FirstOrDefault(declaration => declaration.SchemaName == name);
 
     private AvroSchema BindArray(ArraySchema array)
     {
@@ -81,9 +84,21 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
                 : union;
         }
 
-        return schemasChanged
+        var result = schemasChanged
             ? UnionSchema.Create(schemas, _options.LanguageFeatures.HasNullableReferenceTypes)
             : union;
+
+        // Enum references are only known to be value types after resolution, so nullable unions
+        // need a nullable value-type annotation even when nullable reference types are disabled.
+        if (result.UnderlyingSchema is AvroSchemaReference reference
+            && ResolveReference(reference.SchemaName)?.SchemaType is SchemaType.Enum
+            && schemas.Any(static member => member.SchemaType is SchemaType.Null))
+        {
+            var name = reference.CSharpName.WithNullableAnnotation();
+            if (result.CSharpName != name) result = result with { CSharpName = name };
+        }
+
+        return result;
     }
 
     private AvroSchema BindLogical(LogicalSchema logical)

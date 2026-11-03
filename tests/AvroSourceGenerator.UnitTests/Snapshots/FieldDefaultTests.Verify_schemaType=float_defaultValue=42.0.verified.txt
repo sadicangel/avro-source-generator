@@ -6,7 +6,7 @@ namespace SchemaNamespace
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial record Record
     {
-        public float Field { get; init; } = 42.0f;
+        public required float Field { get; init; }
     }
 }
 #nullable restore

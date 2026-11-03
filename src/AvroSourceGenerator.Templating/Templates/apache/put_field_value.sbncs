@@ -1,3 +1,6 @@
+{{- if field.Type.SchemaType == 'Null' -}}
+{{- ret FieldValueExpression -}}
+{{- end -}}
 {{- if field.UnderlyingType.SchemaType == 'Array' -}}
 {{- ret include 'apache.convert_array' schema: field.Type value: FieldValueExpression -}}
 {{- end -}}
@@ -22,4 +25,4 @@
             }
 {{- ret -}}
 {{- end -}}
-{{- if field.AllowsNull }}{{ FieldValueExpression }} is null ? null : {{ end }}({{ field.UnderlyingType }}){{ FieldValueExpression -}}
+{{- if field.AllowsNull }}{{ FieldValueExpression }} is null ? ({{ field.Type }})null : {{ end }}({{ field.UnderlyingType }}){{ FieldValueExpression -}}

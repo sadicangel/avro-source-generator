@@ -36,7 +36,7 @@ public sealed class PrimitiveRootTests
         var token = TestContext.Current.CancellationToken;
         var file = AvroFile.Parse(source, s_options, token);
         Assert.True(file.IsValid);
-        Assert.Empty(file.Diagnostics);
+        Assert.Empty(file.GetDiagnostics());
         Assert.Same(source, file.Text);
         Assert.Equal(expected, file.RootSchema.SchemaType);
         Assert.Empty(file.Declarations);
@@ -68,7 +68,7 @@ public sealed class PrimitiveRootTests
         var options = s_options with { RequireTopLevelSchema = true };
         var file = AvroFile.Parse(source, options, TestContext.Current.CancellationToken);
         Assert.False(file.IsValid);
-        var diagnostic = Assert.Single(file.Diagnostics);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.MissingRootSchema, diagnostic.Code);
         Assert.Equal("Named schema or protocol required", diagnostic.GetMessage());
         Assert.Same(source, diagnostic.SourceSpan.SourceText);

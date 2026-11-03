@@ -125,7 +125,7 @@ internal closed class AvxxParser(AvroParseOptions options)
 
     protected AvroSchema ResolveFieldType(
         AvroSchema fieldType,
-        FieldName fieldName,
+        MemberName fieldName,
         SchemaName containingSchemaName,
         out AvroSchema underlyingType,
         out string? remarks)

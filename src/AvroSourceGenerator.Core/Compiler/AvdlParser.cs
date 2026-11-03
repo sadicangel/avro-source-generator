@@ -771,7 +771,7 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         var documentation = syntax.GetDocumentation();
         var aliases = GetAliases(syntax);
         var symbols = syntax.Symbols.WithCancellation(cancellationToken)
-            .Select(static symbol => symbol.FullName)
+            .Select(static symbol => new MemberName(symbol.FullName))
             .ToImmutableArray();
         var defaultValue = GetEnumDefault(syntax);
         var properties = syntax.GetSchemaProperties();
@@ -869,7 +869,7 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
     private Field? Field(FieldDeclarationSyntax syntax, SchemaName containingSchemaName)
     {
         var tracker = TrackDiagnostics();
-        var name = new FieldName(syntax.Name.FullName);
+        var name = new MemberName(syntax.Name.FullName);
         var defaultSyntax = syntax.DefaultValueClause?.JsonValue;
         var defaultJson = defaultSyntax?.ToJsonElement();
         var hasNonNullDefault = defaultJson is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) };

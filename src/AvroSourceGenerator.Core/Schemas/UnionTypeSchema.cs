@@ -32,7 +32,7 @@ public sealed record class UnionTypeSchema(SchemaName SchemaName, CSharpName CSh
         return memberCount > 1;
     }
 
-    internal static SchemaName GetSchemaName(SchemaName typeName, FieldName fieldName, bool useUnions)
+    internal static SchemaName GetSchemaName(SchemaName typeName, MemberName fieldName, bool useUnions)
     {
         var (prefix, suffix) = useUnions ? ("", "Union") : ("I", "Variant");
         var name = string.Create(

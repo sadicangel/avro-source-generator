@@ -7,7 +7,7 @@ public sealed record class EnumSchema(
     SchemaName SchemaName,
     string? Documentation,
     ImmutableArray<string> Aliases,
-    ImmutableArray<string> Symbols,
+    ImmutableArray<MemberName> Symbols,
     string? Default,
     ImmutableSortedDictionary<string, JsonElement> Properties)
     : NamedSchema(SchemaType.Enum, SchemaName, Documentation, Aliases, Properties)
@@ -38,7 +38,7 @@ public sealed record class EnumSchema(
 
         writer.WriteStartArray(AvroJsonKeys.Symbols);
         foreach (var symbol in Symbols)
-            writer.WriteStringValue(symbol);
+            writer.WriteStringValue(symbol.SchemaName);
         writer.WriteEndArray();
         if (Default is not null)
             writer.WriteString(AvroJsonKeys.Default, Default);

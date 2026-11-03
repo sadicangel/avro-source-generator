@@ -12,6 +12,30 @@ public sealed class CliTests : IDisposable
     private string Output => Path.Combine(_directory, "output");
 
     [Theory]
+    [InlineData("None", false)]
+    [InlineData("None", true)]
+    [InlineData("Apache", false)]
+    [InlineData("Apache", true)]
+    public async Task Keyword_enum_symbols_and_inline_defaults_match_generator(string library, bool idl)
+    {
+        var content = idl ? EnumSymbolAssertions.Idl("class") : EnumSymbolAssertions.Json("class");
+        var path = Write(idl ? "schema.avdl" : "schema.avsc", content);
+        var file = idl ? ProjectFile.Source(content, path) : ProjectFile.Schema(content, path);
+        var input = GeneratorInput.Create([file], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = library });
+        var generated = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
+        Assert.Empty(generated.Diagnostics);
+        var (code, _, error) = await Run("compile", path, "-o", Output, "--library", library, "--language-version", "12");
+        Assert.Equal(0, code);
+        Assert.Empty(error);
+        var sources = generated.Results.Single().GeneratedSources;
+        Assert.Equal(2, sources.Length);
+        Assert.Equal(sources.Length, Directory.GetFiles(Output).Length);
+        foreach (var source in sources)
+            Assert.Equal(source.SourceText.ToString(), File.ReadAllText(Path.Combine(Output, source.HintName)));
+        Assert.Equal(0, (await Run("compile", path, "-o", Output, "--library", library, "--language-version", "12", "--check")).Code);
+    }
+
+    [Theory]
     [MemberData(nameof(AvdlDirectiveTests.DuplicateDirectives), MemberType = typeof(AvdlDirectiveTests))]
     public async Task Repeated_idl_directives_match_generator_diagnostics_without_writing(string text, string[] repeated)
     {

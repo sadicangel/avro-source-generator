@@ -5,7 +5,7 @@ using AvroSourceGenerator.Schemas.Defaults;
 namespace AvroSourceGenerator.Schemas;
 
 public sealed record class Field(
-    FieldName Name,
+    MemberName Name,
     AvroSchema Type,
     AvroSchema UnderlyingType,
     string? Documentation,

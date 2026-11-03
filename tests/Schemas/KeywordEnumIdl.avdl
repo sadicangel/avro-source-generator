@@ -1,0 +1,5 @@
+namespace AvroSourceGenerator.IntegrationTests.Schemas;
+schema KeywordEnumIdlRecord;
+
+enum KeywordEnumIdl { class, normal } = class;
+record KeywordEnumIdlRecord { KeywordEnumIdl Value = "class"; }

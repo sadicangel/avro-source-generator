@@ -120,7 +120,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
     private ImmutableArray<string> GetOptionalArrayStrings(JsonObjectSyntax syntax, string propertyName)
     {
         var property = GetOptionalProperty(syntax, propertyName);
-        return property is null ? [] : GetArrayStrings(property, normalize: false);
+        return property is null ? [] : GetArrayStrings(property, validateNames: false);
     }
 
     private ImmutableArray<JsonSyntax> GetOptionalArrayItems(JsonObjectSyntax syntax, string propertyName)
@@ -182,7 +182,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         return 0;
     }
 
-    private ImmutableArray<string> GetArrayStrings(JsonPropertySyntax property, bool normalize)
+    private ImmutableArray<string> GetArrayStrings(JsonPropertySyntax property, bool validateNames)
     {
         var items = GetArrayItems(property);
         if (items.IsDefault) return default;
@@ -197,15 +197,21 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
                 return default;
             }
 
-            if (normalize && !IsValidName(@string))
+            if (validateNames && !IsValidName(@string))
             {
                 Report(AvroDiagnostic.InvalidProperty(property, item));
                 return default;
             }
 
-            builder.Add(normalize ? @string!.ToValidName() : @string!);
+            builder.Add(@string!);
         }
         return builder.MoveToImmutable();
+    }
+
+    private ImmutableArray<MemberName> GetEnumSymbols(JsonPropertySyntax? property)
+    {
+        var symbols = property is null ? default : GetArrayStrings(property, validateNames: true);
+        return symbols.IsDefault ? default : [.. symbols.WithCancellation(cancellationToken).Select(static symbol => new MemberName(symbol))];
     }
 
     private SchemaName GetSchemaName(JsonValueSyntax syntax, string? containingNamespace)
@@ -384,7 +390,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
             var documentation = parser.GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
             var aliases = parser.GetOptionalArrayStrings(syntax, AvroJsonKeys.Aliases);
             var symbolsProperty = parser.GetRequiredProperty(syntax, AvroJsonKeys.Symbols);
-            var symbols = symbolsProperty is null ? default : parser.GetArrayStrings(symbolsProperty, normalize: true);
+            var symbols = parser.GetEnumSymbols(symbolsProperty);
             var defaultSymbol = parser.GetOptionalNullableString(syntax, AvroJsonKeys.Default);
             var properties = syntax.GetSchemaProperties();
             return !tracker.HasNewDiagnostics && !aliases.IsDefault && !symbols.IsDefault
@@ -486,7 +492,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         var nameProperty = GetRequiredProperty(syntax, AvroJsonKeys.Name);
         var name = nameProperty is null ? null : GetRequiredAvroName(nameProperty);
         if (name is null) return null;
-        var fieldName = new FieldName(name);
+        var fieldName = new MemberName(name);
 
         var typeProperty = GetRequiredProperty(syntax, AvroJsonKeys.Type);
         var fieldType = typeProperty is null ? null : Schema(typeProperty.Value, containingSchemaName.Namespace);

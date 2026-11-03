@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.UnitTests;
 
-public sealed class FieldNameTests
+public sealed class MemberNameTests
 {
     [Theory]
     [InlineData("ordinary", "ordinary")]
@@ -10,11 +10,15 @@ public sealed class FieldNameTests
     [InlineData("class", "@class")]
     public void Preserves_schema_name_and_exposes_valid_csharp_name(string schemaName, string csharpName)
     {
-        FieldName name = schemaName;
+        MemberName name = schemaName;
 
         Assert.Equal(schemaName, name.SchemaName);
         Assert.Equal(csharpName, name.CSharpName);
         Assert.Equal(csharpName, name.ToString());
+        var copy = new MemberName(new string(schemaName.ToCharArray()));
+        Assert.Equal(name, copy);
+        Assert.Equal(name.GetHashCode(), copy.GetHashCode());
+        Assert.NotEqual(name, new MemberName(schemaName + "Other"));
     }
 
     [Theory]

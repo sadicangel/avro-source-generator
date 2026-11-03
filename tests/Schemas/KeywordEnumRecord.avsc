@@ -1,0 +1,17 @@
+{
+  "type": "record",
+  "name": "KeywordEnumRecord",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
+  "fields": [
+    {
+      "name": "Value",
+      "type": {
+        "type": "enum",
+        "name": "KeywordEnum",
+        "symbols": ["class", "normal"],
+        "default": "class"
+      },
+      "default": "class"
+    }
+  ]
+}

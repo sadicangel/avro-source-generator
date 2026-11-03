@@ -16,7 +16,9 @@ public sealed class ParserPipelineTests
         Assert.Equal(new SchemaName("R", "Example"), record.SchemaName);
         var enumeration = Assert.IsType<EnumSchema>(record.Fields[0].Type);
         Assert.Equal(new SchemaName("E", "Example"), enumeration.SchemaName);
-        Assert.Equal("@class", Assert.Single(enumeration.Symbols));
+        var symbol = Assert.Single(enumeration.Symbols);
+        Assert.Equal("class", symbol.SchemaName);
+        Assert.Equal("@class", symbol.CSharpName);
         Assert.Empty(file.References);
     }
 

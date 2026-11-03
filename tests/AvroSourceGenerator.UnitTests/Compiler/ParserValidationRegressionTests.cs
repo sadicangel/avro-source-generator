@@ -21,7 +21,7 @@ public sealed class ParserValidationRegressionTests
 
         var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
 
-        var diagnostic = Assert.Single(file.Diagnostics);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
         var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
         Assert.Equal(AvroDiagnosticCode.InvalidIdlEnumDefault, diagnostic.Code);
         Assert.Equal(expectedSpan, diagnostic.SourceSpan);
@@ -46,7 +46,7 @@ public sealed class ParserValidationRegressionTests
 
         var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
 
-        var diagnostic = Assert.Single(file.Diagnostics);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
         var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
         Assert.Equal(code, diagnostic.Code);
         Assert.Equal(expectedSpan, diagnostic.SourceSpan);
@@ -61,7 +61,7 @@ public sealed class ParserValidationRegressionTests
     public void Invalid_idl_references_use_the_shared_reference_diagnostic(string text, string name, string reference)
     {
         var source = new SourceText("test.avdl", text);
-        var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).Diagnostics);
+        var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.InvalidSchemaReference, diagnostic.Code);
         Assert.Equal("AVROSG2003", diagnostic.ToDiagnostic().Id);
         Assert.Equal($"Invalid type reference '{name}'; expected a name such as 'Order' or 'com.example.Order'", diagnostic.GetMessage());
@@ -87,7 +87,7 @@ public sealed class ParserValidationRegressionTests
     {
         var file = AvxxParser.Parse(new SourceText("test.avdl", text), s_options, TestContext.Current.CancellationToken);
 
-        Assert.True(file.IsValid, string.Join("; ", file.Diagnostics));
+        Assert.True(file.IsValid, string.Join("; ", file.GetDiagnostics()));
         TopLevelSchema schema = schemaType == "protocol"
             ? Assert.IsType<ProtocolSchema>(file.RootSchema)
             : Assert.IsType<RecordSchema>(Assert.Single(file.Declarations));
@@ -113,7 +113,7 @@ public sealed class ParserValidationRegressionTests
     {
         var file = AvxxParser.Parse(new SourceText(path, text), s_options, TestContext.Current.CancellationToken);
 
-        Assert.True(file.IsValid, string.Join("; ", file.Diagnostics));
+        Assert.True(file.IsValid, string.Join("; ", file.GetDiagnostics()));
         Assert.Equal(2, file.RootSchema.Properties["x"].GetInt32());
     }
 

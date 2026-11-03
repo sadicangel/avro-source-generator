@@ -10,6 +10,8 @@ var collections = new Collections { stringList = ["one"], intMap = new Dictionar
 var request = new CreateUserRequest { username = "user", email = "test@example.com" };
 var content = new EmailContent { subject = "Subject", body = "Body", recipientEmail = request.email };
 var notification = new Notification { content = content };
+var bytes = (BytesDefaults)Activator.CreateInstance(typeof(BytesDefaults))!;
+Check(bytes.Plain is null && bytes.Base64Like is null && bytes.Empty is null, "Schema defaults must not generate C# initializers.");
 
 Check(ReferenceEquals(envelope.Item, nested), "IDL import must use the schema-generated type.");
 Check(collections.intMap[collections.stringList[0]] == 1, "Collection model must be usable.");

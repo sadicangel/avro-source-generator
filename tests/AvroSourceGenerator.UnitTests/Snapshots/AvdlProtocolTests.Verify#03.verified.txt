@@ -10,7 +10,7 @@ namespace Avdl.Acceptance.Protocol
     public partial record ServiceError
     {
         public required string message { get; init; }
-        public int code { get; init; } = 500;
+        public required int code { get; init; }
     }
 }
 #nullable restore

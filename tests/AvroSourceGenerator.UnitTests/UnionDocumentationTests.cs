@@ -135,7 +135,7 @@ public sealed class UnionDocumentationTests
         var cancellationToken = TestContext.Current.CancellationToken;
         var file = AvroFile.Parse(new SourceText("envelope.avsc", schema),
             new AvroParseOptions(GenerationTarget.Modern, features), cancellationToken);
-        Assert.Empty(file.Diagnostics);
+        Assert.Empty(file.GetDiagnostics());
         var symbols = SymbolTable.FromFiles([file], cancellationToken);
         return BoundAvroFile.Bind(LinkedAvroFile.Link(file, symbols, cancellationToken), cancellationToken);
     }

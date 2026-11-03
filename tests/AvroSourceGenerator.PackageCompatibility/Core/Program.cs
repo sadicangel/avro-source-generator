@@ -17,7 +17,7 @@ var inputs = new[]
 foreach (var source in inputs)
 {
     var file = AvroFile.Parse(source, options, CancellationToken.None);
-    if (!file.IsValid || file.Diagnostics.Length != 0 || file.Declarations.Length != 0)
+    if (!file.IsValid || file.GetDiagnostics().Any() || file.Declarations.Length != 0)
         throw new InvalidOperationException($"Could not parse {source.Path.OriginalPath}.");
     using var json = JsonDocument.Parse(file.RootSchema.ToJsonString(new Dictionary<SchemaName, TopLevelSchema>()));
     var compilation = AvroCompiler.Compile(new[] { source }, options);
@@ -25,7 +25,7 @@ foreach (var source in inputs)
         throw new InvalidOperationException($"Could not compile {source.Path.OriginalPath}.");
 }
 var strict = AvroFile.Parse(inputs[0], options with { RequireTopLevelSchema = true }, CancellationToken.None);
-if (strict.IsValid || strict.Diagnostics.Length != 1 || (int)strict.Diagnostics[0].Code != 2002)
+if (strict.IsValid || strict.GetDiagnostics().Count() != 1 || (int)strict.GetDiagnostics().Single().Code != 2002)
     throw new InvalidOperationException("Named-root validation was not applied.");
 
 var assembly = typeof(AvroFile).Assembly;

@@ -9,7 +9,7 @@ namespace Avdl.Acceptance.Schema
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial record Address
     {
-        public string street { get; init; } = "Main";
+        public required string street { get; init; }
         public string? unit { get; init; }
         public required global::System.Collections.Generic.Dictionary<string, string> labels { get; init; }
     }
@@ -47,9 +47,7 @@ namespace Avdl.Acceptance.Schema
                 "type": "map",
                 "values": "string"
               },
-              "default": {
-                "kind": "home"
-              }
+              "default": {"kind":"home"}
             }
           ]
         }
@@ -75,7 +73,7 @@ namespace Avdl.Acceptance.Schema
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_street")]
                     extern static void Set_street(global::Avdl.Acceptance.Schema.Address obj, string value);
                 case 1:
-                    Set_unit(this, fieldValue! is null ? null : (string)fieldValue!); break;
+                    Set_unit(this, fieldValue! is null ? (string?)null : (string)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_unit")]
                     extern static void Set_unit(global::Avdl.Acceptance.Schema.Address obj, string? value);
                 case 2:

@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "BytesDefaults",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
+  "fields": [
+    { "name": "Plain", "type": "bytes", "default": "abc" },
+    { "name": "Base64Like", "type": "bytes", "default": "ABCD" },
+    { "name": "PreviousFixture", "type": "bytes", "default": "NDI=" },
+    { "name": "Empty", "type": "bytes", "default": "" },
+    { "name": "Escaped", "type": "bytes", "default": "\u0000\t\n\r\"\\\u007f\u0080\u00ffé" }
+  ]
+}

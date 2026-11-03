@@ -83,7 +83,7 @@ internal sealed class ImportResolver(
             }
 
             var importedFile = files[importedFileIndex];
-            // A failed parse is the actionable error; its missing target shape is secondary.
+            // Parsing or binding errors are actionable; a missing target shape is secondary.
             if (!importedFile.IsValid)
             {
                 isValid = false;

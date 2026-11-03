@@ -135,7 +135,7 @@ namespace Avdl.Acceptance.Protocol
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_priority")]
                     extern static void Set_priority(global::Avdl.Acceptance.Protocol.SearchRequest obj, global::Avdl.Acceptance.Protocol.Priority value);
                 case 4:
-                    Set_pageToken(this, fieldValue! is null ? null : (string)fieldValue!); break;
+                    Set_pageToken(this, fieldValue! is null ? (string?)null : (string)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_pageToken")]
                     extern static void Set_pageToken(global::Avdl.Acceptance.Protocol.SearchRequest obj, string? value);
                 case 5:

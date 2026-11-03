@@ -8,6 +8,8 @@ namespace AvroSourceGenerator.Compiler;
 
 public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
 {
+    private readonly ImmutableArray<AvroDiagnostic> _diagnostics;
+
     internal AvroFile(
         SourceText sourceText,
         AvroSchema rootSchema,
@@ -28,7 +30,7 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
         ReferenceSpans = referenceSpans;
         Dependencies = dependencies;
         Imports = imports;
-        Diagnostics = diagnostics;
+        _diagnostics = diagnostics;
         ParseOptions = parseOptions;
     }
 
@@ -49,11 +51,11 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
 
     public ImmutableArray<AvroImport> Imports { get; }
 
-    public ImmutableArray<AvroDiagnostic> Diagnostics { get; }
-
-    public bool IsValid => !Diagnostics.HasErrors;
+    public bool IsValid => !_diagnostics.HasErrors;
 
     public AvroParseOptions ParseOptions { get; }
+
+    public IEnumerable<AvroDiagnostic> GetDiagnostics() => _diagnostics;
 
     public bool Equals(AvroFile? other) =>
         ReferenceEquals(this, other) ||

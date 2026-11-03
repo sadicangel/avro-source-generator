@@ -43,6 +43,5 @@ internal static class SyntaxAvroExtensions
     extension(JsonValueSyntax syntax)
     {
         public JsonElement ToJsonElement() => JsonSerializer.SerializeToElement(syntax.JsonNode);
-        public JsonElement? ToOptionalJsonElement() => JsonSerializer.SerializeToElement(syntax.JsonNode);
     }
 }

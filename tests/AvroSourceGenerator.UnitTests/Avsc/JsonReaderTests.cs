@@ -44,7 +44,7 @@ public sealed class JsonReaderTests
     {
         var file = AvxxParser.Parse(new SourceText("test.avsc", text), new AvroParseOptions(), TestContext.Current.CancellationToken);
         Assert.False(file.IsValid);
-        var diagnostic = Assert.Single(file.Diagnostics);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.InvalidJson, diagnostic.Code);
         Assert.StartsWith("Invalid JSON: ", diagnostic.GetMessage());
         Assert.DoesNotContain("LineNumber:", diagnostic.GetMessage());
@@ -56,7 +56,7 @@ public sealed class JsonReaderTests
     {
         const string Text = "{\r\n\"é😀\":0,\"bad\":!\r\n}";
         var file = AvxxParser.Parse(new SourceText("test.avsc", Text), new AvroParseOptions(), TestContext.Current.CancellationToken);
-        var diagnostic = Assert.Single(file.Diagnostics);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.InvalidJson, diagnostic.Code);
         Assert.Equal(Text.IndexOf('!'), diagnostic.SourceSpan.Offset);
         Assert.Equal("!", diagnostic.SourceSpan.ToString());
@@ -68,7 +68,7 @@ public sealed class JsonReaderTests
     {
         var text = new string('[', 65) + "0" + new string(']', 65);
         var file = AvxxParser.Parse(new SourceText("test.avsc", text), new AvroParseOptions(), TestContext.Current.CancellationToken);
-        Assert.Equal(AvroDiagnosticCode.InvalidJson, Assert.Single(file.Diagnostics).Code);
+        Assert.Equal(AvroDiagnosticCode.InvalidJson, Assert.Single(file.GetDiagnostics()).Code);
     }
 
     [Fact]

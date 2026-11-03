@@ -1,5 +1,6 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
@@ -9,7 +10,10 @@ public sealed class BoundAvroFile : IEquatable<BoundAvroFile>, ISourceFile
 {
     private readonly LinkedAvroFile _linkedFile;
 
-    private BoundAvroFile(LinkedAvroFile linkedFile, AvroSchema? rootSchema, ImmutableArray<TopLevelSchema> declarations)
+    private BoundAvroFile(
+        LinkedAvroFile linkedFile,
+        AvroSchema? rootSchema,
+        ImmutableArray<TopLevelSchema> declarations)
     {
         _linkedFile = linkedFile;
         RootSchema = rootSchema;
@@ -22,19 +26,20 @@ public sealed class BoundAvroFile : IEquatable<BoundAvroFile>, ISourceFile
 
     public SourcePath Path => File.Path;
 
-    public bool IsValid => File.IsValid;
+    public bool IsValid => _linkedFile.IsValid;
 
     public AvroSchema? RootSchema { get; }
 
     public ImmutableArray<TopLevelSchema> Declarations { get; }
 
-    public FrozenDictionary<SchemaName, CSharpName?> References => _linkedFile.References;
+    public FrozenDictionary<SchemaName, TopLevelSchema?> References => _linkedFile.References;
 
     public FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies => File.Dependencies;
 
+    public IEnumerable<AvroDiagnostic> GetDiagnostics() => _linkedFile.GetDiagnostics();
+
     public bool Equals(BoundAvroFile? other) =>
-        ReferenceEquals(this, other) ||
-        other is not null && _linkedFile.Equals(other._linkedFile);
+        ReferenceEquals(this, other) || (other is not null && _linkedFile.Equals(other._linkedFile));
 
     public override bool Equals(object? obj) => obj is BoundAvroFile other && Equals(other);
 

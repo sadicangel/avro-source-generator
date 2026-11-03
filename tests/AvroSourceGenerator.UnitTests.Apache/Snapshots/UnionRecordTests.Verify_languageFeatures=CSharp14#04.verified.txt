@@ -99,7 +99,7 @@
             switch (fieldPos)
             {
                 case 0:
-                    Set_content(this, fieldValue! is null ? null : (IEnvelopeContentVariant)fieldValue!); break;
+                    Set_content(this, fieldValue! is null ? (IEnvelopeContentVariant?)null : (IEnvelopeContentVariant)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_content")]
                     extern static void Set_content(Envelope obj, IEnvelopeContentVariant? value);
                 default:

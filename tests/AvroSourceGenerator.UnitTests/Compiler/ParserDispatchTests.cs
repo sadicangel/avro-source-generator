@@ -27,7 +27,7 @@ public sealed class ParserDispatchTests
     {
         var source = new SourceText("test" + extension, " \r\n" + json + " ");
         var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
-        var diagnostic = Assert.Single(file.Diagnostics);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
         Assert.False(file.IsValid);
         Assert.Equal(expected, diagnostic.Code);
         Assert.Equal(source.GetSourceSpan(3, json.Length), diagnostic.SourceSpan);
@@ -54,7 +54,7 @@ public sealed class ParserDispatchTests
     public void Present_discriminators_keep_property_diagnostics(string extension, string json, string value, AvroDiagnosticCode code)
     {
         var source = new SourceText("test" + extension, json);
-        var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).Diagnostics);
+        var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).GetDiagnostics());
         Assert.Equal(code, diagnostic.Code);
         Assert.Equal(value, diagnostic.SourceSpan.ToString());
     }
@@ -68,7 +68,7 @@ public sealed class ParserDispatchTests
     public void Nested_protocols_are_not_schemas(string extension, string json, AvroDiagnosticCode code)
     {
         var source = new SourceText("test" + extension, json);
-        var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).Diagnostics);
+        var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).GetDiagnostics());
         Assert.Equal(code, diagnostic.Code);
         Assert.Equal("""{"protocol":"P"}""", diagnostic.SourceSpan.ToString());
         Assert.Same(source, diagnostic.SourceSpan.SourceText);
@@ -89,7 +89,7 @@ public sealed class ParserDispatchTests
         var actual = AvroFile.Parse(source, s_options, TestContext.Current.CancellationToken);
         Assert.Equal(expected, actual);
         Assert.Equal(expected.RootSchema.ToJsonString(expected.Declarations.ToDictionary(schema => schema.SchemaName)), actual.RootSchema.ToJsonString(actual.Declarations.ToDictionary(schema => schema.SchemaName)));
-        Assert.Equal(expected.Diagnostics, actual.Diagnostics);
+        Assert.Equal(expected.GetDiagnostics(), actual.GetDiagnostics());
         Assert.Equal(expected.Declarations.Select(schema => schema.SchemaName), actual.Declarations.Select(schema => schema.SchemaName));
         Assert.Equal(s_options, actual.ParseOptions);
     }
@@ -106,6 +106,6 @@ public sealed class ParserDispatchTests
         Assert.Empty(file.References);
         Assert.Empty(file.ReferenceSpans);
         Assert.Empty(file.Dependencies);
-        Assert.Equal(code, Assert.Single(file.Diagnostics).Code);
+        Assert.Equal(code, Assert.Single(file.GetDiagnostics()).Code);
     }
 }

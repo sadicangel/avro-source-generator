@@ -70,7 +70,7 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         var localNames = new HashSet<SchemaName>();
         foreach (var (fileIndex, file) in files.Index())
         {
-            schemaIndex.Diagnostics.AddRange(file.File.Diagnostics);
+            schemaIndex.Diagnostics.AddRange(file.GetDiagnostics());
             cancellationToken.ThrowIfCancellationRequested();
             schemaIndex.FileMetadata.Add(file, new FileMetadata(fileIndex, file.IsValid));
             var filePath = file.Path;

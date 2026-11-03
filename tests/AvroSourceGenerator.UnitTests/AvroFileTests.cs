@@ -216,8 +216,8 @@ public sealed class AvroFileTests
         var file = Parse("schema.avdl", Text);
 
         Assert.False(file.IsValid);
-        Assert.Contains(file.Diagnostics, diagnostic => diagnostic.SourceSpan.Offset == Text.IndexOf('$'));
-        Assert.Contains(file.Diagnostics, diagnostic => diagnostic.SourceSpan.Offset == Text.IndexOf('#'));
+        Assert.Contains(file.GetDiagnostics(), diagnostic => diagnostic.SourceSpan.Offset == Text.IndexOf('$'));
+        Assert.Contains(file.GetDiagnostics(), diagnostic => diagnostic.SourceSpan.Offset == Text.IndexOf('#'));
     }
 
     private static AvroFile Parse(string path, string text) =>

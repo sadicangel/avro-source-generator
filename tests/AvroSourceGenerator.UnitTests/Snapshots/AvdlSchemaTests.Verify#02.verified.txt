@@ -9,7 +9,7 @@ namespace Avdl.Acceptance.Schema
     [global::System.CodeDom.Compiler.GeneratedCode("AvroSourceGenerator", "1.0.0.0")]
     public partial record Address
     {
-        public string street { get; init; } = "Main";
+        public required string street { get; init; }
         public string? unit { get; init; }
         public required global::System.Collections.Generic.Dictionary<string, string> labels { get; init; }
     }

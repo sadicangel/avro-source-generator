@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
+using AvroSourceGenerator.Schemas.Defaults;
 
 namespace AvroSourceGenerator.Schemas;
 
@@ -9,8 +10,7 @@ public sealed record class Field(
     AvroSchema UnderlyingType,
     string? Documentation,
     ImmutableArray<string> Aliases,
-    JsonElement? DefaultJson,
-    object? Default,
+    DefaultValue? Default,
     string? Order,
     ImmutableSortedDictionary<string, JsonElement> Properties,
     string? Remarks)
@@ -50,10 +50,10 @@ public sealed record class Field(
             writer.WriteEndArray();
         }
 
-        if (DefaultJson is not null)
+        if (Default is not null)
         {
             writer.WritePropertyName(AvroJsonKeys.Default);
-            DefaultJson.Value.WriteTo(writer);
+            Default.WriteTo(writer);
         }
 
         // Apache.Avro drops field order when CodeGen re-emits a schema. This is probably

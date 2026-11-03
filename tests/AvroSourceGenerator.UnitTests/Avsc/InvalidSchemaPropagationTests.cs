@@ -24,7 +24,7 @@ public sealed class InvalidSchemaPropagationTests
         Assert.Same(AvroSchema.Null, file.RootSchema);
         Assert.False(file.IsValid);
         Assert.Empty(file.Declarations);
-        var diagnostic = Assert.Single(file.Diagnostics);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
         Assert.NotEqual(AvroDiagnosticCode.None, diagnostic.Code);
         Assert.Equal("false", diagnostic.SourceSpan.ToString());
         Assert.NotEmpty(diagnostic.GetMessage());
@@ -47,7 +47,7 @@ public sealed class InvalidSchemaPropagationTests
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
         Assert.Empty(file.Declarations);
-        Assert.NotEqual(AvroDiagnosticCode.None, Assert.Single(file.Diagnostics).Code);
+        Assert.NotEqual(AvroDiagnosticCode.None, Assert.Single(file.GetDiagnostics()).Code);
     }
 
     [Fact]
@@ -57,8 +57,8 @@ public sealed class InvalidSchemaPropagationTests
         var file = AvxxParser.Parse(new SourceText("test.avpr", Text), Options, TestContext.Current.CancellationToken);
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
-        Assert.Equal(["false", "{}", "false"], file.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
-        Assert.All(file.Diagnostics, diagnostic => Assert.NotEqual(AvroDiagnosticCode.None, diagnostic.Code));
+        Assert.Equal(["false", "{}", "false"], file.GetDiagnostics().Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.All(file.GetDiagnostics(), diagnostic => Assert.NotEqual(AvroDiagnosticCode.None, diagnostic.Code));
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public sealed class InvalidSchemaPropagationTests
         var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
 
         Assert.Same(AvroSchema.Null, file.RootSchema);
-        Assert.Equal(AvroDiagnosticCode.RecursiveSchemaDefinition, Assert.Single(file.Diagnostics).Code);
+        Assert.Equal(AvroDiagnosticCode.RecursiveSchemaDefinition, Assert.Single(file.GetDiagnostics()).Code);
     }
 
     [Fact]

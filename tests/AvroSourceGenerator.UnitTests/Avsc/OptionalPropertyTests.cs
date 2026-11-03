@@ -1,8 +1,8 @@
-﻿using System.Text.Json;
-using AvroSourceGenerator.Compiler;
+﻿using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Schemas.Defaults;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.UnitTests.Avsc;
@@ -18,7 +18,7 @@ public sealed class OptionalPropertyTests
         text = text.Insert(text.Length - 1, optionalProperties);
         var file = Parse(text);
         Assert.True(file.IsValid);
-        Assert.Empty(file.Diagnostics);
+        Assert.Empty(file.GetDiagnostics());
         Assert.Null(file.RootSchema.Documentation);
     }
 
@@ -29,8 +29,9 @@ public sealed class OptionalPropertyTests
         var file = Parse(Text);
         Assert.True(file.IsValid);
         var record = Assert.IsType<RecordSchema>(file.RootSchema);
-        Assert.Null(record.Fields[0].DefaultJson);
-        Assert.Equal(JsonValueKind.Null, record.Fields[1].DefaultJson!.Value.ValueKind);
+        Assert.Null(record.Fields[0].Default);
+        Assert.IsType<UnboundDefaultValue>(record.Fields[1].Default);
+        Assert.IsType<UnboundDefaultValue>(Assert.IsType<RecordSchema>(SchemaCompilerTestHelpers.Bind(file).RootSchema).Fields[1].Default);
     }
 
     [Theory]
@@ -42,7 +43,7 @@ public sealed class OptionalPropertyTests
     {
         var file = Parse(text);
         Assert.False(file.IsValid);
-        var diagnostic = Assert.Single(file.Diagnostics);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
         Assert.NotEqual(AvroDiagnosticCode.None, diagnostic.Code);
         Assert.NotEmpty(diagnostic.GetMessage());
     }
@@ -69,7 +70,7 @@ public sealed class OptionalPropertyTests
         const string Text = """{"protocol":"P","types":[],"messages":{"a":{"request":false,"response":"Missing"},"b":{"request":[],"response":"null"},"a":{"request":[],"response":"null"}}}""";
         var file = Parse(Text, ".avpr");
         Assert.True(file.IsValid);
-        Assert.Empty(file.Diagnostics);
+        Assert.Empty(file.GetDiagnostics());
         Assert.Empty(file.References);
         Assert.Equal(2, Assert.IsType<ProtocolSchema>(file.RootSchema).Messages.Length);
     }
@@ -80,7 +81,7 @@ public sealed class OptionalPropertyTests
     public void Discarded_or_unused_values_must_still_be_well_formed_json(string text)
     {
         var file = Parse(text);
-        Assert.Equal(AvroDiagnosticCode.InvalidJson, Assert.Single(file.Diagnostics).Code);
+        Assert.Equal(AvroDiagnosticCode.InvalidJson, Assert.Single(file.GetDiagnostics()).Code);
         Assert.Empty(file.Declarations);
     }
 }

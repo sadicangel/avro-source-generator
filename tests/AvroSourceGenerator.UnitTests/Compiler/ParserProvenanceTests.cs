@@ -37,7 +37,7 @@ public sealed class ParserProvenanceTests
     {
         const string Text = "protocol P { record P {} }";
         var file = AvxxParser.Parse(new SourceText("test.avdl", Text), s_options, TestContext.Current.CancellationToken);
-        var diagnostic = Assert.Single(file.Diagnostics);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.RecursiveSchemaDefinition, diagnostic.Code);
         Assert.Equal("P", diagnostic.SourceSpan.ToString());
         Assert.Equal(Text.LastIndexOf('P'), diagnostic.SourceSpan.Offset);
@@ -59,7 +59,7 @@ public sealed class ParserProvenanceTests
     {
         const string Text = "namespace ns; schema ns.R; record R { ns.Missing a; ns.Missing b; } record R {}";
         var file = AvroFile.Parse(new SourceText("test.avdl", Text), s_options, TestContext.Current.CancellationToken);
-        Assert.True(file.IsValid, string.Join("; ", file.Diagnostics));
+        Assert.True(file.IsValid, string.Join("; ", file.GetDiagnostics()));
         Assert.Equal(
             ["record R { ns.Missing a; ns.Missing b; }", "record R {}"],
             file.DeclarationSpans.Select(span => span.ToString()));
@@ -133,7 +133,7 @@ public sealed class ParserProvenanceTests
     {
         var result = AvxxParser.Parse(new SourceText("test.avdl", text), s_options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
-        Assert.Equal(anchor, Assert.Single(result.Diagnostics).SourceSpan.ToString());
+        Assert.Equal(anchor, Assert.Single(result.GetDiagnostics()).SourceSpan.ToString());
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public sealed class ParserProvenanceTests
     {
         var result = AvxxParser.Parse(new SourceText("test.avdl", "schema ;"), s_options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
-        Assert.NotEmpty(result.Diagnostics);
+        Assert.NotEmpty(result.GetDiagnostics());
     }
 
     [Theory]
@@ -152,7 +152,7 @@ public sealed class ParserProvenanceTests
         var source = new SourceText(path, text);
         var result = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
         Assert.False(result.IsValid);
-        var diagnostic = Assert.Single(result.Diagnostics);
+        var diagnostic = Assert.Single(result.GetDiagnostics());
         Assert.Equal(code, diagnostic.Code);
         var offset = text.IndexOf("null", StringComparison.Ordinal);
         Assert.Equal(source.GetSourceSpan(offset, "null".Length), diagnostic.SourceSpan);

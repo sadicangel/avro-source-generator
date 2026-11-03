@@ -1,5 +1,6 @@
 using System.Text.Json;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Schemas.Defaults;
 
 namespace AvroSourceGenerator.Protocols;
 
@@ -8,8 +9,7 @@ public sealed record class ProtocolRequestParameter(
     AvroSchema Type,
     AvroSchema UnderlyingType,
     string? Documentation,
-    JsonElement? DefaultJson,
-    object? Default)
+    DefaultValue? Default)
 {
     public void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
@@ -22,10 +22,10 @@ public sealed record class ProtocolRequestParameter(
             writer.WriteString(AvroJsonKeys.Doc, Documentation);
         }
 
-        if (DefaultJson is not null)
+        if (Default is not null)
         {
             writer.WritePropertyName(AvroJsonKeys.Default);
-            DefaultJson.Value.WriteTo(writer);
+            Default.WriteTo(writer);
         }
 
         writer.WriteEndObject();

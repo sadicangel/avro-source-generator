@@ -71,7 +71,7 @@ namespace Avdl.Acceptance.Protocol
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_ids")]
                     extern static void Set_ids(global::Avdl.Acceptance.Protocol.SearchResponse obj, global::System.Collections.Generic.List<string> value);
                 case 1:
-                    Set_nextPageToken(this, fieldValue! is null ? null : (string)fieldValue!); break;
+                    Set_nextPageToken(this, fieldValue! is null ? (string?)null : (string)fieldValue!); break;
                     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = "set_nextPageToken")]
                     extern static void Set_nextPageToken(global::Avdl.Acceptance.Protocol.SearchResponse obj, string? value);
                 case 2:

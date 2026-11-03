@@ -67,6 +67,6 @@ public sealed class ApacheFunctionsTests
         Assert.Equal(nested ? ["array", "map"] : [], requiredConverters(schema));
 
         Field CreateField(AvroSchema schema) => new(
-            "Value", schema, schema, null, [], null, null, null, properties, null);
+            "Value", schema, schema, null, [], null, null, properties, null);
     }
 }

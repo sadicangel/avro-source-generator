@@ -170,7 +170,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
-    private static JsonElement? GetDefaultJson(JsonObjectSyntax syntax) => syntax.GetProperty(AvroJsonKeys.Default)?.Value.AsJsonElement();
+    private static JsonSyntax? GetDefaultJson(JsonObjectSyntax syntax) => syntax.GetProperty(AvroJsonKeys.Default)?.Value;
 
     private int GetSizeInt32(JsonPropertySyntax property)
     {
@@ -256,9 +256,9 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
 
     protected JsonSyntax? ParseRootSyntax()
     {
+        var reader = new JsonReader(sourceText);
         try
         {
-            var reader = new JsonReader(sourceText);
             if (!reader.Read())
             {
                 Report(AvroDiagnostic.EmptyJson(sourceText.GetSourceSpan()));
@@ -277,7 +277,10 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         }
         catch (JsonException ex)
         {
-            Report(AvroDiagnostic.InvalidJson(SourceSpan.FromException(sourceText, ex), ex));
+            var span = ex.LineNumber is null && ex.BytePositionInLine is null && !reader.CurrentSpan.IsNone
+                ? reader.CurrentSpan
+                : SourceSpan.FromException(sourceText, ex);
+            Report(AvroDiagnostic.InvalidJson(span, ex));
             return null;
         }
     }
@@ -494,9 +497,11 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         var tracker = TrackDiagnostics();
         var documentation = GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
         var aliases = GetOptionalArrayStrings(syntax, AvroJsonKeys.Aliases);
-        var defaultJson = GetDefaultJson(syntax);
+        var defaultSyntax = GetDefaultJson(syntax);
+        var defaultJson = defaultSyntax?.AsJsonElement();
         var order = GetOptionalString(syntax, AvroJsonKeys.Order);
         var properties = syntax.GetSchemaProperties();
+        var defaultValue = GetDefaultValue(defaultJson, cancellationToken);
         if (tracker.HasNewDiagnostics || aliases.IsDefault) return null;
         return new Field(
             fieldName,
@@ -504,8 +509,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
             underlyingType,
             documentation,
             aliases,
-            defaultJson,
-            fieldType.GetValue(defaultJson),
+            defaultValue,
             order,
             properties,
             remarks);
@@ -618,10 +622,13 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         var typeProperty = GetRequiredProperty(syntax, AvroJsonKeys.Type);
         var type = typeProperty is null ? null : Schema(typeProperty.Value, containingNamespace);
         var documentation = GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-        var defaultJson = GetDefaultJson(syntax);
+        var defaultSyntax = GetDefaultJson(syntax);
+        var defaultJson = defaultSyntax?.AsJsonElement();
         if (name is null || type is null || tracker.HasNewDiagnostics) return null;
+        var defaultValue = GetDefaultValue(defaultJson, cancellationToken);
+        if (tracker.HasNewDiagnostics) return null;
         var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
-        return new ProtocolRequestParameter(name.ToValidName(), type, underlyingType, documentation, defaultJson, type.GetValue(defaultJson));
+        return new ProtocolRequestParameter(name.ToValidName(), type, underlyingType, documentation, defaultValue);
     }
 
     private TSchema? EnterRegisterScope<TSchema>(

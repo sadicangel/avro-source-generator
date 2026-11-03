@@ -10,7 +10,7 @@ namespace Avdl.Acceptance.Protocol
     public partial class ServiceError
     {
         public required string message { get; init; }
-        public int code { get; init; } = 500;
+        public required int code { get; init; }
     }
     
     partial class ServiceError : global::Avro.Specific.SpecificException

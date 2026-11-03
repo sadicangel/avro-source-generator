@@ -656,18 +656,18 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         ITypeSyntax syntax,
         string? containingNamespace,
         ImmutableSortedDictionary<string, JsonElement>? properties = null,
-        JsonElement? defaultJson = null)
+        bool hasNonNullDefault = false)
     {
         properties ??= ImmutableSortedDictionary<string, JsonElement>.Empty;
 
         return syntax switch
         {
-            AnnotatedTypeSyntax type => Annotated(type, containingNamespace, defaultJson),
+            AnnotatedTypeSyntax type => Annotated(type, containingNamespace, hasNonNullDefault),
             ArrayTypeSyntax type => Array(type, containingNamespace, properties),
             ILogicalTypeSyntax type => Logical(type),
             MapTypeSyntax type => Map(type, containingNamespace, properties),
             NamedTypeSyntax type => Named(type, containingNamespace),
-            OptionalTypeSyntax type => Optional(type, containingNamespace, defaultJson),
+            OptionalTypeSyntax type => Optional(type, containingNamespace, hasNonNullDefault),
             PrimitiveTypeSyntax type => Primitive(type),
             UnionTypeSyntax type => Union(type, containingNamespace),
             _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL type syntax '{syntax.SyntaxKind}'."),
@@ -699,14 +699,14 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         return annotated;
     }
 
-    private AvroSchema? Annotated(AnnotatedTypeSyntax syntax, string? containingNamespace, JsonElement? defaultJson)
+    private AvroSchema? Annotated(AnnotatedTypeSyntax syntax, string? containingNamespace, bool hasNonNullDefault)
     {
         var tracker = TrackDiagnostics();
         var logicalTypeName = syntax.Annotations.OfType<LogicalTypeAnnotationSyntax>().LastOrDefault() is { } annotation
             ? GetString(annotation.JsonValue, AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, required: true)
             : null;
         var properties = syntax.Annotations.GetProperties(ReservedSchemaProperties.IsReserved);
-        var underlyingSchema = Type(syntax.Type, containingNamespace, properties, defaultJson);
+        var underlyingSchema = Type(syntax.Type, containingNamespace, properties, hasNonNullDefault);
         if (underlyingSchema is null || tracker.HasNewDiagnostics) return null;
         return logicalTypeName is not null
             ? LogicalSchema.Create(logicalTypeName, underlyingSchema, Options.GenerationTarget)
@@ -854,8 +854,10 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
     {
         var tracker = TrackDiagnostics();
         var name = new FieldName(syntax.Name.FullName);
-        var defaultJson = syntax.DefaultValueClause?.JsonValue.ToOptionalJsonElement();
-        var type = Type(syntax.Type, containingSchemaName.Namespace, defaultJson: defaultJson);
+        var defaultSyntax = syntax.DefaultValueClause?.JsonValue;
+        var defaultJson = defaultSyntax?.ToJsonElement();
+        var hasNonNullDefault = defaultJson is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) };
+        var type = Type(syntax.Type, containingSchemaName.Namespace, hasNonNullDefault: hasNonNullDefault);
         var documentation = syntax.GetDocumentation();
         var aliases = GetAliases(syntax);
         var order = syntax.Annotations.OfType<OrderAnnotationSyntax>().LastOrDefault() is { } annotation
@@ -867,16 +869,18 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
             return null;
 
         var fieldType = ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var remarks);
-        return new Field(name, fieldType, underlyingType, documentation, aliases, defaultJson, fieldType.GetValue(defaultJson), order, properties, remarks);
+        var defaultValue = GetDefaultValue(defaultJson, cancellationToken);
+        if (tracker.HasNewDiagnostics) return null;
+        return new Field(name, fieldType, underlyingType, documentation, aliases, defaultValue, order, properties, remarks);
     }
 
-    private AvroSchema? Optional(OptionalTypeSyntax syntax, string? containingNamespace, JsonElement? defaultJson)
+    private AvroSchema? Optional(OptionalTypeSyntax syntax, string? containingNamespace, bool hasNonNullDefault)
     {
         var underlyingSchema = Type(syntax.Type, containingNamespace);
         if (underlyingSchema is null) return null;
-        ImmutableArray<AvroSchema> schemas = defaultJson is null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined }
-            ? [AvroSchema.Null, underlyingSchema]
-            : [underlyingSchema, AvroSchema.Null];
+        ImmutableArray<AvroSchema> schemas = hasNonNullDefault
+            ? [underlyingSchema, AvroSchema.Null]
+            : [AvroSchema.Null, underlyingSchema];
         return UnionSchema.Create(schemas, Options.LanguageFeatures.HasNullableReferenceTypes);
     }
 
@@ -1014,14 +1018,18 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
 
     private ProtocolRequestParameter? ProtocolRequestParameter(ParameterDeclarationSyntax syntax, string? containingNamespace)
     {
+        var tracker = TrackDiagnostics();
         var name = syntax.Name.FullName.ToValidName();
-        var defaultJson = syntax.DefaultValueClause?.JsonValue.ToOptionalJsonElement();
-        var type = Type(syntax.Type, containingNamespace, defaultJson: defaultJson);
+        var defaultSyntax = syntax.DefaultValueClause?.JsonValue;
+        var defaultJson = defaultSyntax?.ToJsonElement();
+        var hasNonNullDefault = defaultJson is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) };
+        var type = Type(syntax.Type, containingNamespace, hasNonNullDefault: hasNonNullDefault);
         var documentation = syntax.GetDocumentation();
         if (type is null) return null;
         var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
-        var @default = type.GetValue(defaultJson);
-        return new ProtocolRequestParameter(name, type, underlyingType, documentation, defaultJson, @default);
+        var defaultValue = GetDefaultValue(defaultJson, cancellationToken);
+        if (tracker.HasNewDiagnostics) return null;
+        return new ProtocolRequestParameter(name, type, underlyingType, documentation, defaultValue);
     }
 
     private ProtocolResponse? ProtocolResponse(ITypeSyntax syntax, string? containingNamespace)

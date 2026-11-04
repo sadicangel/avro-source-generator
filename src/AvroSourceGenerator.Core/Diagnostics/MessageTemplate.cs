@@ -42,6 +42,10 @@ public static class MessageTemplate
     public const string InvalidFixedSize = "Property 'size' must be a positive 32-bit integer";
     public const string RecursiveSchemaDefinition = "Recursive schema definition detected for '{0}'.";
     public const string InvalidOneWayMessage = "One-way message '{0}' must have a null response and no declared errors";
+    public const string DuplicateField = "Field '{0}' is declared more than once in '{1}'; field names must be unique within a record or error";
+    public const string DuplicateEnumSymbol = "Symbol '{0}' is declared more than once in enum '{1}'; enum symbols must be unique";
+    public const string DuplicateUnionBranch = "Union contains more than one branch for Avro type '{0}'; keep only one branch for each type or named type fullname";
+    public const string NestedUnion = "Union may not immediately contain another union; list its branches in the enclosing union";
     public const string InvalidCharacter = "Unexpected character '{0}'";
     public const string InvalidEscapeSequence = "Invalid escape sequence '{0}'";
     public const string InvalidNumber = "Invalid number literal '{0}'";
@@ -115,6 +119,10 @@ public static class MessageTemplate
         AvroDiagnosticCode.InvalidFixedSize => InvalidFixedSize,
         AvroDiagnosticCode.RecursiveSchemaDefinition => RecursiveSchemaDefinition,
         AvroDiagnosticCode.InvalidOneWayMessage => InvalidOneWayMessage,
+        AvroDiagnosticCode.DuplicateField => DuplicateField,
+        AvroDiagnosticCode.DuplicateEnumSymbol => DuplicateEnumSymbol,
+        AvroDiagnosticCode.DuplicateUnionBranch => DuplicateUnionBranch,
+        AvroDiagnosticCode.NestedUnion => NestedUnion,
         AvroDiagnosticCode.InvalidCharacter => InvalidCharacter,
         AvroDiagnosticCode.InvalidEscapeSequence => InvalidEscapeSequence,
         AvroDiagnosticCode.InvalidNumber => InvalidNumber,

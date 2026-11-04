@@ -770,15 +770,16 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         using var scope = EnterRecursionScope(schemaName);
         var documentation = syntax.GetDocumentation();
         var aliases = GetAliases(syntax);
-        var symbols = syntax.Symbols.WithCancellation(cancellationToken)
-            .Select(static symbol => new MemberName(symbol.FullName))
-            .ToImmutableArray();
+        var symbols = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var symbol in syntax.Symbols.WithCancellation(cancellationToken))
+            if (!symbols.Add(symbol.FullName))
+                Report(AvroDiagnostic.DuplicateSymbol(symbol.GetSourceSpan(), symbol.FullName, schemaName));
         var defaultValue = GetEnumDefault(syntax);
         var properties = syntax.GetSchemaProperties();
         if (aliases.IsDefault || tracker.HasNewDiagnostics)
             return null;
 
-        var schema = new EnumSchema(schemaName, documentation, aliases, symbols, defaultValue, properties);
+        var schema = new EnumSchema(schemaName, documentation, aliases, [.. syntax.Symbols.WithCancellation(cancellationToken).Select(static symbol => new MemberName(symbol.FullName))], defaultValue, properties);
         Declare(schema, syntax.GetSourceSpan());
         return schema;
     }
@@ -855,13 +856,23 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
     private ImmutableArray<Field> Fields(SyntaxList<FieldDeclarationSyntax> syntaxList, SchemaName containingSchemaName)
     {
         var fields = ImmutableArray.CreateBuilder<Field>();
+        var names = new HashSet<string>(StringComparer.Ordinal);
         var valid = true;
         foreach (var syntax in syntaxList.WithCancellation(cancellationToken))
         {
-            if (Field(syntax, containingSchemaName) is { } field)
-                fields.Add(field);
-            else
+            if (Field(syntax, containingSchemaName) is not { } field)
+            {
                 valid = false;
+            }
+            else if (!names.Add(field.Name.SchemaName))
+            {
+                Report(AvroDiagnostic.DuplicateField(syntax.Name.GetSourceSpan(), field.Name.SchemaName, containingSchemaName));
+                valid = false;
+            }
+            else
+            {
+                fields.Add(field);
+            }
         }
         return valid ? fields.DrainToImmutable() : default;
     }
@@ -893,7 +904,17 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
     private AvroSchema? Optional(OptionalTypeSyntax syntax, string? containingNamespace, bool hasNonNullDefault)
     {
         var underlyingSchema = Type(syntax.Type, containingNamespace);
-        if (underlyingSchema is null) return null;
+        switch (underlyingSchema)
+        {
+            case null: return null;
+            case PrimitiveSchema { SchemaType: SchemaType.Null }:
+                Report(AvroDiagnostic.DuplicateUnionBranch(syntax.Type.GetSourceSpan(), AvroTypeNames.Null));
+                return null;
+            case UnionSchema:
+                Report(AvroDiagnostic.NestedUnion(syntax.Type.GetSourceSpan()));
+                return null;
+        }
+
         ImmutableArray<AvroSchema> schemas = hasNonNullDefault
             ? [underlyingSchema, AvroSchema.Null]
             : [AvroSchema.Null, underlyingSchema];
@@ -902,18 +923,38 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
 
     private AvroSchema? Union(UnionTypeSyntax syntax, string? containingNamespace)
     {
+        var schemas = UnionBranches(syntax.Types, containingNamespace);
+        return schemas.IsDefault ? null : UnionSchema.Create(schemas, Options.LanguageFeatures.HasNullableReferenceTypes);
+    }
+
+    private ImmutableArray<AvroSchema> UnionBranches(IEnumerable<ITypeSyntax> items, string? containingNamespace, bool includeSystemError = false)
+    {
         var schemas = ImmutableArray.CreateBuilder<AvroSchema>();
+        var branches = new HashSet<AvroSchema>(UnionBranchComparer.Instance);
+        if (includeSystemError) branches.Add(AvroSchema.String);
         var valid = true;
-        foreach (var type in syntax.Types.WithCancellation(cancellationToken))
+        foreach (var type in items.WithCancellation(cancellationToken))
         {
             var schema = Type(type, containingNamespace);
-            if (schema is not null)
-                schemas.Add(schema);
-            else
-                valid = false;
+            switch (schema)
+            {
+                case null:
+                    valid = false;
+                    break;
+                case UnionSchema:
+                    Report(AvroDiagnostic.NestedUnion(type.GetSourceSpan()));
+                    valid = false;
+                    break;
+                case not null when !branches.Add(schema):
+                    Report(AvroDiagnostic.DuplicateUnionBranch(type.GetSourceSpan(), schema.SchemaName.FullName));
+                    valid = false;
+                    break;
+                default:
+                    schemas.Add(schema);
+                    break;
+            }
         }
-        if (!valid) return null;
-        return UnionSchema.Create(schemas.DrainToImmutable(), Options.LanguageFeatures.HasNullableReferenceTypes);
+        return valid ? schemas.DrainToImmutable() : default;
     }
 
     private AvroSchema? Logical(ILogicalTypeSyntax syntax)
@@ -1056,21 +1097,8 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         return new ProtocolResponse(type, underlyingType);
     }
 
-    private ImmutableArray<AvroSchema> ProtocolErrors(ThrowsErrorClauseSyntax? syntax, string? containingNamespace)
-    {
-        if (syntax is null) return [];
-        var parameters = ImmutableArray.CreateBuilder<AvroSchema>();
-        var valid = true;
-        foreach (var error in syntax.Errors.WithCancellation(cancellationToken))
-        {
-            var schema = Type(error, containingNamespace);
-            if (schema is not null)
-                parameters.Add(schema);
-            else
-                valid = false;
-        }
-        return valid ? parameters.DrainToImmutable() : default;
-    }
+    private ImmutableArray<AvroSchema> ProtocolErrors(ThrowsErrorClauseSyntax? syntax, string? containingNamespace) =>
+        syntax is null ? [] : UnionBranches(syntax.Errors, containingNamespace, includeSystemError: true);
 
     private T Invalid<T>(T @default, AvroDiagnostic diagnostic)
     {

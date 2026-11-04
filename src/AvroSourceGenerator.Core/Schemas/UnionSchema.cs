@@ -9,6 +9,14 @@ public sealed record class UnionSchema(
     AvroSchema UnderlyingSchema)
     : AvroSchema(SchemaType.Union, new SchemaName(string.Empty), CSharpName, Documentation: null, Properties: ImmutableSortedDictionary<string, JsonElement>.Empty)
 {
+    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
+    {
+        writer.WriteStartArray();
+        foreach (var schema in Schemas)
+            schema.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
+        writer.WriteEndArray();
+    }
+
     public static UnionSchema Create(ImmutableArray<AvroSchema> schemas, bool useNullableReferenceTypes)
     {
         var underlyingSchema = GetUnderlyingSchema(schemas);
@@ -19,14 +27,6 @@ public sealed record class UnionSchema(
             : underlyingSchema.CSharpName.WithoutNullableAnnotation();
 
         return new UnionSchema(csharpName, schemas, underlyingSchema);
-    }
-
-    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
-    {
-        writer.WriteStartArray();
-        foreach (var schema in Schemas)
-            schema.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
-        writer.WriteEndArray();
     }
 
     private static bool MapsToValueType(SchemaType type) =>

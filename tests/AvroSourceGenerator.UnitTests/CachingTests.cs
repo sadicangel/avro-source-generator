@@ -8,6 +8,68 @@ namespace AvroSourceGenerator.UnitTests;
 public sealed class CachingTests
 {
     [Theory]
+    [InlineData("schema R; record R { int f; int f; }", "schema R; record R { int f; int other; }", "AVROSG2032")]
+    [InlineData("schema E; enum E { A, A }", "schema E; enum E { A, B }", "AVROSG2033")]
+    [InlineData("schema R; record R { union { int, int } f; }", "schema R; record R { union { int, string } f; }", "AVROSG2034")]
+    [InlineData("schema R; record R { union { R, R } f; }", "schema R; record R { union { null, R } f; }", "AVROSG2034")]
+    [InlineData("schema R; record R { union { null, union { int, string } } f; }", "schema R; record R { union { null, int, string } f; }", "AVROSG2035")]
+    public void Semantic_diagnostics_are_cached_relocated_and_removed_after_repairs(string invalid, string valid, string id)
+    {
+        var token = TestContext.Current.CancellationToken;
+        var input = GeneratorInput.Create([ProjectFile.Source(invalid, "invalid.avdl"), ProjectFile.Source("schema Independent; record Independent {}", "independent.avdl")], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "None" });
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, token);
+        var diagnostic = Assert.Single(driver.GetRunResult().Diagnostics);
+        Assert.Equal(id, diagnostic.Id);
+        var independent = Assert.Single(Assert.Single(driver.GetRunResult().Results).GeneratedSources);
+        Assert.Equal("Independent.Avro.g.cs", independent.HintName);
+        driver = driver.RunGenerators(input.Compilation, token);
+        Assert.Equal(diagnostic, Assert.Single(driver.GetRunResult().Diagnostics));
+        Assert.All(StepTracking.GetTrackedSteps(driver.GetRunResult())["AvroFile"].SelectMany(step => step.Outputs), output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
+
+        var moved = new ChangedAdditionalText(input.AdditionalTexts[0].Path, "\n\n" + invalid);
+        driver = driver.ReplaceAdditionalText(input.AdditionalTexts[0], moved).RunGenerators(input.Compilation, token);
+        var relocated = Assert.Single(driver.GetRunResult().Diagnostics);
+        Assert.Equal(id, relocated.Id);
+        Assert.Equal(2, relocated.Location.GetLineSpan().StartLinePosition.Line);
+        Assert.Equal(diagnostic.Location.SourceSpan.Start + 2, relocated.Location.SourceSpan.Start);
+
+        var repaired = new ChangedAdditionalText(moved.Path, valid);
+        driver = driver.ReplaceAdditionalText(moved, repaired).RunGeneratorsAndUpdateCompilation(input.Compilation, out var compilation, out var diagnostics, token);
+        Assert.Empty(diagnostics);
+        Assert.Empty(driver.GetRunResult().Diagnostics);
+        Assert.Empty(compilation.GetDiagnostics(token).Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.Equal(independent.SourceText.ToString(), Assert.Single(driver.GetRunResult().Results).GeneratedSources.Single(source => source.HintName == independent.HintName).SourceText.ToString());
+
+        driver = driver.ReplaceAdditionalText(repaired, input.AdditionalTexts[0]).RunGenerators(input.Compilation, token);
+        var restored = Assert.Single(driver.GetRunResult().Diagnostics);
+        Assert.Equal(diagnostic.Id, restored.Id);
+        Assert.Equal(diagnostic.GetMessage(), restored.GetMessage());
+        Assert.Equal(diagnostic.Location, restored.Location);
+        Assert.Single(Assert.Single(driver.GetRunResult().Results).GeneratedSources);
+        Assert.All(driver.GetRunResult().Results, result => Assert.Null(result.Exception));
+    }
+
+    [Fact]
+    public void Duplicate_named_union_diagnostics_are_independent_of_reference_resolution()
+    {
+        var token = TestContext.Current.CancellationToken;
+        var input = GeneratorInput.Create([ProjectFile.Source("schema R; record R { union { External, External } f; }", "consumer.avdl")], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "None", ReferenceResolution = "Deferred" });
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, token);
+        var duplicate = Assert.Single(driver.GetRunResult().Diagnostics);
+        Assert.Equal("AVROSG2034", duplicate.Id);
+        var dependency = new ChangedAdditionalText("dependency.avdl", "schema External; record External {}");
+        driver = driver.AddAdditionalTexts([dependency]).RunGenerators(input.Compilation, token);
+        Assert.Equal(duplicate, Assert.Single(driver.GetRunResult().Diagnostics));
+        Assert.Equal("External.Avro.g.cs", Assert.Single(Assert.Single(driver.GetRunResult().Results).GeneratedSources).HintName);
+        driver = driver.RunGenerators(input.Compilation, token);
+        Assert.Equal(duplicate, Assert.Single(driver.GetRunResult().Diagnostics));
+        Assert.All(StepTracking.GetTrackedSteps(driver.GetRunResult())["AvroFile"].SelectMany(step => step.Outputs), output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
+        driver = driver.RemoveAdditionalTexts([dependency]).RunGenerators(input.Compilation, token);
+        Assert.Equal(duplicate, Assert.Single(driver.GetRunResult().Diagnostics));
+        Assert.Empty(driver.GetRunResult().GeneratedTrees);
+    }
+
+    [Theory]
     [InlineData("schema R; schema R; record R {}", "schema R;\n\nschema S; record R {}", "schema R; record R {}")]
     [InlineData("namespace a; namespace a; schema R; record R {}", "namespace a;\n\nnamespace b; schema R; record R {}", "namespace a; schema R; record R {}")]
     public void Duplicate_idl_directive_diagnostics_are_cached_and_refresh_after_edits(string invalid, string edited, string valid)

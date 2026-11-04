@@ -8,6 +8,8 @@ public class FieldPrimitiveTests
     [MemberData(nameof(Primitives))]
     public Task Verify(string @class, string field)
     {
+        // A null-only union has one branch; ["null", "null"] is invalid Avro.
+        var nullableType = field is "null" ? """["null"]""" : $$"""["null", "{{field}}"]""";
         var schema = $$"""
             {
                 "type": "{{@class}}",
@@ -19,7 +21,7 @@ public class FieldPrimitiveTests
                         "name": "Field"
                     },
                     {
-                        "type": ["null", "{{field}}"],
+                        "type": {{nullableType}},
                         "name": "NullableField"
                     }
                 ]

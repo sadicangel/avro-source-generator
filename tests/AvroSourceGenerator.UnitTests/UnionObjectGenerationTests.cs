@@ -123,20 +123,24 @@ public sealed class UnionObjectGenerationTests
     [InlineData("record", DuplicateResolution.Ignore)]
     [InlineData("error", DuplicateResolution.Error)]
     [InlineData("fixed", DuplicateResolution.Error)]
-    public void Duplicate_union_declarations_report_the_second_source_instead_of_throwing(string type, DuplicateResolution resolution)
+    public void Duplicate_inline_union_branches_are_rejected_during_parsing(string type, DuplicateResolution resolution)
     {
         var source = JsonNode.Parse(VariantGenerationAssertions.Schema(type, type))!;
         source["fields"]![0]!["type"]![1]!["name"] = "First";
+        var repeatedBranch = source["fields"]![0]!["type"]![1]!.ToJsonString();
+        var text = source.ToJsonString();
         var compiled = SchemaCompilerTestHelpers.Compile(
             GenerationTarget.Apache,
             ReferenceResolution.Strict,
             resolution,
-            ("duplicates.avsc", source.ToJsonString()));
+            ("duplicates.avsc", text));
 
         var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);
-        Assert.Equal(AvroDiagnosticCode.DuplicateSchema, diagnostic.Code);
-        Assert.Equal(compiled.Files[0].DeclarationSpans[1], diagnostic.SourceSpan);
+        Assert.Equal(AvroDiagnosticCode.DuplicateUnionBranch, diagnostic.Code);
+        Assert.Equal(repeatedBranch, diagnostic.SourceSpan.ToString());
+        Assert.Equal(text.LastIndexOf(repeatedBranch, StringComparison.Ordinal), diagnostic.SourceSpan.Offset);
         Assert.Equal("duplicates.avsc", diagnostic.SourceSpan.SourceText.Path.ToString());
+        Assert.False(compiled.Files[0].IsValid);
         Assert.False(compiled.Compilation.IsValid);
         Assert.Empty(compiled.RenderableFiles[0].EmittedSchemas);
     }

@@ -49,6 +49,11 @@ internal static class DiagnosticDescriptors
     internal static readonly DiagnosticDescriptor RecursiveSchemaDefinition = new DiagnosticDescriptor("AVROSG2030", "Recursive Schema Definition", MessageTemplate.Get(AvroDiagnosticCode.RecursiveSchemaDefinition), CompilerCategory, DiagnosticSeverity.Error, true, "A schema is nested within its own unfinished definition. Use a named reference to the enclosing schema instead.");
     internal static readonly DiagnosticDescriptor InvalidOneWayMessage = new DiagnosticDescriptor("AVROSG2031", "Invalid One Way Message", MessageTemplate.Get(AvroDiagnosticCode.InvalidOneWayMessage), CompilerCategory, DiagnosticSeverity.Error, true, "A one-way protocol message has a non-null response or declares errors. It must return null and declare no errors.");
 
+    internal static readonly DiagnosticDescriptor DuplicateField = new DiagnosticDescriptor("AVROSG2032", "Duplicate Field", MessageTemplate.Get(AvroDiagnosticCode.DuplicateField), CompilerCategory, DiagnosticSeverity.Error, true, "Record and error field names must be unique within their declaration, using case-sensitive Avro names.");
+    internal static readonly DiagnosticDescriptor DuplicateEnumSymbol = new DiagnosticDescriptor("AVROSG2033", "Duplicate Enum Symbol", MessageTemplate.Get(AvroDiagnosticCode.DuplicateEnumSymbol), CompilerCategory, DiagnosticSeverity.Error, true, "An enum cannot repeat a symbol. Remove or rename the repeated symbol.");
+    internal static readonly DiagnosticDescriptor DuplicateUnionBranch = new DiagnosticDescriptor("AVROSG2034", "Duplicate Union Branch", MessageTemplate.Get(AvroDiagnosticCode.DuplicateUnionBranch), CompilerCategory, DiagnosticSeverity.Error, true, "Union branches must have distinct Avro types, or distinct fullnames for record, error, enum, and fixed types. Logical annotations do not change branch identity.");
+    internal static readonly DiagnosticDescriptor NestedUnion = new DiagnosticDescriptor("AVROSG2035", "Nested Union", MessageTemplate.Get(AvroDiagnosticCode.NestedUnion), CompilerCategory, DiagnosticSeverity.Error, true, "A union cannot immediately contain another union. Correct the offending branch in the source schema.");
+
     internal static readonly DiagnosticDescriptor InvalidCharacter = new DiagnosticDescriptor("AVROSG3000", "Invalid Character", MessageTemplate.Get(AvroDiagnosticCode.InvalidCharacter), CompilerCategory, DiagnosticSeverity.Error, true, "The Avro IDL source contains a character that is invalid in the current lexical context.");
     internal static readonly DiagnosticDescriptor InvalidEscapeSequence = new DiagnosticDescriptor("AVROSG3001", "Invalid Escape Sequence", MessageTemplate.Get(AvroDiagnosticCode.InvalidEscapeSequence), CompilerCategory, DiagnosticSeverity.Error, true, "A string or identifier contains an unsupported or incomplete escape sequence.");
     internal static readonly DiagnosticDescriptor InvalidNumber = new DiagnosticDescriptor("AVROSG3002", "Invalid Number", MessageTemplate.Get(AvroDiagnosticCode.InvalidNumber), CompilerCategory, DiagnosticSeverity.Error, true, "The Avro IDL source contains a malformed numeric literal.");
@@ -127,6 +132,10 @@ internal static class DiagnosticDescriptors
         AvroDiagnosticCode.InvalidFixedSize => InvalidFixedSize,
         AvroDiagnosticCode.RecursiveSchemaDefinition => RecursiveSchemaDefinition,
         AvroDiagnosticCode.InvalidOneWayMessage => InvalidOneWayMessage,
+        AvroDiagnosticCode.DuplicateField => DuplicateField,
+        AvroDiagnosticCode.DuplicateEnumSymbol => DuplicateEnumSymbol,
+        AvroDiagnosticCode.DuplicateUnionBranch => DuplicateUnionBranch,
+        AvroDiagnosticCode.NestedUnion => NestedUnion,
 
         AvroDiagnosticCode.InvalidCharacter => InvalidCharacter,
         AvroDiagnosticCode.InvalidEscapeSequence => InvalidEscapeSequence,

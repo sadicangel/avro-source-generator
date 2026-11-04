@@ -1,6 +1,8 @@
 ﻿using System.Text;
 using AvroSourceGenerator.Cli;
 using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Diagnostics;
+using AvroSourceGenerator.UnitTests.Compiler;
 using Microsoft.CodeAnalysis.CSharp;
 
 namespace AvroSourceGenerator.UnitTests;
@@ -10,6 +12,63 @@ public sealed class CliTests : IDisposable
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "avro-cli-tests", Guid.NewGuid().ToString("N"));
 
     private string Output => Path.Combine(_directory, "output");
+
+    [Theory]
+    [MemberData(nameof(SemanticValidationTests.IssueExamples), MemberType = typeof(SemanticValidationTests))]
+    public Task Issue_semantic_errors_match_generator_without_writing(string text, int code, string value) =>
+        VerifySemanticDiagnostic("avsc", text, (AvroDiagnosticCode)code, value);
+
+    [Theory]
+    [MemberData(nameof(SemanticValidationTests.InvalidInputs), MemberType = typeof(SemanticValidationTests))]
+    public Task Json_and_idl_semantic_errors_match_generator_without_writing(string extension, string text, AvroDiagnosticCode code, string value) =>
+        VerifySemanticDiagnostic(extension, text, code, value);
+
+    private async Task VerifySemanticDiagnostic(string extension, string text, AvroDiagnosticCode code, string value)
+    {
+        var path = Write("invalid." + extension, text);
+        var input = GeneratorInput.Create([new ProjectFile(text, extension, path)], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "None" });
+        var result = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal($"AVROSG{(int)code:D4}", diagnostic.Id);
+        Assert.Equal(text.LastIndexOf(value, StringComparison.Ordinal), diagnostic.Location.SourceSpan.Start);
+        var span = diagnostic.Location.GetLineSpan();
+        var expected = $"{span.Path}({span.StartLinePosition.Line + 1},{span.StartLinePosition.Character + 1}): error {diagnostic.Id}: {diagnostic.GetMessage()}" + Environment.NewLine;
+
+        var (exitCode, output, error) = await Run("compile", path, "-o", Output, "--library", "None", "--language-version", "12");
+        Assert.Equal(1, exitCode);
+        Assert.Empty(output);
+        Assert.Equal(expected, error);
+        Assert.False(Directory.Exists(Output));
+    }
+
+    [Theory]
+    [MemberData(nameof(SemanticValidationTests.ValidInputs), MemberType = typeof(SemanticValidationTests))]
+    public async Task Legal_semantic_cases_match_generated_sources(string extension, string text)
+    {
+        var path = Write("valid." + extension, text);
+        var input = GeneratorInput.Create([new ProjectFile(text, extension, path)], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "None" });
+        var result = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
+        Assert.Empty(result.Diagnostics);
+        var (code, _, error) = await Run("compile", path, "-o", Output, "--library", "None", "--language-version", "12");
+        Assert.Equal(0, code);
+        Assert.Empty(error);
+        var sources = Assert.Single(result.Results).GeneratedSources;
+        Assert.Equal(sources.Length, Directory.GetFiles(Output).Length);
+        foreach (var source in sources)
+            Assert.Equal(source.SourceText.ToString(), File.ReadAllText(Path.Combine(Output, source.HintName)));
+    }
+
+    [Theory]
+    [MemberData(nameof(SemanticValidationTests.PreservedEnumDefaults), MemberType = typeof(SemanticValidationTests))]
+    public async Task Enum_schema_defaults_keep_existing_Cli_behavior(string extension, string text, string? expected)
+    {
+        Assert.True(expected is null or "B");
+        var path = Write("preserved." + extension, text);
+        var (code, _, error) = await Run("compile", path, "-o", Output, "--library", "None");
+        Assert.Equal(0, code);
+        Assert.Empty(error);
+        Assert.True(File.Exists(Path.Combine(Output, "E.Avro.g.cs")));
+    }
 
     [Theory]
     [InlineData("None", false)]
@@ -385,10 +444,15 @@ public sealed class CliTests : IDisposable
             Assert.Equal(source.SourceText.ToString(), File.ReadAllText(Path.Combine(Output, source.HintName)));
     }
 
-    [Fact]
-    public async Task Diagnostics_match_generator_and_independent_files_generate()
+    [Theory]
+    [InlineData("{\n \"type\": \"record\", \"name\": \"Broken\", \"fields\": false\n}")]
+    [InlineData("""{"type":"record","name":"Broken","fields":[{"name":"f","type":"int"},{"name":"f","type":"int"}]}""")]
+    [InlineData("""{"type":"record","name":"Broken","fields":[{"name":"f","type":{"type":"enum","name":"E","symbols":["A","A"]}}]}""")]
+    [InlineData("""{"type":"record","name":"Broken","fields":[{"name":"f","type":["Broken","Broken"]}]}""")]
+    [InlineData("""{"type":"record","name":"Broken","fields":[{"name":"f","type":["null",["int","string"]]}]}""")]
+    public async Task Diagnostics_match_generator_and_independent_files_generate(string schema)
     {
-        var invalid = Write("invalid.avsc", "{\n \"type\": \"record\", \"name\": \"Broken\", \"fields\": false\n}");
+        var invalid = Write("invalid.avsc", schema);
         var valid = Write("valid.avsc", Schema("Valid"));
         var dependent = Write("dependent.avdl", "protocol Dependent { import schema \"invalid.avsc\"; record Wrapper { Broken Value; } }");
         var generatorInput = GeneratorInput.Create(

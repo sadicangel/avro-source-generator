@@ -32,6 +32,10 @@ If the command-line build succeeds but the editor still shows stale errors, relo
 | `AVROSG1000` | Invalid JSON | Correct the JSON syntax at the reported location. |
 | `AVROSG2000` | Schema expected | Use a schema in `.avsc`; protocols belong in `.avpr`. |
 | `AVROSG2001` | Protocol expected | Supply a JSON protocol with a `protocol` property in `.avpr`. |
+| `AVROSG2032` | Repeated record or error field | Remove or rename the repeated field within that declaration. |
+| `AVROSG2033` | Repeated enum symbol | Keep each symbol only once within that enum. |
+| `AVROSG2034` | Repeated Avro union branch | Keep at most one branch per primitive, array, or map type, and one per named-type fullname. Logical annotations and C# mappings do not distinguish Avro types. |
+| `AVROSG2035` | Immediately nested union | Move the inner branches into the enclosing union, resolving any duplicates. |
 | `AVROSG4000` | Invalid IDL document form | Supply one main `schema` directive with schema declarations, or exactly one `protocol` block. |
 | `AVROSG4001` | Protocol in an IDL schema document | Move the protocol to its own document, or use schema declarations after the `schema` directive. |
 | `AVROSG4007` | Repeated IDL directive | Keep only one `schema` directive and at most one top-level `namespace` directive; identical repetitions are also errors. Each repeated directive is reported. |

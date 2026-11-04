@@ -44,6 +44,10 @@ AVROSG2027  | Compiler      | Error    | Invalid protocol declaration type
 AVROSG2029  | Compiler      | Error    | Invalid fixed size
 AVROSG2030  | Compiler      | Error    | Recursive schema definition
 AVROSG2031  | Compiler      | Error    | Invalid one-way message
+AVROSG2032  | Compiler      | Error    | Duplicate record or error field
+AVROSG2033  | Compiler      | Error    | Duplicate enum symbol
+AVROSG2034  | Compiler      | Error    | Duplicate union branch
+AVROSG2035  | Compiler      | Error    | Immediately nested union
 AVROSG3000  | Compiler      | Error    | Invalid character
 AVROSG3001  | Compiler      | Error    | Invalid escape sequence
 AVROSG3002  | Compiler      | Error    | Invalid number

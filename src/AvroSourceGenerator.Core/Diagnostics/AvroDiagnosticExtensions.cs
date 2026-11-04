@@ -51,6 +51,10 @@ internal static class AvroDiagnosticExtensions
         public static AvroDiagnostic EmptySource(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.EmptySource, span);
         public static AvroDiagnostic DuplicateSourcePath(SourceSpan span, string path, string original) => new AvroDiagnostic(AvroDiagnosticCode.DuplicateSourcePath, span, path, original);
         public static AvroDiagnostic DuplicateSchema(SourceSpan span, string name) => new AvroDiagnostic(AvroDiagnosticCode.DuplicateSchema, span, name);
+        public static AvroDiagnostic DuplicateField(SourceSpan span, string name, SchemaName owner) => new AvroDiagnostic(AvroDiagnosticCode.DuplicateField, span, name, owner.FullName);
+        public static AvroDiagnostic DuplicateSymbol(SourceSpan span, string name, SchemaName owner) => new AvroDiagnostic(AvroDiagnosticCode.DuplicateEnumSymbol, span, name, owner.FullName);
+        public static AvroDiagnostic DuplicateUnionBranch(SourceSpan span, string type) => new AvroDiagnostic(AvroDiagnosticCode.DuplicateUnionBranch, span, type);
+        public static AvroDiagnostic NestedUnion(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.NestedUnion, span);
         public static AvroDiagnostic MissingReferences(SourceSpan span, IReadOnlyCollection<SchemaName> names) => new AvroDiagnostic(AvroDiagnosticCode.MissingReferences, span, string.Join(", ", names.Select(static name => $"'{name.FullName}'")));
         public static AvroDiagnostic InvalidJson(SourceSpan span, JsonException exception) => new AvroDiagnostic(AvroDiagnosticCode.InvalidJson, span, GetJsonMessage(exception));
         public static AvroDiagnostic EmptyJson(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.EmptyJson, span);

@@ -683,8 +683,8 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
             ILogicalTypeSyntax type => Logical(type),
             MapTypeSyntax type => Map(type, containingNamespace, properties),
             NamedTypeSyntax type => Named(type, containingNamespace),
-            OptionalTypeSyntax type => Optional(type, containingNamespace, hasNonNullDefault),
-            PrimitiveTypeSyntax type => Primitive(type),
+            OptionalTypeSyntax type => Optional(type, containingNamespace, properties, hasNonNullDefault),
+            PrimitiveTypeSyntax type => Primitive(type, properties),
             UnionTypeSyntax type => Union(type, containingNamespace),
             _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL type syntax '{syntax.SyntaxKind}'."),
         };
@@ -729,9 +729,9 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
             : underlyingSchema;
     }
 
-    private static AvroSchema Primitive(PrimitiveTypeSyntax syntax)
+    private static PrimitiveSchema Primitive(PrimitiveTypeSyntax syntax, ImmutableSortedDictionary<string, JsonElement> properties)
     {
-        return syntax.SyntaxKind switch
+        var schema = syntax.SyntaxKind switch
         {
             SyntaxKind.VoidType => AvroSchema.Null,
             SyntaxKind.NullType => AvroSchema.Null,
@@ -745,6 +745,7 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
 
             _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL primitive type '{syntax.TypeKeyword.SyntaxKind}'.")
         };
+        return properties.IsEmpty ? schema : schema with { Properties = properties };
     }
 
     private AvroSchema? Array(ArrayTypeSyntax syntax, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties)
@@ -901,9 +902,9 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         return new Field(name, fieldType, underlyingType, documentation, aliases, defaultValue, order, properties, remarks);
     }
 
-    private AvroSchema? Optional(OptionalTypeSyntax syntax, string? containingNamespace, bool hasNonNullDefault)
+    private AvroSchema? Optional(OptionalTypeSyntax syntax, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties, bool hasNonNullDefault)
     {
-        var underlyingSchema = Type(syntax.Type, containingNamespace);
+        var underlyingSchema = Type(syntax.Type, containingNamespace, properties);
         switch (underlyingSchema)
         {
             case null: return null;

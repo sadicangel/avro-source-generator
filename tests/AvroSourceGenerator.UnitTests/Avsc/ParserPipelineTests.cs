@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Compiler.Configuration;
+﻿using AvroSourceGenerator.Avdl;
+using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
@@ -29,7 +30,7 @@ public sealed class ParserPipelineTests
     public void Avdl_exposes_syntax_and_file_parsing_with_provenance()
     {
         var source = new SourceText("test.avdl", "namespace Example; schema R; record R { string value; }");
-        var syntax = AvdlParser.Parse(source, TestContext.Current.CancellationToken);
+        var syntax = Parser.Parse(source, TestContext.Current.CancellationToken);
         Assert.Empty(syntax.Diagnostics);
         Assert.Single(syntax.Document.Declarations);
         var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);

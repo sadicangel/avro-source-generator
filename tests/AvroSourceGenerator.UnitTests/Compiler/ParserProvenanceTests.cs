@@ -49,10 +49,10 @@ public sealed class ParserProvenanceTests
     [Fact]
     public void Syntax_nodes_return_the_union_of_their_token_spans_or_none()
     {
-        Assert.True(AvdlParser.Parse(new SourceText("empty.avdl", ""), TestContext.Current.CancellationToken).Document.GetSourceSpan().IsNone);
+        Assert.True(Parser.Parse(new SourceText("empty.avdl", ""), TestContext.Current.CancellationToken).Document.GetSourceSpan().IsNone);
 
         const string Text = "/** documentation */ record R {}";
-        var declaration = Assert.Single(AvdlParser.Parse(new SourceText("test.avdl", Text), TestContext.Current.CancellationToken).Document.Declarations);
+        var declaration = Assert.Single(Parser.Parse(new SourceText("test.avdl", Text), TestContext.Current.CancellationToken).Document.Declarations);
         Assert.Equal("record R {}", declaration.GetSourceSpan().ToString());
     }
 

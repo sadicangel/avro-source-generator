@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Compiler;
+﻿using AvroSourceGenerator.Avdl;
+using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Diagnostics;
@@ -31,7 +32,7 @@ public sealed class AvdlDirectiveTests
     {
         var source = new SourceText("schemas/invalid.avdl", text);
         var token = TestContext.Current.CancellationToken;
-        var tree = AvdlParser.Parse(source, token);
+        var tree = Parser.Parse(source, token);
         var file = AvroFile.Parse(source, s_options, token);
         var compilation = AvroCompiler.Compile([source], s_options, cancellationToken: token);
 
@@ -40,7 +41,7 @@ public sealed class AvdlDirectiveTests
         Assert.False(compilation.IsValid);
         Assert.Equal(tree.Diagnostics, file.GetDiagnostics());
         Assert.Equal(tree.Diagnostics, compilation.Diagnostics);
-        Assert.Equal(tree.Diagnostics, AvdlParser.Parse(source, token).Diagnostics);
+        Assert.Equal(tree.Diagnostics, Parser.Parse(source, token).Diagnostics);
         Assert.Equal(repeated.Length, tree.Diagnostics.Length);
         var offset = text.IndexOf(';') + 1;
         for (var index = 0; index < repeated.Length; index++)
@@ -77,7 +78,7 @@ public sealed class AvdlDirectiveTests
     {
         var source = new SourceText("valid.avdl", text);
         var token = TestContext.Current.CancellationToken;
-        var tree = AvdlParser.Parse(source, token);
+        var tree = Parser.Parse(source, token);
         var (file, rootSpan) = AvdlParser.ParseFile(source, s_options, token);
 
         Assert.Empty(tree.Diagnostics);
@@ -114,7 +115,7 @@ public sealed class AvdlDirectiveTests
         cancellation.Cancel();
         var source = new SourceText("invalid.avdl", text);
 
-        Assert.Throws<OperationCanceledException>(() => AvdlParser.Parse(source, cancellation.Token));
+        Assert.Throws<OperationCanceledException>(() => Parser.Parse(source, cancellation.Token));
         Assert.Throws<OperationCanceledException>(() => AvroFile.Parse(source, s_options, cancellation.Token));
     }
 }

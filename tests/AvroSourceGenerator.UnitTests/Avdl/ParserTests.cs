@@ -3,7 +3,6 @@ using AvroSourceGenerator.Avdl.Annotations;
 using AvroSourceGenerator.Avdl.Declarations;
 using AvroSourceGenerator.Avdl.Directives;
 using AvroSourceGenerator.Avdl.Types;
-using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.UnitTests.Avdl;
@@ -413,8 +412,6 @@ public sealed class ParserTests
         Assert.Contains(SyntaxKind.IdentifierToken, kinds);
     }
 
-    private static DocumentSyntax Parse(string text) => AvdlParser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken).Document;
-
     [Fact]
     public void Parse_InvalidScannerInput_ReturnsSyntaxTreeDiagnostic()
     {
@@ -492,6 +489,31 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void Parse_MixedDiagnostics_ReportsScannerDiagnosticsThenParserDiagnosticsInReportingOrder()
+    {
+        var tree = ParseTree("$ schema R; schema R; @custom([1 extra]) record R { string f }");
+
+        Assert.Equal(
+            [AvroDiagnosticCode.InvalidCharacter, AvroDiagnosticCode.DuplicateIdlDirective, AvroDiagnosticCode.UnexpectedToken, AvroDiagnosticCode.UnexpectedToken],
+            tree.Diagnostics.Select(diagnostic => diagnostic.Code));
+        Assert.Equal(["$", "schema R;", "extra", "}"], tree.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.All(tree.Diagnostics, diagnostic => Assert.Same(tree.SourceText, diagnostic.SourceSpan.SourceText));
+    }
+
+    [Fact]
+    public void Parse_ConsecutiveSyntheticTokensAcrossJsonAndIdl_ShareRecoveryState()
+    {
+        const string Text = "@custom([1 record R { string f }";
+        var tree = ParseTree(Text);
+
+        Assert.Equal(["record", "}"], tree.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.All(tree.Diagnostics, diagnostic => Assert.Equal(AvroDiagnosticCode.UnexpectedToken, diagnostic.Code));
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        Assert.Equal("R", record.Name.FullName);
+        Assert.Equal("f", Assert.Single(record.Fields).Name.FullName);
+    }
+
+    [Fact]
     public void Parse_KnownAnnotationsWithUnexpectedValues_DoesNotReturnDiagnostics()
     {
         var tree = ParseTree(
@@ -544,5 +566,7 @@ public sealed class ParserTests
         Assert.Empty(tree.Diagnostics);
     }
 
-    private static SyntaxTree ParseTree(string text) => AvdlParser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
+    private static DocumentSyntax Parse(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken).Document;
+
+    private static SyntaxTree ParseTree(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
 }

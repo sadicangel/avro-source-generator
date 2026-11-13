@@ -26,7 +26,7 @@ public sealed class ParserCancellationTests
         var token = CreateCancelledToken();
 
         Assert.Throws<OperationCanceledException>(() =>
-            AvdlParser.Parse(new SourceText("test.avdl", "schema R; record R {}"), token));
+            Parser.Parse(new SourceText("test.avdl", "schema R; record R {}"), token));
     }
 
     [Fact]
@@ -45,6 +45,18 @@ public sealed class ParserCancellationTests
 
         Assert.Throws<OperationCanceledException>(() =>
             AvxxParser.Parse(new SourceText("test.avdl", "schema R; record R {}"), s_options, token));
+    }
+
+    [Theory]
+    [InlineData("schema string;")]
+    [InlineData("schema R; record R { string f }")]
+    [InlineData("record R {}")]
+    public void Avdl_lowering_propagates_cancellation_after_syntax_parsing(string text)
+    {
+        var syntax = Parser.Parse(new SourceText("test.avdl", text), TestContext.Current.CancellationToken);
+        var token = CreateCancelledToken();
+
+        Assert.Throws<OperationCanceledException>(() => new AvdlParser(syntax, s_options, token).ParseFile());
     }
 
     [Fact]
@@ -78,7 +90,7 @@ public sealed class ParserCancellationTests
         text.Append(" }");
 
         Assert.Throws<OperationCanceledException>(() =>
-            AvdlParser.Parse(new SourceText("large.avdl", text.ToString()), CreateCancelledToken()));
+            Parser.Parse(new SourceText("large.avdl", text.ToString()), CreateCancelledToken()));
     }
 
     [Fact]

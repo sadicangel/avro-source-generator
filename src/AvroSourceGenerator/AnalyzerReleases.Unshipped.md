@@ -48,6 +48,7 @@ AVROSG2032  | Compiler      | Error    | Duplicate record or error field
 AVROSG2033  | Compiler      | Error    | Duplicate enum symbol
 AVROSG2034  | Compiler      | Error    | Duplicate union branch
 AVROSG2035  | Compiler      | Error    | Immediately nested union
+AVROSG2036  | Compiler      | Error    | Invalid field order
 AVROSG3000  | Compiler      | Error    | Invalid character
 AVROSG3001  | Compiler      | Error    | Invalid escape sequence
 AVROSG3002  | Compiler      | Error    | Invalid number

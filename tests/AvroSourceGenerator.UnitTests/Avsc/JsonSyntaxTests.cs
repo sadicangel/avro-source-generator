@@ -13,21 +13,21 @@ public sealed class JsonSyntaxTests
         var root = Assert.IsType<JsonObjectSyntax>(Parse(Text, TestContext.Current.CancellationToken));
         var properties = root.Properties;
         Assert.Equal(properties, root.Properties);
-        var array = Assert.IsType<JsonArraySyntax>(root.GetProperty("items")!.Value);
+        var array = Assert.IsType<JsonArraySyntax>(root.Property("items")!.Value);
         Assert.Same(properties[0].Value, array);
         var items = array.Items;
         Assert.Equal(items, array.Items);
         var value = Assert.IsType<JsonValueSyntax>(items[0]);
-        Assert.Equal("escaped value", value.GetString());
-        Assert.Same(value.GetString(), value.GetString());
-        Assert.Equal(12, Assert.IsType<JsonValueSyntax>(items[1]).GetInt32());
+        Assert.Equal("escaped value", value.StringValue);
+        Assert.Same(value.StringValue, value.StringValue);
+        Assert.Equal(12, Assert.IsType<JsonValueSyntax>(items[1]).Int32Value);
         Assert.Equal(items[1].AsJsonElement(), items[1].AsJsonElement());
         Assert.Equal(JsonTokenType.True, items[2].TokenType);
         Assert.Equal(JsonTokenType.Null, items[3].TokenType);
         Assert.Empty(Assert.IsType<JsonObjectSyntax>(items[4]).Properties);
         Assert.Empty(Assert.IsType<JsonArraySyntax>(items[5]).Items);
-        Assert.Null(root.GetProperty("missing"));
-        Assert.Null(Assert.IsType<JsonValueSyntax>(items[0]).GetInt32());
+        Assert.Null(root.Property("missing"));
+        Assert.Null(Assert.IsType<JsonValueSyntax>(items[0]).Int32Value);
     }
 
     [Fact]
@@ -41,8 +41,8 @@ public sealed class JsonSyntaxTests
         Assert.Equal("\"a\\u0062\"", root.Duplicates[0].Name.SourceSpan.ToString());
         Assert.Equal(Text.IndexOf("\"a\\u0062\"", StringComparison.Ordinal), root.Duplicates[0].Name.SourceSpan.Offset);
         Assert.NotEqual(root.Duplicates[0].Value.SourceSpan, properties[1].Value.SourceSpan);
-        Assert.Same(properties[1].Value, root.GetProperty("ab")!.Value);
-        Assert.Equal(Text.LastIndexOf("null", StringComparison.Ordinal), root.GetProperty("ab")!.Value.SourceSpan.Offset);
+        Assert.Same(properties[1].Value, root.Property("ab")!.Value);
+        Assert.Equal(Text.LastIndexOf("null", StringComparison.Ordinal), root.Property("ab")!.Value.SourceSpan.Offset);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public sealed class JsonSyntaxTests
         var root = Parse(Text, TestContext.Current.CancellationToken);
         Assert.Equal(Text.Trim(), root.GetRawText());
         Assert.Equal(Text.Trim(), root.AsJsonElement().GetRawText());
-        var custom = Assert.IsType<JsonObjectSyntax>(root).GetProperty("custom")!.Value;
+        var custom = Assert.IsType<JsonObjectSyntax>(root).Property("custom")!.Value;
         Assert.Equal("""[1.00, "\u0061", false]""", custom.AsJsonElement().GetRawText());
         Assert.Equal(custom.GetRawText(), custom.AsJsonElement().GetRawText());
     }
@@ -65,11 +65,11 @@ public sealed class JsonSyntaxTests
 
         Assert.Null(root.Parent);
 
-        var scalarProperty = root.GetProperty("scalar")!;
+        var scalarProperty = root.Property("scalar")!;
         Assert.Same(root, scalarProperty.Parent);
         Assert.Same(root, scalarProperty.Value.Parent);
 
-        var arrayProperty = root.GetProperty("array")!;
+        var arrayProperty = root.Property("array")!;
         var array = Assert.IsType<JsonArraySyntax>(arrayProperty.Value);
         Assert.Same(root, arrayProperty.Parent);
         Assert.Same(root, array.Parent);
@@ -78,7 +78,7 @@ public sealed class JsonSyntaxTests
         var nestedObject = Assert.IsType<JsonObjectSyntax>(array.Items[1]);
         Assert.Same(array, nestedObject.Parent);
 
-        var nestedProperty = nestedObject.GetProperty("nested")!;
+        var nestedProperty = nestedObject.Property("nested")!;
         var nestedArray = Assert.IsType<JsonArraySyntax>(nestedProperty.Value);
         Assert.Same(nestedObject, nestedProperty.Parent);
         Assert.Same(nestedObject, nestedArray.Parent);
@@ -123,6 +123,6 @@ public sealed class JsonSyntaxTests
             Assert.Equal(expected[index].Length, root.Items[index].SourceSpan.Length);
         }
         var nested = Assert.IsType<JsonObjectSyntax>(root.Items[5]);
-        Assert.Equal("[]", nested.GetProperty("x")!.Value.GetRawText());
+        Assert.Equal("[]", nested.Property("x")!.Value.GetRawText());
     }
 }

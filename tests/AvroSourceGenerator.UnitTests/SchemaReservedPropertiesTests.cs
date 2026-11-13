@@ -23,7 +23,7 @@ public sealed class SchemaReservedPropertiesTests
                   "type": "string",
                   "doc": "field doc",
                   "aliases": ["LegacyId"],
-                  "order": 1,
+                  "order": "ascending",
                   "default": "A",
                   "x-field": true
                 }

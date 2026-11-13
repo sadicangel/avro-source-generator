@@ -37,8 +37,11 @@ public sealed class ParserArrayTests
             type =>
                 Assert.Equal(count, Assert.IsType<ErrorSchema>(type).Fields.Length));
         var message = Assert.Single(protocol.Messages);
-        Assert.Equal(Enumerable.Range(0, count).Select(i => $"field{i}"), message.RequestParameters.Select(field => field.Name));
-        Assert.Equal(count, message.Errors.Length);
+        Assert.Equal(Enumerable.Range(0, count).Select(i => $"field{i}"), message.RequestParameters.Select(field => field.Name.SchemaName));
+        var errorUnion = Assert.IsType<UnionSchema>(message.Errors);
+        Assert.Equal(count + 1, errorUnion.Schemas.Length);
+        Assert.Same(AvroSchema.String, errorUnion.Schemas[0]);
+        Assert.Equal(Enumerable.Range(0, count).Select(i => $"Error{i}"), errorUnion.Schemas.Skip(1).Select(error => error.SchemaName.Name));
         Assert.All(
             message.RequestParameters,
             parameter =>
@@ -55,5 +58,19 @@ public sealed class ParserArrayTests
         var diagnostic = Assert.Single(SchemaCompilerTestHelpers.ParseJson(schema.ToJsonString(), extension: ".avpr").GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.InvalidTypes, diagnostic.Code);
         Assert.Contains("must be an array of record, error, enum, or fixed definitions", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("""{"type":"record","name":"R","fields":[{"name":false,"type":"string"},false]}""", ".avsc")]
+    [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[{"name":false,"type":"string"},false],"response":"null"}}}""", ".avpr")]
+    public void Arrays_report_the_first_invalid_item_before_later_shapes(string text, string extension)
+    {
+        var file = SchemaCompilerTestHelpers.ParseJson(text, extension: extension);
+
+        Assert.False(file.IsValid);
+        Assert.Empty(file.Declarations);
+        var diagnostic = Assert.Single(file.GetDiagnostics());
+        Assert.Equal("false", diagnostic.SourceSpan.ToString());
+        Assert.Equal(text.IndexOf("false", StringComparison.Ordinal), diagnostic.SourceSpan.Offset);
     }
 }

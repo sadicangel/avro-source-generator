@@ -18,5 +18,12 @@ internal static class AvroSchemaExtensions
                 _ => false
             };
         }
+
+        public AvroSchema GetUnderlyingOrSelf() => schema switch
+        {
+            UnionSchema union => union.UnderlyingSchema,
+            LogicalSchema logical => logical.UnderlyingSchema,
+            _ => schema
+        };
     }
 }

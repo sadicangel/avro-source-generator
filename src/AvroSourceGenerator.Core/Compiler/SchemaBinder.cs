@@ -159,8 +159,8 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
     {
         var requestParameters = BindItems(message.RequestParameters, BindRequestParameter, out var requestChanged);
         var response = BindResponse(message.Response);
-        var errors = BindItems(message.Errors, Bind, out var errorsChanged);
-        return requestChanged || !ReferenceEquals(response, message.Response) || errorsChanged
+        var errors = message.Errors is null ? null : Bind(message.Errors);
+        return requestChanged || !ReferenceEquals(response, message.Response) || !ReferenceEquals(errors, message.Errors)
             ? message with
             {
                 RequestParameters = requestParameters,

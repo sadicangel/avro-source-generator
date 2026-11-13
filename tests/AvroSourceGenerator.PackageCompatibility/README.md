@@ -5,8 +5,9 @@ They verify the exact analyzer files and dependencies in the package, selection 
 compiler-visible package properties, and generated models for Apache.Avro and no runtime library.
 Shared fixtures exercise schemas, protocols, IDL imports, collections, and union interfaces without Docker.
 
-The SDK matrix currently contains the fixed minimum SDK 10.0.100 and the latest preview SDK.
-When .NET 11 is GA and .NET 12 enters preview, add a fixed .NET 11 SDK baseline alongside those checks.
+The SDK matrix contains the fixed minimum SDK 10.0.100, the fixed .NET 11 baseline SDK 11.0.100, and the latest preview SDK.
+Build, unit, integration, smoke, and release jobs install stable .NET 11 so prebuilt `net11.0` binaries can find the matching GA runtime.
+Preview compatibility remains independent of the build SDK; between major release cycles it may select a prerelease from the latest stable major.
 
 Each SDK runs every consumer twice: with C# 12 targeting .NET 10, and with its default C# version targeting its own .NET version.
 SDKs starting with .NET 11 also run each consumer with the preview language version and `AvroSourceGeneratorPreviewFeatures=Unions`,
@@ -25,7 +26,7 @@ All source libraries use the central `System.Collections.Immutable` version with
 The package consumers verify that the shared assemblies and Immutable APIs work with every supported compiler host,
 including SDK 10.0.100. Increasing Immutable's major version requires checking that minimum host again.
 
-Install SDK 10.0.100 and the latest preview SDK, plus the .NET 10 runtime.
+Install SDKs 10.0.100 and 11.0.100 and the latest preview SDK, plus the .NET 10 runtime.
 Build once with the package version, then pack all three projects without rebuilding from the repository root:
 
 ```powershell
@@ -39,7 +40,7 @@ $core = 'artifacts/packages/AvroSourceGenerator.Core.0.0.0-development.nupkg'
 ./tests/AvroSourceGenerator.PackageCompatibility/Run-Compatibility.ps1 -PackagePath $package -CliPackagePath $cli -CorePackagePath $core -SdkVersion 10.0.100 -ExpectedRoslynApiVersion 5.0 -OutputDirectory artifacts/manifests/minimum
 ```
 
-Run the same script for the exact installed latest preview SDK version, writing to a separate manifest directory.
+Run the same script for SDK 11.0.100 and for the exact installed latest preview SDK version, passing `-ExpectedRoslynApiVersion latest` and writing to separate `artifacts/manifests/stable` and `artifacts/manifests/preview` directories.
 Pass the same `PackageVersion` to build and pack. `src/Directory.Build.props` stamps every source assembly during compilation.
 Normal development builds use `0.0.0-development`; explicit package builds use the full package version as the informational version without a commit hash.
 Verify's `ScrubReplace` normalizes only the generated version annotation to the existing `1.0.0.0` snapshot baseline. Separate tests check assembly-version consistency and the raw generated-code version; package validation checks these against the supplied package version.
@@ -51,10 +52,10 @@ With `-CorePackagePath`, the runner checks Core's matching package and assembly 
 and its transitive JSON and Immutable dependencies. A standalone consumer exercises primitive-root parsing and compilation,
 checks that parser machinery is internal and verifies that external schema inheritance fails.
 Core runs in every language/framework mode alongside the generator consumers. Pass all three package paths for normal validation.
-For the preview SDK, pass `-ExpectedRoslynApiVersion latest` to require selection of the latest packaged generator variant.
+For the .NET 11 baseline and preview SDKs, pass `-ExpectedRoslynApiVersion latest` to require selection of the latest packaged generator variant.
 A newer compiler API emits a Roslyn update review warning; compatibility is established by analyzer selection,
 compilation, consumer execution, and generated-source comparison. The minimum SDK must select the Roslyn 5.0 variant.
-Then compare both SDK outputs:
+Then compare all SDK outputs:
 
 ```powershell
 ./tests/AvroSourceGenerator.PackageCompatibility/Compare-GeneratedSources.ps1 -ManifestDirectory artifacts/manifests
@@ -66,8 +67,8 @@ a published package cannot satisfy the validation run. The main solution's SDK p
 
 The build workflow builds the solution once with `PackageVersion=0.0.0-development`, then packs all three projects with `--no-build`.
 Unit tests, fast integration tests, Apache smoke tests, and package compatibility
-checks then run in independent parallel jobs using the corresponding build outputs. Compatibility checks use the minimum SDK 10.0.100 and resolve
-the latest preview SDK on every push and pull request, comparing the generated sources in the same job.
+checks then run in independent parallel jobs using the corresponding build outputs. Compatibility checks use the fixed SDKs 10.0.100 and 11.0.100 and resolve
+the latest preview SDK on every push and pull request, comparing generated sources from all three SDKs in the same job.
 The Actions summary shows the SDK and compiler versions, selected generator variants, completed consumer checks,
 generated-source comparison status, and any Roslyn review reminders or failures.
 Test jobs run the prebuilt assemblies directly with the Microsoft.Testing.Platform runner and use Microsoft's GitHub

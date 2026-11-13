@@ -4,7 +4,7 @@
 
 Avro Source Generator is a C# incremental source generator for Avro schema (`.avsc`), protocol (`.avpr`), and IDL (`.avdl`) files. It can generate models for Apache Avro or without a runtime library.
 
-The solution uses the latest installed development SDK, including previews, selected by `global.json` with a minimum of SDK 11.0.100-preview.6.26359.118. The packaged generator supports consumers starting with SDK 10.0.100. Source libraries target `netstandard2.0`; the packaged CLI targets `net10.0`. Tests and development tools use the target configured in the root `Directory.Build.props`. Package versions are managed centrally in `Directory.Packages.props`.
+The solution uses the latest installed development SDK, including previews, selected by `global.json` with a minimum of SDK 11.0.100. The packaged generator supports consumers starting with SDK 10.0.100. Source libraries target `netstandard2.0`; the packaged CLI targets `net10.0`. Tests and development tools use the target configured in the root `Directory.Build.props`. Package versions are managed centrally in `Directory.Packages.props`.
 
 ## Repository layout
 
@@ -26,7 +26,7 @@ The solution uses the latest installed development SDK, including previews, sele
 - Inspect the relevant implementation and tests before editing. Keep changes focused and split large architectural work into reviewable batches.
 - Preserve unrelated working-tree changes. Do not reset or discard user work.
 - Do not change package versions or target frameworks unless the task requires it.
-- Keep package compatibility checks on the fixed minimum SDK 10.0.100 and the latest preview SDK. When .NET 11 is GA and .NET 12 enters preview, add a fixed .NET 11 SDK baseline while retaining the minimum .NET 10 baseline and latest preview check. Newer compiler API versions prompt a Roslyn update review warning; analyzer selection, compilation, consumer execution, and generated-source parity must still pass.
+- Keep package compatibility checks on the fixed minimum SDK 10.0.100, the fixed .NET 11 baseline SDK 11.0.100, and the latest preview SDK. Newer compiler API versions prompt a Roslyn update review warning; analyzer selection, compilation, consumer execution, and generated-source parity must still pass.
 - On Roslyn updates, keep the unsuffixed `AvroSourceGenerator` project on the latest supported Roslyn and preserve the explicit 5.0 baseline. Align the development SDK in `global.json` with the latest generator's compiler API; samples and integration tests reference that assembly directly. Review Roslyn versions in the generator projects and central package management, the central `System.Collections.Immutable` version and its compatibility with the minimum SDK 10.0.100 compiler host, unit-test compiler references, SDK matrix, and documentation. Numeric `analyzers/dotnet/roslynX.Y/cs` paths are derived from each version; there is no `latest` package directory. Verify package contents, analyzer selection, and generated-source parity across the SDK matrix before release. Core, Templating, and all common dependencies, including Immutable, are packaged once in `analyzers/dotnet/cs`; keep only the generator in each versioned folder. All source projects use the central Immutable version; verify minimum compiler-host compatibility before increasing its major version.
 - Preserve valid-input behavior, generated output, import behavior, provenance, and deterministic diagnostic ordering unless the requested change intentionally updates a contract.
 - Treat equality and hash codes as part of incremental-generator correctness. Add or update caching tests when a change affects pipeline inputs or outputs.
@@ -48,6 +48,7 @@ The solution uses the latest installed development SDK, including previews, sele
 ## Style and generated artifacts
 
 - Follow `.editorconfig` and nearby code. C# uses four spaces, file-scoped namespaces, `System` usings first, and `var` where configured.
+- Order members as fields (constants, static fields, then instance fields), properties, constructors, then methods; keep fields and properties above constructors and methods, preserving initialization dependencies. Within the method section, prioritize behavioural cohesion: group related methods, overloads, and interface implementations; place private helpers immediately after their caller, or after the related group when shared. Use member kind and accessibility (`public`, `protected`, `internal`, `private`) only as secondary ordering within these sections. Put nested types last unless locality strongly favors keeping them beside their use, and apply the same structural order inside them. Keep comments and attributes attached to their declarations.
 - Preserve existing encodings and line endings. C# files use UTF-8 BOM and CRLF. Verify snapshots use the special rules in `.editorconfig` and `.gitattributes`.
 - Treat generated source and `.verified.*` snapshots as contracts. Review snapshot differences before accepting them; do not bulk-accept unexplained changes.
 

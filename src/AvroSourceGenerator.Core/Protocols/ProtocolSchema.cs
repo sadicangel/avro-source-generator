@@ -42,7 +42,7 @@ public sealed record class ProtocolSchema(
             writer.WriteStartObject(AvroJsonKeys.Messages);
             foreach (var message in Messages)
             {
-                writer.WritePropertyName(message.MethodName is ['@', ..] ? message.MethodName[1..] : message.MethodName);
+                writer.WritePropertyName(message.MethodName.SchemaName);
                 message.WriteTo(writer, registeredSchemas, writtenSchemas, SchemaName.Namespace);
             }
 

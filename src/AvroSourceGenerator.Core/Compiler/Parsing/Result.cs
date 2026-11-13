@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using AvroSourceGenerator.Diagnostics;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Parsing;
 
 [Union]
 internal readonly struct Result<T> : IUnion

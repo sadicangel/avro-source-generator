@@ -1,6 +1,6 @@
 ﻿using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Parsing;
 
 internal sealed class UnionBranchComparer : IEqualityComparer<AvroSchema>
 {

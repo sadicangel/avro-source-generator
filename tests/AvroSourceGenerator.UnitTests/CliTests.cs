@@ -1,6 +1,6 @@
 ﻿using System.Text;
 using AvroSourceGenerator.Cli;
-using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.UnitTests.Compiler;
 using Microsoft.CodeAnalysis.CSharp;

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Templating;
 
 namespace AvroSourceGenerator.Extensions;

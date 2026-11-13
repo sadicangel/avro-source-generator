@@ -1,4 +1,4 @@
-﻿namespace AvroSourceGenerator.Compiler;
+﻿namespace AvroSourceGenerator.Compiler.Configuration;
 
 public enum DuplicateResolution
 {

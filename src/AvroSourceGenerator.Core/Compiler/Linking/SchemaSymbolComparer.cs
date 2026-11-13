@@ -1,6 +1,6 @@
 ﻿using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Linking;
 
 // Binding a named reference consumes its type and names, not its declaration body.
 internal sealed class SchemaSymbolComparer : IEqualityComparer<TopLevelSchema?>

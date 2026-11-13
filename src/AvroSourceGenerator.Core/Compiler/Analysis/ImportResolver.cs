@@ -3,7 +3,7 @@ using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Text;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Analysis;
 
 internal sealed class ImportResolver(
     ImmutableArray<BoundAvroFile> files,

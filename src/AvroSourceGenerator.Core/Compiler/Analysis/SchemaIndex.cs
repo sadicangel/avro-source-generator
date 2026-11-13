@@ -3,7 +3,7 @@ using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Analysis;
 
 internal readonly record struct FileMetadata(int FileIndex, bool IsValid);
 

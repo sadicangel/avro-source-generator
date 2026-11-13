@@ -1,10 +1,11 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
+using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Binding;
 
 internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken cancellationToken)
 {

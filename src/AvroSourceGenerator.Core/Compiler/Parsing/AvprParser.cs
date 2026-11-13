@@ -1,7 +1,8 @@
-﻿using AvroSourceGenerator.Protocols;
+﻿using AvroSourceGenerator.Compiler.Configuration;
+using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Text;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Parsing;
 
 internal sealed class AvprParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken) : AvjsParser(sourceText, options, cancellationToken)
 {

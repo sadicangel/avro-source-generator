@@ -3,7 +3,7 @@ using System.Collections.Frozen;
 using System.Collections.Immutable;
 using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Linking;
 
 public sealed class SymbolTable : IEquatable<SymbolTable>, IReadOnlyDictionary<SchemaName, TopLevelSchema>
 {

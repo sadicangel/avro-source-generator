@@ -1,4 +1,5 @@
 ﻿using System.Collections.Frozen;
+using AvroSourceGenerator.Compiler.Linking;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;

@@ -1,4 +1,4 @@
-﻿namespace AvroSourceGenerator.Compiler;
+﻿namespace AvroSourceGenerator.Compiler.Analysis;
 
 // Ownership of the set is transferred by the resolver; callers only read the completed set.
 internal readonly struct ImportResolution(bool isValid, HashSet<int> importedFileIndices)

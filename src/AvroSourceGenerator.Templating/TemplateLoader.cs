@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Compiler.Configuration;
 using Scriban;
 using Scriban.Parsing;
 using Scriban.Runtime;

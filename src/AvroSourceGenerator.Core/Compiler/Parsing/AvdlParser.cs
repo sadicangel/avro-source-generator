@@ -6,6 +6,7 @@ using AvroSourceGenerator.Avdl.Annotations;
 using AvroSourceGenerator.Avdl.Declarations;
 using AvroSourceGenerator.Avdl.Directives;
 using AvroSourceGenerator.Avdl.Types;
+using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
@@ -13,7 +14,7 @@ using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Schemas.Defaults;
 using AvroSourceGenerator.Text;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Parsing;
 
 internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken)
     : AvxxParser(options)

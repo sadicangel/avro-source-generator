@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Compiler;
+﻿using AvroSourceGenerator.Compiler.Configuration;
 using Microsoft.CodeAnalysis.CSharp;
 
 namespace AvroSourceGenerator.UnitTests.Snapshots;

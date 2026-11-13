@@ -1,4 +1,4 @@
-﻿namespace AvroSourceGenerator.Compiler;
+﻿namespace AvroSourceGenerator.Compiler.Parsing;
 
 internal static class ResultExtensions
 {

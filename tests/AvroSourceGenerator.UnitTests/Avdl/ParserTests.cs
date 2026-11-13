@@ -3,7 +3,7 @@ using AvroSourceGenerator.Avdl.Annotations;
 using AvroSourceGenerator.Avdl.Declarations;
 using AvroSourceGenerator.Avdl.Directives;
 using AvroSourceGenerator.Avdl.Types;
-using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Diagnostics;
 
 namespace AvroSourceGenerator.UnitTests.Avdl;

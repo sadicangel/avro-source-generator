@@ -11,12 +11,6 @@ namespace AvroSourceGenerator.UnitTests;
 
 internal static class SchemaCompilerTestHelpers
 {
-    public static BoundAvroFile Bind(AvroFile file)
-    {
-        var token = TestContext.Current.CancellationToken;
-        return BoundAvroFile.Bind(LinkedAvroFile.Link(file, SymbolTable.FromFiles([file], token), token), token);
-    }
-
     public static AvroFile ParseJson(
         string json,
         GenerationTarget generationTarget = GenerationTarget.Modern,
@@ -35,6 +29,12 @@ internal static class SchemaCompilerTestHelpers
             new SourceText("test.avdl", source),
             new AvroParseOptions(generationTarget, useNullableReferenceTypes ? LanguageFeatures.NullableReferenceTypes : LanguageFeatures.None),
             TestContext.Current.CancellationToken);
+
+    public static BoundAvroFile Bind(AvroFile file)
+    {
+        var token = TestContext.Current.CancellationToken;
+        return BoundAvroFile.Bind(LinkedAvroFile.Link(file, SymbolTable.FromFiles([file], token), token), token);
+    }
 
     public static AvroCompilation Bind(
         ReferenceResolution referenceResolution,

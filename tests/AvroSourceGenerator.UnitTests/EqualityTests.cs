@@ -15,6 +15,9 @@ namespace AvroSourceGenerator.UnitTests;
 
 public class EqualityTests
 {
+    private readonly AutoFaker _faker;
+    private readonly int _seed;
+
     private static Type CompilationEnvironmentType =>
         field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.CompilationEnvironment", throwOnError: true)!;
 
@@ -23,9 +26,6 @@ public class EqualityTests
 
     private static Type GeneratorConfigurationType =>
         field ??= typeof(AvroSourceGenerator).Assembly.GetType("AvroSourceGenerator.Configuration.GeneratorConfiguration", throwOnError: true)!;
-
-    private readonly AutoFaker _faker;
-    private readonly int _seed;
 
     public EqualityTests()
     {
@@ -36,12 +36,6 @@ public class EqualityTests
             .WithOverride(new DiagnosticArrayOverride())
             .WithOverride(new ObjectArrayOverride()));
         _seed = _faker.Generate<int>();
-    }
-
-    private object Generate(Type type)
-    {
-        _faker.UseSeed(_seed);
-        return _faker.Generate(type);
     }
 
     [Fact]
@@ -69,6 +63,12 @@ public class EqualityTests
         var b = Generate(GeneratorConfigurationType);
 
         Assert.Equal(a, b);
+    }
+
+    private object Generate(Type type)
+    {
+        _faker.UseSeed(_seed);
+        return _faker.Generate(type);
     }
 
     [Fact]

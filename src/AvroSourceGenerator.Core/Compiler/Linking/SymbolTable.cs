@@ -10,17 +10,17 @@ public sealed class SymbolTable : IEquatable<SymbolTable>, IReadOnlyDictionary<S
     private readonly FrozenDictionary<SchemaName, TopLevelSchema> _symbols;
     private readonly Lazy<int> _hashCode;
 
-    private SymbolTable(FrozenDictionary<SchemaName, TopLevelSchema> symbols)
-    {
-        _symbols = symbols;
-        _hashCode = new Lazy<int>(ComputeHashCode);
-    }
-
     public IEnumerable<SchemaName> Keys => _symbols.Keys;
     public IEnumerable<TopLevelSchema> Values => _symbols.Values;
     public int Count => _symbols.Count;
 
     public TopLevelSchema this[SchemaName key] => _symbols[key];
+
+    private SymbolTable(FrozenDictionary<SchemaName, TopLevelSchema> symbols)
+    {
+        _symbols = symbols;
+        _hashCode = new Lazy<int>(ComputeHashCode);
+    }
 
     public bool Equals(SymbolTable? other) =>
         ReferenceEquals(this, other)

@@ -12,6 +12,27 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
 {
     private readonly ImmutableArray<AvroDiagnostic> _diagnostics;
 
+    internal ImmutableArray<SourceSpan> DeclarationSpans { get; }
+    internal FrozenDictionary<SchemaName, ImmutableArray<SourceSpan>> ReferenceSpans { get; }
+
+    public SourceText Text { get; }
+
+    public SourcePath Path => Text.Path;
+
+    public AvroSchema RootSchema { get; }
+
+    public ImmutableArray<TopLevelSchema> Declarations { get; }
+
+    public ImmutableArray<SchemaName> References { get; }
+
+    public FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies { get; }
+
+    public ImmutableArray<AvroImport> Imports { get; }
+
+    public bool IsValid => !_diagnostics.HasErrors;
+
+    public AvroParseOptions ParseOptions { get; }
+
     internal AvroFile(
         SourceText sourceText,
         AvroSchema rootSchema,
@@ -35,27 +56,6 @@ public sealed class AvroFile : IEquatable<AvroFile>, ISourceFile
         _diagnostics = diagnostics;
         ParseOptions = parseOptions;
     }
-
-    internal ImmutableArray<SourceSpan> DeclarationSpans { get; }
-    internal FrozenDictionary<SchemaName, ImmutableArray<SourceSpan>> ReferenceSpans { get; }
-
-    public SourceText Text { get; }
-
-    public SourcePath Path => Text.Path;
-
-    public AvroSchema RootSchema { get; }
-
-    public ImmutableArray<TopLevelSchema> Declarations { get; }
-
-    public ImmutableArray<SchemaName> References { get; }
-
-    public FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies { get; }
-
-    public ImmutableArray<AvroImport> Imports { get; }
-
-    public bool IsValid => !_diagnostics.HasErrors;
-
-    public AvroParseOptions ParseOptions { get; }
 
     public IEnumerable<AvroDiagnostic> GetDiagnostics() => _diagnostics;
 

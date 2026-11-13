@@ -22,16 +22,6 @@ internal sealed class ImportResolver(
 
     public ImportResolution Resolve(int fileIndex) => Resolve(fileIndex, SourceSpan.None);
 
-    private readonly struct Cycle(int[] indices)
-    {
-        public IEnumerable<int> Indices => indices;
-
-        public string Key { get; } = string.Join(",", indices.OrderBy(static index => index));
-
-        public string GetPath(ImmutableArray<BoundAvroFile> files) =>
-            string.Join(" -> ", indices.Append(indices[0]).Select(index => files[index].Path.ToString()));
-    }
-
     private ImportResolution Resolve(int fileIndex, SourceSpan incomingImportSpan)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -152,4 +142,14 @@ internal sealed class ImportResolver(
         AvroImportKind.Schema => "schema",
         _ => throw new InvalidOperationException("Unreachable: Unsupported Avro import kind."),
     };
+
+    private readonly struct Cycle(int[] indices)
+    {
+        public IEnumerable<int> Indices => indices;
+
+        public string Key { get; } = string.Join(",", indices.OrderBy(static index => index));
+
+        public string GetPath(ImmutableArray<BoundAvroFile> files) =>
+            string.Join(" -> ", indices.Append(indices[0]).Select(index => files[index].Path.ToString()));
+    }
 }

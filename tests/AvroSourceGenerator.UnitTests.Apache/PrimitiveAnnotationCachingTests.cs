@@ -55,6 +55,30 @@ public sealed class PrimitiveAnnotationCachingTests
         Assert.Equal(independent, Assert.Single(fresh.GeneratorDriver.RunGenerators(fresh.Compilation, token).GetRunResult().GeneratedTrees).ToString());
     }
 
+    private static void AssertProperty(GeneratorDriverRunResult result, int expected)
+    {
+        Assert.Empty(result.Diagnostics);
+        Assert.Equal(2, result.GeneratedTrees.Length);
+        foreach (var tree in result.GeneratedTrees)
+        {
+            var initializer = tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes()
+                .OfType<VariableDeclaratorSyntax>().Single(variable => variable.Identifier.ValueText == "_SCHEMA").Initializer!;
+            var json = Assert.Single(initializer.DescendantNodes().OfType<LiteralExpressionSyntax>()).Token.ValueText;
+            using var serialized = JsonDocument.Parse(Avro.Schema.Parse(json).ToString());
+            var fields = serialized.RootElement.GetProperty("fields");
+            if (serialized.RootElement.GetProperty("name").GetString() == "R")
+            {
+                Assert.Equal(expected, fields[0].GetProperty("type").GetProperty("custom").GetInt32());
+                Assert.Equal("string", fields[1].GetProperty("type").GetString());
+            }
+            else
+            {
+                Assert.Equal("S", serialized.RootElement.GetProperty("name").GetString());
+                Assert.Equal("string", fields[0].GetProperty("type").GetString());
+            }
+        }
+    }
+
     [Fact]
     public void Annotated_primitive_values_and_pipeline_inputs_preserve_equality_and_hash_contracts()
     {
@@ -83,30 +107,6 @@ public sealed class PrimitiveAnnotationCachingTests
         Assert.Equal(primitive.GetHashCode(), copy.GetHashCode());
         Assert.NotEqual(AvroSchema.String, primitive);
         Assert.Empty(AvroSchema.String.Properties);
-    }
-
-    private static void AssertProperty(GeneratorDriverRunResult result, int expected)
-    {
-        Assert.Empty(result.Diagnostics);
-        Assert.Equal(2, result.GeneratedTrees.Length);
-        foreach (var tree in result.GeneratedTrees)
-        {
-            var initializer = tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes()
-                .OfType<VariableDeclaratorSyntax>().Single(variable => variable.Identifier.ValueText == "_SCHEMA").Initializer!;
-            var json = Assert.Single(initializer.DescendantNodes().OfType<LiteralExpressionSyntax>()).Token.ValueText;
-            using var serialized = JsonDocument.Parse(Avro.Schema.Parse(json).ToString());
-            var fields = serialized.RootElement.GetProperty("fields");
-            if (serialized.RootElement.GetProperty("name").GetString() == "R")
-            {
-                Assert.Equal(expected, fields[0].GetProperty("type").GetProperty("custom").GetInt32());
-                Assert.Equal("string", fields[1].GetProperty("type").GetString());
-            }
-            else
-            {
-                Assert.Equal("S", serialized.RootElement.GetProperty("name").GetString());
-                Assert.Equal("string", fields[0].GetProperty("type").GetString());
-            }
-        }
     }
 
     private sealed class ChangedAdditionalText(string path, string content) : AdditionalText

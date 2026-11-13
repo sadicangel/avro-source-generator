@@ -36,6 +36,15 @@ public sealed class JsonReaderTests
         Assert.Equal("null", root.Duplicates[0].Value.SourceSpan.ToString());
     }
 
+    private static JsonObjectSyntax Span(string text, CancellationToken cancellationToken)
+    {
+        var reader = new JsonReader(new SourceText("test.avsc", text));
+        Assert.True(reader.Read());
+        var root = Assert.IsType<JsonObjectSyntax>(reader.Parse(cancellationToken));
+        Assert.False(reader.Read());
+        return root;
+    }
+
     [Theory]
     [InlineData("{")]
     [InlineData("[] []")]
@@ -88,14 +97,5 @@ public sealed class JsonReaderTests
         {
             Assert.Equal(cancellation.Token, ex.CancellationToken);
         }
-    }
-
-    private static JsonObjectSyntax Span(string text, CancellationToken cancellationToken)
-    {
-        var reader = new JsonReader(new SourceText("test.avsc", text));
-        Assert.True(reader.Read());
-        var root = Assert.IsType<JsonObjectSyntax>(reader.Parse(cancellationToken));
-        Assert.False(reader.Read());
-        return root;
     }
 }

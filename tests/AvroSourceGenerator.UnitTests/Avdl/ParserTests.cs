@@ -393,6 +393,12 @@ public sealed class ParserTests
         Assert.Equal(10, kinds.Count(kind => kind == SyntaxKind.LogicalType));
     }
 
+    private static void AssertLogicalType(ITypeSyntax type, SyntaxKind logicalTypeKeyword)
+    {
+        var logicalType = Assert.IsType<LogicalTypeSyntax>(type);
+        Assert.Equal(logicalTypeKeyword, logicalType.LogicalTypeNameKeyword.SyntaxKind);
+    }
+
     [Fact]
     public void Parse_FlattensExpectedSyntaxKinds()
     {
@@ -406,6 +412,8 @@ public sealed class ParserTests
         Assert.Contains(SyntaxKind.StringType, kinds);
         Assert.Contains(SyntaxKind.IdentifierToken, kinds);
     }
+
+    private static DocumentSyntax Parse(string text) => AvdlParser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken).Document;
 
     [Fact]
     public void Parse_InvalidScannerInput_ReturnsSyntaxTreeDiagnostic()
@@ -535,14 +543,6 @@ public sealed class ParserTests
 
         Assert.Empty(tree.Diagnostics);
     }
-
-    private static void AssertLogicalType(ITypeSyntax type, SyntaxKind logicalTypeKeyword)
-    {
-        var logicalType = Assert.IsType<LogicalTypeSyntax>(type);
-        Assert.Equal(logicalTypeKeyword, logicalType.LogicalTypeNameKeyword.SyntaxKind);
-    }
-
-    private static DocumentSyntax Parse(string text) => AvdlParser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken).Document;
 
     private static SyntaxTree ParseTree(string text) => AvdlParser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
 }

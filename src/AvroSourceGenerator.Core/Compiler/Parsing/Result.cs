@@ -10,15 +10,15 @@ internal readonly struct Result<T> : IUnion
     private readonly T? _value;
     private readonly AvroDiagnostic? _error;
 
-    public Result(T value) => (_value, _error) = (value, null);
-
-    public Result(AvroDiagnostic diagnostic) => (_value, _error) = (default, diagnostic);
-
     public object? Value => IsValue ? _value : _error;
 
     public bool IsValue => _error is null;
 
     public bool IsError => !IsValue;
+
+    public Result(T value) => (_value, _error) = (value, null);
+
+    public Result(AvroDiagnostic diagnostic) => (_value, _error) = (default, diagnostic);
 
     public T GetValueOrDefault(T defaultValue) => IsValue ? _value! : defaultValue;
 

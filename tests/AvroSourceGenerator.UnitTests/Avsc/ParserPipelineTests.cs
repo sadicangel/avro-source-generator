@@ -7,6 +7,8 @@ namespace AvroSourceGenerator.UnitTests.Avsc;
 
 public sealed class ParserPipelineTests
 {
+    private static AvroParseOptions Options => new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
+
     [Fact]
     public void Qualified_names_ignore_namespace_properties_and_nested_names_inherit()
     {
@@ -37,6 +39,4 @@ public sealed class ParserPipelineTests
         Assert.Equal("value", Assert.Single(record.Fields).Name.SchemaName);
         Assert.Equal("record R { string value; }", Assert.Single(file.DeclarationSpans).ToString());
     }
-
-    private static AvroParseOptions Options => new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
 }

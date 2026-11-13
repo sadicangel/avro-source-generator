@@ -26,6 +26,29 @@ public sealed class BoundReferenceTypeTests
         Assert.Single(compiled.RenderableFiles[0].EmittedSchemas);
     }
 
+    private static CompiledAvroSources CompileFixedReference(GenerationTarget generationTarget) =>
+        SchemaCompilerTestHelpers.Compile(
+            generationTarget,
+            ReferenceResolution.Deferred,
+            DuplicateResolution.Error,
+            ("hash.avsc", """
+                { "type": "fixed", "name": "Hash", "namespace": "Demo", "size": 16 }
+                """),
+            ("consumer.avsc", """
+                {
+                  "type": "record",
+                  "name": "Consumer",
+                  "namespace": "Demo",
+                  "fields": [{ "name": "hash", "type": "Hash" }]
+                }
+                """));
+
+    private static AvroSchemaReference GetConsumerReference(CompiledAvroSources compiled)
+    {
+        var consumer = Assert.IsType<RecordSchema>(compiled.BoundFiles[1].Declarations.Single());
+        return Assert.IsType<AvroSchemaReference>(Assert.Single(consumer.Fields).Type);
+    }
+
     [Fact]
     public void Nullable_union_uses_bound_reference_csharp_name()
     {
@@ -49,6 +72,10 @@ public sealed class BoundReferenceTypeTests
         Assert.Equal(CSharpName.FromSchemaName(Name("Target")), reference.CSharpName);
         Assert.Equal("global::Demo.Target?", union.CSharpName.FullName);
     }
+
+    private static string Record(string name) => $$"""
+        { "type": "record", "name": "{{name}}", "namespace": "Demo", "fields": [] }
+        """;
 
     [Fact]
     public void Protocol_parameters_and_responses_are_bound_references()
@@ -81,33 +108,6 @@ public sealed class BoundReferenceTypeTests
         Assert.Equal(CSharpName.FromSchemaName(Name("Request")), parameter.CSharpName);
         Assert.Equal(CSharpName.FromSchemaName(Name("Response")), response.CSharpName);
     }
-
-    private static CompiledAvroSources CompileFixedReference(GenerationTarget generationTarget) =>
-        SchemaCompilerTestHelpers.Compile(
-            generationTarget,
-            ReferenceResolution.Deferred,
-            DuplicateResolution.Error,
-            ("hash.avsc", """
-                { "type": "fixed", "name": "Hash", "namespace": "Demo", "size": 16 }
-                """),
-            ("consumer.avsc", """
-                {
-                  "type": "record",
-                  "name": "Consumer",
-                  "namespace": "Demo",
-                  "fields": [{ "name": "hash", "type": "Hash" }]
-                }
-                """));
-
-    private static AvroSchemaReference GetConsumerReference(CompiledAvroSources compiled)
-    {
-        var consumer = Assert.IsType<RecordSchema>(compiled.BoundFiles[1].Declarations.Single());
-        return Assert.IsType<AvroSchemaReference>(Assert.Single(consumer.Fields).Type);
-    }
-
-    private static string Record(string name) => $$"""
-        { "type": "record", "name": "{{name}}", "namespace": "Demo", "fields": [] }
-        """;
 
     private static SchemaName Name(string name) => new SchemaName(name, "Demo");
 }

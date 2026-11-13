@@ -9,6 +9,8 @@ namespace AvroSourceGenerator.UnitTests.Avsc;
 
 public sealed class PropertyDiagnosticTests
 {
+    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
+
     [Fact]
     public void Schema_name_default_is_distinct_from_constructed_names()
     {
@@ -122,6 +124,4 @@ public sealed class PropertyDiagnosticTests
 
     private static AvroFile Parse(string json, string extension) => AvxxParser.Parse(
         new SourceText("test" + extension, json), Options, TestContext.Current.CancellationToken);
-
-    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
 }

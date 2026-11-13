@@ -15,6 +15,16 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
     private readonly FrozenDictionary<BoundAvroFile, FileMetadata> _fileMetadata;
     private readonly FrozenDictionary<BoundAvroFile, ImmutableArray<BoundAvroFile>> _fileDependencies;
 
+    public ImmutableArray<BoundAvroFile> Files { get; }
+
+    public FrozenDictionary<SchemaName, TopLevelSchema> Schemas { get; }
+
+    public AvroCompilationOptions Options { get; }
+
+    public ImmutableArray<AvroDiagnostic> Diagnostics { get; }
+
+    public bool IsValid { get; }
+
     private AvroCompilation(ImmutableArray<BoundAvroFile> files, AvroCompilationOptions options, SchemaIndex schemaIndex)
     {
         Files = files;
@@ -27,16 +37,6 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         Diagnostics = [.. schemaIndex.Diagnostics];
         IsValid = !schemaIndex.Diagnostics.HasErrors;
     }
-
-    public ImmutableArray<BoundAvroFile> Files { get; }
-
-    public FrozenDictionary<SchemaName, TopLevelSchema> Schemas { get; }
-
-    public AvroCompilationOptions Options { get; }
-
-    public ImmutableArray<AvroDiagnostic> Diagnostics { get; }
-
-    public bool IsValid { get; }
 
     public bool Equals(AvroCompilation? other) =>
         ReferenceEquals(this, other) || (other is not null && Options == other.Options && Files.SequenceEqual(other.Files));
@@ -117,6 +117,11 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
 
         return schemaIndex;
     }
+
+    private static SourceSpan GetDeclarationSpan(BoundAvroFile file, int declarationIndex) =>
+        declarationIndex < file.File.DeclarationSpans.Length
+            ? file.File.DeclarationSpans[declarationIndex]
+            : SourceSpan.None;
 
     private static void AnalyzeImports(
         SchemaIndex schemaIndex,
@@ -294,13 +299,6 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
             schemaIndex.Diagnostics.AddRange(importResolver.Diagnostics);
     }
 
-    private readonly record struct ImportEdge(AvroImport Import, int TargetIndex);
-
-    private static SourceSpan GetDeclarationSpan(BoundAvroFile file, int declarationIndex) =>
-        declarationIndex < file.File.DeclarationSpans.Length
-            ? file.File.DeclarationSpans[declarationIndex]
-            : SourceSpan.None;
-
     public bool IsFileValid(BoundAvroFile file, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -344,4 +342,6 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         }
         return declarations.DrainToImmutable();
     }
+
+    private readonly record struct ImportEdge(AvroImport Import, int TargetIndex);
 }

@@ -20,22 +20,6 @@ public sealed class SemanticValidationTests
         { """{"type":"record","name":"R","fields":[{"name":"Value","type":["null",["int","string"]]}]}""", 2035, "[\"int\",\"string\"]" },
     };
 
-    [Theory]
-    [MemberData(nameof(IssueExamples))]
-    public void Issue_examples_report_the_offending_occurrence(string text, int code, string value)
-    {
-        var source = new SourceText("invalid.avsc", text);
-        var compilation = AvroCompiler.Compile([source], new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.CSharp12), cancellationToken: TestContext.Current.CancellationToken);
-
-        Assert.False(compilation.IsValid);
-        var diagnostic = Assert.Single(compilation.Diagnostics, diagnostic => diagnostic.Code == (AvroDiagnosticCode)code);
-        Assert.Equal((AvroDiagnosticCode)code, diagnostic.Code);
-        Assert.Equal(source.GetSourceSpan(text.LastIndexOf(value, StringComparison.Ordinal), value.Length), diagnostic.SourceSpan);
-        Assert.Same(source, diagnostic.SourceSpan.SourceText);
-        Assert.NotEmpty(diagnostic.GetMessage());
-        Assert.False(compilation.IsFileValid(Assert.Single(compilation.Files), TestContext.Current.CancellationToken));
-    }
-
     public static TheoryData<string, string, AvroDiagnosticCode, string> InvalidInputs => new TheoryData<string, string, AvroDiagnosticCode, string>
     {
         { "avsc", """{"type":"error","name":"R","fields":[{"name":"class","type":"int"},{"name":"class","type":"long"}]}""", AvroDiagnosticCode.DuplicateField, "\"class\"" },
@@ -67,6 +51,47 @@ public sealed class SemanticValidationTests
         { "avdl", "schema R; record R { null? Value; }", AvroDiagnosticCode.DuplicateUnionBranch, "null" },
     };
 
+    public static TheoryData<string, string> ValidInputs => new TheoryData<string, string>
+    {
+        { "avsc", """{"type":"enum","name":"E","symbols":["class","A","a"],"default":"class"}""" },
+        { "avsc", """{"type":"enum","name":"E","symbols":["A"]}""" },
+        { "avdl", "schema E; enum E { class, A, a } = class;" },
+        { "avdl", "schema E; enum E { A }" },
+        { "avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":[{"type":"record","name":"A","fields":[{"name":"value","type":"int"}]},{"type":"record","name":"B","fields":[{"name":"value","type":"int"}]}]},{"name":"F","type":[{"type":"enum","name":"E","symbols":["A"]},{"type":"enum","name":"Other","symbols":["A"]}]}]}""" },
+        { "avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":["bytes",{"type":"fixed","name":"A","size":4},{"type":"fixed","name":"B","size":4}]}]}""" },
+        { "avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":[{"type":"fixed","name":"A","size":4,"logicalType":"decimal","precision":4,"scale":2},{"type":"fixed","name":"B","size":4,"logicalType":"decimal","precision":4,"scale":2}]}]}""" },
+        { "avpr", """{"protocol":"P","types":[{"type":"record","name":"A","namespace":"one","fields":[]},{"type":"record","name":"A","namespace":"two","fields":[]},{"type":"record","name":"R","fields":[{"name":"f","type":["one.A","two.A"]}]}],"messages":{}}""" },
+        { "avdl", "schema R; fixed A(4); fixed B(4); record R { union { bytes, A, B } f; }" },
+        { "avdl", "protocol P { record A { int value; } record B { int value; } enum E { A } = A; enum Other { A } record R { union { A, B } f; union { E, Other } F; } }" },
+        { "avpr", """{"protocol":"P","types":[{"type":"error","name":"A","fields":[]},{"type":"error","name":"B","fields":[]}],"messages":{"m":{"request":[],"response":"null","errors":["A","B"]}}}""" },
+        { "avdl", "protocol P { error A {} error B {} void m() throws A, B; }" },
+        { "avsc", """{"type":"record","name":"R","fields":[{"name":"value","type":{"type":"array","items":["int","string"]}},{"name":"Value","type":{"type":"map","values":["int","string"]}}]}""" },
+    };
+
+    public static TheoryData<string, string, string?> PreservedEnumDefaults => new TheoryData<string, string, string?>
+    {
+        { "avsc", """{"type":"enum","name":"E","symbols":["A"],"default":"B"}""", "B" },
+        { "avsc", """{"type":"enum","name":"E","symbols":["A"],"default":null}""", null },
+        { "avdl", "schema E; enum E { A } = B;", "B" },
+        { "avdl", "schema E; enum E { A } = null;", null },
+    };
+
+    [Theory]
+    [MemberData(nameof(IssueExamples))]
+    public void Issue_examples_report_the_offending_occurrence(string text, int code, string value)
+    {
+        var source = new SourceText("invalid.avsc", text);
+        var compilation = AvroCompiler.Compile([source], new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.CSharp12), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.False(compilation.IsValid);
+        var diagnostic = Assert.Single(compilation.Diagnostics, diagnostic => diagnostic.Code == (AvroDiagnosticCode)code);
+        Assert.Equal((AvroDiagnosticCode)code, diagnostic.Code);
+        Assert.Equal(source.GetSourceSpan(text.LastIndexOf(value, StringComparison.Ordinal), value.Length), diagnostic.SourceSpan);
+        Assert.Same(source, diagnostic.SourceSpan.SourceText);
+        Assert.NotEmpty(diagnostic.GetMessage());
+        Assert.False(compilation.IsFileValid(Assert.Single(compilation.Files), TestContext.Current.CancellationToken));
+    }
+
     [Theory]
     [MemberData(nameof(InvalidInputs))]
     public void Core_and_generator_agree_on_semantics_and_source_occurrences(string extension, string text, AvroDiagnosticCode code, string value)
@@ -95,23 +120,6 @@ public sealed class SemanticValidationTests
         Assert.All(result.Results, result => Assert.Null(result.Exception));
     }
 
-    public static TheoryData<string, string> ValidInputs => new TheoryData<string, string>
-    {
-        { "avsc", """{"type":"enum","name":"E","symbols":["class","A","a"],"default":"class"}""" },
-        { "avsc", """{"type":"enum","name":"E","symbols":["A"]}""" },
-        { "avdl", "schema E; enum E { class, A, a } = class;" },
-        { "avdl", "schema E; enum E { A }" },
-        { "avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":[{"type":"record","name":"A","fields":[{"name":"value","type":"int"}]},{"type":"record","name":"B","fields":[{"name":"value","type":"int"}]}]},{"name":"F","type":[{"type":"enum","name":"E","symbols":["A"]},{"type":"enum","name":"Other","symbols":["A"]}]}]}""" },
-        { "avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":["bytes",{"type":"fixed","name":"A","size":4},{"type":"fixed","name":"B","size":4}]}]}""" },
-        { "avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":[{"type":"fixed","name":"A","size":4,"logicalType":"decimal","precision":4,"scale":2},{"type":"fixed","name":"B","size":4,"logicalType":"decimal","precision":4,"scale":2}]}]}""" },
-        { "avpr", """{"protocol":"P","types":[{"type":"record","name":"A","namespace":"one","fields":[]},{"type":"record","name":"A","namespace":"two","fields":[]},{"type":"record","name":"R","fields":[{"name":"f","type":["one.A","two.A"]}]}],"messages":{}}""" },
-        { "avdl", "schema R; fixed A(4); fixed B(4); record R { union { bytes, A, B } f; }" },
-        { "avdl", "protocol P { record A { int value; } record B { int value; } enum E { A } = A; enum Other { A } record R { union { A, B } f; union { E, Other } F; } }" },
-        { "avpr", """{"protocol":"P","types":[{"type":"error","name":"A","fields":[]},{"type":"error","name":"B","fields":[]}],"messages":{"m":{"request":[],"response":"null","errors":["A","B"]}}}""" },
-        { "avdl", "protocol P { error A {} error B {} void m() throws A, B; }" },
-        { "avsc", """{"type":"record","name":"R","fields":[{"name":"value","type":{"type":"array","items":["int","string"]}},{"name":"Value","type":{"type":"map","values":["int","string"]}}]}""" },
-    };
-
     [Theory]
     [MemberData(nameof(ValidInputs))]
     public void Legal_Avro_names_and_branches_generate_compilable_CSharp(string extension, string text)
@@ -136,14 +144,6 @@ public sealed class SemanticValidationTests
         var record = Assert.IsType<RecordSchema>(compiled.Schemas[new SchemaName("R")]);
         Assert.Equal("raw", Assert.IsType<UnboundDefaultValue>(Assert.Single(record.Fields).Default).Json.GetString());
     }
-
-    public static TheoryData<string, string, string?> PreservedEnumDefaults => new TheoryData<string, string, string?>
-    {
-        { "avsc", """{"type":"enum","name":"E","symbols":["A"],"default":"B"}""", "B" },
-        { "avsc", """{"type":"enum","name":"E","symbols":["A"],"default":null}""", null },
-        { "avdl", "schema E; enum E { A } = B;", "B" },
-        { "avdl", "schema E; enum E { A } = null;", null },
-    };
 
     [Theory]
     [MemberData(nameof(PreservedEnumDefaults))]

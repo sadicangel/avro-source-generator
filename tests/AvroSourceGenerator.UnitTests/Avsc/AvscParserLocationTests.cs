@@ -13,6 +13,8 @@ namespace AvroSourceGenerator.UnitTests.Avsc;
 
 public sealed class AvscParserLocationTests
 {
+    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
+
     [Theory]
     [InlineData(GenerationTarget.Apache, false)]
     [InlineData(GenerationTarget.Legacy, false)]
@@ -74,6 +76,14 @@ public sealed class AvscParserLocationTests
                 "false",
                 AvroDiagnosticCode.InvalidRequest,
                 "Property 'request' must be an array of request parameter objects"));
+    }
+
+    private static void AssertDiagnostic(AvroDiagnostic diagnostic, SourceText source, string value, AvroDiagnosticCode code, string message)
+    {
+        var offset = source.Text.IndexOf(value, StringComparison.Ordinal);
+        Assert.Equal(code, diagnostic.Code);
+        Assert.Equal(source.GetSourceSpan(offset, value.Length), diagnostic.SourceSpan);
+        Assert.Equal(message, diagnostic.GetMessage());
     }
 
     [Theory]
@@ -157,15 +167,5 @@ public sealed class AvscParserLocationTests
 
         Assert.Throws<OperationCanceledException>(() =>
             AvxxParser.Parse(new SourceText("test.avsc", "{}"), Options, cancellation.Token));
-    }
-
-    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
-
-    private static void AssertDiagnostic(AvroDiagnostic diagnostic, SourceText source, string value, AvroDiagnosticCode code, string message)
-    {
-        var offset = source.Text.IndexOf(value, StringComparison.Ordinal);
-        Assert.Equal(code, diagnostic.Code);
-        Assert.Equal(source.GetSourceSpan(offset, value.Length), diagnostic.SourceSpan);
-        Assert.Equal(message, diagnostic.GetMessage());
     }
 }

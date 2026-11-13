@@ -11,16 +11,6 @@ public sealed class BoundAvroFile : IEquatable<BoundAvroFile>, ISourceFile
 {
     private readonly LinkedAvroFile _linkedFile;
 
-    private BoundAvroFile(
-        LinkedAvroFile linkedFile,
-        AvroSchema? rootSchema,
-        ImmutableArray<TopLevelSchema> declarations)
-    {
-        _linkedFile = linkedFile;
-        RootSchema = rootSchema;
-        Declarations = declarations;
-    }
-
     public AvroFile File => _linkedFile.File;
 
     public SourceText Text => File.Text;
@@ -36,6 +26,16 @@ public sealed class BoundAvroFile : IEquatable<BoundAvroFile>, ISourceFile
     public FrozenDictionary<SchemaName, TopLevelSchema?> References => _linkedFile.References;
 
     public FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> Dependencies => File.Dependencies;
+
+    private BoundAvroFile(
+        LinkedAvroFile linkedFile,
+        AvroSchema? rootSchema,
+        ImmutableArray<TopLevelSchema> declarations)
+    {
+        _linkedFile = linkedFile;
+        RootSchema = rootSchema;
+        Declarations = declarations;
+    }
 
     public IEnumerable<AvroDiagnostic> GetDiagnostics() => _linkedFile.GetDiagnostics();
 

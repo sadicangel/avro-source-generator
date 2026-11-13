@@ -10,15 +10,15 @@ internal readonly struct Option<T> : IUnion
 
     public static Option<T> None => new Option<T>(new None());
 
-    public Option(T value) => (_value, IsSome) = (value, true);
-
-    public Option(None _) : this() { }
-
     public object? Value => IsSome ? _value : new None();
 
     public bool IsSome { get; }
 
     public bool IsNone => !IsSome;
+
+    public Option(T value) => (_value, IsSome) = (value, true);
+
+    public Option(None _) : this() { }
 
     public T GetValueOrDefault(T defaultValue) => IsSome ? _value! : defaultValue;
 

@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Avdl.Declarations;
+﻿using AvroSourceGenerator.Avdl;
+using AvroSourceGenerator.Avdl.Declarations;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Compiler.Parsing;
@@ -164,21 +165,40 @@ public sealed class SemanticResultTests
     {
         const string Text = "schema R; record R { string f } fixed F(0);";
         var source = new SourceText("test.avdl", Text);
-        var syntax = AvdlParser.Parse(source, TestContext.Current.CancellationToken);
+        var syntax = Parser.Parse(source, TestContext.Current.CancellationToken);
         var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
         AssertInvalid(file);
         Assert.Equal(syntax.Diagnostics, file.GetDiagnostics());
         Assert.DoesNotContain(file.GetDiagnostics(), diagnostic => diagnostic.Code == AvroDiagnosticCode.InvalidIdlFixedSize);
     }
 
-    [Fact]
-    public void Static_and_instance_entry_points_return_the_same_diagnostics()
+    [Theory]
+    [InlineData("namespace Example; schema R; record R { string value; }")]
+    [InlineData("protocol P { import idl \"common.avdl\"; void ping(); }")]
+    [InlineData("schema R; fixed F(0); record R { @logicalType(1) string f; }")]
+    [InlineData("schema R; record R { string f } fixed F(0);")]
+    [InlineData("schema R; schema S; record R {}")]
+    [InlineData("record R {}")]
+    public void Lowering_a_parsed_tree_matches_file_parsing(string text)
     {
-        var source = new SourceText("test.avdl", "schema R; fixed F(0); record R { @logicalType(1) string f; }");
-        var expected = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
-        var actual = new AvdlParser(source, s_options, TestContext.Current.CancellationToken).ParseFile().File;
-        AssertInvalid(actual);
+        var source = new SourceText("test.avdl", text);
+        var token = TestContext.Current.CancellationToken;
+        var syntax = Parser.Parse(source, token);
+        var (expected, expectedRootSpan) = AvdlParser.ParseFile(source, s_options, token);
+        var (actual, actualRootSpan) = new AvdlParser(syntax, s_options, token).ParseFile();
+        var expectedSchemas = expected.Declarations.ToDictionary(schema => schema.SchemaName);
+        var actualSchemas = actual.Declarations.ToDictionary(schema => schema.SchemaName);
+
+        Assert.Same(source, actual.Text);
+        Assert.Equal(expected.IsValid, actual.IsValid);
+        Assert.Equal(expected.ParseOptions, actual.ParseOptions);
+        Assert.Equal(expected.RootSchema.ToJsonString(expectedSchemas), actual.RootSchema.ToJsonString(actualSchemas));
+        Assert.Equal(expected.Declarations.Select(schema => schema.ToJsonString(expectedSchemas)), actual.Declarations.Select(schema => schema.ToJsonString(actualSchemas)));
+        Assert.Equal(expected.DeclarationSpans, actual.DeclarationSpans);
+        Assert.Equal(expected.References, actual.References);
+        Assert.Equal(expected.Imports, actual.Imports);
         Assert.Equal(expected.GetDiagnostics(), actual.GetDiagnostics());
+        Assert.Equal(expectedRootSpan, actualRootSpan);
     }
 
     [Fact]
@@ -190,7 +210,7 @@ public sealed class SemanticResultTests
             record R { map<long> f = {"x": 3, "x": 4}; }
             """;
         var source = new SourceText("test.avdl", Text);
-        var syntax = AvdlParser.Parse(source, TestContext.Current.CancellationToken);
+        var syntax = Parser.Parse(source, TestContext.Current.CancellationToken);
         Assert.Empty(syntax.Diagnostics);
         var recordSyntax = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(syntax.Document.Declarations));
         Assert.Equal(4, recordSyntax.Fields[0].DefaultValueClause!.JsonValue.JsonNode!["x"]!.GetValue<int>());
@@ -208,7 +228,7 @@ public sealed class SemanticResultTests
     public void Overflowing_numbers_return_diagnostics_in_syntax_and_file_parsing(string number)
     {
         var source = new SourceText("test.avdl", $"schema R; @custom({number}) record R {{ double f = {number}; }}");
-        var syntax = AvdlParser.Parse(source, TestContext.Current.CancellationToken);
+        var syntax = Parser.Parse(source, TestContext.Current.CancellationToken);
         var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
         AssertInvalid(file);
         Assert.Equal(syntax.Diagnostics, file.GetDiagnostics());

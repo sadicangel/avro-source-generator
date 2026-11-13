@@ -1,6 +1,6 @@
 ﻿using System.Text;
 using AvroSourceGenerator.Cli;
-using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.UnitTests.Compiler;
 using Microsoft.CodeAnalysis.CSharp;
@@ -480,6 +480,11 @@ public sealed class CliTests : IDisposable
         Assert.False(File.Exists(Path.Combine(Output, "Wrapper.Avro.g.cs")));
     }
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_directory)) Directory.Delete(_directory, recursive: true);
+    }
+
     private string Write(string relative, string content)
     {
         var path = Path.Combine(_directory, relative);
@@ -497,10 +502,5 @@ public sealed class CliTests : IDisposable
         await using var error = new StringWriter();
         var code = await CliApplication.RunAsync(args, output, error, TestContext.Current.CancellationToken);
         return (code, output.ToString(), error.ToString());
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_directory)) Directory.Delete(_directory, recursive: true);
     }
 }

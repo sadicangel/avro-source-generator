@@ -21,7 +21,7 @@ public sealed record class UnionTypeSchema(SchemaName SchemaName, CSharpName CSh
             {
                 case { SchemaType: SchemaType.Null }:
                     break;
-                case RecordSchema or ErrorSchema or FixedSchema { IsSubstituted: false }:
+                case FixedSchema { IsSubstituted: false } or RecordSchema or ErrorSchema:
                     memberCount++;
                     break;
                 default:

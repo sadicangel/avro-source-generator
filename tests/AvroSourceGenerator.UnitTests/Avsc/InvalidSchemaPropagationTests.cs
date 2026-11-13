@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Compiler;
+﻿using AvroSourceGenerator.Compiler.Configuration;
+using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
@@ -7,6 +8,8 @@ namespace AvroSourceGenerator.UnitTests.Avsc;
 
 public sealed class InvalidSchemaPropagationTests
 {
+    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
+
     [Theory]
     [InlineData("""{"type":"array","items":false}""")]
     [InlineData("""{"type":"map","values":false}""")]
@@ -78,6 +81,4 @@ public sealed class InvalidSchemaPropagationTests
         var source = new SourceText("test.avsc", """{"type":"string","logicalType":"uuid"}""");
         Assert.Throws<InvalidOperationException>(() => AvxxParser.Parse(source, new AvroParseOptions((GenerationTarget)(-1), LanguageFeatures.NullableReferenceTypes), TestContext.Current.CancellationToken));
     }
-
-    private static AvroParseOptions Options { get; } = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
 }

@@ -7,7 +7,7 @@ using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Schemas.Defaults;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Parsing;
 
 internal static class JsonSyntaxExtensions
 {
@@ -207,20 +207,6 @@ internal static class JsonSyntaxExtensions
 
 internal static class NameValidator
 {
-    private static bool IsValidPart(ReadOnlySpan<char> part)
-    {
-        if (part.IsWhiteSpace() || !(char.IsAsciiLetter(part[0]) || part[0] is '_'))
-            return false;
-
-        for (var i = 0; i < part.Length; i++)
-        {
-            if (!(char.IsAsciiLetterOrDigit(part[i]) || part[i] is '_'))
-                return false;
-        }
-
-        return true;
-    }
-
     public static bool IsValidName(string? name) => IsValidName(name.AsSpan());
 
     public static bool IsValidName(ReadOnlySpan<char> name)
@@ -231,6 +217,20 @@ internal static class NameValidator
         foreach (var part in new SplitEnumerable(name, '.'))
         {
             if (!IsValidPart(part))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsValidPart(ReadOnlySpan<char> part)
+    {
+        if (part.IsWhiteSpace() || !(char.IsAsciiLetter(part[0]) || part[0] is '_'))
+            return false;
+
+        for (var i = 0; i < part.Length; i++)
+        {
+            if (!(char.IsAsciiLetterOrDigit(part[i]) || part[i] is '_'))
                 return false;
         }
 

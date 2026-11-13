@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using AvroSourceGenerator.Avjs;
-using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Compiler.Configuration;
+using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Text;
 
@@ -33,6 +34,15 @@ public sealed class JsonReaderTests
         Assert.NotEqual(Assert.Single(root.Duplicates).Value.SourceSpan.Offset, properties[0].Value.SourceSpan.Offset);
         Assert.Equal("null", properties[0].Value.GetRawText());
         Assert.Equal("null", root.Duplicates[0].Value.SourceSpan.ToString());
+    }
+
+    private static JsonObjectSyntax Span(string text, CancellationToken cancellationToken)
+    {
+        var reader = new JsonReader(new SourceText("test.avsc", text));
+        Assert.True(reader.Read());
+        var root = Assert.IsType<JsonObjectSyntax>(reader.Parse(cancellationToken));
+        Assert.False(reader.Read());
+        return root;
     }
 
     [Theory]
@@ -87,14 +97,5 @@ public sealed class JsonReaderTests
         {
             Assert.Equal(cancellation.Token, ex.CancellationToken);
         }
-    }
-
-    private static JsonObjectSyntax Span(string text, CancellationToken cancellationToken)
-    {
-        var reader = new JsonReader(new SourceText("test.avsc", text));
-        Assert.True(reader.Read());
-        var root = Assert.IsType<JsonObjectSyntax>(reader.Parse(cancellationToken));
-        Assert.False(reader.Read());
-        return root;
     }
 }

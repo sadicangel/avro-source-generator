@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Compiler;
+﻿using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Templating;
 using Microsoft.CodeAnalysis;

@@ -1,4 +1,5 @@
 ﻿using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;

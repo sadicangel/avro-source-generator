@@ -1,4 +1,4 @@
-﻿namespace AvroSourceGenerator.Compiler;
+﻿namespace AvroSourceGenerator.Compiler.Configuration;
 
 [Flags]
 public enum LanguageFeatures

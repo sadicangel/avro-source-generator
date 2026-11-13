@@ -1,3 +1,3 @@
-﻿namespace AvroSourceGenerator.Compiler;
+﻿namespace AvroSourceGenerator.Compiler.Configuration;
 
 public readonly record struct AvroParseOptions(GenerationTarget GenerationTarget, LanguageFeatures LanguageFeatures, bool RequireTopLevelSchema = false);

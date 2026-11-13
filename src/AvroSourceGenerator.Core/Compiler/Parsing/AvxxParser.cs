@@ -1,11 +1,12 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
+using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Parsing;
 
 internal closed class AvxxParser(AvroParseOptions options)
 {
@@ -119,6 +120,13 @@ internal closed class AvxxParser(AvroParseOptions options)
         return new AvroSchemaReference(schemaName);
     }
 
+    private void AddDependency(SchemaName schema, SchemaName dependsOn)
+    {
+        if (!Dependencies.TryGetValue(schema, out var dependencies))
+            Dependencies.Add(schema, dependencies = []);
+        dependencies.Add(dependsOn);
+    }
+
     protected ImmutableArray<SchemaName> GetReferences() => [.. References.OrderBy(static reference => reference.FullName, StringComparer.Ordinal)];
 
     protected FrozenDictionary<SchemaName, ImmutableArray<SourceSpan>> GetReferenceSpans()
@@ -139,13 +147,6 @@ internal closed class AvxxParser(AvroParseOptions options)
                 [.. dependency.Value.OrderBy(static name => name.FullName, StringComparer.Ordinal)]);
         }
         return dependencies.ToFrozenDictionary();
-    }
-
-    private void AddDependency(SchemaName schema, SchemaName dependsOn)
-    {
-        if (!Dependencies.TryGetValue(schema, out var dependencies))
-            Dependencies.Add(schema, dependencies = []);
-        dependencies.Add(dependsOn);
     }
 
     protected bool IsInRecursionScope(SchemaName schemaName) => RecursionStack.Contains(schemaName);

@@ -1,6 +1,8 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
 using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Compiler.Configuration;
+using AvroSourceGenerator.Compiler.Linking;
 using AvroSourceGenerator.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Extensions;

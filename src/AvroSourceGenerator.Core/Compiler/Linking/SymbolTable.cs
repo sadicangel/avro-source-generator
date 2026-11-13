@@ -3,24 +3,24 @@ using System.Collections.Frozen;
 using System.Collections.Immutable;
 using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Linking;
 
 public sealed class SymbolTable : IEquatable<SymbolTable>, IReadOnlyDictionary<SchemaName, TopLevelSchema>
 {
     private readonly FrozenDictionary<SchemaName, TopLevelSchema> _symbols;
     private readonly Lazy<int> _hashCode;
 
-    private SymbolTable(FrozenDictionary<SchemaName, TopLevelSchema> symbols)
-    {
-        _symbols = symbols;
-        _hashCode = new Lazy<int>(ComputeHashCode);
-    }
-
     public IEnumerable<SchemaName> Keys => _symbols.Keys;
     public IEnumerable<TopLevelSchema> Values => _symbols.Values;
     public int Count => _symbols.Count;
 
     public TopLevelSchema this[SchemaName key] => _symbols[key];
+
+    private SymbolTable(FrozenDictionary<SchemaName, TopLevelSchema> symbols)
+    {
+        _symbols = symbols;
+        _hashCode = new Lazy<int>(ComputeHashCode);
+    }
 
     public bool Equals(SymbolTable? other) =>
         ReferenceEquals(this, other)

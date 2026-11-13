@@ -1,4 +1,6 @@
 ﻿using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Compiler.Configuration;
+using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
@@ -97,11 +99,6 @@ public sealed class OptionalPropertyTests
         Assert.Equal("2", protocol.Properties["custom"].GetRawText());
     }
 
-    private static AvroFile Parse(string text, string extension = ".avsc") => AvxxParser.Parse(
-        new SourceText("test" + extension, text),
-        new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes),
-        TestContext.Current.CancellationToken);
-
     [Fact]
     public void Only_selected_message_values_are_semantically_validated()
     {
@@ -122,4 +119,9 @@ public sealed class OptionalPropertyTests
         Assert.Equal(AvroDiagnosticCode.InvalidJson, Assert.Single(file.GetDiagnostics()).Code);
         Assert.Empty(file.Declarations);
     }
+
+    private static AvroFile Parse(string text, string extension = ".avsc") => AvxxParser.Parse(
+        new SourceText("test" + extension, text),
+        new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes),
+        TestContext.Current.CancellationToken);
 }

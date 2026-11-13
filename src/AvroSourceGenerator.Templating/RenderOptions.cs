@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Compiler;
+﻿using AvroSourceGenerator.Compiler.Configuration;
 
 namespace AvroSourceGenerator.Templating;
 

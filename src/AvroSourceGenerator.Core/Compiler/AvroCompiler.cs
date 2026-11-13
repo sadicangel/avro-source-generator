@@ -1,4 +1,6 @@
 ﻿using System.Collections.Immutable;
+using AvroSourceGenerator.Compiler.Configuration;
+using AvroSourceGenerator.Compiler.Linking;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;

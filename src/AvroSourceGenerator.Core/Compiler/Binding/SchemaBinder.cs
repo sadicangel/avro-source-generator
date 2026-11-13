@@ -1,10 +1,11 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
+using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 
-namespace AvroSourceGenerator.Compiler;
+namespace AvroSourceGenerator.Compiler.Binding;
 
 internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken cancellationToken)
 {
@@ -24,34 +25,22 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
 
         var bound = schema switch
         {
+            PrimitiveSchema => schema,
             ArraySchema array => BindArray(array),
             MapSchema map => BindMap(map),
             UnionSchema union => BindUnion(union),
-            LogicalSchema logical => BindLogical(logical),
+            EnumSchema or FixedSchema => schema,
             RecordSchema record => BindRecord(record),
             ErrorSchema error => BindError(error),
             ProtocolSchema protocol => BindProtocol(protocol),
+            LogicalSchema logical => BindLogical(logical),
             UnionTypeSchema generatedUnion => BindUnionType(generatedUnion),
-            PrimitiveSchema or EnumSchema or FixedSchema => schema,
             _ => throw new InvalidOperationException($"Unhandled Avro schema type: {schema.GetType()}"),
         };
 
         _boundSchemas.Add(schema, bound);
         return bound;
     }
-
-    private AvroSchema BindReference(AvroSchemaReference reference)
-    {
-        if (ResolveReference(reference.SchemaName) is not { } resolved || reference.CSharpName == resolved.CSharpName)
-        {
-            return reference;
-        }
-
-        return reference with { CSharpName = resolved.CSharpName };
-    }
-
-    private TopLevelSchema? ResolveReference(SchemaName name) =>
-        _references.GetValueOrDefault(name) ?? _file.Declarations.WithCancellation(cancellationToken).FirstOrDefault(declaration => declaration.SchemaName == name);
 
     private AvroSchema BindArray(ArraySchema array)
     {
@@ -101,14 +90,6 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
         return result;
     }
 
-    private AvroSchema BindLogical(LogicalSchema logical)
-    {
-        var underlyingSchema = Bind(logical.UnderlyingSchema);
-        return ReferenceEquals(underlyingSchema, logical.UnderlyingSchema)
-            ? logical
-            : LogicalSchema.Create(logical.SchemaName.Name, underlyingSchema, _options.GenerationTarget);
-    }
-
     private AvroSchema BindRecord(RecordSchema record)
     {
         var fields = BindItems(record.Fields, BindField, out var fieldsChanged);
@@ -119,6 +100,19 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
     {
         var fields = BindItems(error.Fields, BindField, out var changed);
         return changed ? error with { Fields = fields } : error;
+    }
+
+    private Field BindField(Field field)
+    {
+        var type = Bind(field.Type);
+        if (ReferenceEquals(type, field.Type))
+            return field;
+
+        return field with
+        {
+            Type = type,
+            UnderlyingType = GetUnderlyingType(type),
+        };
     }
 
     private AvroSchema BindProtocol(ProtocolSchema protocol)
@@ -134,25 +128,6 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
             : protocol;
 
         NamedSchema NamedSchema(NamedSchema schema) => (NamedSchema)Bind(schema);
-    }
-
-    private AvroSchema BindUnionType(UnionTypeSchema generatedUnion)
-    {
-        var memberSchemas = BindItems(generatedUnion.MemberSchemas, Bind, out var changed);
-        return changed ? new UnionTypeSchema(generatedUnion.SchemaName, generatedUnion.CSharpName, [.. memberSchemas.Canonicalize(includeNull: false)]) : generatedUnion;
-    }
-
-    private Field BindField(Field field)
-    {
-        var type = Bind(field.Type);
-        if (ReferenceEquals(type, field.Type))
-            return field;
-
-        return field with
-        {
-            Type = type,
-            UnderlyingType = GetUnderlyingType(type),
-        };
     }
 
     private ProtocolMessage BindMessage(ProtocolMessage message)
@@ -192,6 +167,33 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
 
     private static AvroSchema GetUnderlyingType(AvroSchema schema) =>
         schema is UnionSchema union ? union.UnderlyingSchema : schema;
+
+    private AvroSchema BindLogical(LogicalSchema logical)
+    {
+        var underlyingSchema = Bind(logical.UnderlyingSchema);
+        return ReferenceEquals(underlyingSchema, logical.UnderlyingSchema)
+            ? logical
+            : LogicalSchema.Create(logical.SchemaName.Name, underlyingSchema, _options.GenerationTarget);
+    }
+
+    private AvroSchema BindReference(AvroSchemaReference reference)
+    {
+        if (ResolveReference(reference.SchemaName) is not { } resolved || reference.CSharpName == resolved.CSharpName)
+        {
+            return reference;
+        }
+
+        return reference with { CSharpName = resolved.CSharpName };
+    }
+
+    private TopLevelSchema? ResolveReference(SchemaName name) =>
+        _references.GetValueOrDefault(name) ?? _file.Declarations.WithCancellation(cancellationToken).FirstOrDefault(declaration => declaration.SchemaName == name);
+
+    private AvroSchema BindUnionType(UnionTypeSchema generatedUnion)
+    {
+        var memberSchemas = BindItems(generatedUnion.MemberSchemas, Bind, out var changed);
+        return changed ? new UnionTypeSchema(generatedUnion.SchemaName, generatedUnion.CSharpName, [.. memberSchemas.Canonicalize(includeNull: false)]) : generatedUnion;
+    }
 
     private static ImmutableArray<T> BindItems<T>(ImmutableArray<T> items, Func<T, T> bind, out bool changed) where T : class
     {

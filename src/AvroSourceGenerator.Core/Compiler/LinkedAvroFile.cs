@@ -1,4 +1,5 @@
 ﻿using System.Collections.Frozen;
+using AvroSourceGenerator.Compiler.Linking;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
@@ -9,14 +10,6 @@ public sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>, ISourceFile
 {
     private readonly Lazy<int> _hashCode;
 
-    private LinkedAvroFile(AvroFile file, FrozenDictionary<SchemaName, TopLevelSchema?> references)
-    {
-        File = file;
-        References = references;
-
-        _hashCode = new Lazy<int>(ComputeHashCode);
-    }
-
     public AvroFile File { get; }
 
     public SourceText Text => File.Text;
@@ -26,6 +19,14 @@ public sealed class LinkedAvroFile : IEquatable<LinkedAvroFile>, ISourceFile
     public bool IsValid => File.IsValid;
 
     public FrozenDictionary<SchemaName, TopLevelSchema?> References { get; }
+
+    private LinkedAvroFile(AvroFile file, FrozenDictionary<SchemaName, TopLevelSchema?> references)
+    {
+        File = file;
+        References = references;
+
+        _hashCode = new Lazy<int>(ComputeHashCode);
+    }
 
     public IEnumerable<AvroDiagnostic> GetDiagnostics() => File.GetDiagnostics();
 

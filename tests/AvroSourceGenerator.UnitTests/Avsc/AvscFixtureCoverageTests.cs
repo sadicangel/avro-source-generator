@@ -1,5 +1,8 @@
 ﻿using System.Collections.Immutable;
 using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Compiler.Configuration;
+using AvroSourceGenerator.Compiler.Linking;
+using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Templating;
 using AvroSourceGenerator.Text;
@@ -31,28 +34,6 @@ public sealed class AvscFixtureCoverageTests
         var pipeline = BuildPipeline(files, target, nullableReferences);
         Assert.All(pipeline.BoundFiles, static file => Assert.True(file.IsValid));
         Assert.NotEmpty(pipeline.RenderedSchemas);
-    }
-
-    [Fact]
-    public void Uses_last_duplicate_message()
-    {
-        const string Text = """
-            {
-              "protocol":"P",
-              "types":[],
-              "messages":{
-                "m":{"request":[],"response":"null","doc":"first"},
-                "m":{"request":[],"response":"null","doc":"second"}
-              }
-            }
-            """;
-        var source = new SourceText("test.avpr", Text);
-
-        var file = AvxxParser.Parse(source, new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes), TestContext.Current.CancellationToken);
-
-        var protocol = Assert.IsType<ProtocolSchema>(file.RootSchema);
-        Assert.Equal("second", Assert.Single(protocol.Messages).Documentation);
-        Assert.Empty(file.GetDiagnostics());
     }
 
     private static PipelineResult BuildPipeline(
@@ -98,6 +79,28 @@ public sealed class AvscFixtureCoverageTests
                 .OrderBy(static path => path, StringComparer.Ordinal)
                 .Select(path => new SourceText(Path.GetFileName(path), File.ReadAllText(path)))
         ];
+    }
+
+    [Fact]
+    public void Uses_last_duplicate_message()
+    {
+        const string Text = """
+            {
+              "protocol":"P",
+              "types":[],
+              "messages":{
+                "m":{"request":[],"response":"null","doc":"first"},
+                "m":{"request":[],"response":"null","doc":"second"}
+              }
+            }
+            """;
+        var source = new SourceText("test.avpr", Text);
+
+        var file = AvxxParser.Parse(source, new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes), TestContext.Current.CancellationToken);
+
+        var protocol = Assert.IsType<ProtocolSchema>(file.RootSchema);
+        Assert.Equal("second", Assert.Single(protocol.Messages).Documentation);
+        Assert.Empty(file.GetDiagnostics());
     }
 
     private readonly record struct PipelineResult(

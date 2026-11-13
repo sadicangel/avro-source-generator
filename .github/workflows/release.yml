@@ -27,11 +27,10 @@ jobs:
     - uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
-    - name: Setup .NET 11 preview
+    - name: Setup .NET 11
       uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 11.0.x
-        dotnet-quality: preview
     - name: Build
       run: dotnet build --configuration Release -p:PackageVersion="${VERSION}"
     - name: Test

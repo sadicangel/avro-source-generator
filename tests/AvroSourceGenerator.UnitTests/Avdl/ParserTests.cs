@@ -491,6 +491,31 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void Parse_MixedDiagnostics_ReportsScannerDiagnosticsThenParserDiagnosticsInReportingOrder()
+    {
+        var tree = ParseTree("$ schema R; schema R; @custom([1 extra]) record R { string f }");
+
+        Assert.Equal(
+            [AvroDiagnosticCode.InvalidCharacter, AvroDiagnosticCode.DuplicateIdlDirective, AvroDiagnosticCode.UnexpectedToken, AvroDiagnosticCode.UnexpectedToken],
+            tree.Diagnostics.Select(diagnostic => diagnostic.Code));
+        Assert.Equal(["$", "schema R;", "extra", "}"], tree.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.All(tree.Diagnostics, diagnostic => Assert.Same(tree.SourceText, diagnostic.SourceSpan.SourceText));
+    }
+
+    [Fact]
+    public void Parse_ConsecutiveSyntheticTokensAcrossJsonAndIdl_ShareRecoveryState()
+    {
+        const string Text = "@custom([1 record R { string f }";
+        var tree = ParseTree(Text);
+
+        Assert.Equal(["record", "}"], tree.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.All(tree.Diagnostics, diagnostic => Assert.Equal(AvroDiagnosticCode.UnexpectedToken, diagnostic.Code));
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        Assert.Equal("R", record.Name.FullName);
+        Assert.Equal("f", Assert.Single(record.Fields).Name.FullName);
+    }
+
+    [Fact]
     public void Parse_KnownAnnotationsWithUnexpectedValues_DoesNotReturnDiagnostics()
     {
         var tree = ParseTree(

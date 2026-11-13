@@ -412,8 +412,6 @@ public sealed class ParserTests
         Assert.Contains(SyntaxKind.IdentifierToken, kinds);
     }
 
-    private static DocumentSyntax Parse(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken).Document;
-
     [Fact]
     public void Parse_InvalidScannerInput_ReturnsSyntaxTreeDiagnostic()
     {
@@ -567,6 +565,8 @@ public sealed class ParserTests
 
         Assert.Empty(tree.Diagnostics);
     }
+
+    private static DocumentSyntax Parse(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken).Document;
 
     private static SyntaxTree ParseTree(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
 }

@@ -28,11 +28,14 @@ public sealed class CliTests : IDisposable
         var path = Write("invalid." + extension, text);
         var input = GeneratorInput.Create([new ProjectFile(text, extension, path)], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "None" });
         var result = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
-        var diagnostic = Assert.Single(result.Diagnostics);
+        var diagnostic = Assert.Single(result.Diagnostics, diagnostic => diagnostic.Id == $"AVROSG{(int)code:D4}");
         Assert.Equal($"AVROSG{(int)code:D4}", diagnostic.Id);
         Assert.Equal(text.LastIndexOf(value, StringComparison.Ordinal), diagnostic.Location.SourceSpan.Start);
-        var span = diagnostic.Location.GetLineSpan();
-        var expected = $"{span.Path}({span.StartLinePosition.Line + 1},{span.StartLinePosition.Character + 1}): error {diagnostic.Id}: {diagnostic.GetMessage()}" + Environment.NewLine;
+        var expected = string.Concat(result.Diagnostics.Select(diagnostic =>
+        {
+            var span = diagnostic.Location.GetLineSpan();
+            return $"{span.Path}({span.StartLinePosition.Line + 1},{span.StartLinePosition.Character + 1}): error {diagnostic.Id}: {diagnostic.GetMessage()}" + Environment.NewLine;
+        }));
 
         var (exitCode, output, error) = await Run("compile", path, "-o", Output, "--library", "None", "--language-version", "12");
         Assert.Equal(1, exitCode);

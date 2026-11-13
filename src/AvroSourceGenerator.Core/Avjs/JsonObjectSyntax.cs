@@ -1,8 +1,6 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Text.Json;
-using AvroSourceGenerator.Protocols;
-using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Avjs;
@@ -14,22 +12,5 @@ internal sealed record class JsonObjectSyntax(
     ImmutableArray<JsonPropertySyntax> Duplicates)
     : JsonSyntax(SourceSpan, JsonTokenType.StartObject)
 {
-    public JsonPropertySyntax? GetProperty(string propertyName) => NameLookup.TryGetValue(propertyName, out var index) ? Properties[index] : null;
-
-    public ImmutableSortedDictionary<string, JsonElement> GetSchemaProperties() => GetProperties(ReservedSchemaProperties.IsReserved);
-    public ImmutableSortedDictionary<string, JsonElement> GetProtocolProperties() => GetProperties(ReservedProtocolProperties.IsReserved);
-
-    private ImmutableSortedDictionary<string, JsonElement> GetProperties(Func<string, bool> isReserved)
-    {
-        ImmutableSortedDictionary<string, JsonElement>.Builder? properties = null;
-        foreach (var (name, value) in Properties)
-        {
-            if (isReserved(name.Value)) continue;
-            // Preserve the existing dictionary value equality; JSON content equality is a separate contract.
-            // ReSharper disable once UsageOfDefaultStructEquality
-            properties ??= ImmutableSortedDictionary.CreateBuilder<string, JsonElement>();
-            properties[name.Value] = value.AsJsonElement();
-        }
-        return properties?.ToImmutable() ?? ImmutableSortedDictionary<string, JsonElement>.Empty;
-    }
+    public JsonPropertySyntax? Property(string propertyName) => NameLookup.TryGetValue(propertyName, out var index) ? Properties[index] : null;
 }

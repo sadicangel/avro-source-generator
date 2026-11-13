@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Text;
+﻿using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
@@ -7,9 +8,7 @@ internal sealed class AvscParser(SourceText sourceText, AvroParseOptions options
     public static AvroFile ParseFile(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken)
     {
         var parser = new AvscParser(sourceText, options, cancellationToken);
-        var schema = parser.ParseSchema();
-
-        if (schema is null)
+        if (parser.ParseSchema() is not AvroSchema schema)
             return AvroFile.Invalid(sourceText, [.. parser.Diagnostics], options);
 
         return new AvroFile(

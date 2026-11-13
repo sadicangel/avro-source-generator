@@ -13,7 +13,7 @@ public enum AvroDiagnosticCode
     InvalidResponse = 2023, InvalidErrors = 2024, InvalidOneWay = 2025, InvalidEnumDefault = 2026,
     InvalidProtocolDeclarationType = 2027, InvalidFixedSize = 2029,
     RecursiveSchemaDefinition = 2030, InvalidOneWayMessage = 2031,
-    DuplicateField = 2032, DuplicateEnumSymbol = 2033, DuplicateUnionBranch = 2034, NestedUnion = 2035,
+    DuplicateField = 2032, DuplicateEnumSymbol = 2033, DuplicateUnionBranch = 2034, NestedUnion = 2035, InvalidOrder = 2036,
     InvalidCharacter = 3000, InvalidEscapeSequence = 3001, InvalidNumber = 3002, UnterminatedDocumentation = 3003, UnterminatedComment = 3004,
     UnterminatedString = 3005, UnterminatedVerbatimIdentifier = 3006, UnexpectedToken = 3007, UnexpectedJsonValue = 3008,
     MisplacedAnnotation = 3009, MisplacedDocumentation = 3010,

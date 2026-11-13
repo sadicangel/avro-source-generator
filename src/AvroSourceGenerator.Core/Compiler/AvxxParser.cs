@@ -1,16 +1,26 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
-using System.Text.Json;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Schemas;
-using AvroSourceGenerator.Schemas.Defaults;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
 internal closed class AvxxParser(AvroParseOptions options)
 {
+    protected readonly List<AvroDiagnostic> Diagnostics = [];
+
+    protected AvroParseOptions Options { get; } = options;
+    protected List<TopLevelSchema> Declarations => field ??= [];
+    private Dictionary<SchemaName, int> DeclarationIndexes => field ??= [];
+    protected HashSet<SchemaName> References => field ??= [];
+    // Provenance belongs to occurrences in a file, never to semantic schema equality.
+    protected List<SourceSpan> DeclarationSpans => field ??= [];
+    protected Dictionary<SchemaName, List<SourceSpan>> ReferenceSpans => field ??= [];
+    private Dictionary<SchemaName, HashSet<SchemaName>> Dependencies => field ??= [];
+    private List<SchemaName> RecursionStack => field ??= [];
+
     public static AvroFile Parse(SourceText sourceText, AvroParseOptions parseOptions, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -37,20 +47,6 @@ internal closed class AvxxParser(AvroParseOptions options)
             return AvroFile.Invalid(sourceText, [.. file.GetDiagnostics(), AvroDiagnostic.MissingRootSchema(rootSpan)], parseOptions);
         return file;
     }
-
-    protected List<TopLevelSchema> Declarations => field ??= [];
-    private Dictionary<SchemaName, int> DeclarationIndexes => field ??= [];
-    protected HashSet<SchemaName> References => field ??= [];
-    private Dictionary<SchemaName, HashSet<SchemaName>> Dependencies => field ??= [];
-    private List<SchemaName> RecursionStack => field ??= [];
-
-    // Provenance belongs to occurrences in a file, never to semantic schema equality.
-    protected List<SourceSpan> DeclarationSpans => field ??= [];
-    protected Dictionary<SchemaName, List<SourceSpan>> ReferenceSpans => field ??= [];
-
-    protected AvroParseOptions Options { get; } = options;
-
-    protected readonly List<AvroDiagnostic> Diagnostics = [];
 
     protected void Declare(TopLevelSchema schema, SourceSpan sourceSpan)
     {
@@ -122,6 +118,39 @@ internal closed class AvxxParser(AvroParseOptions options)
         References.Add(schemaName);
         return new AvroSchemaReference(schemaName);
     }
+
+    protected ImmutableArray<SchemaName> GetReferences() => [.. References.OrderBy(static reference => reference.FullName, StringComparer.Ordinal)];
+
+    protected FrozenDictionary<SchemaName, ImmutableArray<SourceSpan>> GetReferenceSpans()
+    {
+        var references = new Dictionary<SchemaName, ImmutableArray<SourceSpan>>(ReferenceSpans.Count);
+        foreach (var pair in ReferenceSpans)
+            references.Add(pair.Key, [.. pair.Value.OrderBy(static span => span.Offset)]);
+        return references.ToFrozenDictionary();
+    }
+
+    protected FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> GetDependencies()
+    {
+        var dependencies = new Dictionary<SchemaName, ImmutableArray<SchemaName>>(Dependencies.Count);
+        foreach (var dependency in Dependencies)
+        {
+            dependencies.Add(
+                dependency.Key,
+                [.. dependency.Value.OrderBy(static name => name.FullName, StringComparer.Ordinal)]);
+        }
+        return dependencies.ToFrozenDictionary();
+    }
+
+    private void AddDependency(SchemaName schema, SchemaName dependsOn)
+    {
+        if (!Dependencies.TryGetValue(schema, out var dependencies))
+            Dependencies.Add(schema, dependencies = []);
+        dependencies.Add(dependsOn);
+    }
+
+    protected bool IsInRecursionScope(SchemaName schemaName) => RecursionStack.Contains(schemaName);
+
+    protected RecursionScope EnterRecursionScope(SchemaName schemaName) => new RecursionScope(RecursionStack, schemaName);
 
     protected AvroSchema ResolveFieldType(
         AvroSchema fieldType,
@@ -208,18 +237,13 @@ internal closed class AvxxParser(AvroParseOptions options)
         }
     }
 
-    protected DefaultValue? GetDefaultValue(JsonElement? json, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        if (json is null) return null;
-        return new UnboundDefaultValue(json.Value);
-    }
-
-    protected bool IsInRecursionScope(SchemaName schemaName) => RecursionStack.Contains(schemaName);
-
-    protected RecursionScope EnterRecursionScope(SchemaName schemaName) => new RecursionScope(RecursionStack, schemaName);
-
     protected void Report(AvroDiagnostic diagnostic) => Diagnostics.Add(diagnostic);
+
+    protected Option<T> Report<T>(AvroDiagnostic diagnostic)
+    {
+        Diagnostics.Add(diagnostic);
+        return Option.None<T>();
+    }
 
     protected DiagnosticTracker TrackDiagnostics() => new DiagnosticTracker(Diagnostics);
 
@@ -228,35 +252,6 @@ internal closed class AvxxParser(AvroParseOptions options)
         private readonly int _initialCount = diagnostics.Count;
 
         public bool HasNewDiagnostics => diagnostics.Count != _initialCount;
-    }
-
-    protected ImmutableArray<SchemaName> GetReferences() => [.. References.OrderBy(static reference => reference.FullName, StringComparer.Ordinal)];
-
-    protected FrozenDictionary<SchemaName, ImmutableArray<SourceSpan>> GetReferenceSpans()
-    {
-        var references = new Dictionary<SchemaName, ImmutableArray<SourceSpan>>(ReferenceSpans.Count);
-        foreach (var pair in ReferenceSpans)
-            references.Add(pair.Key, [.. pair.Value.OrderBy(static span => span.Offset)]);
-        return references.ToFrozenDictionary();
-    }
-
-    private void AddDependency(SchemaName schema, SchemaName dependsOn)
-    {
-        if (!Dependencies.TryGetValue(schema, out var dependencies))
-            Dependencies.Add(schema, dependencies = []);
-        dependencies.Add(dependsOn);
-    }
-
-    protected FrozenDictionary<SchemaName, ImmutableArray<SchemaName>> GetDependencies()
-    {
-        var dependencies = new Dictionary<SchemaName, ImmutableArray<SchemaName>>(Dependencies.Count);
-        foreach (var dependency in Dependencies)
-        {
-            dependencies.Add(
-                dependency.Key,
-                [.. dependency.Value.OrderBy(static name => name.FullName, StringComparer.Ordinal)]);
-        }
-        return dependencies.ToFrozenDictionary();
     }
 
     protected readonly ref struct RecursionScope

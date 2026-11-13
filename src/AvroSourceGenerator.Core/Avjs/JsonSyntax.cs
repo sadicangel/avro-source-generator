@@ -15,7 +15,7 @@ internal closed record class JsonSyntax(SourceSpan SourceSpan, JsonTokenType Tok
 
     public string GetDisplayText() => TokenType switch
     {
-        JsonTokenType.String => ((JsonValueSyntax)this).GetString()!,
+        JsonTokenType.String => ((JsonValueSyntax)this).StringValue!,
         JsonTokenType.Null => string.Empty,
         JsonTokenType.True => bool.TrueString,
         JsonTokenType.False => bool.FalseString,

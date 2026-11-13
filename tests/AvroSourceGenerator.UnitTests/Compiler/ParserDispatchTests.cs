@@ -51,12 +51,35 @@ public sealed class ParserDispatchTests
     [Theory]
     [InlineData(".avsc", """{"type":null}""", "null", AvroDiagnosticCode.InvalidSchemaType)]
     [InlineData(".avpr", """{"protocol":false}""", "false", AvroDiagnosticCode.InvalidProtocolName)]
+    [InlineData(".avpr", """{"protocol":null}""", "null", AvroDiagnosticCode.InvalidProtocolName)]
+    [InlineData(".avpr", """{"protocol":[]}""", "[]", AvroDiagnosticCode.InvalidProtocolName)]
+    [InlineData(".avpr", """{"protocol":{}}""", "{}", AvroDiagnosticCode.InvalidProtocolName)]
+    [InlineData(".avpr", """{"protocol":42}""", "42", AvroDiagnosticCode.InvalidProtocolName)]
+    [InlineData(".avpr", """{"protocol":""}""", "\"\"", AvroDiagnosticCode.InvalidProtocolName)]
+    [InlineData(".avpr", """{"protocol":"bad-name"}""", "\"bad-name\"", AvroDiagnosticCode.InvalidProtocolName)]
     public void Present_discriminators_keep_property_diagnostics(string extension, string json, string value, AvroDiagnosticCode code)
     {
         var source = new SourceText("test" + extension, json);
         var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).GetDiagnostics());
         Assert.Equal(code, diagnostic.Code);
         Assert.Equal(value, diagnostic.SourceSpan.ToString());
+    }
+
+    [Theory]
+    [InlineData("P", "\"example\"", "example.P", "example.R")]
+    [InlineData("P", "null", "P", "R")]
+    [InlineData("qualified.P", "\"ignored\"", "qualified.P", "qualified.R")]
+    [InlineData("qualified.P", "false", "qualified.P", "qualified.R")]
+    public void Protocol_names_resolve_the_namespace_for_the_protocol_and_its_types(string name, string ns, string protocolName, string typeName)
+    {
+        var source = new SourceText("test.avpr", $$"""{"protocol":"{{name}}","namespace":{{ns}},"types":[{"type":"record","name":"R","fields":[]}],"messages":{} }""");
+        var file = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
+
+        Assert.True(file.IsValid);
+        Assert.Empty(file.GetDiagnostics());
+        var protocol = Assert.IsType<ProtocolSchema>(file.RootSchema);
+        Assert.Equal(protocolName, protocol.SchemaName.FullName);
+        Assert.Equal(typeName, Assert.Single(protocol.Types).SchemaName.FullName);
     }
 
     [Theory]

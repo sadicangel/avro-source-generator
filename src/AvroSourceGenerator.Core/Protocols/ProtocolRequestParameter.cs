@@ -1,11 +1,11 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Schemas.Defaults;
 
 namespace AvroSourceGenerator.Protocols;
 
 public sealed record class ProtocolRequestParameter(
-    string Name,
+    MemberName Name,
     AvroSchema Type,
     AvroSchema UnderlyingType,
     string? Documentation,
@@ -14,7 +14,7 @@ public sealed record class ProtocolRequestParameter(
     public void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace)
     {
         writer.WriteStartObject();
-        writer.WriteString(AvroJsonKeys.Name, Name is ['@', ..] ? Name[1..] : Name);
+        writer.WriteString(AvroJsonKeys.Name, Name.SchemaName);
         writer.WritePropertyName(AvroJsonKeys.Type);
         Type.WriteTo(writer, registeredSchemas, writtenSchemas, containingNamespace);
         if (Documentation is not null)

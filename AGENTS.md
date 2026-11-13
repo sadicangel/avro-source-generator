@@ -48,6 +48,7 @@ The solution uses the latest installed development SDK, including previews, sele
 ## Style and generated artifacts
 
 - Follow `.editorconfig` and nearby code. C# uses four spaces, file-scoped namespaces, `System` usings first, and `var` where configured.
+- Order members as fields (constants, static fields, then instance fields), properties, constructors, then methods; keep fields and properties above constructors and methods, preserving initialization dependencies. Within the method section, prioritize behavioural cohesion: group related methods, overloads, and interface implementations; place private helpers immediately after their caller, or after the related group when shared. Use member kind and accessibility (`public`, `protected`, `internal`, `private`) only as secondary ordering within these sections. Put nested types last unless locality strongly favors keeping them beside their use, and apply the same structural order inside them. Keep comments and attributes attached to their declarations.
 - Preserve existing encodings and line endings. C# files use UTF-8 BOM and CRLF. Verify snapshots use the special rules in `.editorconfig` and `.gitattributes`.
 - Treat generated source and `.verified.*` snapshots as contracts. Review snapshot differences before accepting them; do not bulk-accept unexplained changes.
 

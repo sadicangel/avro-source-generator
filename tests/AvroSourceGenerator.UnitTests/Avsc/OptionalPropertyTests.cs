@@ -35,6 +35,44 @@ public sealed class OptionalPropertyTests
     }
 
     [Theory]
+    [InlineData("null")]
+    [InlineData("false")]
+    public void Optional_message_values_preserve_valid_null_and_false(string oneWay)
+    {
+        var file = Parse(
+            $$"""{"protocol":"P","types":[],"messages":{"m":{"request":[{"name":"p","type":"string"}],"response":"string","one-way":{{oneWay}},"errors":null,"doc":null} } }""",
+            ".avpr");
+
+        Assert.True(file.IsValid);
+        Assert.Empty(file.GetDiagnostics());
+        var message = Assert.Single(Assert.IsType<ProtocolSchema>(file.RootSchema).Messages);
+        Assert.Equal(oneWay == "false" ? false : (bool?)null, message.OneWay);
+        Assert.Null(message.Documentation);
+        Assert.Null(message.Errors);
+        var parameter = Assert.Single(message.RequestParameters);
+        Assert.Null(parameter.Documentation);
+        Assert.Null(parameter.Default);
+    }
+
+    [Theory]
+    [InlineData("string", """{"type":"string"}""")]
+    [InlineData("record", """{"type":"record","name":"R","fields":[]}""")]
+    [InlineData("enum", """{"type":"enum","name":"E","symbols":["A"]}""")]
+    [InlineData("fixed", """{"type":"fixed","name":"F","size":4}""")]
+    public void Omitted_logical_types_preserve_apache_schema_types(string type, string text)
+    {
+        var file = AvxxParser.Parse(
+            new SourceText("test.avsc", text),
+            new AvroParseOptions(GenerationTarget.Apache, LanguageFeatures.NullableReferenceTypes),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(file.IsValid);
+        Assert.Empty(file.GetDiagnostics());
+        Assert.IsNotType<LogicalSchema>(file.RootSchema);
+        Assert.Equal(type, file.RootSchema.SchemaType.ToString().ToLowerInvariant());
+    }
+
+    [Theory]
     [InlineData("""{"type":"array","items":null}""")]
     [InlineData("""{"type":null}""")]
     [InlineData("""{"type":"record","name":"R","fields":[],"doc":0}""")]

@@ -27,7 +27,7 @@ public sealed class SemanticValidationTests
         var compilation = AvroCompiler.Compile([source], new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.CSharp12), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.False(compilation.IsValid);
-        var diagnostic = Assert.Single(compilation.Diagnostics);
+        var diagnostic = Assert.Single(compilation.Diagnostics, diagnostic => diagnostic.Code == (AvroDiagnosticCode)code);
         Assert.Equal((AvroDiagnosticCode)code, diagnostic.Code);
         Assert.Equal(source.GetSourceSpan(text.LastIndexOf(value, StringComparison.Ordinal), value.Length), diagnostic.SourceSpan);
         Assert.Same(source, diagnostic.SourceSpan.SourceText);
@@ -74,14 +74,17 @@ public sealed class SemanticValidationTests
         var token = TestContext.Current.CancellationToken;
         var source = new SourceText(path, text);
         var compiled = AvroCompiler.Compile([source], new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.CSharp12), cancellationToken: token);
-        var diagnostic = Assert.Single(compiled.Diagnostics);
+        var diagnostic = Assert.Single(compiled.Diagnostics, diagnostic => diagnostic.Code == code);
         Assert.Equal(code, diagnostic.Code);
         Assert.Equal(source.GetSourceSpan(text.LastIndexOf(value, StringComparison.Ordinal), value.Length), diagnostic.SourceSpan);
         Assert.False(compiled.IsFileValid(Assert.Single(compiled.Files), token));
 
         var input = GeneratorInput.Create([new ProjectFile(text, extension, path)], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "None" });
         var result = input.GeneratorDriver.RunGenerators(input.Compilation, token).GetRunResult();
-        var generatedDiagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal(
+            compiled.Diagnostics.Select(diagnostic => (diagnostic.ToDiagnostic().Id, diagnostic.GetMessage(), diagnostic.SourceSpan.Offset, diagnostic.SourceSpan.Length)),
+            result.Diagnostics.Select(diagnostic => (diagnostic.Id, diagnostic.GetMessage(), diagnostic.Location.SourceSpan.Start, diagnostic.Location.SourceSpan.Length)));
+        var generatedDiagnostic = Assert.Single(result.Diagnostics, diagnostic => diagnostic.Id == $"AVROSG{(int)code:D4}");
         Assert.Equal($"AVROSG{(int)code:D4}", generatedDiagnostic.Id);
         Assert.Equal(diagnostic.GetMessage(), generatedDiagnostic.GetMessage());
         Assert.Equal(diagnostic.SourceSpan.Offset, generatedDiagnostic.Location.SourceSpan.Start);
@@ -255,8 +258,10 @@ public sealed class SemanticValidationTests
         var token = TestContext.Current.CancellationToken;
         var compilation = AvroCompiler.Compile([source], options, cancellationToken: token);
         var expected = new[] { first, second };
-        Assert.Equal(expected, compilation.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
-        Assert.Equal(expected.Select(value => text.LastIndexOf(value, StringComparison.Ordinal)), compilation.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.Offset));
+        var duplicates = compilation.Diagnostics.Where(diagnostic => diagnostic.Code is AvroDiagnosticCode.DuplicateField or AvroDiagnosticCode.DuplicateEnumSymbol or AvroDiagnosticCode.DuplicateUnionBranch);
+        Assert.Equal(expected, duplicates.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.Equal(expected.Select(value => text.LastIndexOf(value, StringComparison.Ordinal)), duplicates.Select(diagnostic => diagnostic.SourceSpan.Offset));
+        Assert.All(compilation.Diagnostics.Except(duplicates), diagnostic => Assert.True(diagnostic.Code is AvroDiagnosticCode.InvalidSymbols));
         var repeated = AvroCompiler.Compile([source], options, cancellationToken: token);
         Assert.Equal(compilation.Diagnostics, repeated.Diagnostics);
         Assert.Equal(compilation, repeated);

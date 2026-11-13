@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Text;
+﻿using AvroSourceGenerator.Protocols;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
 
@@ -7,9 +8,7 @@ internal sealed class AvprParser(SourceText sourceText, AvroParseOptions options
     public static AvroFile ParseFile(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken)
     {
         var parser = new AvprParser(sourceText, options, cancellationToken);
-        var protocol = parser.ParseProtocol();
-
-        if (protocol is null)
+        if (parser.ParseProtocol() is not ProtocolSchema protocol)
             return AvroFile.Invalid(sourceText, [.. parser.Diagnostics], options);
 
         return new AvroFile(

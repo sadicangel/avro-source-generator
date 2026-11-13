@@ -10,6 +10,7 @@ using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Schemas.Defaults;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler;
@@ -20,6 +21,7 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
     private readonly SyntaxTokenStream _stream = new SyntaxTokenStream(sourceText, cancellationToken);
     private readonly List<IAnnotationSyntax> _annotations = [];
     private readonly List<DocumentationSyntax> _documentation = [];
+
     public AvdlParser(SourceText sourceText, CancellationToken cancellationToken) : this(sourceText, default, cancellationToken) { }
 
     public static SyntaxTree Parse(SourceText sourceText, CancellationToken cancellationToken) => new AvdlParser(sourceText, cancellationToken).Parse();
@@ -134,92 +136,6 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         };
     }
 
-    private void EnqueueMetadata()
-    {
-        while (!_stream.IsAtEnd)
-        {
-            switch (_stream.Current.SyntaxKind)
-            {
-                case SyntaxKind.DocumentationTrivia:
-                    _documentation.Add(ParseDocumentation());
-                    break;
-                case SyntaxKind.AtSignToken:
-                    _annotations.Add(ParseAnnotation());
-                    break;
-                default:
-                    return;
-            }
-        }
-    }
-
-    private void EnqueueDocumentation()
-    {
-        while (_stream.Current.SyntaxKind is SyntaxKind.DocumentationTrivia)
-            _documentation.Add(ParseDocumentation());
-    }
-
-    private void ReportAndClearMisplacedMetadata(string target)
-    {
-        foreach (var documentation in _documentation)
-            Report(AvroDiagnostic.MisplacedDocumentation(documentation.DocumentationTrivia.SourceSpan, target));
-        foreach (var annotation in _annotations)
-            Report(AvroDiagnostic.MisplacedAnnotation(GetAnnotationSpan(annotation), GetAnnotationName(annotation), target));
-
-        _documentation.Clear();
-        _annotations.Clear();
-    }
-
-    private (SyntaxList<DocumentationSyntax> Documentation, SyntaxList<IAnnotationSyntax> Annotations) DequeueMetadata()
-    {
-        var documentation = new SyntaxList<DocumentationSyntax>([.. _documentation]);
-        _documentation.Clear();
-        var annotations = new SyntaxList<IAnnotationSyntax>([.. _annotations]);
-        _annotations.Clear();
-        return (documentation, annotations);
-    }
-
-    private DocumentationSyntax ParseDocumentation()
-    {
-        var documentationTrivia = _stream.Match(SyntaxKind.DocumentationTrivia);
-        return new DocumentationSyntax(documentationTrivia);
-    }
-
-    private IAnnotationSyntax ParseAnnotation()
-    {
-        var atSignToken = _stream.Match(SyntaxKind.AtSignToken);
-        var name = ParseAnnotationName();
-        var parenthesisOpenToken = _stream.Match(SyntaxKind.ParenthesisOpenToken);
-        var jsonValue = ParseJsonValue();
-        var parenthesisCloseToken = _stream.Match(SyntaxKind.ParenthesisCloseToken);
-        return name.FullName switch
-        {
-            "namespace" => new NamespaceAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
-            "aliases" => new AliasesAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
-            "order" => new OrderAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
-            "logicalType" => new LogicalTypeAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
-
-            _ => new CustomAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
-        };
-    }
-
-    private AnnotationNameSyntax ParseAnnotationName()
-    {
-        var separatedIdentifiers = ParseSeparatedList(
-            parseNode: () => _stream.Current.SyntaxKind is SyntaxKind.NamespaceKeyword ? _stream.Next() : _stream.Match(SyntaxKind.IdentifierToken),
-            separator: SyntaxKind.DotToken,
-            terminators: SyntaxKind.ParenthesisOpenToken);
-
-        return new AnnotationNameSyntax(separatedIdentifiers);
-    }
-
-    private JsonValueSyntax ParseJsonValue()
-    {
-        var index = _stream.Position;
-        var json = JsonParser.Parse(_stream, cancellationToken);
-        var count = _stream.Position - index;
-        return new JsonValueSyntax(new SyntaxList<SyntaxToken>([.. _stream.GetTokens(index, count)]), json);
-    }
-
     private EnumDeclarationSyntax ParseEnumDeclaration()
     {
         var enumKeyword = _stream.Match(SyntaxKind.EnumKeyword);
@@ -284,14 +200,6 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         var defaultValue = ParseDefaultValueClause();
         var semicolonToken = _stream.Match(SyntaxKind.SemicolonToken);
         return new FieldDeclarationSyntax(type, name, documentation, annotations, defaultValue, semicolonToken);
-    }
-
-    private DefaultValueClauseSyntax? ParseDefaultValueClause()
-    {
-        if (_stream.Current.SyntaxKind != SyntaxKind.EqualsToken) return null;
-        var equalsToken = _stream.Match(SyntaxKind.EqualsToken);
-        var jsonValue = ParseJsonValue();
-        return new DefaultValueClauseSyntax(equalsToken, jsonValue);
     }
 
     private ProtocolDeclarationSyntax ParseProtocolDeclaration()
@@ -402,25 +310,113 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         return new ThrowsErrorClauseSyntax(throwsKeyword, errors);
     }
 
-    private INameSyntax ParseName() => _stream.Peek(1).SyntaxKind == SyntaxKind.DotToken
-        ? ParseQualifiedName()
-        : ParseSimpleName();
-
-    private SimpleNameSyntax ParseSimpleName()
+    private DefaultValueClauseSyntax? ParseDefaultValueClause()
     {
-        var identifierToken = _stream.Match(SyntaxKind.IdentifierToken);
-        return new SimpleNameSyntax(identifierToken);
+        if (_stream.Current.SyntaxKind != SyntaxKind.EqualsToken) return null;
+        var equalsToken = _stream.Match(SyntaxKind.EqualsToken);
+        var jsonValue = ParseJsonValue();
+        return new DefaultValueClauseSyntax(equalsToken, jsonValue);
     }
 
-    private QualifiedNameSyntax ParseQualifiedName()
+    private void EnqueueMetadata()
+    {
+        while (!_stream.IsAtEnd)
+        {
+            switch (_stream.Current.SyntaxKind)
+            {
+                case SyntaxKind.DocumentationTrivia:
+                    _documentation.Add(ParseDocumentation());
+                    break;
+                case SyntaxKind.AtSignToken:
+                    _annotations.Add(ParseAnnotation());
+                    break;
+                default:
+                    return;
+            }
+        }
+    }
+
+    private void EnqueueDocumentation()
+    {
+        while (_stream.Current.SyntaxKind is SyntaxKind.DocumentationTrivia)
+            _documentation.Add(ParseDocumentation());
+    }
+
+    private (SyntaxList<DocumentationSyntax> Documentation, SyntaxList<IAnnotationSyntax> Annotations) DequeueMetadata()
+    {
+        var documentation = new SyntaxList<DocumentationSyntax>([.. _documentation]);
+        _documentation.Clear();
+        var annotations = new SyntaxList<IAnnotationSyntax>([.. _annotations]);
+        _annotations.Clear();
+        return (documentation, annotations);
+    }
+
+    private DocumentationSyntax ParseDocumentation()
+    {
+        var documentationTrivia = _stream.Match(SyntaxKind.DocumentationTrivia);
+        return new DocumentationSyntax(documentationTrivia);
+    }
+
+    private IAnnotationSyntax ParseAnnotation()
+    {
+        var atSignToken = _stream.Match(SyntaxKind.AtSignToken);
+        var name = ParseAnnotationName();
+        var parenthesisOpenToken = _stream.Match(SyntaxKind.ParenthesisOpenToken);
+        var jsonValue = ParseJsonValue();
+        var parenthesisCloseToken = _stream.Match(SyntaxKind.ParenthesisCloseToken);
+        return name.FullName switch
+        {
+            "namespace" => new NamespaceAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+            "aliases" => new AliasesAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+            "order" => new OrderAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+            "logicalType" => new LogicalTypeAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+
+            _ => new CustomAnnotationSyntax(atSignToken, name, parenthesisOpenToken, jsonValue, parenthesisCloseToken),
+        };
+    }
+
+    private AnnotationNameSyntax ParseAnnotationName()
     {
         var separatedIdentifiers = ParseSeparatedList(
-            parseNode: () => _stream.Match(SyntaxKind.IdentifierToken),
+            parseNode: () => _stream.Current.SyntaxKind is SyntaxKind.NamespaceKeyword ? _stream.Next() : _stream.Match(SyntaxKind.IdentifierToken),
             separator: SyntaxKind.DotToken,
-            terminators: SyntaxKind.SemicolonToken);
+            terminators: SyntaxKind.ParenthesisOpenToken);
 
-        return new QualifiedNameSyntax(separatedIdentifiers);
+        return new AnnotationNameSyntax(separatedIdentifiers);
     }
+
+    private JsonValueSyntax ParseJsonValue()
+    {
+        var index = _stream.Position;
+        var json = JsonParser.Parse(_stream, cancellationToken);
+        var count = _stream.Position - index;
+        return new JsonValueSyntax(new SyntaxList<SyntaxToken>([.. _stream.GetTokens(index, count)]), json);
+    }
+
+    private void ReportAndClearMisplacedMetadata(string target)
+    {
+        foreach (var documentation in _documentation)
+            Report(AvroDiagnostic.MisplacedDocumentation(documentation.DocumentationTrivia.SourceSpan, target));
+        foreach (var annotation in _annotations)
+            Report(AvroDiagnostic.MisplacedAnnotation(GetAnnotationSpan(annotation), GetAnnotationName(annotation), target));
+
+        _documentation.Clear();
+        _annotations.Clear();
+    }
+
+    private static SourceSpan GetAnnotationSpan(IAnnotationSyntax annotation) =>
+        annotation switch
+        {
+            NamespaceAnnotationSyntax namespaceAnnotation => namespaceAnnotation.AtSignToken.SourceSpan,
+            AliasesAnnotationSyntax aliasesAnnotation => aliasesAnnotation.AtSignToken.SourceSpan,
+            OrderAnnotationSyntax orderAnnotation => orderAnnotation.AtSignToken.SourceSpan,
+            LogicalTypeAnnotationSyntax logicalTypeAnnotation => logicalTypeAnnotation.AtSignToken.SourceSpan,
+            CustomAnnotationSyntax customAnnotation => customAnnotation.AtSignToken.SourceSpan,
+            _ => annotation.Children().OfType<SyntaxToken>().First().SourceSpan,
+        };
+
+    private static string GetAnnotationName(IAnnotationSyntax annotation) =>
+        annotation.AnnotationName.FullName;
 
     private ITypeSyntax ParseType()
     {
@@ -525,6 +521,26 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         return new NamedTypeSyntax(name);
     }
 
+    private INameSyntax ParseName() => _stream.Peek(1).SyntaxKind == SyntaxKind.DotToken
+        ? ParseQualifiedName()
+        : ParseSimpleName();
+
+    private SimpleNameSyntax ParseSimpleName()
+    {
+        var identifierToken = _stream.Match(SyntaxKind.IdentifierToken);
+        return new SimpleNameSyntax(identifierToken);
+    }
+
+    private QualifiedNameSyntax ParseQualifiedName()
+    {
+        var separatedIdentifiers = ParseSeparatedList(
+            parseNode: () => _stream.Match(SyntaxKind.IdentifierToken),
+            separator: SyntaxKind.DotToken,
+            terminators: SyntaxKind.SemicolonToken);
+
+        return new QualifiedNameSyntax(separatedIdentifiers);
+    }
+
     private SyntaxList<T> ParseList<T>(Func<T> parseNode, params ReadOnlySpan<SyntaxKind> terminators) where T : ISyntaxNode
     {
         var nodes = ImmutableArray.CreateBuilder<T>();
@@ -553,35 +569,7 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         return new SeparatedSyntaxList<T>(nodes.DrainToImmutable());
     }
 
-    private static SourceSpan GetAnnotationSpan(IAnnotationSyntax annotation) =>
-        annotation switch
-        {
-            NamespaceAnnotationSyntax namespaceAnnotation => namespaceAnnotation.AtSignToken.SourceSpan,
-            AliasesAnnotationSyntax aliasesAnnotation => aliasesAnnotation.AtSignToken.SourceSpan,
-            OrderAnnotationSyntax orderAnnotation => orderAnnotation.AtSignToken.SourceSpan,
-            LogicalTypeAnnotationSyntax logicalTypeAnnotation => logicalTypeAnnotation.AtSignToken.SourceSpan,
-            CustomAnnotationSyntax customAnnotation => customAnnotation.AtSignToken.SourceSpan,
-            _ => annotation.Children().OfType<SyntaxToken>().First().SourceSpan,
-        };
-
-    private static string GetAnnotationName(IAnnotationSyntax annotation) =>
-        annotation.AnnotationName.FullName;
-
     private ProgressTracker EnsureProgress(ReadOnlySpan<SyntaxKind> terminators = default) => new ProgressTracker(_stream, terminators);
-
-    private readonly ref struct ProgressTracker(SyntaxTokenStream stream, ReadOnlySpan<SyntaxKind> terminators)
-    {
-        private readonly int _startPosition = stream.Position;
-        private readonly ReadOnlySpan<SyntaxKind> _terminators = terminators;
-
-        public void Dispose()
-        {
-            if (stream.Position != _startPosition || stream.IsAtEnd || _terminators.Contains(stream.Current.SyntaxKind))
-                return;
-
-            _ = stream.Next();
-        }
-    }
 
     public static (AvroFile File, SourceSpan RootSpan) ParseFile(SourceText source, AvroParseOptions options, CancellationToken cancellationToken) =>
         new AvdlParser(source, options, cancellationToken).ParseFile();
@@ -685,34 +673,9 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
             NamedTypeSyntax type => Named(type, containingNamespace),
             OptionalTypeSyntax type => Optional(type, containingNamespace, properties, hasNonNullDefault),
             PrimitiveTypeSyntax type => Primitive(type, properties),
-            UnionTypeSyntax type => Union(type, containingNamespace),
+            UnionTypeSyntax type => Union(type.Types, containingNamespace),
             _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL type syntax '{syntax.SyntaxKind}'."),
         };
-    }
-
-    private NamedSchema? Schema(ISchemaDeclarationSyntax declaration, string? containingNamespace)
-    {
-        var schema = declaration switch
-        {
-            EnumDeclarationSyntax syntax => Enum(syntax, containingNamespace),
-            ErrorDeclarationSyntax syntax => Error(syntax, containingNamespace),
-            FixedDeclarationSyntax syntax => Fixed(syntax, containingNamespace),
-            RecordDeclarationSyntax syntax => Record(syntax, containingNamespace),
-            _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL schema declaration '{declaration.SyntaxKind}'.")
-        };
-
-        if (schema is not FixedSchema fixedSchema ||
-            declaration.Annotations.OfType<LogicalTypeAnnotationSyntax>().LastOrDefault() is not { } annotation)
-            return schema;
-
-        var logicalType = GetString(annotation.JsonValue, AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, required: true);
-        if (logicalType is null) return null;
-        if (LogicalSchema.Create(logicalType, fixedSchema, Options.GenerationTarget) is not LogicalSchema)
-            return fixedSchema;
-
-        var annotated = fixedSchema with { Properties = fixedSchema.Properties.SetItem(AvroJsonKeys.LogicalType, annotation.JsonValue.ToJsonElement()) };
-        Replace(fixedSchema, annotated);
-        return annotated;
     }
 
     private AvroSchema? Annotated(AnnotatedTypeSyntax syntax, string? containingNamespace, bool hasNonNullDefault)
@@ -760,6 +723,136 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         return values is not null ? new MapSchema(values, Documentation: null, properties) : null;
     }
 
+    private AvroSchema? Optional(OptionalTypeSyntax syntax, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties, bool hasNonNullDefault)
+    {
+        var underlyingSchema = Type(syntax.Type, containingNamespace, properties);
+        switch (underlyingSchema)
+        {
+            case null: return null;
+            case PrimitiveSchema { SchemaType: SchemaType.Null }:
+                Report(AvroDiagnostic.DuplicateUnionBranch(syntax.Type.GetSourceSpan(), AvroTypeNames.Null));
+                return null;
+            case UnionSchema:
+                Report(AvroDiagnostic.NestedUnion(syntax.Type.GetSourceSpan()));
+                return null;
+        }
+
+        ImmutableArray<AvroSchema> schemas = hasNonNullDefault
+            ? [underlyingSchema, AvroSchema.Null]
+            : [AvroSchema.Null, underlyingSchema];
+        return UnionSchema.Create(schemas, Options.LanguageFeatures.HasNullableReferenceTypes);
+    }
+
+    private AvroSchema? Union(IEnumerable<ITypeSyntax> items, string? containingNamespace, bool includeSystemError = false)
+    {
+        var schemas = UnionBranches(items, containingNamespace, includeSystemError);
+        return schemas.IsDefault ? null : UnionSchema.Create(schemas, Options.LanguageFeatures.HasNullableReferenceTypes);
+    }
+
+    private ImmutableArray<AvroSchema> UnionBranches(IEnumerable<ITypeSyntax> items, string? containingNamespace, bool includeSystemError = false)
+    {
+        var schemas = ImmutableArray.CreateBuilder<AvroSchema>();
+        var branches = new HashSet<AvroSchema>(UnionBranchComparer.Instance);
+        if (includeSystemError)
+        {
+            branches.Add(AvroSchema.String);
+            schemas.Add(AvroSchema.String);
+        }
+        var valid = true;
+        foreach (var type in items.WithCancellation(cancellationToken))
+        {
+            var schema = Type(type, containingNamespace);
+            switch (schema)
+            {
+                case null:
+                    valid = false;
+                    break;
+                case UnionSchema:
+                    Report(AvroDiagnostic.NestedUnion(type.GetSourceSpan()));
+                    valid = false;
+                    break;
+                case not null when !branches.Add(schema):
+                    Report(AvroDiagnostic.DuplicateUnionBranch(type.GetSourceSpan(), schema.SchemaName.FullName));
+                    valid = false;
+                    break;
+                default:
+                    schemas.Add(schema);
+                    break;
+            }
+        }
+        return valid ? schemas.DrainToImmutable() : default;
+    }
+
+    private AvroSchema? Logical(ILogicalTypeSyntax syntax)
+    {
+        if (syntax is DecimalLogicalTypeSyntax decimalSyntax)
+        {
+            var tracker = TrackDiagnostics();
+            var precision = decimalSyntax.PrecisionLiteralToken.Value is int precisionValue
+                ? precisionValue
+                : Invalid(0, AvroDiagnostic.InvalidIdlDecimalPrecision(decimalSyntax.PrecisionLiteralToken.SourceSpan));
+            var scale = decimalSyntax.ScaleLiteralToken.Value is int scaleValue
+                ? scaleValue
+                : Invalid(0, AvroDiagnostic.InvalidIdlDecimalScale(decimalSyntax.ScaleLiteralToken.SourceSpan));
+            if (tracker.HasNewDiagnostics)
+                return null;
+            var properties = ImmutableSortedDictionary<string, JsonElement>.Empty
+                .Add("precision", JsonSerializer.SerializeToElement(precision))
+                .Add("scale", JsonSerializer.SerializeToElement(scale));
+            var bytes = AvroSchema.Bytes with { Properties = properties };
+
+            return LogicalSchema.Create(LogicalTypeNames.Decimal, bytes, Options.GenerationTarget);
+        }
+
+        if (syntax is not LogicalTypeSyntax logical)
+        {
+            throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL logical type syntax '{syntax.SyntaxKind}'.");
+        }
+
+        return logical.LogicalTypeNameKeyword.SyntaxKind switch
+        {
+            SyntaxKind.DateKeyword => LogicalSchema.Create(LogicalTypeNames.Date, AvroSchema.Int, Options.GenerationTarget),
+            SyntaxKind.TimeMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimeMillis, AvroSchema.Int, Options.GenerationTarget),
+            SyntaxKind.TimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimestampMillis, AvroSchema.Long, Options.GenerationTarget),
+            SyntaxKind.LocalTimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.LocalTimestampMillis, AvroSchema.Long, Options.GenerationTarget),
+            SyntaxKind.UuidKeyword => LogicalSchema.Create(LogicalTypeNames.Uuid, AvroSchema.String, Options.GenerationTarget),
+            _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL logical type '{logical.LogicalTypeNameKeyword.SyntaxKind}'.")
+        };
+    }
+
+    private AvroSchema? Named(NamedTypeSyntax syntax, string? containingNamespace)
+    {
+        syntax.Name.FullName.TrySplitQualifiedName(out var name, out var ns);
+        if (string.IsNullOrWhiteSpace(name) || ns is "")
+            return Invalid<AvroSchema?>(null, AvroDiagnostic.InvalidSchemaReference(syntax.Name.GetSourceSpan(), syntax.Name.FullName));
+        return Reference(new SchemaName(name, ns), containingNamespace, syntax.Name.GetSourceSpan());
+    }
+
+    private NamedSchema? Schema(ISchemaDeclarationSyntax declaration, string? containingNamespace)
+    {
+        var schema = declaration switch
+        {
+            EnumDeclarationSyntax syntax => Enum(syntax, containingNamespace),
+            ErrorDeclarationSyntax syntax => Error(syntax, containingNamespace),
+            FixedDeclarationSyntax syntax => Fixed(syntax, containingNamespace),
+            RecordDeclarationSyntax syntax => Record(syntax, containingNamespace),
+            _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL schema declaration '{declaration.SyntaxKind}'.")
+        };
+
+        if (schema is not FixedSchema fixedSchema ||
+            declaration.Annotations.OfType<LogicalTypeAnnotationSyntax>().LastOrDefault() is not { } annotation)
+            return schema;
+
+        var logicalType = GetString(annotation.JsonValue, AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, required: true);
+        if (logicalType is null) return null;
+        if (LogicalSchema.Create(logicalType, fixedSchema, Options.GenerationTarget) is not LogicalSchema)
+            return fixedSchema;
+
+        var annotated = fixedSchema with { Properties = fixedSchema.Properties.SetItem(AvroJsonKeys.LogicalType, annotation.JsonValue.ToJsonElement()) };
+        Replace(fixedSchema, annotated);
+        return annotated;
+    }
+
     private NamedSchema? Enum(EnumDeclarationSyntax syntax, string? containingNamespace)
     {
         var tracker = TrackDiagnostics();
@@ -784,6 +877,11 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         Declare(schema, syntax.GetSourceSpan());
         return schema;
     }
+
+    private string? GetEnumDefault(EnumDeclarationSyntax syntax) =>
+        syntax.DefaultValue is { } clause
+            ? GetString(clause.JsonValue, AvroDiagnosticCode.InvalidIdlEnumDefault, required: false)
+            : null;
 
     private NamedSchema? Fixed(FixedDeclarationSyntax syntax, string? containingNamespace)
     {
@@ -811,6 +909,11 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         Declare(schema, syntax.GetSourceSpan());
         return schema;
     }
+
+    private int GetFixedSize(FixedDeclarationSyntax syntax) =>
+        syntax.SizeLiteralToken.Value is int value and > 0
+            ? value
+            : Invalid(0, AvroDiagnostic.InvalidIdlFixedSize(syntax.SizeLiteralToken.SourceSpan));
 
     private NamedSchema? Error(ErrorDeclarationSyntax syntax, string? containingNamespace)
     {
@@ -882,9 +985,8 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
     {
         var tracker = TrackDiagnostics();
         var name = new MemberName(syntax.Name.FullName);
-        var defaultSyntax = syntax.DefaultValueClause?.JsonValue;
-        var defaultJson = defaultSyntax?.ToJsonElement();
-        var hasNonNullDefault = defaultJson is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) };
+        var defaultValue = syntax.DefaultValueClause?.JsonValue?.ToJsonElement() is JsonElement json ? new UnboundDefaultValue(json) : null;
+        var hasNonNullDefault = defaultValue is { Json.ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) };
         var type = Type(syntax.Type, containingSchemaName.Namespace, hasNonNullDefault: hasNonNullDefault);
         var documentation = syntax.GetDocumentation();
         var aliases = GetAliases(syntax);
@@ -897,102 +999,9 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
             return null;
 
         var fieldType = ResolveFieldType(type, name, containingSchemaName, out var underlyingType, out var remarks);
-        var defaultValue = GetDefaultValue(defaultJson, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
         if (tracker.HasNewDiagnostics) return null;
         return new Field(name, fieldType, underlyingType, documentation, aliases, defaultValue, order, properties, remarks);
-    }
-
-    private AvroSchema? Optional(OptionalTypeSyntax syntax, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties, bool hasNonNullDefault)
-    {
-        var underlyingSchema = Type(syntax.Type, containingNamespace, properties);
-        switch (underlyingSchema)
-        {
-            case null: return null;
-            case PrimitiveSchema { SchemaType: SchemaType.Null }:
-                Report(AvroDiagnostic.DuplicateUnionBranch(syntax.Type.GetSourceSpan(), AvroTypeNames.Null));
-                return null;
-            case UnionSchema:
-                Report(AvroDiagnostic.NestedUnion(syntax.Type.GetSourceSpan()));
-                return null;
-        }
-
-        ImmutableArray<AvroSchema> schemas = hasNonNullDefault
-            ? [underlyingSchema, AvroSchema.Null]
-            : [AvroSchema.Null, underlyingSchema];
-        return UnionSchema.Create(schemas, Options.LanguageFeatures.HasNullableReferenceTypes);
-    }
-
-    private AvroSchema? Union(UnionTypeSyntax syntax, string? containingNamespace)
-    {
-        var schemas = UnionBranches(syntax.Types, containingNamespace);
-        return schemas.IsDefault ? null : UnionSchema.Create(schemas, Options.LanguageFeatures.HasNullableReferenceTypes);
-    }
-
-    private ImmutableArray<AvroSchema> UnionBranches(IEnumerable<ITypeSyntax> items, string? containingNamespace, bool includeSystemError = false)
-    {
-        var schemas = ImmutableArray.CreateBuilder<AvroSchema>();
-        var branches = new HashSet<AvroSchema>(UnionBranchComparer.Instance);
-        if (includeSystemError) branches.Add(AvroSchema.String);
-        var valid = true;
-        foreach (var type in items.WithCancellation(cancellationToken))
-        {
-            var schema = Type(type, containingNamespace);
-            switch (schema)
-            {
-                case null:
-                    valid = false;
-                    break;
-                case UnionSchema:
-                    Report(AvroDiagnostic.NestedUnion(type.GetSourceSpan()));
-                    valid = false;
-                    break;
-                case not null when !branches.Add(schema):
-                    Report(AvroDiagnostic.DuplicateUnionBranch(type.GetSourceSpan(), schema.SchemaName.FullName));
-                    valid = false;
-                    break;
-                default:
-                    schemas.Add(schema);
-                    break;
-            }
-        }
-        return valid ? schemas.DrainToImmutable() : default;
-    }
-
-    private AvroSchema? Logical(ILogicalTypeSyntax syntax)
-    {
-        if (syntax is DecimalLogicalTypeSyntax decimalSyntax)
-        {
-            var tracker = TrackDiagnostics();
-            var precision = decimalSyntax.PrecisionLiteralToken.Value is int precisionValue
-                ? precisionValue
-                : Invalid(0, AvroDiagnostic.InvalidIdlDecimalPrecision(decimalSyntax.PrecisionLiteralToken.SourceSpan));
-            var scale = decimalSyntax.ScaleLiteralToken.Value is int scaleValue
-                ? scaleValue
-                : Invalid(0, AvroDiagnostic.InvalidIdlDecimalScale(decimalSyntax.ScaleLiteralToken.SourceSpan));
-            if (tracker.HasNewDiagnostics)
-                return null;
-            var properties = ImmutableSortedDictionary<string, JsonElement>.Empty
-                .Add("precision", JsonSerializer.SerializeToElement(precision))
-                .Add("scale", JsonSerializer.SerializeToElement(scale));
-            var bytes = AvroSchema.Bytes with { Properties = properties };
-
-            return LogicalSchema.Create(LogicalTypeNames.Decimal, bytes, Options.GenerationTarget);
-        }
-
-        if (syntax is not LogicalTypeSyntax logical)
-        {
-            throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL logical type syntax '{syntax.SyntaxKind}'.");
-        }
-
-        return logical.LogicalTypeNameKeyword.SyntaxKind switch
-        {
-            SyntaxKind.DateKeyword => LogicalSchema.Create(LogicalTypeNames.Date, AvroSchema.Int, Options.GenerationTarget),
-            SyntaxKind.TimeMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimeMillis, AvroSchema.Int, Options.GenerationTarget),
-            SyntaxKind.TimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimestampMillis, AvroSchema.Long, Options.GenerationTarget),
-            SyntaxKind.LocalTimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.LocalTimestampMillis, AvroSchema.Long, Options.GenerationTarget),
-            SyntaxKind.UuidKeyword => LogicalSchema.Create(LogicalTypeNames.Uuid, AvroSchema.String, Options.GenerationTarget),
-            _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL logical type '{logical.LogicalTypeNameKeyword.SyntaxKind}'.")
-        };
     }
 
     private ProtocolSchema? Protocol(ProtocolDeclarationSyntax syntax, string? containingNamespace)
@@ -1053,9 +1062,9 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         var response = ProtocolResponse(syntax.Type, containingNamespace);
         var errors = ProtocolErrors(syntax.ThrowsErrorClause, containingNamespace);
         var oneWay = syntax.OneWayClause is not null ? true : default(bool?);
-        if (oneWay is true && response is not null && !errors.IsDefault && (response.Type.SchemaType is not SchemaType.Null || errors.Length > 0))
+        if (oneWay is true && response is not null && (response.Type.SchemaType is not SchemaType.Null || errors is not null))
             Report(AvroDiagnostic.InvalidIdlOneWayMessage(syntax.OneWayClause!.OneWayKeyword.SourceSpan, syntax.Name.FullName));
-        if (requestParameters.IsDefault || response is null || errors.IsDefault || tracker.HasNewDiagnostics)
+        if (requestParameters.IsDefault || response is null || tracker.HasNewDiagnostics)
             return null;
         return new ProtocolMessage(methodName, documentation, requestParameters, response, errors, oneWay);
     }
@@ -1078,14 +1087,13 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
     {
         var tracker = TrackDiagnostics();
         var name = syntax.Name.FullName.ToValidName();
-        var defaultSyntax = syntax.DefaultValueClause?.JsonValue;
-        var defaultJson = defaultSyntax?.ToJsonElement();
-        var hasNonNullDefault = defaultJson is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) };
+        var defaultValue = syntax.DefaultValueClause?.JsonValue?.ToJsonElement() is JsonElement json ? new UnboundDefaultValue(json) : null;
+        var hasNonNullDefault = defaultValue is { Json.ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) };
         var type = Type(syntax.Type, containingNamespace, hasNonNullDefault: hasNonNullDefault);
         var documentation = syntax.GetDocumentation();
         if (type is null) return null;
         var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
-        var defaultValue = GetDefaultValue(defaultJson, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
         if (tracker.HasNewDiagnostics) return null;
         return new ProtocolRequestParameter(name, type, underlyingType, documentation, defaultValue);
     }
@@ -1098,33 +1106,8 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         return new ProtocolResponse(type, underlyingType);
     }
 
-    private ImmutableArray<AvroSchema> ProtocolErrors(ThrowsErrorClauseSyntax? syntax, string? containingNamespace) =>
-        syntax is null ? [] : UnionBranches(syntax.Errors, containingNamespace, includeSystemError: true);
-
-    private T Invalid<T>(T @default, AvroDiagnostic diagnostic)
-    {
-        Report(diagnostic);
-        return @default;
-    }
-
-    private string? GetEnumDefault(EnumDeclarationSyntax syntax) =>
-        syntax.DefaultValue is { } clause
-            ? GetString(clause.JsonValue, AvroDiagnosticCode.InvalidIdlEnumDefault, required: false)
-            : null;
-
-    private int GetFixedSize(FixedDeclarationSyntax syntax) =>
-        syntax.SizeLiteralToken.Value is int value and > 0
-            ? value
-            : Invalid(0, AvroDiagnostic.InvalidIdlFixedSize(syntax.SizeLiteralToken.SourceSpan));
-
-    private string? GetString(JsonValueSyntax syntax, AvroDiagnosticCode code, bool required)
-    {
-        if (syntax.JsonNode is null && !required)
-            return null;
-        if (syntax.JsonNode is JsonValue value && value.TryGetValue<string>(out var result))
-            return result;
-        return Invalid<string?>(null, AvroDiagnostic.InvalidIdlProperty(code, syntax.GetSourceSpan()));
-    }
+    private AvroSchema? ProtocolErrors(ThrowsErrorClauseSyntax? syntax, string? containingNamespace) =>
+        syntax is null ? null : Union(syntax.Errors, containingNamespace, includeSystemError: true);
 
     private ImmutableArray<string> GetAliases(IDeclarationSyntax syntax)
     {
@@ -1157,12 +1140,33 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         return new SchemaName(name, containingNamespace);
     }
 
-    private AvroSchema? Named(NamedTypeSyntax syntax, string? containingNamespace)
+    private string? GetString(JsonValueSyntax syntax, AvroDiagnosticCode code, bool required)
     {
-        syntax.Name.FullName.TrySplitQualifiedName(out var name, out var ns);
-        if (string.IsNullOrWhiteSpace(name) || ns is "")
-            return Invalid<AvroSchema?>(null, AvroDiagnostic.InvalidSchemaReference(syntax.Name.GetSourceSpan(), syntax.Name.FullName));
-        return Reference(new SchemaName(name, ns), containingNamespace, syntax.Name.GetSourceSpan());
+        if (syntax.JsonNode is null && !required)
+            return null;
+        if (syntax.JsonNode is JsonValue value && value.TryGetValue<string>(out var result))
+            return result;
+        return Invalid<string?>(null, AvroDiagnostic.InvalidIdlProperty(code, syntax.GetSourceSpan()));
+    }
+
+    private T Invalid<T>(T @default, AvroDiagnostic diagnostic)
+    {
+        Report(diagnostic);
+        return @default;
+    }
+
+    private readonly ref struct ProgressTracker(SyntaxTokenStream stream, ReadOnlySpan<SyntaxKind> terminators)
+    {
+        private readonly int _startPosition = stream.Position;
+        private readonly ReadOnlySpan<SyntaxKind> _terminators = terminators;
+
+        public void Dispose()
+        {
+            if (stream.Position != _startPosition || stream.IsAtEnd || _terminators.Contains(stream.Current.SyntaxKind))
+                return;
+
+            _ = stream.Next();
+        }
     }
 }
 

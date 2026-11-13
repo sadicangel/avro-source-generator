@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using AvroSourceGenerator.Avjs;
 using AvroSourceGenerator.Diagnostics;
@@ -11,349 +12,69 @@ namespace AvroSourceGenerator.Compiler;
 
 internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options, CancellationToken cancellationToken) : AvxxParser(options)
 {
-    protected AvroSchema? ParseSchema()
+    protected Option<AvroSchema> ParseSchema() => ParseRootSyntax(sourceText, cancellationToken) switch
     {
-        var root = ParseRootSyntax();
-        if (root is null) return null;
-        var schema = Schema(root, containingNamespace: null);
-        if (schema is null || Diagnostics.HasErrors) return null;
+        JsonSyntax root => Schema(root, containingNamespace: null),
+        AvroDiagnostic diagnostic => Report<AvroSchema>(diagnostic)
+    };
 
-        return schema;
-    }
-
-    protected ProtocolSchema? ParseProtocol()
+    protected Option<AvroSchema> Schema(Option<JsonSyntax> maybeSyntax, string? containingNamespace)
     {
-        var root = ParseRootSyntax();
-        if (root is null) return null;
-        var syntax = AsProtocol(root);
-        if (syntax is null) return null;
-        var protocol = Protocol(syntax, containingNamespace: null);
-        if (protocol is null || Diagnostics.HasErrors) return null;
-
-        return protocol;
-    }
-
-    private T Invalid<T>(T value, AvroDiagnostic diagnostic)
-    {
-        Report(diagnostic);
-        return value;
-    }
-
-    private JsonPropertySyntax? GetRequiredProperty(JsonObjectSyntax syntax, string propertyName)
-    {
-        var property = syntax.GetProperty(propertyName);
-        if (property is not null) return property;
-        Report(AvroDiagnostic.MissingProperty(syntax, propertyName));
-        return null;
-    }
-
-    private static JsonPropertySyntax? GetOptionalProperty(JsonObjectSyntax syntax, string propertyName)
-    {
-        var property = syntax.GetProperty(propertyName);
-        if (property is { Value.TokenType: not JsonTokenType.Null }) return property;
-        return null;
-    }
-
-    private JsonObjectSyntax? AsProtocol(JsonSyntax syntax)
-    {
-        if (syntax is JsonObjectSyntax @object && @object.GetProperty(AvroJsonKeys.Protocol) is not null)
-            return @object;
-
-        return Invalid<JsonObjectSyntax?>(null, AvroDiagnostic.ProtocolExpected(syntax.SourceSpan));
-    }
-
-    private JsonObjectSyntax? AsObject(JsonSyntax syntax)
-    {
-        if (syntax is JsonObjectSyntax @object) return @object;
-        Report(AvroDiagnostic.InvalidProperty(syntax));
-        return null;
-    }
-
-    private string? GetRequiredString(JsonPropertySyntax property)
-    {
-        if (property.Value is JsonValueSyntax { TokenType: JsonTokenType.String or JsonTokenType.Null } value)
-        {
-            var @string = value.GetString();
-            if (!string.IsNullOrWhiteSpace(@string)) return @string!;
-        }
-        Report(AvroDiagnostic.InvalidProperty(property));
-        return null;
-    }
-
-    private string? GetRequiredAvroName(JsonPropertySyntax property)
-    {
-        var name = GetRequiredString(property);
-        if (name is null) return null;
-        if (IsValidName(name)) return name;
-        Report(AvroDiagnostic.InvalidProperty(property));
-        return null;
-    }
-
-    private string? GetNullableString(JsonPropertySyntax property)
-    {
-        if (property.Value is JsonValueSyntax { TokenType: JsonTokenType.String or JsonTokenType.Null } value)
-        {
-            var @string = value.GetString();
-            return string.IsNullOrWhiteSpace(@string) ? null : @string;
-        }
-        Report(AvroDiagnostic.InvalidProperty(property));
-        return null;
-    }
-
-    private string? GetOptionalNullableString(JsonObjectSyntax syntax, string propertyName)
-    {
-        var property = GetOptionalProperty(syntax, propertyName);
-        if (property is null) return null;
-        return GetNullableString(property);
-    }
-
-    private ImmutableArray<JsonSyntax> GetArrayItems(JsonPropertySyntax property)
-    {
-        if (property.Value is JsonArraySyntax array)
-        {
-            return array.Items;
-        }
-        Report(AvroDiagnostic.InvalidProperty(property));
-        return default;
-    }
-
-    private ImmutableArray<string> GetOptionalArrayStrings(JsonObjectSyntax syntax, string propertyName)
-    {
-        var property = GetOptionalProperty(syntax, propertyName);
-        return property is null ? [] : GetArrayStrings(property, validateNames: false);
-    }
-
-    private ImmutableArray<JsonSyntax> GetOptionalArrayItems(JsonObjectSyntax syntax, string propertyName)
-    {
-        var property = GetOptionalProperty(syntax, propertyName);
-        return property is null ? [] : GetArrayItems(property);
-    }
-
-    private ImmutableArray<JsonPropertySyntax> GetObjectProperties(JsonPropertySyntax property)
-    {
-        if (property.Value is JsonObjectSyntax @object)
-            return @object.Properties;
-
-        Report(AvroDiagnostic.InvalidProperty(property));
-        return default;
-    }
-
-    private bool? GetBoolean(JsonPropertySyntax property)
-    {
-        if (property.Value.TokenType == JsonTokenType.True) return true;
-        if (property.Value.TokenType == JsonTokenType.False) return false;
-        Report(AvroDiagnostic.InvalidProperty(property));
-        return null;
-    }
-
-    private bool? GetOptionalBoolean(JsonObjectSyntax syntax, string propertyName)
-    {
-        var property = GetOptionalProperty(syntax, propertyName);
-        return property is not null ? GetBoolean(property) : null;
-    }
-
-    private string? GetOptionalSchemaString(JsonObjectSyntax syntax, string propertyName)
-    {
-        var property = syntax.GetProperty(propertyName);
-        if (property is null)
-            return null;
-
-        var value = (property.Value as JsonValueSyntax)?.GetString();
-        return !string.IsNullOrWhiteSpace(value)
-            ? value
-            : Invalid<string?>(null, AvroDiagnostic.InvalidProperty(property));
-    }
-
-    private static string? GetOptionalString(JsonObjectSyntax syntax, string propertyName)
-    {
-        var value = (syntax.GetProperty(propertyName)?.Value as JsonValueSyntax)?.GetString();
-        return string.IsNullOrWhiteSpace(value) ? null : value;
-    }
-
-    private static JsonSyntax? GetDefaultJson(JsonObjectSyntax syntax) => syntax.GetProperty(AvroJsonKeys.Default)?.Value;
-
-    private int GetSizeInt32(JsonPropertySyntax property)
-    {
-        var size = (property.Value as JsonValueSyntax)?.GetInt32();
-        if (size is > 0)
-            return size.Value;
-
-        Report(AvroDiagnostic.InvalidProperty(property));
-        return 0;
-    }
-
-    private ImmutableArray<string> GetArrayStrings(JsonPropertySyntax property, bool validateNames)
-    {
-        var items = GetArrayItems(property);
-        if (items.IsDefault) return default;
-
-        var builder = ImmutableArray.CreateBuilder<string>(items.Length);
-        foreach (var item in items.WithCancellation(cancellationToken))
-        {
-            var @string = (item as JsonValueSyntax)?.GetString();
-            if (string.IsNullOrWhiteSpace(@string))
-            {
-                Report(AvroDiagnostic.InvalidProperty(property, item));
-                return default;
-            }
-
-            if (validateNames && !IsValidName(@string))
-            {
-                Report(AvroDiagnostic.InvalidProperty(property, item));
-                return default;
-            }
-
-            builder.Add(@string!);
-        }
-        return builder.MoveToImmutable();
-    }
-
-    private ImmutableArray<MemberName> GetEnumSymbols(JsonPropertySyntax? property, SchemaName schemaName)
-    {
-        if (property is null) return default;
-        var symbols = GetArrayStrings(property, validateNames: true);
-        if (symbols.IsDefault) return default;
-        var names = new HashSet<string>(StringComparer.Ordinal);
-        var items = ((JsonArraySyntax)property.Value).Items;
-        foreach (var (symbol, item) in symbols.WithCancellation(cancellationToken).Zip(items))
-        {
-            if (!names.Add(symbol))
-                Report(AvroDiagnostic.DuplicateSymbol(item.SourceSpan, symbol, schemaName));
-        }
-        return [.. symbols.WithCancellation(cancellationToken).Select(static symbol => new MemberName(symbol))];
-    }
-
-    private SchemaName GetSchemaName(JsonValueSyntax syntax, string? containingNamespace)
-    {
-        var qualifiedName = syntax.GetString();
-        if (string.IsNullOrWhiteSpace(qualifiedName))
-            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(syntax));
-
-        if (!IsValidQualifiedName(qualifiedName!))
-            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(syntax));
-
-        _ = qualifiedName!.TrySplitQualifiedName(out var localName, out var @namespace);
-        if (!IsValidName(localName) || (@namespace is not null && !IsValidNamespace(@namespace)))
-            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(syntax));
-
-        return new SchemaName(localName, @namespace ?? containingNamespace);
-    }
-
-    private SchemaName GetSchemaName(JsonPropertySyntax property, string? containingNamespace)
-    {
-        var qualifiedName = GetRequiredString(property);
-        if (qualifiedName is null) return default;
-        if (!IsValidQualifiedName(qualifiedName))
-            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(property));
-
-        var hasNamespace = qualifiedName.TrySplitQualifiedName(out var localName, out var @namespace);
-        var tracker = TrackDiagnostics();
-        if (!hasNamespace)
-            @namespace = GetOptionalNullableString((JsonObjectSyntax)property.Parent!, AvroJsonKeys.Namespace);
-        if (tracker.HasNewDiagnostics) return default;
-        if (!IsValidName(localName))
-            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(property));
-        if (@namespace is not null && !IsValidNamespace(@namespace))
-        {
-            var invalidProperty = hasNamespace ? property : ((JsonObjectSyntax)property.Parent!).GetProperty(AvroJsonKeys.Namespace)!;
-            return Invalid(default(SchemaName), AvroDiagnostic.InvalidProperty(invalidProperty));
-        }
-        return new SchemaName(localName, @namespace ?? containingNamespace);
-    }
-
-    private static bool IsValidNamespace(string value) => value.Length == 0 || value.Split('.').All(IsValidName);
-
-    private static bool IsValidQualifiedName(string value) => value.Split('.').All(IsValidName);
-
-    private static bool IsValidName(string? value) => !string.IsNullOrEmpty(value) &&
-        (char.IsAsciiLetter(value![0]) || value[0] is '_') &&
-        value.All(static character => char.IsAsciiLetterOrDigit(character) || character is '_');
-
-    protected JsonSyntax? ParseRootSyntax()
-    {
-        var reader = new JsonReader(sourceText);
-        try
-        {
-            if (!reader.Read())
-            {
-                Report(AvroDiagnostic.EmptyJson(sourceText.GetSourceSpan()));
-                return null;
-            }
-
-            var root = reader.Parse(cancellationToken);
-
-            if (reader.Read())
-            {
-                Report(AvroDiagnostic.TrailingJson(reader.CurrentSpan));
-                return null;
-            }
-
-            return root;
-        }
-        catch (JsonException ex)
-        {
-            var span = ex.LineNumber is null && ex.BytePositionInLine is null && !reader.CurrentSpan.IsNone
-                ? reader.CurrentSpan
-                : SourceSpan.FromException(sourceText, ex);
-            Report(AvroDiagnostic.InvalidJson(span, ex));
-            return null;
-        }
-    }
-
-    protected AvroSchema? Schema(JsonSyntax syntax, string? containingNamespace)
-    {
+        if (!maybeSyntax.TryGetValue(out JsonSyntax? syntax))
+            return Option.None<AvroSchema>();
         return syntax switch
         {
             JsonValueSyntax { TokenType: JsonTokenType.String } value => Named(value, containingNamespace),
-            JsonObjectSyntax @object when @object.GetProperty(AvroJsonKeys.Type) is not null => Complex(@object, containingNamespace),
-            JsonArraySyntax array => Union(array, containingNamespace),
-            _ => Invalid<AvroSchema?>(null, AvroDiagnostic.InvalidProperty(syntax))
+            JsonObjectSyntax @object when @object.Property(AvroJsonKeys.Type) is not null => Complex(@object, containingNamespace),
+            JsonArraySyntax array => Union(array, containingNamespace, prependSystemError: false),
+            _ => Report<AvroSchema>(AvroDiagnostic.InvalidProperty(syntax))
         };
     }
 
-    private AvroSchema? Named(JsonValueSyntax syntax, string? containingNamespace)
+    private Option<AvroSchema> Complex(JsonObjectSyntax syntax, string? containingNamespace)
     {
-        var schemaName = GetSchemaName(syntax, containingNamespace: null);
-        return schemaName.IsDefault ? null : Reference(schemaName, containingNamespace, syntax.SourceSpan);
-    }
+        if (!TryUnwrap(syntax.GetRequiredValue(AvroJsonKeys.Type), out var type) || !TryUnwrap(type.AsString(), out var typeName))
+            return Option.None<AvroSchema>();
 
-    private AvroSchema? Complex(JsonObjectSyntax syntax, string? containingNamespace)
-    {
-        var type = GetRequiredProperty(syntax, AvroJsonKeys.Type);
-        if (type is null) return null;
-        var typeName = GetRequiredString(type);
-        if (typeName is null) return null;
-
-        var schema = typeName switch
+        var maybeSchema = typeName switch
         {
             AvroTypeNames.Array => Array(syntax, containingNamespace),
             AvroTypeNames.Map => Map(syntax, containingNamespace),
-            AvroTypeNames.Enum => Enum(syntax, containingNamespace),
-            AvroTypeNames.Record => Record(syntax, containingNamespace),
-            AvroTypeNames.Error => Error(syntax, containingNamespace),
-            AvroTypeNames.Fixed => Fixed(syntax, containingNamespace),
-            _ => Named((JsonValueSyntax)type.Value, containingNamespace)
+            AvroTypeNames.Enum => Enum(syntax, containingNamespace).Map(static named => (AvroSchema)named),
+            AvroTypeNames.Record => Record(syntax, containingNamespace).Map(static named => (AvroSchema)named),
+            AvroTypeNames.Error => Error(syntax, containingNamespace).Map(static named => (AvroSchema)named),
+            AvroTypeNames.Fixed => Fixed(syntax, containingNamespace).Map(static named => (AvroSchema)named),
+            _ => Named(type, containingNamespace)
         };
 
-        if (schema is PrimitiveSchema)
+        if (!maybeSchema.TryGetValue(out AvroSchema? schema))
+            return Option.None<AvroSchema>();
+
+        if (schema is PrimitiveSchema primitive)
         {
-            var tracker = TrackDiagnostics();
-            var documentation = GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-            var properties = syntax.GetSchemaProperties();
-            if (tracker.HasNewDiagnostics) schema = null;
-            if (schema is not null && (documentation is not null || !properties.IsEmpty))
+            if (!TryUnwrap(syntax.GetDocumentation(), out var documentation) || !TryUnwrap(syntax.GetSchemaProperties(), out var properties))
+                return Option.None<AvroSchema>();
+
+            if (documentation.IsSome || !properties.IsEmpty)
+            {
                 schema = schema with
                 {
-                    Documentation = documentation,
+                    Documentation = documentation.GetValueOrDefault(),
                     Properties = properties
                 };
+            }
         }
 
-        var logicalTracker = TrackDiagnostics();
-        var logicalType = GetOptionalSchemaString(syntax, AvroJsonKeys.LogicalType);
-        if (schema is null || logicalTracker.HasNewDiagnostics) return null;
-        if (logicalType is null) return schema;
+        if (!TryUnwrap(syntax.GetLogicalTypeName(), out var maybeLogicalType))
+            return Option.None<AvroSchema>();
 
+        return maybeLogicalType is string logicalType
+            ? Logical(logicalType, schema)
+            : schema;
+    }
+
+    private Option<AvroSchema> Logical(string logicalType, AvroSchema schema)
+    {
         var logicalSchema = LogicalSchema.Create(logicalType, schema, Options.GenerationTarget);
         if (logicalSchema is LogicalSchema) return logicalSchema;
 
@@ -365,346 +86,442 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         return underlyingSchema;
     }
 
-    private AvroSchema? Array(JsonObjectSyntax syntax, string? containingNamespace)
+    private Option<AvroSchema> Named(JsonValueSyntax syntax, string? containingNamespace)
     {
-        var tracker = TrackDiagnostics();
-        var itemsProperty = GetRequiredProperty(syntax, AvroJsonKeys.Items);
-        var items = itemsProperty is null ? null : Schema(itemsProperty.Value, containingNamespace);
-        var documentation = GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-        var properties = syntax.GetSchemaProperties();
-        return items is not null && !tracker.HasNewDiagnostics
-            ? new ArraySchema(items, documentation, properties)
-            : null;
+        if (!TryUnwrap(syntax.AsSchemaName(containingNamespace: null), out var schemaName))
+            return Option.None<AvroSchema>();
+
+        return Reference(schemaName, containingNamespace, syntax.SourceSpan);
     }
 
-    private AvroSchema? Map(JsonObjectSyntax syntax, string? containingNamespace)
+    private Option<AvroSchema> Array(JsonObjectSyntax syntax, string? containingNamespace)
     {
-        var tracker = TrackDiagnostics();
-        var valuesProperty = GetRequiredProperty(syntax, AvroJsonKeys.Values);
-        var values = valuesProperty is null ? null : Schema(valuesProperty.Value, containingNamespace);
-        var documentation = GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-        var properties = syntax.GetSchemaProperties();
-        return values is not null && !tracker.HasNewDiagnostics
-            ? new MapSchema(values, documentation, properties)
-            : null;
+        var itemsSchema = Schema(Unwrap(syntax.GetRequiredProperty(AvroJsonKeys.Items).Map(static property => property.Value)), containingNamespace);
+        var documentation = Unwrap(syntax.GetDocumentation());
+        var properties = Unwrap(syntax.GetSchemaProperties());
+        if (itemsSchema.IsNone || documentation.IsNone || properties.IsNone)
+            return Option.None<AvroSchema>();
+
+        return new ArraySchema(itemsSchema.GetValue(), documentation.GetValue().GetValueOrDefault(), properties.GetValue());
     }
 
-    private NamedSchema? Enum(JsonObjectSyntax syntax, string? containingNamespace) => EnterRegisterScope(
-        syntax,
-        AvroJsonKeys.Name,
-        containingNamespace,
-        static (parser, syntax, schemaName) =>
-        {
-            var tracker = parser.TrackDiagnostics();
-            var documentation = parser.GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-            var aliases = parser.GetOptionalArrayStrings(syntax, AvroJsonKeys.Aliases);
-            var symbolsProperty = parser.GetRequiredProperty(syntax, AvroJsonKeys.Symbols);
-            var symbols = parser.GetEnumSymbols(symbolsProperty, schemaName);
-            var defaultSymbol = parser.GetOptionalNullableString(syntax, AvroJsonKeys.Default);
-            var properties = syntax.GetSchemaProperties();
-            return !tracker.HasNewDiagnostics && !aliases.IsDefault && !symbols.IsDefault
-                ? new EnumSchema(schemaName, documentation, aliases, symbols, defaultSymbol, properties)
-                : null;
-        });
-
-    private NamedSchema? Fixed(JsonObjectSyntax syntax, string? containingNamespace) => EnterRegisterScope(
-        syntax,
-        AvroJsonKeys.Name,
-        containingNamespace,
-        static (parser, syntax, schemaName) =>
-        {
-            var tracker = parser.TrackDiagnostics();
-            var documentation = parser.GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-            var aliases = parser.GetOptionalArrayStrings(syntax, AvroJsonKeys.Aliases);
-            var sizeProperty = parser.GetRequiredProperty(syntax, AvroJsonKeys.Size);
-            var size = sizeProperty is null ? 0 : parser.GetSizeInt32(sizeProperty);
-            var properties = syntax.GetSchemaProperties();
-            return !tracker.HasNewDiagnostics && !aliases.IsDefault && size > 0
-                ? new FixedSchema(schemaName, documentation, aliases, size, properties)
-                {
-                    CSharpName = parser.Options.GenerationTarget is GenerationTarget.Apache
-                        ? CSharpName.FromSchemaName(schemaName)
-                        : AvroSchema.Bytes.CSharpName
-                }
-                : null;
-        });
-
-    private NamedSchema? Record(JsonObjectSyntax syntax, string? containingNamespace) => EnterRegisterScope(
-        syntax,
-        AvroJsonKeys.Name,
-        containingNamespace,
-        static (parser, syntax, schemaName) =>
-        {
-            var tracker = parser.TrackDiagnostics();
-            var documentation = parser.GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-            var aliases = parser.GetOptionalArrayStrings(syntax, AvroJsonKeys.Aliases);
-            var fields = parser.Fields(syntax, schemaName);
-            var properties = syntax.GetSchemaProperties();
-            return !tracker.HasNewDiagnostics && !aliases.IsDefault && !fields.IsDefault
-                ? new RecordSchema(schemaName, documentation, aliases, fields, properties)
-                : null;
-        });
-
-    private NamedSchema? Error(JsonObjectSyntax syntax, string? containingNamespace) => EnterRegisterScope(
-        syntax,
-        AvroJsonKeys.Name,
-        containingNamespace,
-        static (parser, syntax, schemaName) =>
-        {
-            var tracker = parser.TrackDiagnostics();
-            var documentation = parser.GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-            var aliases = parser.GetOptionalArrayStrings(syntax, AvroJsonKeys.Aliases);
-            var fields = parser.Fields(syntax, schemaName);
-            var properties = syntax.GetSchemaProperties();
-            return !tracker.HasNewDiagnostics && !aliases.IsDefault && !fields.IsDefault
-                ? new ErrorSchema(schemaName, documentation, aliases, fields, properties)
-                : null;
-        });
-
-    private ImmutableArray<T> ParseItems<TSyntax, T, TState>(
-        ImmutableArray<TSyntax> items,
-        TState state,
-        Func<TSyntax, TState, T?> parse)
-        where T : class
+    private Option<AvroSchema> Map(JsonObjectSyntax syntax, string? containingNamespace)
     {
-        if (items.IsDefault) return default;
-        var builder = ImmutableArray.CreateBuilder<T>(items.Length);
-        foreach (var item in items.WithCancellation(cancellationToken))
-        {
-            var result = parse(item, state);
-            if (result is null)
-                return default;
-            builder.Add(result);
-        }
-        return builder.MoveToImmutable();
+        var valueSchema = Schema(Unwrap(syntax.GetRequiredProperty(AvroJsonKeys.Values).Map(static property => property.Value)), containingNamespace);
+        var documentation = Unwrap(syntax.GetDocumentation());
+        var properties = Unwrap(syntax.GetSchemaProperties());
+        if (valueSchema.IsNone || documentation.IsNone || properties.IsNone)
+            return Option.None<AvroSchema>();
+
+        return new MapSchema(valueSchema.GetValue(), documentation.GetValue().GetValueOrDefault(), properties.GetValue());
     }
 
-    private ImmutableArray<T> ParseObjectItems<T, TState>(
-        ImmutableArray<JsonSyntax> items,
-        TState state,
-        Func<JsonObjectSyntax, TState, T?> parse) where T : class =>
-        ParseItems(
-            items,
-            (Parser: this, State: state, Parse: parse),
-            static (item, state) => state.Parser.AsObject(item) is { } @object
-                ? state.Parse(@object, state.State)
-                : null);
-
-    private ImmutableArray<Field> Fields(JsonObjectSyntax syntax, SchemaName containingSchemaName)
+    private Option<NamedSchema> Enum(JsonObjectSyntax syntax, string? containingNamespace)
     {
-        var names = new HashSet<string>(StringComparer.Ordinal);
-        return ParseObjectItems(
-            GetRequiredProperty(syntax, AvroJsonKeys.Fields) is { } property ? GetArrayItems(property) : default,
-            (Parser: this, ContainingSchemaName: containingSchemaName, Names: names),
-            static (syntax, state) =>
+        if (!TryUnwrap(syntax.GetSchemaName(containingNamespace), out var schemaName))
+            return Option.None<NamedSchema>();
+        if (IsInRecursionScope(schemaName))
+            return Report<NamedSchema>(AvroDiagnostic.RecursiveDefinition(syntax.Property(AvroJsonKeys.Name)!.Value.SourceSpan, schemaName));
+
+        using var recursionScope = EnterRecursionScope(schemaName);
+        var documentation = Unwrap(syntax.GetDocumentation());
+        var aliases = Unwrap(syntax.GetAliases());
+        var symbols = Unwrap(GetEnumSymbols(syntax, schemaName));
+        var defaultSymbol = Unwrap(syntax.GetOptionalNullableString(AvroJsonKeys.Default));
+        var properties = Unwrap(syntax.GetSchemaProperties());
+
+        if (documentation.IsNone || aliases.IsNone || symbols.IsNone || defaultSymbol.IsNone || properties.IsNone)
+            return Option.None<NamedSchema>();
+
+        var enumSchema = new EnumSchema(
+            schemaName,
+            documentation.GetValue().GetValueOrDefault(),
+            aliases.GetValue(),
+            symbols.GetValue(),
+            defaultSymbol.GetValue().GetValueOrDefault(),
+            properties.GetValue());
+        Declare(enumSchema, syntax.SourceSpan);
+        return enumSchema;
+    }
+
+    private Result<ImmutableArray<MemberName>> GetEnumSymbols(JsonObjectSyntax syntax, SchemaName schemaName)
+    {
+        var maybeSymbols = syntax.GetRequiredArray(AvroJsonKeys.Symbols);
+        if (!maybeSymbols.TryGetValue(out JsonArraySyntax? symbols))
+            return maybeSymbols.GetError();
+
+        var members = new HashSet<MemberName>();
+        var valid = true;
+        foreach (var symbol in symbols.Items.WithCancellation(cancellationToken))
+        {
+            switch (symbol.AsValue().Bind(static value => value.AsMemberName()))
             {
-                var field = state.Parser.Field(syntax, state.ContainingSchemaName);
-                if (field is not null && !state.Names.Add(field.Name.SchemaName))
-                    state.Parser.Report(AvroDiagnostic.DuplicateField(syntax.GetProperty(AvroJsonKeys.Name)!.Value.SourceSpan, field.Name.SchemaName, state.ContainingSchemaName));
-                return field;
-            });
+                case AvroDiagnostic diagnostic:
+                    return diagnostic;
+
+                case MemberName name when !members.Add(name):
+                    valid = false;
+                    Report(AvroDiagnostic.DuplicateSymbol(symbol.SourceSpan, name.SchemaName, schemaName));
+                    break;
+            }
+        }
+
+        return valid ? members.ToImmutableArray() : AvroDiagnostic.InvalidProperty(symbols);
     }
 
-    private Field? Field(JsonObjectSyntax syntax, SchemaName containingSchemaName)
+    private Option<NamedSchema> Fixed(JsonObjectSyntax syntax, string? containingNamespace)
     {
-        var nameProperty = GetRequiredProperty(syntax, AvroJsonKeys.Name);
-        var name = nameProperty is null ? null : GetRequiredAvroName(nameProperty);
-        if (name is null) return null;
-        var fieldName = new MemberName(name);
+        if (!TryUnwrap(syntax.GetSchemaName(containingNamespace), out var schemaName))
+            return Option.None<NamedSchema>();
+        if (IsInRecursionScope(schemaName))
+            return Report<NamedSchema>(AvroDiagnostic.RecursiveDefinition(syntax.Property(AvroJsonKeys.Name)!.Value.SourceSpan, schemaName));
 
-        var typeProperty = GetRequiredProperty(syntax, AvroJsonKeys.Type);
-        var fieldType = typeProperty is null ? null : Schema(typeProperty.Value, containingSchemaName.Namespace);
-        if (fieldType is null) return null;
+        using var recursionScope = EnterRecursionScope(schemaName);
+        var documentation = Unwrap(syntax.GetDocumentation());
+        var aliases = Unwrap(syntax.GetAliases());
+        var size = Unwrap(syntax.GetFixedSize());
+        var properties = Unwrap(syntax.GetSchemaProperties());
 
-        fieldType = ResolveFieldType(fieldType, fieldName, containingSchemaName, out var underlyingType, out var remarks);
+        if (documentation.IsNone || aliases.IsNone || size.IsNone || properties.IsNone)
+            return Option.None<NamedSchema>();
 
-        var tracker = TrackDiagnostics();
-        var documentation = GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-        var aliases = GetOptionalArrayStrings(syntax, AvroJsonKeys.Aliases);
-        var defaultSyntax = GetDefaultJson(syntax);
-        var defaultJson = defaultSyntax?.AsJsonElement();
-        var order = GetOptionalString(syntax, AvroJsonKeys.Order);
-        var properties = syntax.GetSchemaProperties();
-        var defaultValue = GetDefaultValue(defaultJson, cancellationToken);
-        if (tracker.HasNewDiagnostics || aliases.IsDefault) return null;
+        var fixedSchema = new FixedSchema(schemaName, documentation.GetValue().GetValueOrDefault(), aliases.GetValue(), size.GetValue(), properties.GetValue())
+        {
+            CSharpName = Options.GenerationTarget is GenerationTarget.Apache
+                ? CSharpName.FromSchemaName(schemaName)
+                : AvroSchema.Bytes.CSharpName
+        };
+        Declare(fixedSchema, syntax.SourceSpan);
+        return fixedSchema;
+    }
+
+    private Option<NamedSchema> Record(JsonObjectSyntax syntax, string? containingNamespace)
+    {
+        if (!TryUnwrap(syntax.GetSchemaName(containingNamespace), out var schemaName))
+            return Option.None<NamedSchema>();
+        if (IsInRecursionScope(schemaName))
+            return Report<NamedSchema>(AvroDiagnostic.RecursiveDefinition(syntax.Property(AvroJsonKeys.Name)!.Value.SourceSpan, schemaName));
+
+        using var recursionScope = EnterRecursionScope(schemaName);
+        var documentation = Unwrap(syntax.GetDocumentation());
+        var aliases = Unwrap(syntax.GetAliases());
+        var fields = Fields(syntax, schemaName);
+        var properties = Unwrap(syntax.GetSchemaProperties());
+
+        if (documentation.IsNone || aliases.IsNone || fields.IsNone || properties.IsNone)
+            return Option.None<NamedSchema>();
+
+        var recordSchema = new RecordSchema(schemaName, documentation.GetValue().GetValueOrDefault(), aliases.GetValue(), fields.GetValue(), properties.GetValue());
+        Declare(recordSchema, syntax.SourceSpan);
+        return recordSchema;
+    }
+
+    private Option<NamedSchema> Error(JsonObjectSyntax syntax, string? containingNamespace)
+    {
+        if (!TryUnwrap(syntax.GetSchemaName(containingNamespace), out var schemaName))
+            return Option.None<NamedSchema>();
+        if (IsInRecursionScope(schemaName))
+            return Report<NamedSchema>(AvroDiagnostic.RecursiveDefinition(syntax.Property(AvroJsonKeys.Name)!.Value.SourceSpan, schemaName));
+
+        using var recursionScope = EnterRecursionScope(schemaName);
+        var documentation = Unwrap(syntax.GetDocumentation());
+        var aliases = Unwrap(syntax.GetAliases());
+        var fields = Fields(syntax, schemaName);
+        var properties = Unwrap(syntax.GetSchemaProperties());
+
+        if (documentation.IsNone || aliases.IsNone || fields.IsNone || properties.IsNone)
+            return Option.None<NamedSchema>();
+
+        var errorSchema = new ErrorSchema(schemaName, documentation.GetValue().GetValueOrDefault(), aliases.GetValue(), fields.GetValue(), properties.GetValue());
+        Declare(errorSchema, syntax.SourceSpan);
+        return errorSchema;
+    }
+
+    private Option<ImmutableArray<Field>> Fields(JsonObjectSyntax syntax, SchemaName containingSchemaName)
+    {
+        if (!TryUnwrap(syntax.GetRequiredArray(AvroJsonKeys.Fields), out var array))
+            return Option.None<ImmutableArray<Field>>();
+
+        var fields = new HashSet<Field>(FieldByNameComparer.Instance);
+        var valid = true;
+        foreach (var item in array.Items.WithCancellation(cancellationToken))
+        {
+            switch (Field(item, containingSchemaName))
+            {
+                case None:
+                    return Option.None<ImmutableArray<Field>>();
+
+                case Field field when !fields.Add(field):
+                    valid = false;
+                    Report(AvroDiagnostic.DuplicateField(((JsonObjectSyntax)item).Property(AvroJsonKeys.Name)!.Value.SourceSpan, field.Name.SchemaName, containingSchemaName));
+                    break;
+            }
+        }
+        return valid ? Option.Some(fields.ToImmutableArray()) : Option.None<ImmutableArray<Field>>();
+    }
+
+    private Option<Field> Field(JsonSyntax syntax, SchemaName containingSchemaName)
+    {
+        if (!TryUnwrap(syntax.AsObject(), out var field))
+            return Option.None<Field>();
+
+        var name = Unwrap(field.GetMemberName());
+        var type = Schema(Unwrap(field.GetRequiredProperty(AvroJsonKeys.Type).Map(static property => property.Value)), containingSchemaName.Namespace);
+        var documentation = Unwrap(field.GetDocumentation());
+        var aliases = Unwrap(field.GetAliases());
+        var defaultValue = Unwrap(field.GetDefaultValue());
+        var order = Unwrap(field.GetOptionalProperty(AvroJsonKeys.Order).Traverse(static order => order.GetRequiredString()));
+        var properties = Unwrap(field.GetSchemaProperties());
+        if (name.IsNone || type.IsNone || documentation.IsNone || aliases.IsNone || defaultValue.IsNone || order.IsNone || properties.IsNone)
+            return Option.None<Field>();
+
+        var fieldType = ResolveFieldType(type.GetValue(), name.GetValue(), containingSchemaName, out var underlyingType, out var remarks);
         return new Field(
-            fieldName,
+            name.GetValue(),
             fieldType,
             underlyingType,
-            documentation,
-            aliases,
-            defaultValue,
-            order,
-            properties,
+            documentation.GetValue().GetValueOrDefault(),
+            aliases.GetValue(),
+            defaultValue.GetValue().GetValueOrDefault(),
+            order.GetValue().GetValueOrDefault(),
+            properties.GetValue(),
             remarks);
     }
 
-    private AvroSchema? Union(JsonArraySyntax syntax, string? containingNamespace)
-    {
-        var schemas = UnionBranches(syntax.Items, containingNamespace);
-        return schemas.IsDefault ? null : UnionSchema.Create(schemas, Options.LanguageFeatures.HasNullableReferenceTypes);
-    }
-
-    private ImmutableArray<AvroSchema> UnionBranches(ImmutableArray<JsonSyntax> items, string? containingNamespace, bool includeSystemError = false)
+    private Option<AvroSchema> Union(JsonArraySyntax syntax, string? containingNamespace, bool prependSystemError)
     {
         var valid = true;
         var branches = new HashSet<AvroSchema>(UnionBranchComparer.Instance);
-        if (includeSystemError) branches.Add(AvroSchema.String);
-        var schemas = ParseItems(
-            items,
-            containingNamespace,
-            (item, ns) =>
+        if (prependSystemError) branches.Add(AvroSchema.String);
+        foreach (var item in syntax.Items)
+        {
+            switch (Schema(item, containingNamespace))
             {
-                var schema = Schema(item, ns);
-                switch (schema)
-                {
-                    case UnionSchema union:
-                        Report(AvroDiagnostic.NestedUnion(item.SourceSpan));
-                        valid = false;
-                        return union;
-                    case not null when !branches.Add(schema):
-                        Report(AvroDiagnostic.DuplicateUnionBranch(item.SourceSpan, schema.SchemaName.FullName));
-                        valid = false;
-                        return schema;
-                    default:
-                        valid &= schema is not null;
-                        return schema;
-                }
-            });
-        return valid ? schemas : default;
+                case None:
+                    valid = false;
+                    break;
+
+                case UnionSchema:
+                    valid = false;
+                    Report(AvroDiagnostic.NestedUnion(item.SourceSpan));
+                    break;
+
+                case AvroSchema schema when !branches.Add(schema):
+                    valid = false;
+                    Report(AvroDiagnostic.DuplicateUnionBranch(item.SourceSpan, schema.GetUnderlyingOrSelf().SchemaName.FullName));
+                    break;
+            }
+        }
+
+        return valid ? UnionSchema.Create(branches.ToImmutableArray(), Options.LanguageFeatures.HasNullableReferenceTypes) : Option.None<AvroSchema>();
     }
 
-
-    protected ProtocolSchema? Protocol(JsonObjectSyntax syntax, string? containingNamespace)
+    protected Option<ProtocolSchema> ParseProtocol() => ParseRootSyntax(sourceText, cancellationToken) switch
     {
-        return EnterRegisterScope(
-            syntax,
-            AvroJsonKeys.Protocol,
-            containingNamespace,
-            static (parser, syntax, schemaName) =>
-            {
-                var tracker = parser.TrackDiagnostics();
-                var types = parser.ProtocolTypes(syntax, schemaName.Namespace);
-                var messages = parser.ProtocolMessages(syntax, schemaName.Namespace);
-                var documentation = parser.GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-                var properties = syntax.GetProtocolProperties();
-                return !tracker.HasNewDiagnostics && !types.IsDefault && !messages.IsDefault
-                    ? new ProtocolSchema(schemaName, documentation, types, messages, properties)
-                    : null;
-            });
+        JsonSyntax root => Protocol(root, containingNamespace: null),
+        AvroDiagnostic diagnostic => Report<ProtocolSchema>(diagnostic)
+    };
+
+    protected Option<ProtocolSchema> Protocol(JsonSyntax syntax, string? containingNamespace)
+    {
+        if (syntax is not JsonObjectSyntax @object || @object.Property(AvroJsonKeys.Protocol) is null)
+            return Report<ProtocolSchema>(AvroDiagnostic.ProtocolExpected(syntax.SourceSpan));
+        if (!TryUnwrap(@object.GetProtocolName(containingNamespace), out var schemaName))
+            return Option.None<ProtocolSchema>();
+        if (IsInRecursionScope(schemaName))
+            return Report<ProtocolSchema>(AvroDiagnostic.RecursiveDefinition(@object.Property(AvroJsonKeys.Protocol)!.Value.SourceSpan, schemaName));
+
+        using var recursionScope = EnterRecursionScope(schemaName);
+        var types = ProtocolTypes(@object, schemaName.Namespace);
+        var messages = ProtocolMessages(@object, schemaName.Namespace);
+        var documentation = Unwrap(@object.GetDocumentation());
+        var properties = Unwrap(@object.GetProtocolProperties());
+
+        if (types.IsNone || messages.IsNone || documentation.IsNone || properties.IsNone)
+            return Option.None<ProtocolSchema>();
+
+        var protocol = new ProtocolSchema(schemaName, documentation.GetValue().GetValueOrDefault(), types.GetValue(), messages.GetValue(), properties.GetValue());
+        Declare(protocol, @object.SourceSpan);
+        return protocol;
     }
 
-    private ImmutableArray<NamedSchema> ProtocolTypes(JsonObjectSyntax syntax, string? containingNamespace) =>
-        ParseItems(
-            GetRequiredProperty(syntax, AvroJsonKeys.Types) is { } property ? GetArrayItems(property) : default,
-            (Parser: this, ContainingNamespace: containingNamespace),
-            static (item, state) => state.Parser.NamedSchema(item, state.ContainingNamespace));
-
-    private ImmutableArray<ProtocolMessage> ProtocolMessages(JsonObjectSyntax syntax, string? containingNamespace) =>
-        ParseItems(
-            GetRequiredProperty(syntax, AvroJsonKeys.Messages) is { } property ? GetObjectProperties(property) : default,
-            (Parser: this, ContainingNamespace: containingNamespace),
-            static (message, state) => state.Parser.Message(message, state.ContainingNamespace));
-
-    private NamedSchema? NamedSchema(JsonSyntax syntax, string? containingNamespace)
+    private Option<ImmutableArray<NamedSchema>> ProtocolTypes(JsonObjectSyntax syntax, string? containingNamespace)
     {
-        if (syntax is not JsonObjectSyntax namedSchema)
-            return Invalid<NamedSchema?>(null, AvroDiagnostic.InvalidProperty(syntax));
+        if (!TryUnwrap(syntax.GetRequiredArray(AvroJsonKeys.Types), out var array))
+            return Option.None<ImmutableArray<NamedSchema>>();
 
-        var typeProperty = GetRequiredProperty(namedSchema, AvroJsonKeys.Type);
-        if (typeProperty is null) return null;
-        var type = GetRequiredString(typeProperty);
-        if (type is null) return null;
+        var types = ImmutableArray.CreateBuilder<NamedSchema>(array.Items.Length);
+        foreach (var item in array.Items)
+        {
+            if (NamedSchema(item, containingNamespace) is not NamedSchema namedSchema)
+                return Option.None<ImmutableArray<NamedSchema>>();
+            types.Add(namedSchema);
+        }
+        return types.MoveToImmutable();
+    }
+
+    private Option<NamedSchema> NamedSchema(JsonSyntax syntax, string? containingNamespace)
+    {
+        if (!TryUnwrap(syntax.AsObject(), out var @object) || !TryUnwrap(@object.GetRequiredString(AvroJsonKeys.Type), out var type))
+            return Option.None<NamedSchema>();
 
         return type switch
         {
-            AvroTypeNames.Enum => Enum(namedSchema, containingNamespace),
-            AvroTypeNames.Record => Record(namedSchema, containingNamespace),
-            AvroTypeNames.Error => Error(namedSchema, containingNamespace),
-            AvroTypeNames.Fixed => Fixed(namedSchema, containingNamespace),
-            _ => Invalid<NamedSchema?>(null, AvroDiagnostic.InvalidProperty(typeProperty))
+            AvroTypeNames.Enum => Enum(@object, containingNamespace),
+            AvroTypeNames.Record => Record(@object, containingNamespace),
+            AvroTypeNames.Error => Error(@object, containingNamespace),
+            AvroTypeNames.Fixed => Fixed(@object, containingNamespace),
+            _ => Report<NamedSchema>(AvroDiagnostic.InvalidProperty(@object.Property(AvroJsonKeys.Type)!))
         };
     }
 
-    private ProtocolMessage? Message(JsonPropertySyntax message, string? containingNamespace)
+    private Option<ImmutableArray<ProtocolMessage>> ProtocolMessages(JsonObjectSyntax syntax, string? containingNamespace)
     {
-        var syntax = AsObject(message.Value);
-        if (syntax is null) return null;
+        if (!TryUnwrap(syntax.GetRequiredObject(AvroJsonKeys.Messages), out var @object))
+            return Option.None<ImmutableArray<ProtocolMessage>>();
 
-        var tracker = TrackDiagnostics();
-        var parameters = ProtocolRequest(syntax, containingNamespace);
-        var response = ProtocolResponse(syntax, containingNamespace);
-        var errors = ProtocolErrors(syntax, containingNamespace);
-        var oneWay = GetOptionalBoolean(syntax, AvroJsonKeys.OneWay);
-        var documentation = GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-        if (tracker.HasNewDiagnostics || parameters.IsDefault || response is null || errors.IsDefault)
-            return null;
-        if (oneWay is true && (response.Type.SchemaType is not SchemaType.Null || !errors.IsEmpty))
-            return Invalid<ProtocolMessage?>(null, AvroDiagnostic.InvalidOneWayMessage(message.Value, message.Name.Value));
-        return new ProtocolMessage(message.Name.Value.ToValidName(), documentation, parameters, response, errors, oneWay);
+        var messages = ImmutableArray.CreateBuilder<ProtocolMessage>(@object.Properties.Length);
+        foreach (var property in @object.Properties.WithCancellation(cancellationToken))
+        {
+            if (Message(property, containingNamespace) is not ProtocolMessage message)
+                return Option.None<ImmutableArray<ProtocolMessage>>();
+            messages.Add(message);
+        }
+
+        return messages.MoveToImmutable();
     }
 
-    private ImmutableArray<ProtocolRequestParameter> ProtocolRequest(JsonObjectSyntax syntax, string? containingNamespace) =>
-        ParseObjectItems(
-            GetRequiredProperty(syntax, AvroJsonKeys.Request) is { } property ? GetArrayItems(property) : default,
-            (Parser: this, ContainingNamespace: containingNamespace),
-            static (parameter, state) => state.Parser.ProtocolRequestParameter(parameter, state.ContainingNamespace));
-
-    private ProtocolResponse? ProtocolResponse(JsonObjectSyntax syntax, string? containingNamespace)
+    private Option<ProtocolMessage> Message(JsonPropertySyntax property, string? containingNamespace)
     {
-        var property = GetRequiredProperty(syntax, AvroJsonKeys.Response);
-        if (property is null) return null;
-        var type = Schema(property.Value, containingNamespace);
-        return type is not null ? new ProtocolResponse(type, type is UnionSchema union ? union.UnderlyingSchema : type) : null;
+        if (!TryUnwrap(property.Value.AsObject(), out var message))
+            return Option.None<ProtocolMessage>();
+
+        var parameters = ProtocolRequest(message, containingNamespace);
+        var response = ProtocolResponse(message, containingNamespace);
+        var errors = ProtocolErrors(message, containingNamespace);
+        var oneWay = Unwrap(message.GetOptionalBoolean(AvroJsonKeys.OneWay));
+        var documentation = Unwrap(message.GetDocumentation());
+        if (parameters.IsNone || response.IsNone || errors.IsNone || oneWay.IsNone || documentation.IsNone)
+            return Option.None<ProtocolMessage>();
+
+        var hasDeclaredErrors = errors.GetValue().GetValueOrDefault() is { } errorSchema &&
+            errorSchema is not UnionSchema { Schemas: [{ SchemaType: SchemaType.String }] };
+        if (oneWay.GetValue() is true && (response.GetValue().Type.SchemaType is not SchemaType.Null || hasDeclaredErrors))
+            return Report<ProtocolMessage>(AvroDiagnostic.InvalidOneWayMessage(property.Value, property.Name.Value));
+
+        return new ProtocolMessage(
+            new MemberName(property.Name.Value),
+            documentation.GetValue().GetValueOrDefault(),
+            parameters.GetValue(),
+            response.GetValue(),
+            errors.GetValue().GetValueOrDefault(),
+            oneWay.GetValue().TryGetValue(out bool oneWayValue) ? oneWayValue : null);
     }
 
-    private ImmutableArray<AvroSchema> ProtocolErrors(JsonObjectSyntax syntax, string? containingNamespace) =>
-        UnionBranches(
-            GetOptionalArrayItems(syntax, AvroJsonKeys.Errors),
-            containingNamespace,
-            includeSystemError: true);
-
-    private ProtocolRequestParameter? ProtocolRequestParameter(JsonObjectSyntax syntax, string? containingNamespace)
+    private Option<ImmutableArray<ProtocolRequestParameter>> ProtocolRequest(JsonObjectSyntax syntax, string? containingNamespace)
     {
-        var tracker = TrackDiagnostics();
-        var nameProperty = GetRequiredProperty(syntax, AvroJsonKeys.Name);
-        var name = nameProperty is null ? null : GetRequiredAvroName(nameProperty);
-        var typeProperty = GetRequiredProperty(syntax, AvroJsonKeys.Type);
-        var type = typeProperty is null ? null : Schema(typeProperty.Value, containingNamespace);
-        var documentation = GetOptionalNullableString(syntax, AvroJsonKeys.Doc);
-        var defaultSyntax = GetDefaultJson(syntax);
-        var defaultJson = defaultSyntax?.AsJsonElement();
-        if (name is null || type is null || tracker.HasNewDiagnostics) return null;
-        var defaultValue = GetDefaultValue(defaultJson, cancellationToken);
-        if (tracker.HasNewDiagnostics) return null;
-        var underlyingType = type is UnionSchema union ? union.UnderlyingSchema : type;
-        return new ProtocolRequestParameter(name.ToValidName(), type, underlyingType, documentation, defaultValue);
+        if (!TryUnwrap(syntax.GetRequiredArray(AvroJsonKeys.Request), out var request))
+            return Option.None<ImmutableArray<ProtocolRequestParameter>>();
+
+        // TODO: This should be a hashset and we should check duplicate names.
+        var parameters = ImmutableArray.CreateBuilder<ProtocolRequestParameter>(request.Items.Length);
+        foreach (var item in request.Items.WithCancellation(cancellationToken))
+        {
+            switch (ProtocolRequestParameter(item, containingNamespace))
+            {
+                case None:
+                    return Option.None<ImmutableArray<ProtocolRequestParameter>>();
+
+                case ProtocolRequestParameter parameter:
+                    parameters.Add(parameter);
+                    break;
+            }
+        }
+        return parameters.MoveToImmutable();
     }
 
-    private TSchema? EnterRegisterScope<TSchema>(
-        JsonObjectSyntax syntax,
-        string propertyName,
-        string? containingNamespace,
-        Func<AvjsParser, JsonObjectSyntax, SchemaName, TSchema?> parse)
-        where TSchema : TopLevelSchema
+    private Option<ProtocolRequestParameter> ProtocolRequestParameter(JsonSyntax syntax1, string? containingNamespace)
     {
-        var property = GetRequiredProperty(syntax, propertyName);
-        if (property is null) return null;
+        if (!TryUnwrap(syntax1.AsObject(), out var syntax))
+            return Option.None<ProtocolRequestParameter>();
 
-        var tracker = TrackDiagnostics();
-        var schemaName = GetSchemaName(property, containingNamespace);
-        if (schemaName.IsDefault || tracker.HasNewDiagnostics)
-            return null;
+        var name = Unwrap(syntax.GetMemberName());
+        var type = Schema(Unwrap(syntax.GetRequiredProperty(AvroJsonKeys.Type)).Map(static property => property.Value), containingNamespace);
+        var documentation = Unwrap(syntax.GetDocumentation());
+        var defaultValue = Unwrap(syntax.GetDefaultValue());
+        if (name.IsNone || type.IsNone || documentation.IsNone || defaultValue.IsNone)
+            return Option.None<ProtocolRequestParameter>();
 
-        if (IsInRecursionScope(schemaName))
-            return Invalid<TSchema?>(null, AvroDiagnostic.RecursiveDefinition(property.Value.SourceSpan, schemaName));
+        return new ProtocolRequestParameter(
+            name.GetValue(),
+            type.GetValue(),
+            type.GetValue().GetUnderlyingOrSelf(),
+            documentation.GetValue().GetValueOrDefault(),
+            defaultValue.GetValue().GetValueOrDefault());
+    }
 
-        using var scope = EnterRecursionScope(schemaName);
-        var schema = parse(this, syntax, schemaName);
-        if (schema is null) return null;
+    private Option<ProtocolResponse> ProtocolResponse(JsonObjectSyntax syntax, string? containingNamespace)
+    {
+        var response = Unwrap(syntax.GetRequiredProperty(AvroJsonKeys.Response)).Map(static property => property.Value);
+        return Schema(response, containingNamespace) switch
+        {
+            AvroSchema schema => new ProtocolResponse(schema, schema.GetUnderlyingOrSelf()),
+            _ => Option.None<ProtocolResponse>()
+        };
+    }
 
-        Declare(schema, syntax.SourceSpan);
+    private Option<Option<AvroSchema>> ProtocolErrors(JsonObjectSyntax syntax, string? containingNamespace)
+    {
+        if (!TryUnwrap(syntax.GetOptionalArray(AvroJsonKeys.Errors), out var maybeErrors))
+            return Option.None<Option<AvroSchema>>();
+        return maybeErrors switch
+        {
+            JsonArraySyntax errors => Union(errors, containingNamespace, prependSystemError: true).Map(Option.Some),
+            None => Option.Some(Option.None<AvroSchema>())
+        };
+    }
 
-        return schema;
+    protected static Result<JsonSyntax> ParseRootSyntax(SourceText sourceText, CancellationToken cancellationToken)
+    {
+        var reader = new JsonReader(sourceText);
+        try
+        {
+            if (!reader.Read())
+            {
+                return AvroDiagnostic.EmptyJson(sourceText.GetSourceSpan());
+            }
+
+            var root = reader.Parse(cancellationToken);
+
+            if (reader.Read())
+            {
+                return AvroDiagnostic.TrailingJson(reader.CurrentSpan);
+            }
+
+            return root;
+        }
+        catch (JsonException ex)
+        {
+            var span = ex.LineNumber is null && ex.BytePositionInLine is null && !reader.CurrentSpan.IsNone
+                ? reader.CurrentSpan
+                : SourceSpan.FromException(sourceText, ex);
+            return AvroDiagnostic.InvalidJson(span, ex);
+        }
+    }
+
+    private bool TryUnwrap<T>(Result<T> result, [MaybeNullWhen(false)] out T value)
+    {
+        if (result.TryGetValue(out value))
+            return true;
+        Report(result.GetError());
+        return false;
+    }
+
+    private Option<T> Unwrap<T>(Result<T> result)
+    {
+        if (result.TryGetValue(out T? value))
+            return value;
+        Report(result.GetError());
+        return Option.None<T>();
     }
 }

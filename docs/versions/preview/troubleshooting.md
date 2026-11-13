@@ -36,6 +36,7 @@ If the command-line build succeeds but the editor still shows stale errors, relo
 | `AVROSG2033` | Repeated enum symbol | Keep each symbol only once within that enum. |
 | `AVROSG2034` | Repeated Avro union branch | Keep at most one branch per primitive, array, or map type, and one per named-type fullname. Logical annotations and C# mappings do not distinguish Avro types. |
 | `AVROSG2035` | Immediately nested union | Move the inner branches into the enclosing union, resolving any duplicates. |
+| `AVROSG2036` | Invalid JSON field order | Supply a non-empty string or omit the property. |
 | `AVROSG4000` | Invalid IDL document form | Supply one main `schema` directive with schema declarations, or exactly one `protocol` block. |
 | `AVROSG4001` | Protocol in an IDL schema document | Move the protocol to its own document, or use schema declarations after the `schema` directive. |
 | `AVROSG4007` | Repeated IDL directive | Keep only one `schema` directive and at most one top-level `namespace` directive; identical repetitions are also errors. Each repeated directive is reported. |

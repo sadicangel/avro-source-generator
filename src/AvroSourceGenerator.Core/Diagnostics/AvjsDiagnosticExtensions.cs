@@ -59,6 +59,7 @@ internal static class AvjsDiagnosticExtensions
             AvroJsonKeys.OneWay => AvroDiagnosticCode.InvalidOneWay,
             AvroJsonKeys.Default => AvroDiagnosticCode.InvalidEnumDefault,
             AvroJsonKeys.Size => AvroDiagnosticCode.InvalidFixedSize,
+            AvroJsonKeys.Order => AvroDiagnosticCode.InvalidOrder,
             _ => throw new ArgumentOutOfRangeException(nameof(property), property.Name.Value, "Property has no validation diagnostic."),
         };
     }

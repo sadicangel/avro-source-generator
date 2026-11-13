@@ -39,6 +39,7 @@ public static class MessageTemplate
     public const string InvalidEnumDefault = "Enum property 'default' must be a string or null";
     public const string InvalidProtocolDeclarationType = "Protocol type declaration property 'type' must be 'record', 'error', 'enum', or 'fixed'";
     public const string InvalidSchemaReference = "Invalid type reference '{0}'; expected a name such as 'Order' or 'com.example.Order'";
+    public const string InvalidOrder = "Field property 'order' must be a non-empty string or null";
     public const string InvalidFixedSize = "Property 'size' must be a positive 32-bit integer";
     public const string RecursiveSchemaDefinition = "Recursive schema definition detected for '{0}'.";
     public const string InvalidOneWayMessage = "One-way message '{0}' must have a null response and no declared errors";
@@ -116,6 +117,7 @@ public static class MessageTemplate
         AvroDiagnosticCode.InvalidEnumDefault => InvalidEnumDefault,
         AvroDiagnosticCode.InvalidProtocolDeclarationType => InvalidProtocolDeclarationType,
         AvroDiagnosticCode.InvalidSchemaReference => InvalidSchemaReference,
+        AvroDiagnosticCode.InvalidOrder => InvalidOrder,
         AvroDiagnosticCode.InvalidFixedSize => InvalidFixedSize,
         AvroDiagnosticCode.RecursiveSchemaDefinition => RecursiveSchemaDefinition,
         AvroDiagnosticCode.InvalidOneWayMessage => InvalidOneWayMessage,

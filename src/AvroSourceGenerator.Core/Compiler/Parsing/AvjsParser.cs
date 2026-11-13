@@ -42,9 +42,9 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
             AvroTypeNames.Array => Array(syntax, containingNamespace),
             AvroTypeNames.Map => Map(syntax, containingNamespace),
             AvroTypeNames.Enum => Enum(syntax, containingNamespace).Map(static named => (AvroSchema)named),
+            AvroTypeNames.Fixed => Fixed(syntax, containingNamespace).Map(static named => (AvroSchema)named),
             AvroTypeNames.Record => Record(syntax, containingNamespace).Map(static named => (AvroSchema)named),
             AvroTypeNames.Error => Error(syntax, containingNamespace).Map(static named => (AvroSchema)named),
-            AvroTypeNames.Fixed => Fixed(syntax, containingNamespace).Map(static named => (AvroSchema)named),
             _ => Named(type, containingNamespace)
         };
 
@@ -369,9 +369,9 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         return type switch
         {
             AvroTypeNames.Enum => Enum(@object, containingNamespace),
+            AvroTypeNames.Fixed => Fixed(@object, containingNamespace),
             AvroTypeNames.Record => Record(@object, containingNamespace),
             AvroTypeNames.Error => Error(@object, containingNamespace),
-            AvroTypeNames.Fixed => Fixed(@object, containingNamespace),
             _ => Report<NamedSchema>(AvroDiagnostic.InvalidProperty(@object.Property(AvroJsonKeys.Type)!))
         };
     }

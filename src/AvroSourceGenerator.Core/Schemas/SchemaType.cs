@@ -10,15 +10,20 @@ public enum SchemaType
     Double,
     Bytes,
     String,
-    Record,
-    Enum,
+
     Array,
     Map,
     Union,
+
+    Enum,
     Fixed,
+    Record,
     Error,
-    Logical,
+
     Protocol,
-    UnionType,
+
+    Logical,
+
     Reference,
+    UnionType,
 }

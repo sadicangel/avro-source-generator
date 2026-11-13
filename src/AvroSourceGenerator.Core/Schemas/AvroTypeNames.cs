@@ -10,10 +10,12 @@ internal static class AvroTypeNames
     public const string Double = "double";
     public const string Bytes = "bytes";
     public const string String = "string";
+
     public const string Array = "array";
     public const string Map = "map";
+
     public const string Enum = "enum";
+    public const string Fixed = "fixed";
     public const string Record = "record";
     public const string Error = "error";
-    public const string Fixed = "fixed";
 }

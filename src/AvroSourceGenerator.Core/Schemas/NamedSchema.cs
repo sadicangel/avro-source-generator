@@ -16,7 +16,7 @@ public closed record class NamedSchema(
         get;
         init
         {
-            if (SchemaType is not (SchemaType.Record or SchemaType.Error or SchemaType.Fixed))
+            if (SchemaType is not (SchemaType.Fixed or SchemaType.Record or SchemaType.Error))
                 throw new InvalidOperationException($"InheritsFrom can only be set for Record, Error or Fixed schemas, but was {SchemaType}.");
             field = value;
         }

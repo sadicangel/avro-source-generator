@@ -25,14 +25,14 @@ internal sealed class UnionBranchComparer : IEqualityComparer<AvroSchema>
         SchemaType.String => "<string>",
         SchemaType.Array => "<array>",
         SchemaType.Map => "<map>",
-        SchemaType.Logical => GetSchemaId(((LogicalSchema)schema).UnderlyingSchema),
-        SchemaType.Record => schema.SchemaName.FullName,
-        SchemaType.Enum => schema.SchemaName.FullName,
         SchemaType.Union => schema.SchemaName.FullName,
+        SchemaType.Enum => schema.SchemaName.FullName,
         SchemaType.Fixed => schema.SchemaName.FullName,
-        SchemaType.Reference => schema.SchemaName.FullName,
+        SchemaType.Record => schema.SchemaName.FullName,
         SchemaType.Error => schema.SchemaName.FullName,
         SchemaType.Protocol => schema.SchemaName.FullName,
+        SchemaType.Logical => GetSchemaId(((LogicalSchema)schema).UnderlyingSchema),
+        SchemaType.Reference => schema.SchemaName.FullName,
         SchemaType.UnionType => throw new NotSupportedException($"Unsupported schema type: {schema.SchemaType}"),
         _ => throw new NotSupportedException($"Unsupported schema type: {schema.SchemaType}")
     };

@@ -25,30 +25,21 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
 
         var bound = schema switch
         {
+            PrimitiveSchema => schema,
             ArraySchema array => BindArray(array),
             MapSchema map => BindMap(map),
             UnionSchema union => BindUnion(union),
-            LogicalSchema logical => BindLogical(logical),
+            EnumSchema or FixedSchema => schema,
             RecordSchema record => BindRecord(record),
             ErrorSchema error => BindError(error),
             ProtocolSchema protocol => BindProtocol(protocol),
+            LogicalSchema logical => BindLogical(logical),
             UnionTypeSchema generatedUnion => BindUnionType(generatedUnion),
-            PrimitiveSchema or EnumSchema or FixedSchema => schema,
             _ => throw new InvalidOperationException($"Unhandled Avro schema type: {schema.GetType()}"),
         };
 
         _boundSchemas.Add(schema, bound);
         return bound;
-    }
-
-    private AvroSchema BindReference(AvroSchemaReference reference)
-    {
-        if (ResolveReference(reference.SchemaName) is not { } resolved || reference.CSharpName == resolved.CSharpName)
-        {
-            return reference;
-        }
-
-        return reference with { CSharpName = resolved.CSharpName };
     }
 
     private AvroSchema BindArray(ArraySchema array)
@@ -97,17 +88,6 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
         }
 
         return result;
-    }
-
-    private TopLevelSchema? ResolveReference(SchemaName name) =>
-        _references.GetValueOrDefault(name) ?? _file.Declarations.WithCancellation(cancellationToken).FirstOrDefault(declaration => declaration.SchemaName == name);
-
-    private AvroSchema BindLogical(LogicalSchema logical)
-    {
-        var underlyingSchema = Bind(logical.UnderlyingSchema);
-        return ReferenceEquals(underlyingSchema, logical.UnderlyingSchema)
-            ? logical
-            : LogicalSchema.Create(logical.SchemaName.Name, underlyingSchema, _options.GenerationTarget);
     }
 
     private AvroSchema BindRecord(RecordSchema record)
@@ -187,6 +167,27 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
 
     private static AvroSchema GetUnderlyingType(AvroSchema schema) =>
         schema is UnionSchema union ? union.UnderlyingSchema : schema;
+
+    private AvroSchema BindLogical(LogicalSchema logical)
+    {
+        var underlyingSchema = Bind(logical.UnderlyingSchema);
+        return ReferenceEquals(underlyingSchema, logical.UnderlyingSchema)
+            ? logical
+            : LogicalSchema.Create(logical.SchemaName.Name, underlyingSchema, _options.GenerationTarget);
+    }
+
+    private AvroSchema BindReference(AvroSchemaReference reference)
+    {
+        if (ResolveReference(reference.SchemaName) is not { } resolved || reference.CSharpName == resolved.CSharpName)
+        {
+            return reference;
+        }
+
+        return reference with { CSharpName = resolved.CSharpName };
+    }
+
+    private TopLevelSchema? ResolveReference(SchemaName name) =>
+        _references.GetValueOrDefault(name) ?? _file.Declarations.WithCancellation(cancellationToken).FirstOrDefault(declaration => declaration.SchemaName == name);
 
     private AvroSchema BindUnionType(UnionTypeSchema generatedUnion)
     {

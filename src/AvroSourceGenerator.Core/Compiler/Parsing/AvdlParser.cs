@@ -699,13 +699,13 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         {
             SyntaxKind.VoidType => AvroSchema.Null,
             SyntaxKind.NullType => AvroSchema.Null,
+            SyntaxKind.BooleanType => AvroSchema.Boolean,
             SyntaxKind.IntType => AvroSchema.Int,
             SyntaxKind.LongType => AvroSchema.Long,
-            SyntaxKind.StringType => AvroSchema.String,
-            SyntaxKind.BooleanType => AvroSchema.Boolean,
             SyntaxKind.FloatType => AvroSchema.Float,
             SyntaxKind.DoubleType => AvroSchema.Double,
             SyntaxKind.BytesType => AvroSchema.Bytes,
+            SyntaxKind.StringType => AvroSchema.String,
 
             _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL primitive type '{syntax.TypeKeyword.SyntaxKind}'.")
         };
@@ -834,9 +834,9 @@ internal sealed class AvdlParser(SourceText sourceText, AvroParseOptions options
         var schema = declaration switch
         {
             EnumDeclarationSyntax syntax => Enum(syntax, containingNamespace),
-            ErrorDeclarationSyntax syntax => Error(syntax, containingNamespace),
             FixedDeclarationSyntax syntax => Fixed(syntax, containingNamespace),
             RecordDeclarationSyntax syntax => Record(syntax, containingNamespace),
+            ErrorDeclarationSyntax syntax => Error(syntax, containingNamespace),
             _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL schema declaration '{declaration.SyntaxKind}'.")
         };
 

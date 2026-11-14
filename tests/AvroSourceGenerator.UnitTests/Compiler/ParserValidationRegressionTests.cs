@@ -41,6 +41,9 @@ public sealed class ParserValidationRegressionTests
     [InlineData("schema R; record R { @logicalType(1) string f; }", "1", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
     [InlineData("schema R; @logicalType(1) fixed R(16);", "1", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
     [InlineData("schema R; record R { string @order(1) f; }", "1", AvroDiagnosticCode.InvalidIdlOrder, "Annotation '@order' must have a string value")]
+    [InlineData("schema R; @namespace([]) record R {}", "[]", AvroDiagnosticCode.InvalidIdlNamespace, "Annotation '@namespace' must have a string value")]
+    [InlineData("schema R; record R { @logicalType({}) string f; }", "{}", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
+    [InlineData("schema R; record R { string @order(false) f; }", "false", AvroDiagnosticCode.InvalidIdlOrder, "Annotation '@order' must have a string value")]
     public void Invalid_annotation_values_report_the_value_span(string text, string value, AvroDiagnosticCode code, string message)
     {
         var source = new SourceText("test.avdl", text);

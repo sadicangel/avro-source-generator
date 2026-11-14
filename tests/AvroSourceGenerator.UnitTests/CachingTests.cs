@@ -13,6 +13,8 @@ public sealed class CachingTests
     [InlineData("schema R; record R { union { int, int } f; }", "schema R; record R { union { int, string } f; }", "AVROSG2034")]
     [InlineData("schema R; record R { union { R, R } f; }", "schema R; record R { union { null, R } f; }", "AVROSG2034")]
     [InlineData("schema R; record R { union { null, union { int, string } } f; }", "schema R; record R { union { null, int, string } f; }", "AVROSG2035")]
+    [InlineData("protocol P { error E {} string m() oneway throws E, E; }", "protocol P { error E {} void m() throws E; }", "AVROSG2034")]
+    [InlineData("protocol P { @namespace(\"bad-name\") record R {} }", "protocol P { @namespace(\"valid.name\") record R {} }", "AVROSG4002")]
     public void Semantic_diagnostics_are_cached_relocated_and_removed_after_repairs(string invalid, string valid, string id)
     {
         var token = TestContext.Current.CancellationToken;

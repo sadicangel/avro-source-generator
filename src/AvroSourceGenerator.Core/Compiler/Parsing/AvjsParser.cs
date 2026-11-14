@@ -65,16 +65,16 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
             }
         }
 
-        if (!TryUnwrap(syntax.GetLogicalTypeName(), out var maybeLogicalType))
-            return Option.None<AvroSchema>();
-
-        return maybeLogicalType is string logicalType
-            ? Logical(logicalType, schema)
-            : schema;
+        return Logical(syntax, schema);
     }
 
-    private Option<AvroSchema> Logical(string logicalType, AvroSchema schema)
+    private Option<AvroSchema> Logical(JsonObjectSyntax syntax, AvroSchema schema)
     {
+        if (!TryUnwrap(syntax.GetLogicalTypeName(), out var maybeLogicalType))
+            return Option.None<AvroSchema>();
+        if (maybeLogicalType is not string logicalType)
+            return schema;
+
         var logicalSchema = LogicalSchema.Create(logicalType, schema, Options.GenerationTarget);
         if (logicalSchema is LogicalSchema) return logicalSchema;
 
@@ -365,7 +365,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         if (!TryUnwrap(syntax.AsObject(), out var @object) || !TryUnwrap(@object.GetRequiredString(AvroJsonKeys.Type), out var type))
             return Option.None<NamedSchema>();
 
-        return type switch
+        var maybeSchema = type switch
         {
             AvroTypeNames.Enum => Enum(@object, containingNamespace),
             AvroTypeNames.Fixed => Fixed(@object, containingNamespace),
@@ -373,6 +373,13 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
             AvroTypeNames.Error => Error(@object, containingNamespace),
             _ => Report<NamedSchema>(AvroDiagnostic.InvalidProperty(@object.Property(AvroJsonKeys.Type)!))
         };
+
+        if (!maybeSchema.TryGetValue(out NamedSchema? schema))
+            return Option.None<NamedSchema>();
+
+        // Protocol types remain named declarations; supported logical annotations stay
+        // on the underlying schema, while ignored annotations use the shared replacement path.
+        return Logical(@object, schema).Map(static schema => (NamedSchema)(schema is LogicalSchema logical ? logical.UnderlyingSchema : schema));
     }
 
     private Option<ImmutableArray<ProtocolMessage>> ProtocolMessages(JsonObjectSyntax syntax, string? containingNamespace)

@@ -123,7 +123,7 @@ internal static class AvroSyntaxExtensions
         private Result<Option<string>> GetNamespace() => annotations.OfType<NamespaceAnnotationSyntax>().LastOrDefault() switch
         {
             null => Option.None<string>(),
-            NamespaceAnnotationSyntax { JsonValue.JsonNode: JsonValue value } when value.TryGetValue<string>(out var result) => Option.Some(result),
+            NamespaceAnnotationSyntax { JsonValue.JsonNode: JsonValue value } when value.TryGetValue<string>(out var result) && (result.Length == 0 || NameValidator.IsValidName(result)) => Option.Some(result),
             NamespaceAnnotationSyntax syntax => AvroDiagnostic.InvalidIdlProperty(AvroDiagnosticCode.InvalidIdlNamespace, syntax.JsonValue.GetSourceSpan())
         };
 

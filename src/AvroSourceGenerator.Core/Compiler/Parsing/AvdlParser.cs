@@ -115,7 +115,7 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
         {
             AnnotatedTypeSyntax type => Annotated(type, containingNamespace, hasNonNullDefault),
             ArrayTypeSyntax type => Array(type, containingNamespace, properties),
-            ILogicalTypeSyntax type => Logical(type),
+            ILogicalTypeSyntax type => Logical(type, properties),
             MapTypeSyntax type => Map(type, containingNamespace, properties),
             NamedTypeSyntax type => Named(type, containingNamespace),
             OptionalTypeSyntax type => Optional(type, containingNamespace, properties, hasNonNullDefault),
@@ -172,7 +172,7 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
         return annotated;
     }
 
-    private Option<AvroSchema> Logical(ILogicalTypeSyntax syntax)
+    private Option<AvroSchema> Logical(ILogicalTypeSyntax syntax, ImmutableSortedDictionary<string, JsonElement> properties)
     {
         if (syntax is DecimalLogicalTypeSyntax decimalSyntax)
         {
@@ -187,11 +187,9 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
 
             var bytes = AvroSchema.Bytes with
             {
-                Properties = ImmutableSortedDictionary.CreateRange(new Dictionary<string, JsonElement>
-                {
-                    ["precision"] = JsonSerializer.SerializeToElement(precision.GetValue()),
-                    ["scale"] = JsonSerializer.SerializeToElement(scale.GetValue())
-                })
+                Properties = properties
+                    .SetItem("precision", JsonSerializer.SerializeToElement(precision.GetValue()))
+                    .SetItem("scale", JsonSerializer.SerializeToElement(scale.GetValue()))
             };
 
             return LogicalSchema.Create(LogicalTypeNames.Decimal, bytes, Options.GenerationTarget);
@@ -202,15 +200,16 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
             throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL logical type syntax '{syntax.SyntaxKind}'.");
         }
 
-        return logical.LogicalTypeNameKeyword.SyntaxKind switch
+        var (logicalType, underlyingSchema) = logical.LogicalTypeNameKeyword.SyntaxKind switch
         {
-            SyntaxKind.DateKeyword => LogicalSchema.Create(LogicalTypeNames.Date, AvroSchema.Int, Options.GenerationTarget),
-            SyntaxKind.TimeMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimeMillis, AvroSchema.Int, Options.GenerationTarget),
-            SyntaxKind.TimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.TimestampMillis, AvroSchema.Long, Options.GenerationTarget),
-            SyntaxKind.LocalTimestampMsKeyword => LogicalSchema.Create(LogicalTypeNames.LocalTimestampMillis, AvroSchema.Long, Options.GenerationTarget),
-            SyntaxKind.UuidKeyword => LogicalSchema.Create(LogicalTypeNames.Uuid, AvroSchema.String, Options.GenerationTarget),
+            SyntaxKind.DateKeyword => (LogicalTypeNames.Date, AvroSchema.Int),
+            SyntaxKind.TimeMsKeyword => (LogicalTypeNames.TimeMillis, AvroSchema.Int),
+            SyntaxKind.TimestampMsKeyword => (LogicalTypeNames.TimestampMillis, AvroSchema.Long),
+            SyntaxKind.LocalTimestampMsKeyword => (LogicalTypeNames.LocalTimestampMillis, AvroSchema.Long),
+            SyntaxKind.UuidKeyword => (LogicalTypeNames.Uuid, AvroSchema.String),
             _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL logical type '{logical.LogicalTypeNameKeyword.SyntaxKind}'.")
         };
+        return LogicalSchema.Create(logicalType, properties.IsEmpty ? underlyingSchema : underlyingSchema with { Properties = properties }, Options.GenerationTarget);
     }
 
     private Option<AvroSchema> Annotated(AnnotatedTypeSyntax syntax, string? containingNamespace, bool hasNonNullDefault)
@@ -555,7 +554,9 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
     };
 
     private Option<Option<AvroSchema>> ProtocolErrors(ThrowsErrorClauseSyntax? syntax, string? containingNamespace) =>
-        Option.Some(syntax is null ? Option.None<AvroSchema>() : Union(syntax.Errors, containingNamespace, prependSystemError: true));
+        syntax is null
+            ? Option.Some(Option.None<AvroSchema>())
+            : Union(syntax.Errors, containingNamespace, prependSystemError: true).Map(Option.Some);
 
     private T Invalid<T>(T @default, AvroDiagnostic diagnostic)
     {

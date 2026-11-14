@@ -1,5 +1,6 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Extensions;
@@ -278,5 +279,21 @@ internal closed class AvxxParser(AvroParseOptions options)
 
             _recursionStack.RemoveAt(_recursionStack.Count - 1);
         }
+    }
+
+    protected bool TryUnwrap<T>(Result<T> result, [MaybeNullWhen(false)] out T value)
+    {
+        if (result.TryGetValue(out value))
+            return true;
+        Report(result.GetError());
+        return false;
+    }
+
+    protected Option<T> Unwrap<T>(Result<T> result)
+    {
+        if (result.TryGetValue(out T? value))
+            return value;
+        Report(result.GetError());
+        return Option.None<T>();
     }
 }

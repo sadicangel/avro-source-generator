@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using AvroSourceGenerator.Avjs;
 using AvroSourceGenerator.Compiler.Configuration;
@@ -127,7 +126,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         using var recursionScope = EnterRecursionScope(schemaName);
         var documentation = Unwrap(syntax.GetDocumentation());
         var aliases = Unwrap(syntax.GetAliases());
-        var symbols = Unwrap(GetEnumSymbols(syntax, schemaName));
+        var symbols = GetEnumSymbols(syntax, schemaName);
         var defaultSymbol = Unwrap(syntax.GetOptionalNullableString(AvroJsonKeys.Default));
         var properties = Unwrap(syntax.GetSchemaProperties());
 
@@ -145,11 +144,11 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         return enumSchema;
     }
 
-    private Result<ImmutableArray<MemberName>> GetEnumSymbols(JsonObjectSyntax syntax, SchemaName schemaName)
+    private Option<ImmutableArray<MemberName>> GetEnumSymbols(JsonObjectSyntax syntax, SchemaName schemaName)
     {
         var maybeSymbols = syntax.GetRequiredArray(AvroJsonKeys.Symbols);
         if (!maybeSymbols.TryGetValue(out JsonArraySyntax? symbols))
-            return maybeSymbols.GetError();
+            return Report<ImmutableArray<MemberName>>(maybeSymbols.GetError());
 
         var members = new HashSet<MemberName>();
         var valid = true;
@@ -158,7 +157,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
             switch (symbol.AsValue().Bind(static value => value.AsMemberName()))
             {
                 case AvroDiagnostic diagnostic:
-                    return diagnostic;
+                    return Report<ImmutableArray<MemberName>>(diagnostic);
 
                 case MemberName name when !members.Add(name):
                     valid = false;
@@ -167,7 +166,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
             }
         }
 
-        return valid ? members.ToImmutableArray() : AvroDiagnostic.InvalidProperty(symbols);
+        return valid ? members.ToImmutableArray() : Option.None<ImmutableArray<MemberName>>();
     }
 
     private Option<NamedSchema> Fixed(JsonObjectSyntax syntax, string? containingNamespace)
@@ -314,7 +313,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
             }
         }
 
-        return valid ? UnionSchema.Create(branches.ToImmutableArray(), Options.LanguageFeatures.HasNullableReferenceTypes) : Option.None<AvroSchema>();
+        return valid ? UnionSchema.Create([.. branches], Options.LanguageFeatures.HasNullableReferenceTypes) : Option.None<AvroSchema>();
     }
 
     protected Option<ProtocolSchema> ParseProtocol() => ParseRootSyntax(sourceText, cancellationToken) switch
@@ -397,6 +396,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
         if (!TryUnwrap(property.Value.AsObject(), out var message))
             return Option.None<ProtocolMessage>();
 
+        var methodName = new MemberName(property.Name.Value);
         var parameters = ProtocolRequest(message, containingNamespace);
         var response = ProtocolResponse(message, containingNamespace);
         var errors = ProtocolErrors(message, containingNamespace);
@@ -411,7 +411,7 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
             return Report<ProtocolMessage>(AvroDiagnostic.InvalidOneWayMessage(property.Value, property.Name.Value));
 
         return new ProtocolMessage(
-            new MemberName(property.Name.Value),
+            methodName,
             documentation.GetValue().GetValueOrDefault(),
             parameters.GetValue(),
             response.GetValue(),
@@ -508,21 +508,5 @@ internal closed class AvjsParser(SourceText sourceText, AvroParseOptions options
                 : SourceSpan.FromException(sourceText, ex);
             return AvroDiagnostic.InvalidJson(span, ex);
         }
-    }
-
-    private bool TryUnwrap<T>(Result<T> result, [MaybeNullWhen(false)] out T value)
-    {
-        if (result.TryGetValue(out value))
-            return true;
-        Report(result.GetError());
-        return false;
-    }
-
-    private Option<T> Unwrap<T>(Result<T> result)
-    {
-        if (result.TryGetValue(out T? value))
-            return value;
-        Report(result.GetError());
-        return Option.None<T>();
     }
 }

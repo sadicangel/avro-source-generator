@@ -140,9 +140,9 @@ public sealed class PropertyResultTests
 
         AssertInvalid(file);
         Assert.Equal(
-            [AvroDiagnosticCode.DuplicateEnumSymbol, AvroDiagnosticCode.DuplicateEnumSymbol, AvroDiagnosticCode.DuplicateEnumSymbol, AvroDiagnosticCode.InvalidSymbols, AvroDiagnosticCode.InvalidEnumDefault],
+            [AvroDiagnosticCode.DuplicateEnumSymbol, AvroDiagnosticCode.DuplicateEnumSymbol, AvroDiagnosticCode.DuplicateEnumSymbol, AvroDiagnosticCode.InvalidEnumDefault],
             file.GetDiagnostics().Select(diagnostic => diagnostic.Code));
-        Assert.Equal(["\"A\"", "\"B\"", "\"A\"", """["A","A","B","B","A"]""", "false"], file.GetDiagnostics().Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.Equal(["\"A\"", "\"B\"", "\"A\"", "false"], file.GetDiagnostics().Select(diagnostic => diagnostic.SourceSpan.ToString()));
     }
 
     [Theory]

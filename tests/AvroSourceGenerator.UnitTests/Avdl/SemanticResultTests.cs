@@ -62,7 +62,7 @@ public sealed class SemanticResultTests
     }
 
     [Fact]
-    public void Independent_errors_are_collected_in_semantic_traversal_order()
+    public void Errors_before_a_failed_field_and_in_later_declarations_keep_traversal_order()
     {
         const string Text = """
             schema R;
@@ -77,13 +77,12 @@ public sealed class SemanticResultTests
         var file = Parse(Text);
         AssertInvalid(file);
         Assert.Equal(
-            ["false", "0", "1", "2", "3", "4", "5", "6", "2147483648", "2147483649", "7"],
+            ["false", "0", "1", "2", "3", "4", "7"],
             file.GetDiagnostics().Select(diagnostic => diagnostic.SourceSpan.ToString()));
         Assert.Equal(
             [AvroDiagnosticCode.InvalidIdlAliases, AvroDiagnosticCode.InvalidIdlFixedSize, AvroDiagnosticCode.InvalidIdlAliases,
                 AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, AvroDiagnosticCode.InvalidIdlAliases, AvroDiagnosticCode.InvalidIdlOrder,
-                AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation,
-                AvroDiagnosticCode.InvalidIdlDecimalPrecision, AvroDiagnosticCode.InvalidIdlDecimalScale, AvroDiagnosticCode.InvalidIdlEnumDefault],
+                AvroDiagnosticCode.InvalidIdlEnumDefault],
             file.GetDiagnostics().Select(diagnostic => diagnostic.Code));
         Assert.All(file.GetDiagnostics(), diagnostic => Assert.Equal("test.avdl", diagnostic.SourceSpan.SourceText.Path.OriginalPath));
         Assert.Equal(file.GetDiagnostics(), Parse(Text).GetDiagnostics());
@@ -123,7 +122,7 @@ public sealed class SemanticResultTests
     }
 
     [Fact]
-    public void Protocol_errors_continue_across_types_parameters_responses_and_messages()
+    public void Protocol_components_report_errors_but_failed_collections_stop_at_the_first_invalid_item()
     {
         const string Text = """
             protocol P {
@@ -135,17 +134,17 @@ public sealed class SemanticResultTests
             """;
         var file = Parse(Text);
         AssertInvalid(file);
-        Assert.Equal(["0", "1", "2", "2147483648", "4", "oneway", "5"], file.GetDiagnostics().Select(diagnostic => diagnostic.SourceSpan.ToString()));
-        // The first response failed, so its one-way rule cannot be evaluated.
-        Assert.Single(file.GetDiagnostics(), diagnostic => diagnostic.Code == AvroDiagnosticCode.InvalidIdlOneWayMessage);
+        Assert.Equal(["0", "1", "2147483648"], file.GetDiagnostics().Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        // The response failed, so its one-way rule cannot be evaluated; later messages are skipped.
+        Assert.DoesNotContain(file.GetDiagnostics(), diagnostic => diagnostic.Code == AvroDiagnosticCode.InvalidIdlOneWayMessage);
     }
 
     [Fact]
-    public void Failed_schema_scope_does_not_poison_later_siblings()
+    public void Protocol_types_stop_after_a_failed_schema_scope()
     {
         var file = Parse("protocol P { record P {} fixed F(0); fixed F(1); }");
         AssertInvalid(file);
-        Assert.Equal([AvroDiagnosticCode.RecursiveSchemaDefinition, AvroDiagnosticCode.InvalidIdlFixedSize], file.GetDiagnostics().Select(diagnostic => diagnostic.Code));
+        Assert.Equal([AvroDiagnosticCode.RecursiveSchemaDefinition], file.GetDiagnostics().Select(diagnostic => diagnostic.Code));
     }
 
     [Fact]

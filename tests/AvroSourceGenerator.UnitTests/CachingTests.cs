@@ -8,13 +8,13 @@ namespace AvroSourceGenerator.UnitTests;
 public sealed class CachingTests
 {
     [Theory]
-    [InlineData("schema R; record R { int f; int f; }", "schema R; record R { int f; int other; }", "AVROSG2032")]
-    [InlineData("schema E; enum E { A, A }", "schema E; enum E { A, B }", "AVROSG2033")]
-    [InlineData("schema R; record R { union { int, int } f; }", "schema R; record R { union { int, string } f; }", "AVROSG2034")]
-    [InlineData("schema R; record R { union { R, R } f; }", "schema R; record R { union { null, R } f; }", "AVROSG2034")]
-    [InlineData("schema R; record R { union { null, union { int, string } } f; }", "schema R; record R { union { null, int, string } f; }", "AVROSG2035")]
-    [InlineData("protocol P { error E {} string m() oneway throws E, E; }", "protocol P { error E {} void m() throws E; }", "AVROSG2034")]
-    [InlineData("protocol P { @namespace(\"bad-name\") record R {} }", "protocol P { @namespace(\"valid.name\") record R {} }", "AVROSG4002")]
+    [InlineData("schema R; record R { int f; int f; }", "schema R; record R { int f; int other; }", "AVROSG5004")]
+    [InlineData("schema E; enum E { A, A }", "schema E; enum E { A, B }", "AVROSG5005")]
+    [InlineData("schema R; record R { union { int, int } f; }", "schema R; record R { union { int, string } f; }", "AVROSG5006")]
+    [InlineData("schema R; record R { union { R, R } f; }", "schema R; record R { union { null, R } f; }", "AVROSG5006")]
+    [InlineData("schema R; record R { union { null, union { int, string } } f; }", "schema R; record R { union { null, int, string } f; }", "AVROSG5007")]
+    [InlineData("protocol P { error E {} string m() oneway throws E, E; }", "protocol P { error E {} void m() throws E; }", "AVROSG5006")]
+    [InlineData("protocol P { @namespace(\"bad-name\") record R {} }", "protocol P { @namespace(\"valid.name\") record R {} }", "AVROSG4005")]
     public void Semantic_diagnostics_are_cached_relocated_and_removed_after_repairs(string invalid, string valid, string id)
     {
         var token = TestContext.Current.CancellationToken;
@@ -58,7 +58,7 @@ public sealed class CachingTests
         var input = GeneratorInput.Create([ProjectFile.Source("schema R; record R { union { External, External } f; }", "consumer.avdl")], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "None", ReferenceResolution = "Deferred" });
         var driver = input.GeneratorDriver.RunGenerators(input.Compilation, token);
         var duplicate = Assert.Single(driver.GetRunResult().Diagnostics);
-        Assert.Equal("AVROSG2034", duplicate.Id);
+        Assert.Equal("AVROSG5006", duplicate.Id);
         var dependency = new ChangedAdditionalText("dependency.avdl", "schema External; record External {}");
         driver = driver.AddAdditionalTexts([dependency]).RunGenerators(input.Compilation, token);
         Assert.Equal(duplicate, Assert.Single(driver.GetRunResult().Diagnostics));
@@ -82,7 +82,7 @@ public sealed class CachingTests
         var token = TestContext.Current.CancellationToken;
         var driver = input.GeneratorDriver.RunGenerators(input.Compilation, token);
         var diagnostic = Assert.Single(driver.GetRunResult().Diagnostics);
-        Assert.Equal("AVROSG4007", diagnostic.Id);
+        Assert.Equal("AVROSG3005", diagnostic.Id);
         Assert.Empty(driver.GetRunResult().GeneratedTrees);
 
         driver = driver.RunGenerators(input.Compilation, token);
@@ -93,7 +93,7 @@ public sealed class CachingTests
         var changed = new ChangedAdditionalText(input.AdditionalTexts[0].Path, edited);
         driver = driver.ReplaceAdditionalText(input.AdditionalTexts[0], changed).RunGenerators(input.Compilation, token);
         var updated = Assert.Single(driver.GetRunResult().Diagnostics);
-        Assert.Equal("AVROSG4007", updated.Id);
+        Assert.Equal("AVROSG3005", updated.Id);
         Assert.Equal(2, updated.Location.GetLineSpan().StartLinePosition.Line);
         Assert.NotEqual(diagnostic.Location.SourceSpan, updated.Location.SourceSpan);
         Assert.Empty(driver.GetRunResult().GeneratedTrees);
@@ -120,7 +120,7 @@ public sealed class CachingTests
             new ProjectConfig { AvroLibrary = "None", LanguageVersion = LanguageVersion.CSharp10 });
         var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         var diagnostic = Assert.Single(driver.GetRunResult().Diagnostics);
-        Assert.Equal("AVROSG2002", diagnostic.Id);
+        Assert.Equal("AVROSG3002", diagnostic.Id);
         Assert.Empty(driver.GetRunResult().GeneratedTrees);
         driver = driver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         Assert.Equal(diagnostic, Assert.Single(driver.GetRunResult().Diagnostics));
@@ -140,7 +140,7 @@ public sealed class CachingTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Document_kind_diagnostics_are_cached_and_refresh_after_an_edit(bool protocol)
+    public void Document_diagnostics_are_cached_and_refresh_after_an_edit(bool protocol)
     {
         const string Schema = """{"type":"record","name":"R","fields":[]}""";
         const string Service = """{"protocol":"P","types":[],"messages":{}}""";
@@ -159,7 +159,7 @@ public sealed class CachingTests
         driver = driver.ReplaceAdditionalText(input.AdditionalTexts[0], changedText)
             .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         var diagnostic = Assert.Single(driver.GetRunResult().Diagnostics);
-        Assert.Equal(protocol ? "AVROSG2001" : "AVROSG2000", diagnostic.Id);
+        Assert.Equal(protocol ? "AVROSG3001" : "AVROSG4000", diagnostic.Id);
         Assert.Empty(driver.GetRunResult().GeneratedTrees);
         driver = driver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         Assert.Equal(diagnostic, Assert.Single(driver.GetRunResult().Diagnostics));
@@ -178,20 +178,20 @@ public sealed class CachingTests
         var input = GeneratorInput.Create(files, [], new ProjectConfig { LanguageVersion = LanguageVersion.CSharp10 });
         var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         var initial = driver.GetRunResult();
-        var diagnostics = initial.Diagnostics.Where(diagnostic => diagnostic.Id == "AVROSG4010").ToArray();
+        var diagnostics = initial.Diagnostics.Where(diagnostic => diagnostic.Id == "AVROSG4021").ToArray();
         Assert.Equal(2, diagnostics.Length);
         Assert.All(initial.Results, result => Assert.Null(result.Exception));
 
         driver = driver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         var cached = driver.GetRunResult();
-        Assert.Equal(diagnostics, cached.Diagnostics.Where(diagnostic => diagnostic.Id == "AVROSG4010"));
+        Assert.Equal(diagnostics, cached.Diagnostics.Where(diagnostic => diagnostic.Id == "AVROSG4021"));
         var tracked = StepTracking.GetTrackedSteps(cached);
         Assert.All(tracked["AvroFile"].SelectMany(step => step.Outputs), output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
 
         driver = driver.ReplaceAdditionalText(input.AdditionalTexts[0], new ChangedAdditionalText(input.AdditionalTexts[0].Path, "schema F; fixed F(1); fixed G(0);"))
             .RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         var changed = driver.GetRunResult();
-        var remaining = Assert.Single(changed.Diagnostics, diagnostic => diagnostic.Id == "AVROSG4010");
+        var remaining = Assert.Single(changed.Diagnostics, diagnostic => diagnostic.Id == "AVROSG4021");
         Assert.Equal(diagnostics[1].Location.SourceSpan, remaining.Location.SourceSpan);
         Assert.Equal(1, CountModified(StepTracking.GetTrackedSteps(changed), "AvroFile"));
         Assert.All(changed.Results, result => Assert.Null(result.Exception));
@@ -212,7 +212,7 @@ public sealed class CachingTests
         var input = GeneratorInput.Create(files, [], config);
         var driver = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken);
         var initial = driver.GetRunResult();
-        Assert.Equal(["AVROSG0005"], initial.Diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).Select(diagnostic => diagnostic.Id));
+        Assert.Equal(["AVROSG5002"], initial.Diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).Select(diagnostic => diagnostic.Id));
         Assert.Equal(["CachingTests.Independent.Avro.g.cs"], initial.Results.Single().GeneratedSources.Select(source => source.HintName));
 
         var fixedFile = new ChangedAdditionalText(input.AdditionalTexts[0].Path, Record("Broken", ""));

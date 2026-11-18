@@ -111,12 +111,12 @@ public sealed class OptionalPropertyTests
     }
 
     [Theory]
-    [InlineData("""{"type":"record","name":"R","fields":[1,],"fields":[]}""")]
-    [InlineData("""{"type":"record","name":"R","fields":[],"unused":{"invalid":!}}""")]
-    public void Discarded_or_unused_values_must_still_be_well_formed_json(string text)
+    [InlineData("""{"type":"record","name":"R","fields":[1,],"fields":[]}""", AvroDiagnosticCode.UnexpectedToken)]
+    [InlineData("""{"type":"record","name":"R","fields":[],"unused":{"invalid":!}}""", AvroDiagnosticCode.InvalidCharacter)]
+    public void Discarded_or_unused_values_must_still_be_well_formed_json(string text, AvroDiagnosticCode code)
     {
         var file = Parse(text);
-        Assert.Equal(AvroDiagnosticCode.InvalidJson, Assert.Single(file.GetDiagnostics()).Code);
+        Assert.Equal(code, Assert.Single(file.GetDiagnostics()).Code);
         Assert.Empty(file.Declarations);
     }
 

@@ -1,9 +1,10 @@
-﻿using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Avdl.Annotations;
-using AvroSourceGenerator.Avdl.Declarations;
-using AvroSourceGenerator.Avdl.Directives;
-using AvroSourceGenerator.Avdl.Types;
-using AvroSourceGenerator.Diagnostics;
+﻿using AvroSourceGenerator.Diagnostics;
+using AvroSourceGenerator.Syntax.Annotations;
+using AvroSourceGenerator.Syntax.Declarations;
+using AvroSourceGenerator.Syntax.Directives;
+using AvroSourceGenerator.Syntax.Json;
+using AvroSourceGenerator.Syntax.Types;
+using AvroSourceGenerator.Syntax;
 
 namespace AvroSourceGenerator.UnitTests.Avdl;
 
@@ -28,15 +29,15 @@ public sealed class ParserTests
 
         var idlImport = Assert.IsType<ImportDirectiveSyntax>(unit.Directives[2]);
         Assert.Equal(SyntaxKind.IdlKeyword, idlImport.ImportTypeKeyword.SyntaxKind);
-        Assert.Equal("dep.avdl", idlImport.ImportPathLiteralToken.Value);
+        Assert.Equal("dep.avdl", idlImport.ImportPathLiteralToken.ValueText);
 
         var protocolImport = Assert.IsType<ImportDirectiveSyntax>(unit.Directives[3]);
         Assert.Equal(SyntaxKind.ProtocolKeyword, protocolImport.ImportTypeKeyword.SyntaxKind);
-        Assert.Equal("dep.avpr", protocolImport.ImportPathLiteralToken.Value);
+        Assert.Equal("dep.avpr", protocolImport.ImportPathLiteralToken.ValueText);
 
         var schemaImport = Assert.IsType<ImportDirectiveSyntax>(unit.Directives[4]);
         Assert.Equal(SyntaxKind.SchemaKeyword, schemaImport.ImportTypeKeyword.SyntaxKind);
-        Assert.Equal("dep.avsc", schemaImport.ImportPathLiteralToken.Value);
+        Assert.Equal("dep.avsc", schemaImport.ImportPathLiteralToken.ValueText);
 
         var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(unit.Declarations));
         Assert.Equal("P", protocol.Name.Identifier.SourceSpan.ToString());
@@ -81,15 +82,15 @@ public sealed class ParserTests
 
         var idlImport = protocol.Imports[0];
         Assert.Equal(SyntaxKind.IdlKeyword, idlImport.ImportTypeKeyword.SyntaxKind);
-        Assert.Equal("common.avdl", idlImport.ImportPathLiteralToken.Value);
+        Assert.Equal("common.avdl", idlImport.ImportPathLiteralToken.ValueText);
 
         var protocolImport = protocol.Imports[1];
         Assert.Equal(SyntaxKind.ProtocolKeyword, protocolImport.ImportTypeKeyword.SyntaxKind);
-        Assert.Equal("dep.avpr", protocolImport.ImportPathLiteralToken.Value);
+        Assert.Equal("dep.avpr", protocolImport.ImportPathLiteralToken.ValueText);
 
         var schemaImport = protocol.Imports[2];
         Assert.Equal(SyntaxKind.SchemaKeyword, schemaImport.ImportTypeKeyword.SyntaxKind);
-        Assert.Equal("dep.avsc", schemaImport.ImportPathLiteralToken.Value);
+        Assert.Equal("dep.avsc", schemaImport.ImportPathLiteralToken.ValueText);
 
         Assert.Single(protocol.Types);
         Assert.Single(protocol.Messages);
@@ -126,14 +127,14 @@ public sealed class ParserTests
         Assert.Equal("Kind", enumDeclaration.Name.Identifier.SourceSpan.ToString());
         Assert.Equal(" Kind doc ", Assert.Single(enumDeclaration.Documentation).DocumentationTrivia.SourceSpan.ToString());
         var aliases = Assert.IsType<AliasesAnnotationSyntax>(Assert.Single(enumDeclaration.Annotations));
-        Assert.Equal(["OldKind", "OlderKind"], aliases.JsonValue.JsonNode!.AsArray().Select(static value => value!.GetValue<string>()));
-        Assert.Equal(2, Assert.IsType<JsonArray>(aliases.JsonValue.JsonNode).Count);
+        Assert.Equal(["OldKind", "OlderKind"], aliases.JsonValue.AsJsonElement().EnumerateArray().Select(static value => value.GetString()));
+        Assert.Equal(2, Assert.IsType<JsonArraySyntax>(aliases.JsonValue).Elements.Length);
         Assert.Equal(2, enumDeclaration.Symbols.Count);
-        Assert.Equal("A", enumDeclaration.DefaultValue!.JsonValue.JsonNode?.GetValue<string>());
+        Assert.Equal("A", enumDeclaration.DefaultValue!.Symbol.ValueText);
 
         var fixedDeclaration = Assert.IsType<FixedDeclarationSyntax>(unit.Declarations[1]);
         Assert.Equal("MD5", fixedDeclaration.Name.Identifier.SourceSpan.ToString());
-        Assert.Equal(16, fixedDeclaration.SizeLiteralToken.Value);
+        Assert.Equal("16", fixedDeclaration.SizeLiteralToken.ValueText);
         Assert.Empty(fixedDeclaration.Documentation);
         Assert.Empty(fixedDeclaration.Annotations);
 
@@ -147,21 +148,38 @@ public sealed class ParserTests
         Assert.Equal(SyntaxKind.StringType, nameField.Type.SyntaxKind);
         Assert.Equal("name", nameField.Name.Identifier.SourceSpan.ToString());
         var order = Assert.IsType<OrderAnnotationSyntax>(Assert.Single(nameField.Annotations));
-        Assert.Equal("ignore", order.JsonValue.JsonNode!.GetValue<string>());
-        Assert.Equal("Ada", nameField.DefaultValueClause!.JsonValue.JsonNode?.GetValue<string>());
+        Assert.Equal("ignore", order.JsonValue.AsJsonElement().GetString());
+        Assert.Equal("Ada", nameField.DefaultValueClause!.JsonValue.AsJsonElement().GetString());
 
         var resultCodeField = recordDeclaration.Fields[1];
         Assert.Equal("result_code", resultCodeField.Name.Identifier.SourceSpan.ToString());
-        Assert.Equal(-1, resultCodeField.DefaultValueClause!.JsonValue.JsonNode?.GetValue<int>());
+        Assert.Equal(-1, resultCodeField.DefaultValueClause!.JsonValue.AsJsonElement().GetInt32());
 
-        var configDefault = Assert.IsType<JsonObject>(recordDeclaration.Fields[2].DefaultValueClause!.JsonValue.JsonNode);
-        Assert.Equal(1, configDefault["x"]!.GetValue<int>());
-        Assert.True(configDefault["ok"]!.GetValue<bool>());
-        Assert.Equal("b", Assert.IsType<JsonArray>(configDefault["tags"]).Last()!.GetValue<string>());
+        var configDefault = recordDeclaration.Fields[2].DefaultValueClause!.JsonValue.AsJsonElement();
+        Assert.Equal(1, configDefault.GetProperty("x").GetInt32());
+        Assert.True(configDefault.GetProperty("ok").GetBoolean());
+        Assert.Equal("b", configDefault.GetProperty("tags")[1].GetString());
 
         var errorDeclaration = Assert.IsType<ErrorDeclarationSyntax>(unit.Declarations[3]);
         Assert.Equal("Problem", errorDeclaration.Name.Identifier.SourceSpan.ToString());
         Assert.Single(errorDeclaration.Fields);
+    }
+
+    [Theory]
+    [InlineData("A", (int)SyntaxKind.IdentifierToken, "A")]
+    [InlineData("`int`", (int)SyntaxKind.IdentifierToken, "int")]
+    [InlineData("\"A\"", (int)SyntaxKind.StringLiteralToken, "A")]
+    [InlineData("null", (int)SyntaxKind.NullKeyword, "null")]
+    public void Enum_default_is_a_symbol_token(string text, int kind, string value)
+    {
+        var tree = ParseTree("enum E { A, `int` } = " + text + ";");
+        Assert.Empty(tree.Diagnostics);
+        var enumeration = Assert.IsType<EnumDeclarationSyntax>(Assert.Single(tree.Root.Declarations));
+        var clause = Assert.IsType<EnumDefaultClauseSyntax>(enumeration.DefaultValue);
+        Assert.Equal((SyntaxKind)kind, clause.Symbol.SyntaxKind);
+        Assert.Equal(value, clause.Symbol.ValueText);
+        Assert.Equal(text, clause.Symbol.SourceSpan.ToString());
+        Assert.Equal("= " + text, clause.GetSourceSpan().ToString());
     }
 
     [Fact]
@@ -192,7 +210,7 @@ public sealed class ParserTests
         var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(unit.Declarations));
         Assert.Equal("Service", protocol.Name.Identifier.SourceSpan.ToString());
         var namespaceAnnotation = Assert.IsType<NamespaceAnnotationSyntax>(Assert.Single(protocol.Annotations));
-        Assert.Equal("example", namespaceAnnotation.JsonValue.JsonNode!.GetValue<string>());
+        Assert.Equal("example", namespaceAnnotation.JsonValue.AsJsonElement().GetString());
         Assert.Empty(protocol.Imports);
         Assert.Equal(4, protocol.Types.Count);
         Assert.Equal(2, protocol.Messages.Count);
@@ -217,7 +235,7 @@ public sealed class ParserTests
         Assert.Equal("hello", hello.Name.Identifier.SourceSpan.ToString());
         Assert.Equal(2, hello.Parameters.Count);
         Assert.Equal("greeting", hello.Parameters[0].Name.Identifier.SourceSpan.ToString());
-        Assert.Equal(1, hello.Parameters[1].DefaultValueClause!.JsonValue.JsonNode?.GetValue<int>());
+        Assert.Equal(1, hello.Parameters[1].DefaultValueClause!.JsonValue.AsJsonElement().GetInt32());
         Assert.Equal(2, hello.ThrowsErrorClause!.Errors.Count);
     }
 
@@ -253,7 +271,7 @@ public sealed class ParserTests
         var annotation = Assert.IsType<CustomAnnotationSyntax>(Assert.Single(record.Annotations));
 
         Assert.Equal("java-class", annotation.AnnotationName.FullName);
-        Assert.Equal("com.example.User", annotation.JsonValue.JsonNode!.GetValue<string>());
+        Assert.Equal("com.example.User", annotation.JsonValue.AsJsonElement().GetString());
     }
 
     [Fact]
@@ -274,14 +292,14 @@ public sealed class ParserTests
         var idType = Assert.IsType<AnnotatedTypeSyntax>(id.Type);
         var uuid = Assert.IsType<LogicalTypeAnnotationSyntax>(Assert.Single(idType.Annotations));
         Assert.Equal("logicalType", uuid.AnnotationName.FullName);
-        Assert.Equal("uuid", uuid.JsonValue.JsonNode!.GetValue<string>());
+        Assert.Equal("uuid", uuid.JsonValue.AsJsonElement().GetString());
         Assert.Equal(SyntaxKind.StringType, idType.Type.SyntaxKind);
 
         var createdAt = record.Fields[1];
         Assert.Empty(createdAt.Annotations);
         var createdAtType = Assert.IsType<AnnotatedTypeSyntax>(createdAt.Type);
         var timestampMillis = Assert.IsType<LogicalTypeAnnotationSyntax>(Assert.Single(createdAtType.Annotations));
-        Assert.Equal("timestamp-millis", timestampMillis.JsonValue.JsonNode!.GetValue<string>());
+        Assert.Equal("timestamp-millis", timestampMillis.JsonValue.AsJsonElement().GetString());
         Assert.Equal(SyntaxKind.LongType, createdAtType.Type.SyntaxKind);
     }
 
@@ -298,7 +316,7 @@ public sealed class ParserTests
             """);
 
         Assert.Empty(tree.Diagnostics);
-        var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(tree.Root.Declarations));
         var message = Assert.Single(protocol.Messages);
         Assert.Equal(" Ping doc ", Assert.Single(message.Documentation).DocumentationTrivia.SourceSpan.ToString());
         var annotation = Assert.IsType<CustomAnnotationSyntax>(Assert.Single(message.Annotations));
@@ -318,7 +336,7 @@ public sealed class ParserTests
         var annotation = Assert.IsType<CustomAnnotationSyntax>(Assert.Single(record.Annotations));
 
         Assert.Equal("foo.bar-baz", annotation.AnnotationName.FullName);
-        Assert.True(annotation.JsonValue.JsonNode!.GetValue<bool>());
+        Assert.True(annotation.JsonValue.AsJsonElement().GetBoolean());
     }
 
     [Fact]
@@ -369,24 +387,24 @@ public sealed class ParserTests
 
         var amount = Assert.IsType<DecimalLogicalTypeSyntax>(record.Fields[5].Type);
         Assert.Equal(SyntaxKind.DecimalKeyword, amount.DecimalKeyword.SyntaxKind);
-        Assert.Equal(12, amount.PrecisionLiteralToken.Value);
-        Assert.Equal(4, amount.ScaleLiteralToken.Value);
+        Assert.Equal("12", amount.PrecisionLiteralToken.ValueText);
+        Assert.Equal("4", amount.ScaleLiteralToken.ValueText);
 
         var ids = Assert.IsType<ArrayTypeSyntax>(record.Fields[6].Type);
         AssertLogicalType(ids.ItemType, SyntaxKind.UuidKeyword);
 
         var amounts = Assert.IsType<MapTypeSyntax>(record.Fields[7].Type);
         var mapDecimal = Assert.IsType<DecimalLogicalTypeSyntax>(amounts.ValueType);
-        Assert.Equal(9, mapDecimal.PrecisionLiteralToken.Value);
-        Assert.Equal(2, mapDecimal.ScaleLiteralToken.Value);
+        Assert.Equal("9", mapDecimal.PrecisionLiteralToken.ValueText);
+        Assert.Equal("2", mapDecimal.ScaleLiteralToken.ValueText);
 
         var maybe = Assert.IsType<UnionTypeSyntax>(record.Fields[8].Type);
         Assert.Equal(3, maybe.Types.Count);
         Assert.Equal(SyntaxKind.NullType, maybe.Types[0].SyntaxKind);
         AssertLogicalType(maybe.Types[1], SyntaxKind.DateKeyword);
         var unionDecimal = Assert.IsType<DecimalLogicalTypeSyntax>(maybe.Types[2]);
-        Assert.Equal(18, unionDecimal.PrecisionLiteralToken.Value);
-        Assert.Equal(6, unionDecimal.ScaleLiteralToken.Value);
+        Assert.Equal("18", unionDecimal.PrecisionLiteralToken.ValueText);
+        Assert.Equal("6", unionDecimal.ScaleLiteralToken.ValueText);
 
         var kinds = AvdlTestHelpers.FlattenKinds(unit);
         Assert.Equal(10, kinds.Count(kind => kind == SyntaxKind.LogicalType));
@@ -436,7 +454,7 @@ public sealed class ParserTests
     {
         var tree = ParseTree("record User { , string name; }");
 
-        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Root.Declarations));
         var field = Assert.Single(record.Fields, field => field.Name.FullName == "name");
 
         Assert.Equal(SyntaxKind.StringType, field.Type.SyntaxKind);
@@ -459,7 +477,7 @@ public sealed class ParserTests
         const string Text = "record User { string name }";
         var tree = ParseTree(Text);
 
-        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Root.Declarations));
         Assert.Equal("}", record.BraceCloseToken.SourceSpan.ToString());
         Assert.Equal(Text.IndexOf('}'), record.BraceCloseToken.SourceSpan.Offset);
         Assert.Equal(1, record.BraceCloseToken.SourceSpan.Length);
@@ -471,7 +489,7 @@ public sealed class ParserTests
         const string Text = "record User { string name extra; }";
         var tree = ParseTree(Text);
 
-        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Root.Declarations));
         var field = Assert.Single(record.Fields);
         var diagnostic = Assert.Single(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.UnexpectedToken);
 
@@ -480,23 +498,53 @@ public sealed class ParserTests
         Assert.Equal(Text.IndexOf("extra", StringComparison.Ordinal), diagnostic.SourceSpan.Offset);
     }
 
-    [Fact]
-    public void Parse_InvalidJsonDefault_ReturnsUnexpectedJsonValueDiagnostic()
+    [Theory]
+    [InlineData("enum E { A, }")]
+    [InlineData("schema union { string, };")]
+    [InlineData("protocol P { void m(string p,); }")]
+    public void Parse_TrailingComma_IsReportedAtTheSeparator(string text)
     {
-        var tree = ParseTree("record User { string name = ; }");
+        var tree = ParseTree(text);
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.UnexpectedToken, diagnostic.Code);
+        Assert.Equal(tree.SourceText.GetSourceSpan(text.IndexOf(','), 1), diagnostic.SourceSpan);
+    }
 
-        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.UnexpectedJsonValue);
+    [Theory]
+    [InlineData("record\u00a0R {}", '\u00a0')]
+    [InlineData("record\u000cR {}", '\u000c')]
+    [InlineData("// comment\u2028more comment\nrecord R {}", '\u2028')]
+    [InlineData("// comment\u2029more comment\nrecord R {}", '\u2029')]
+    public void Parse_UnsupportedWhitespace_IsReportedAtTheCharacter(string text, char character)
+    {
+        var tree = ParseTree(text);
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.InvalidCharacter, diagnostic.Code);
+        Assert.Equal(tree.SourceText.GetSourceSpan(text.IndexOf(character), 1), diagnostic.SourceSpan);
     }
 
     [Fact]
-    public void Parse_MixedDiagnostics_ReportsScannerDiagnosticsThenParserDiagnosticsInReportingOrder()
+    public void Parse_InvalidJsonDefault_ReturnsUnexpectedJsonValueDiagnostic()
     {
-        var tree = ParseTree("$ schema R; schema R; @custom([1 extra]) record R { string f }");
+        const string Text = "record User { string name = ; string email; }";
+        var tree = ParseTree(Text);
 
-        Assert.Equal(
-            [AvroDiagnosticCode.InvalidCharacter, AvroDiagnosticCode.DuplicateIdlDirective, AvroDiagnosticCode.UnexpectedToken, AvroDiagnosticCode.UnexpectedToken],
-            tree.Diagnostics.Select(diagnostic => diagnostic.Code));
-        Assert.Equal(["$", "schema R;", "extra", "}"], tree.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.UnexpectedJsonValue, diagnostic.Code);
+        Assert.Equal(tree.SourceText.GetSourceSpan(Text.IndexOf(';'), 1), diagnostic.SourceSpan);
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Root.Declarations));
+        Assert.Equal(["name", "email"], record.Fields.Select(field => field.Name.FullName));
+    }
+
+    [Fact]
+    public void Parse_ScannerErrorsSkipGrammarAndReturnAnEmptyDocument()
+    {
+        var tree = ParseTree("$ schema R; schema R; @custom([1 extra]) record R { string f } #");
+
+        Assert.Empty(tree.Root.Directives);
+        Assert.Empty(tree.Root.Declarations);
+        Assert.All(tree.Diagnostics, diagnostic => Assert.Equal(AvroDiagnosticCode.InvalidCharacter, diagnostic.Code));
+        Assert.Equal(["$", "#"], tree.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
         Assert.All(tree.Diagnostics, diagnostic => Assert.Same(tree.SourceText, diagnostic.SourceSpan.SourceText));
     }
 
@@ -508,7 +556,7 @@ public sealed class ParserTests
 
         Assert.Equal(["record", "}"], tree.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
         Assert.All(tree.Diagnostics, diagnostic => Assert.Equal(AvroDiagnosticCode.UnexpectedToken, diagnostic.Code));
-        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Root.Declarations));
         Assert.Equal("R", record.Name.FullName);
         Assert.Equal("f", Assert.Single(record.Fields).Name.FullName);
     }
@@ -549,7 +597,7 @@ public sealed class ParserTests
         Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.MisplacedAnnotation && diagnostic.SourceSpan.ToString() == "@");
         Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.MisplacedDocumentation && diagnostic.SourceSpan.ToString() == " Import doc ");
 
-        var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(tree.Document.Declarations));
+        var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(tree.Root.Declarations));
         Assert.Empty(Assert.IsType<RecordDeclarationSyntax>(Assert.Single(protocol.Types)).Annotations);
     }
 
@@ -566,7 +614,7 @@ public sealed class ParserTests
         Assert.Empty(tree.Diagnostics);
     }
 
-    private static DocumentSyntax Parse(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken).Document;
+    private static DocumentSyntax Parse(string text) => Parser.ParseIdl(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken).Root;
 
-    private static SyntaxTree ParseTree(string text) => Parser.Parse(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
+    private static SyntaxTree<DocumentSyntax> ParseTree(string text) => Parser.ParseIdl(AvdlTestHelpers.SourceText(text), TestContext.Current.CancellationToken);
 }

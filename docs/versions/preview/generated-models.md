@@ -50,7 +50,7 @@ Logical types use library-specific mappings. For example, `timestamp-millis` map
 
 ## Schema defaults
 
-In the unreleased preview, field and protocol-parameter defaults are preserved as JSON in emitted Avro schemas. They do not initialize generated C# properties. Set property values explicitly when constructing a model; non-nullable properties follow the usual `required` rules when supported.
+The generator preserves field and protocol-parameter defaults as JSON in emitted Avro schemas. Set property values explicitly when constructing a C# model. Non-nullable properties follow the usual `required` rules when supported.
 
 Opt-in C# initialization is tracked in [issue #191](https://github.com/sadicangel/avro-source-generator/issues/191).
 

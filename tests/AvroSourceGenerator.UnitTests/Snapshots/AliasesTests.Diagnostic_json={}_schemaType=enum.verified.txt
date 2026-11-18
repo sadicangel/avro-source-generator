@@ -3,7 +3,7 @@
   Message: Property 'aliases' must be an array of non-empty strings, or null,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2017,
+    Id: AVROSG4006,
     Title: Invalid Aliases,
     Description: Property 'aliases' must be an array of non-empty strings, or null.,
     MessageFormat: Property 'aliases' must be an array of non-empty strings, or null,

@@ -16,6 +16,8 @@ public sealed class DefaultValueTests
     [InlineData("42")]
     [InlineData("1.234567890123456789E+00")]
     [InlineData("1e999")]
+    [InlineData("9223372036854775808")]
+    [InlineData("-9223372036854775809")]
     [InlineData("\"abc\\u00ff\"")]
     [InlineData("\"NDI=\"")]
     [InlineData("\"\\ud800\"")]

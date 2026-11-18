@@ -161,7 +161,7 @@ public sealed class PropertyResultTests
         var diagnostic = file.GetDiagnostics().First();
         Assert.Equal(order, diagnostic.SourceSpan.ToString());
         Assert.Equal("Field property 'order' must be a non-empty string or null", diagnostic.GetMessage());
-        Assert.Equal("AVROSG2036", diagnostic.ToDiagnostic().Id);
+        Assert.Equal("AVROSG4016", diagnostic.ToDiagnostic().Id);
     }
 
     private static AvroFile Parse(string text, string extension = ".avsc") => AvxxParser.Parse(

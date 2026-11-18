@@ -17,7 +17,7 @@ Configure the generator with MSBuild properties in your consuming project's `.cs
 | `AvroSourceGeneratorReferenceResolution` | `Strict` | `Strict`, `Deferred` |
 | `AvroSourceGeneratorPreviewFeatures` | `None` | `None`, `Unions` |
 
-Chr support is removed in the next 0.8.0 preview. Explicit `Chr` settings or automatic Chr detection report `AVROSG6002` and generate standalone fallback models. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}).
+Explicit `Chr` settings or automatic Chr detection report `AVROSG7002` and generate standalone fallback models. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}).
 
 ## Access modifier
 

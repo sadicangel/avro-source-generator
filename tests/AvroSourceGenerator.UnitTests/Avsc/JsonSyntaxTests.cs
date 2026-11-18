@@ -1,5 +1,5 @@
-﻿using System.Text.Json;
-using AvroSourceGenerator.Avjs;
+﻿using AvroSourceGenerator.Syntax.Json;
+using AvroSourceGenerator.Syntax;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.UnitTests.Avsc;
@@ -15,19 +15,30 @@ public sealed class JsonSyntaxTests
         Assert.Equal(properties, root.Properties);
         var array = Assert.IsType<JsonArraySyntax>(root.Property("items")!.Value);
         Assert.Same(properties[0].Value, array);
-        var items = array.Items;
-        Assert.Equal(items, array.Items);
-        var value = Assert.IsType<JsonValueSyntax>(items[0]);
-        Assert.Equal("escaped value", value.StringValue);
-        Assert.Same(value.StringValue, value.StringValue);
-        Assert.Equal(12, Assert.IsType<JsonValueSyntax>(items[1]).Int32Value);
+        var items = array.Elements;
+        Assert.Equal(items, array.Elements);
+        var value = Assert.IsType<JsonStringSyntax>(items[0]);
+        Assert.Equal("escaped value", value.Value);
+        Assert.Same(value.Literal.ValueText, value.Value);
+        Assert.Equal(12, Assert.IsType<JsonNumberSyntax>(items[1]).Int32Value);
         Assert.Equal(items[1].AsJsonElement(), items[1].AsJsonElement());
-        Assert.Equal(JsonTokenType.True, items[2].TokenType);
-        Assert.Equal(JsonTokenType.Null, items[3].TokenType);
+        Assert.True(Assert.IsType<JsonBooleanSyntax>(items[2]).Value);
+        Assert.IsType<JsonNullSyntax>(items[3]);
         Assert.Empty(Assert.IsType<JsonObjectSyntax>(items[4]).Properties);
-        Assert.Empty(Assert.IsType<JsonArraySyntax>(items[5]).Items);
+        Assert.Empty(Assert.IsType<JsonArraySyntax>(items[5]).Elements);
         Assert.Null(root.Property("missing"));
-        Assert.Null(Assert.IsType<JsonValueSyntax>(items[0]).Int32Value);
+    }
+
+    [Theory]
+    [InlineData("\"😀\"", "😀")]
+    [InlineData("\"\\uD83D\\uDE00\"", "😀")]
+    [InlineData("\"\\uD800\"", null)]
+    [InlineData("\"\\uDC00\"", null)]
+    public void Text_reads_preserve_unicode_and_raw_spelling(string text, string? decoded)
+    {
+        var value = Assert.IsType<JsonStringSyntax>(Parse(text, TestContext.Current.CancellationToken));
+        Assert.Equal(decoded, value.Value);
+        Assert.Equal(text, value.AsJsonElement().GetRawText());
     }
 
     [Fact]
@@ -36,13 +47,13 @@ public sealed class JsonSyntaxTests
         const string Text = "{\r\n\"é😀\":0,\"a\\u0062\" : null,\"ab\":null}";
         var root = Assert.IsType<JsonObjectSyntax>(Parse(Text, TestContext.Current.CancellationToken));
         var properties = root.Properties;
-        Assert.Equal(["é😀", "ab"], properties.Select(property => property.Name.Value));
+        Assert.Equal(["é😀", "ab"], properties.Select(property => property.Name.ValueText));
         Assert.Single(root.Duplicates);
         Assert.Equal("\"a\\u0062\"", root.Duplicates[0].Name.SourceSpan.ToString());
         Assert.Equal(Text.IndexOf("\"a\\u0062\"", StringComparison.Ordinal), root.Duplicates[0].Name.SourceSpan.Offset);
-        Assert.NotEqual(root.Duplicates[0].Value.SourceSpan, properties[1].Value.SourceSpan);
+        Assert.NotEqual(root.Duplicates[0].Value.GetSourceSpan(), properties[1].Value.GetSourceSpan());
         Assert.Same(properties[1].Value, root.Property("ab")!.Value);
-        Assert.Equal(Text.LastIndexOf("null", StringComparison.Ordinal), root.Property("ab")!.Value.SourceSpan.Offset);
+        Assert.Equal(Text.LastIndexOf("null", StringComparison.Ordinal), root.Property("ab")!.Value.GetSourceSpan().Offset);
     }
 
     [Fact]
@@ -50,11 +61,11 @@ public sealed class JsonSyntaxTests
     {
         const string Text = """ { "custom": [1.00, "\u0061", false] } """;
         var root = Parse(Text, TestContext.Current.CancellationToken);
-        Assert.Equal(Text.Trim(), root.GetRawText());
+        Assert.Equal(Text.Trim(), root.GetRawText().ToString());
         Assert.Equal(Text.Trim(), root.AsJsonElement().GetRawText());
         var custom = Assert.IsType<JsonObjectSyntax>(root).Property("custom")!.Value;
         Assert.Equal("""[1.00, "\u0061", false]""", custom.AsJsonElement().GetRawText());
-        Assert.Equal(custom.GetRawText(), custom.AsJsonElement().GetRawText());
+        Assert.Equal(custom.GetRawText().ToString(), custom.AsJsonElement().GetRawText());
     }
 
     [Fact]
@@ -67,31 +78,29 @@ public sealed class JsonSyntaxTests
 
         var scalarProperty = root.Property("scalar")!;
         Assert.Same(root, scalarProperty.Parent);
-        Assert.Same(root, scalarProperty.Value.Parent);
+        Assert.Same(scalarProperty, scalarProperty.Value.Parent);
 
         var arrayProperty = root.Property("array")!;
         var array = Assert.IsType<JsonArraySyntax>(arrayProperty.Value);
         Assert.Same(root, arrayProperty.Parent);
-        Assert.Same(root, array.Parent);
-        Assert.Same(array, array.Items[0].Parent);
+        Assert.Same(arrayProperty, array.Parent);
+        Assert.Same(array, array.Elements[0].Parent);
 
-        var nestedObject = Assert.IsType<JsonObjectSyntax>(array.Items[1]);
+        var nestedObject = Assert.IsType<JsonObjectSyntax>(array.Elements[1]);
         Assert.Same(array, nestedObject.Parent);
 
         var nestedProperty = nestedObject.Property("nested")!;
         var nestedArray = Assert.IsType<JsonArraySyntax>(nestedProperty.Value);
         Assert.Same(nestedObject, nestedProperty.Parent);
-        Assert.Same(nestedObject, nestedArray.Parent);
-        Assert.Same(nestedArray, nestedArray.Items[0].Parent);
+        Assert.Same(nestedProperty, nestedArray.Parent);
+        Assert.Same(nestedArray, nestedArray.Elements[0].Parent);
     }
 
-    private static JsonSyntax Parse(string text, CancellationToken cancellationToken)
+    private static JsonValueSyntax Parse(string text, CancellationToken cancellationToken)
     {
-        var reader = new JsonReader(new SourceText("test.avsc", text));
-        Assert.True(reader.Read());
-        var root = reader.Parse(cancellationToken);
-        Assert.False(reader.Read());
-        return root;
+        var tree = Parser.ParseJson(new SourceText("test.avsc", text), cancellationToken);
+        Assert.Empty(tree.Diagnostics);
+        return tree.Root;
     }
 
     [Fact]
@@ -99,11 +108,11 @@ public sealed class JsonSyntaxTests
     {
         const string Text = """{"a":{"old":1},"b":true,"a":2,"c":[],"a":3,"b":false}""";
         var root = Assert.IsType<JsonObjectSyntax>(Parse(Text, TestContext.Current.CancellationToken));
-        Assert.Equal(["a", "b", "c"], root.Properties.Select(property => property.Name.Value));
-        Assert.Equal(["3", "false", "[]"], root.Properties.Select(property => property.Value.GetRawText()));
-        Assert.Equal(2, root.Duplicates.Count(property => property.Name.Value == "a"));
-        Assert.Equal(["""{"old":1}""", "2"], root.Duplicates.Where(property => property.Name.Value == "a").Select(property => property.Value.SourceSpan.ToString()));
-        Assert.Equal(["true"], root.Duplicates.Where(property => property.Name.Value == "b").Select(property => property.Value.SourceSpan.ToString()));
+        Assert.Equal(["a", "b", "c"], root.Properties.Select(property => property.Name.ValueText));
+        Assert.Equal(["3", "false", "[]"], root.Properties.Select(property => property.Value.GetRawText().ToString()));
+        Assert.Equal(2, root.Duplicates.Count(property => property.Name.ValueText == "a"));
+        Assert.Equal(["""{"old":1}""", "2"], root.Duplicates.Where(property => property.Name.ValueText == "a").Select(property => property.Value.GetSourceSpan().ToString()));
+        Assert.Equal(["true"], root.Duplicates.Where(property => property.Name.ValueText == "b").Select(property => property.Value.GetSourceSpan().ToString()));
         Assert.Equal(Text, root.AsJsonElement().GetRawText());
         Assert.Equal(6, root.AsJsonElement().EnumerateObject().Count());
     }
@@ -114,15 +123,15 @@ public sealed class JsonSyntaxTests
         const string Text = " \r\n[\"é😀\\u0061\",-1.25e+2,true,false,null,{\"x\":[]},{}] \r\n";
         var root = Assert.IsType<JsonArraySyntax>(Parse(Text, TestContext.Current.CancellationToken));
         var expected = new[] { "\"é😀\\u0061\"", "-1.25e+2", "true", "false", "null", "{\"x\":[]}", "{}" };
-        Assert.Equal(Text.Trim(), root.GetRawText());
-        Assert.Equal(3, root.SourceSpan.Offset);
+        Assert.Equal(Text.Trim(), root.GetRawText().ToString());
+        Assert.Equal(3, root.GetSourceSpan().Offset);
         for (var index = 0; index < expected.Length; index++)
         {
-            Assert.Equal(expected[index], root.Items[index].GetRawText());
-            Assert.Equal(Text.IndexOf(expected[index], StringComparison.Ordinal), root.Items[index].SourceSpan.Offset);
-            Assert.Equal(expected[index].Length, root.Items[index].SourceSpan.Length);
+            Assert.Equal(expected[index], root.Elements[index].GetRawText().ToString());
+            Assert.Equal(Text.IndexOf(expected[index], StringComparison.Ordinal), root.Elements[index].GetSourceSpan().Offset);
+            Assert.Equal(expected[index].Length, root.Elements[index].GetSourceSpan().Length);
         }
-        var nested = Assert.IsType<JsonObjectSyntax>(root.Items[5]);
-        Assert.Equal("[]", nested.Property("x")!.Value.GetRawText());
+        var nested = Assert.IsType<JsonObjectSyntax>(root.Elements[5]);
+        Assert.Equal("[]", nested.Property("x")!.Value.GetRawText().ToString());
     }
 }

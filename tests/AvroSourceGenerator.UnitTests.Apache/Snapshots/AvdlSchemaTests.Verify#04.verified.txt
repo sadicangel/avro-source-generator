@@ -126,7 +126,7 @@ namespace Avdl.Acceptance.Schema
                       "type": "map",
                       "values": "string"
                     },
-                    "default": {"kind":"home"}
+                    "default": { "kind": "home" }
                   }
                 ]
               }
@@ -137,7 +137,7 @@ namespace Avdl.Acceptance.Schema
                 "type": "array",
                 "items": "string"
               },
-              "default": ["admin","active"]
+              "default": ["admin", "active"]
             },
             {
               "name": "scores",
@@ -145,7 +145,7 @@ namespace Avdl.Acceptance.Schema
                 "type": "map",
                 "values": "int"
               },
-              "default": {"reputation":42}
+              "default": { "reputation": 42 }
             },
             {
               "name": "searchKey",

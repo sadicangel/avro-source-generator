@@ -47,7 +47,7 @@ namespace Avdl.Acceptance.Schema
                 "type": "map",
                 "values": "string"
               },
-              "default": {"kind":"home"}
+              "default": { "kind": "home" }
             }
           ]
         }

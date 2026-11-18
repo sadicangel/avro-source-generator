@@ -30,8 +30,8 @@ public sealed class RuntimeSelectionTests
     }
 
     [Theory]
-    [InlineData("Auto", "AVROSG6002")]
-    [InlineData("Chr", "AVROSG6002")]
+    [InlineData("Auto", "AVROSG7002")]
+    [InlineData("Chr", "AVROSG7002")]
     [InlineData("Apache", null)]
     [InlineData("None", null)]
     public void Both_runtime_references_require_an_explicit_supported_target(string library, string? diagnosticId)
@@ -46,7 +46,7 @@ public sealed class RuntimeSelectionTests
     }
 
     [Theory]
-    [InlineData("Auto", false, "AVROSG6000")]
+    [InlineData("Auto", false, "AVROSG7000")]
     [InlineData("Auto", true, null)]
     [InlineData("None", false, null)]
     public void Supported_targets_preserve_generation(string library, bool referencesApache, string? diagnosticId)
@@ -93,7 +93,7 @@ public sealed class RuntimeSelectionTests
         AssertCachedParsing(driver.GetRunResult());
 
         driver = driver.RunGenerators(initial.Compilation, TestContext.Current.CancellationToken);
-        Assert.Equal("AVROSG6000", Assert.Single(driver.GetRunResult().Diagnostics).Id);
+        Assert.Equal("AVROSG7000", Assert.Single(driver.GetRunResult().Diagnostics).Id);
         Assert.Single(driver.GetRunResult().GeneratedTrees);
 
         driver = driver.RunGenerators(initial.Compilation, TestContext.Current.CancellationToken);
@@ -139,7 +139,7 @@ public sealed class RuntimeSelectionTests
     {
         Assert.All(result.Results, generator => Assert.Null(generator.Exception));
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("AVROSG6002", diagnostic.Id);
+        Assert.Equal("AVROSG7002", diagnostic.Id);
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
         Assert.Contains("0.8.0", diagnostic.GetMessage());
         Assert.Contains("Apache", diagnostic.GetMessage());

@@ -1,22 +1,32 @@
-﻿using AvroSourceGenerator.Extensions;
+﻿using System.Diagnostics.CodeAnalysis;
+using AvroSourceGenerator.Extensions;
 
 namespace AvroSourceGenerator.Compiler.Parsing;
 
 internal static class NameValidator
 {
-    public static bool IsValidName(string? name) => IsValidName(name.AsSpan());
+    public static bool IsValidMemberName([NotNullWhen(true)] string? memberName) => IsValidName(memberName.AsSpan(), out var isQualified) && !isQualified;
 
-    public static bool IsValidName(ReadOnlySpan<char> name)
+    public static bool IsValidName([NotNullWhen(true)] string? name) => IsValidName(name.AsSpan());
+
+    public static bool IsValidName(ReadOnlySpan<char> name) => IsValidName(name, out _);
+
+    public static bool IsValidName(ReadOnlySpan<char> name, out bool isQualified)
     {
+        isQualified = false;
         if (name.IsWhiteSpace())
             return false;
 
-        foreach (var part in new SplitEnumerable(name, '.'))
+        var index = 0;
+        var enumerator = new SplitEnumerable(name, '.').GetEnumerator();
+        while (enumerator.MoveNext())
         {
-            if (!IsValidPart(part))
+            if (!IsValidPart(enumerator.Current))
                 return false;
+            ++index;
         }
 
+        isQualified = index > 1;
         return true;
     }
 

@@ -1,5 +1,5 @@
-﻿using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Diagnostics;
+﻿using AvroSourceGenerator.Diagnostics;
+using AvroSourceGenerator.Syntax;
 
 namespace AvroSourceGenerator.UnitTests.Avdl;
 
@@ -62,25 +62,15 @@ public sealed class ScannerTests
             { "oneway", SyntaxKind.OneWayKeyword },
         };
 
-    public static TheoryData<string, object> IntegerLiterals =>
-        new TheoryData<string, object>
-        {
-            { "0", 0 },
-            { "42", 42 },
-            { "-1", -1 },
-            { "2147483648", 2147483648L },
-        };
+    public static TheoryData<string> IntegerLiterals =>
+    [
+        "0", "42", "-1", "2147483648", "9223372036854775808", "-9223372036854775809"
+    ];
 
-    public static TheoryData<string, double> FloatLiterals =>
-        new TheoryData<string, double>
-        {
-            { "0.5", 0.5D },
-            { ".5", 0.5D },
-            { "-0.5", -0.5D },
-            { "1e2", 100D },
-            { "1e+2", 100D },
-            { "1E-2", 0.01D },
-        };
+    public static TheoryData<string> FloatLiterals =>
+    [
+        "0.5", ".5", "-0.5", "1e2", "1e+2", "1E-2", "1.00", "1e999", "-1e999", "1e-999"
+    ];
 
     public static TheoryData<string> InvalidInputs =>
     [
@@ -153,7 +143,6 @@ public sealed class ScannerTests
         Assert.Empty(scanner.BadTokens);
         Assert.Equal(SyntaxKind.IdentifierToken, tokens[0].SyntaxKind);
         Assert.Equal("`error`", tokens[0].SourceSpan.ToString());
-        Assert.Equal("error", tokens[0].Value);
         Assert.Equal("error", tokens[0].ValueText);
     }
 
@@ -220,13 +209,12 @@ public sealed class ScannerTests
 
         Assert.Empty(scanner.BadTokens);
         Assert.Equal(SyntaxKind.StringLiteralToken, tokens[0].SyntaxKind);
-        Assert.Equal("a\n\t\"\\/A", tokens[0].Value);
         Assert.Equal("a\n\t\"\\/A", tokens[0].ValueText);
     }
 
     [Theory]
     [MemberData(nameof(IntegerLiterals))]
-    public void Scan_IntegerLiteral_ReturnsIntegerValue(string text, object expected)
+    public void Scan_IntegerLiteral_PreservesText(string text)
     {
         var scanner = CreateScanner(text);
 
@@ -234,12 +222,12 @@ public sealed class ScannerTests
 
         Assert.Empty(scanner.BadTokens);
         Assert.Equal(SyntaxKind.IntegerLiteralToken, tokens[0].SyntaxKind);
-        Assert.Equal(expected, tokens[0].Value);
+        Assert.Equal(text, tokens[0].ValueText);
     }
 
     [Theory]
     [MemberData(nameof(FloatLiterals))]
-    public void Scan_FloatLiteral_ReturnsDoubleValue(string text, double expected)
+    public void Scan_FloatLiteral_PreservesText(string text)
     {
         var scanner = CreateScanner(text);
 
@@ -247,7 +235,7 @@ public sealed class ScannerTests
 
         Assert.Empty(scanner.BadTokens);
         Assert.Equal(SyntaxKind.FloatLiteralToken, tokens[0].SyntaxKind);
-        Assert.Equal(expected, Assert.IsType<double>(tokens[0].Value), precision: 10);
+        Assert.Equal(text, tokens[0].ValueText);
     }
 
     [Theory]
@@ -300,7 +288,7 @@ public sealed class ScannerTests
         Assert.Empty(scanner.Diagnostics);
         Assert.Empty(scanner.BadTokens);
         Assert.Equal(SyntaxKind.StringLiteralToken, tokens[0].SyntaxKind);
-        Assert.Equal(expected, tokens[0].Value);
+        Assert.Equal(expected, tokens[0].ValueText);
         Assert.Equal(text, tokens[0].SourceSpan.ToString());
         Assert.Equal(0, tokens[0].SourceSpan.Offset);
         Assert.Equal(text.Length, tokens[0].SourceSpan.Length);

@@ -39,12 +39,13 @@ public sealed class PropertyDiagnosticTests
     [InlineData("""{"protocol":"P","types":[],"messages":false}""", ".avpr", AvroDiagnosticCode.InvalidMessages, "false", "Property 'messages' must be an object whose values are message objects")]
     [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":false,"response":"null"}}}""", ".avpr", AvroDiagnosticCode.InvalidRequest, "false", "Property 'request' must be an array of request parameter objects")]
     [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":false}}}""", ".avpr", AvroDiagnosticCode.InvalidResponse, "false", "Property 'response' must be a primitive type name, a named type reference, an inline type definition, or a union")]
-    [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":"null","errors":[false]}}}""", ".avpr", AvroDiagnosticCode.InvalidErrors, "false", "Property 'errors' must be null or an array of primitive type names, named type references, inline type definitions, or unions")]
+    [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":"null","errors":false}}}""", ".avpr", AvroDiagnosticCode.InvalidErrors, "false", "Property 'errors' must be null or an array of primitive type names, named type references, inline type definitions, or unions")]
     [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":"null","one-way":0}}}""", ".avpr", AvroDiagnosticCode.InvalidOneWay, "0", "Property 'one-way' must be a boolean or null")]
-    [InlineData("""{"type":"enum","name":"E","symbols":["A"],"default":false}""", ".avsc", AvroDiagnosticCode.InvalidEnumDefault, "false", "Enum property 'default' must be a string or null")]
+    [InlineData("""{"type":"enum","name":"E","symbols":["A"],"default":false}""", ".avsc", AvroDiagnosticCode.InvalidEnumDefault, "false", "Enum default must be a string or null")]
     [InlineData("""{"protocol":"P","types":[{"type":"unknown"}],"messages":{}}""", ".avpr", AvroDiagnosticCode.InvalidProtocolDeclarationType, "\"unknown\"", "Protocol type declaration property 'type' must be 'record', 'error', 'enum', or 'fixed'")]
+    [InlineData("""{"type":"\uD800"}""", ".avsc", AvroDiagnosticCode.InvalidSchemaReference, "\"\\uD800\"", "Invalid type reference '\\uD800'; expected a name such as 'Order' or 'com.example.Order'")]
     [InlineData("\"bad-name\"", ".avsc", AvroDiagnosticCode.InvalidSchemaReference, "\"bad-name\"", "Invalid type reference 'bad-name'; expected a name such as 'Order' or 'com.example.Order'")]
-    [InlineData("""{"type":"fixed","name":"F","size":0}""", ".avsc", AvroDiagnosticCode.InvalidFixedSize, "0", "Property 'size' must be a positive 32-bit integer")]
+    [InlineData("""{"type":"fixed","name":"F","size":0}""", ".avsc", AvroDiagnosticCode.InvalidFixedSize, "0", "Fixed size must be a positive 32-bit integer")]
     public void Invalid_values_have_property_specific_codes_messages_and_value_spans(
         string json, string extension, AvroDiagnosticCode code, string value, string message)
     {
@@ -95,18 +96,19 @@ public sealed class PropertyDiagnosticTests
 
     [Theory]
     [InlineData("[[\"bad-name\"]]", ".avsc", AvroDiagnosticCode.InvalidSchemaReference, "\"bad-name\"")]
+    [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":"null","errors":[false]}}}""", ".avpr", AvroDiagnosticCode.SchemaExpected, "false")]
     [InlineData("[[false]]", ".avsc", AvroDiagnosticCode.SchemaExpected, "false")]
-    [InlineData("""{"type":"array","items":[[false]]}""", ".avsc", AvroDiagnosticCode.InvalidItems, "false")]
-    [InlineData("""{"type":"map","values":[[false]]}""", ".avsc", AvroDiagnosticCode.InvalidValues, "false")]
-    [InlineData("""{"type":"record","name":"R","fields":[{"name":"f","type":[["bad-name"]]}]}""", ".avsc", AvroDiagnosticCode.InvalidFieldType, "\"bad-name\"")]
-    [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[{"name":"p","type":[["bad-name"]]}],"response":"null"}}}""", ".avpr", AvroDiagnosticCode.InvalidParameterType, "\"bad-name\"")]
-    [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":[["bad-name"]]}}}""", ".avpr", AvroDiagnosticCode.InvalidResponse, "\"bad-name\"")]
-    [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":"null","errors":[["bad-name"]]}}}""", ".avpr", AvroDiagnosticCode.InvalidErrors, "\"bad-name\"")]
+    [InlineData("""{"type":"array","items":[[false]]}""", ".avsc", AvroDiagnosticCode.SchemaExpected, "false")]
+    [InlineData("""{"type":"map","values":[[false]]}""", ".avsc", AvroDiagnosticCode.SchemaExpected, "false")]
+    [InlineData("""{"type":"record","name":"R","fields":[{"name":"f","type":[["bad-name"]]}]}""", ".avsc", AvroDiagnosticCode.InvalidSchemaReference, "\"bad-name\"")]
+    [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[{"name":"p","type":[["bad-name"]]}],"response":"null"}}}""", ".avpr", AvroDiagnosticCode.InvalidSchemaReference, "\"bad-name\"")]
+    [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":[["bad-name"]]}}}""", ".avpr", AvroDiagnosticCode.InvalidSchemaReference, "\"bad-name\"")]
+    [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":"null","errors":[["bad-name"]]}}}""", ".avpr", AvroDiagnosticCode.InvalidSchemaReference, "\"bad-name\"")]
     [InlineData("""{"type":"record","name":"R","fields":[{"name":"f","type":["null",{"type":false}]}]}""", ".avsc", AvroDiagnosticCode.InvalidSchemaType, "false")]
     [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[],"response":[{"type":"record","name":false,"fields":[]}]}}}""", ".avpr", AvroDiagnosticCode.InvalidSchemaName, "false")]
     [InlineData("""{"protocol":"P","types":[],"messages":{"type":false}}""", ".avpr", AvroDiagnosticCode.InvalidMessages, "false")]
     [InlineData("""{"protocol":"P","types":[],"messages":{"name":false}}""", ".avpr", AvroDiagnosticCode.InvalidMessages, "false")]
-    public void Union_elements_and_nested_definitions_use_their_owning_property(
+    public void Union_elements_and_nested_definitions_report_the_invalid_syntax(
         string json, string extension, AvroDiagnosticCode code, string value)
     {
         var diagnostic = Assert.Single(Parse(json, extension).GetDiagnostics());
@@ -114,12 +116,16 @@ public sealed class PropertyDiagnosticTests
         Assert.Equal(value, diagnostic.SourceSpan.ToString());
     }
 
-    [Fact]
-    public void Missing_required_property_remains_separate()
+    [Theory]
+    [InlineData("""{"type":"record","fields":[]}""", ".avsc", "name", """{"type":"record","fields":[]}""")]
+    [InlineData("""{"type":"record","name":"R","fields":[{"name":"f"}]}""", ".avsc", "type", """{"name":"f"}""")]
+    [InlineData("""{"protocol":"P","types":[],"messages":{"m":{"request":[{"name":"p"}],"response":"null"}}}""", ".avpr", "type", """{"name":"p"}""")]
+    public void Missing_required_property_remains_separate(string json, string extension, string property, string owner)
     {
-        var diagnostic = Assert.Single(Parse("""{"type":"record","fields":[]}""", ".avsc").GetDiagnostics());
+        var diagnostic = Assert.Single(Parse(json, extension).GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.MissingSchemaProperty, diagnostic.Code);
-        Assert.Equal("Required property 'name' is missing", diagnostic.GetMessage());
+        Assert.Equal($"Required property '{property}' is missing", diagnostic.GetMessage());
+        Assert.Equal(owner, diagnostic.SourceSpan.ToString());
     }
 
     private static AvroFile Parse(string json, string extension) => AvxxParser.Parse(

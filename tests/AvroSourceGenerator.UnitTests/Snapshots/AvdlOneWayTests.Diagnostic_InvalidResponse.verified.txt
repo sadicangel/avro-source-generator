@@ -3,9 +3,9 @@
   Message: One-way message 'heartbeat' must have a null response and no declared errors,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG4014,
-    Title: Invalid IDL One Way Message,
-    Description: An Avro IDL one-way message has a non-null response or declares errors.,
+    Id: AVROSG5008,
+    Title: Invalid One Way Message,
+    Description: A one-way protocol message has a non-null response or declares errors. It must return null and declare no errors.,
     MessageFormat: One-way message '{0}' must have a null response and no declared errors,
     Category: Compiler,
     DefaultSeverity: Error,

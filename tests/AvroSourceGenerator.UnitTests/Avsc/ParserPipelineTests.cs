@@ -1,7 +1,7 @@
-﻿using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Compiler.Configuration;
+﻿using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Syntax;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.UnitTests.Avsc;
@@ -30,9 +30,9 @@ public sealed class ParserPipelineTests
     public void Avdl_exposes_syntax_and_file_parsing_with_provenance()
     {
         var source = new SourceText("test.avdl", "namespace Example; schema R; record R { string value; }");
-        var syntax = Parser.Parse(source, TestContext.Current.CancellationToken);
+        var syntax = Parser.ParseIdl(source, TestContext.Current.CancellationToken);
         Assert.Empty(syntax.Diagnostics);
-        Assert.Single(syntax.Document.Declarations);
+        Assert.Single(syntax.Root.Declarations);
         var file = AvxxParser.Parse(source, Options, TestContext.Current.CancellationToken);
         Assert.True(file.IsValid);
         var record = Assert.IsType<RecordSchema>(Assert.Single(file.Declarations));

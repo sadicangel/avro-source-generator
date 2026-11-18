@@ -107,7 +107,7 @@ public sealed class CliTests : IDisposable
             new ProjectConfig { AvroLibrary = "None", LanguageVersion = LanguageVersion.CSharp10 });
         var result = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
         Assert.Equal(repeated.Length, result.Diagnostics.Length);
-        Assert.All(result.Diagnostics, diagnostic => Assert.Equal("AVROSG4007", diagnostic.Id));
+        Assert.All(result.Diagnostics, diagnostic => Assert.Equal("AVROSG3005", diagnostic.Id));
         var expected = string.Concat(result.Diagnostics.Select(diagnostic =>
         {
             var span = diagnostic.Location.GetLineSpan();
@@ -136,7 +136,7 @@ public sealed class CliTests : IDisposable
             new ProjectConfig { AvroLibrary = "None", LanguageVersion = LanguageVersion.CSharp10 });
         var result = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("AVROSG2002", diagnostic.Id);
+        Assert.Equal("AVROSG3002", diagnostic.Id);
         var (code, output, error) = await Run("compile", inputPath, "-o", Output);
         var span = diagnostic.Location.GetLineSpan();
         Assert.Equal(1, code);
@@ -333,7 +333,7 @@ public sealed class CliTests : IDisposable
         var parent = Write("parent.avdl", "protocol Parent { import schema \"child.avsc\"; record Envelope { Child Value; } }");
         var (code, _, error) = await Run("compile", parent, "-o", Output);
         Assert.Equal(1, code);
-        Assert.Contains("AVROSG5002", error);
+        Assert.Contains("AVROSG6002", error);
         Assert.False(File.Exists(Path.Combine(Output, "Child.Avro.g.cs")));
     }
 

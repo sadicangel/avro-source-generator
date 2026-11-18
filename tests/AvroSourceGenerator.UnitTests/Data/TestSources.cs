@@ -109,7 +109,7 @@ public static class TestSources
             /** Identifier documentation */
             @logicalType("uuid") string id;
             @aliases(["fullName"]) string name = "Ada";
-            Status status = OPEN;
+            Status status = "OPEN";
             Md5Hash checksum;
             Address address;
             array<string> tags = ["admin", "active"];
@@ -153,7 +153,7 @@ public static class TestSources
                 @logicalType("uuid") string requestId;
                 array<string> terms;
                 map<string> filters;
-                Priority priority = LOW;
+                Priority priority = "LOW";
                 string? pageToken = null;
                 decimal(12, 4) minimumScore;
                 TraceId trace;

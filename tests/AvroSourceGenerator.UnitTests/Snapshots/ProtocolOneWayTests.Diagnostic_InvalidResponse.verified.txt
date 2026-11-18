@@ -1,9 +1,9 @@
 ﻿{
-  Location: Sqaijwd2T_2ScM8fgAFX1H3mCXA.avpr: (4,21)-(8,9),
+  Location: Sqaijwd2T_2ScM8fgAFX1H3mCXA.avpr: (7,23)-(7,27),
   Message: One-way message 'heartbeat' must have a null response and no declared errors,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2031,
+    Id: AVROSG5008,
     Title: Invalid One Way Message,
     Description: A one-way protocol message has a non-null response or declares errors. It must return null and declare no errors.,
     MessageFormat: One-way message '{0}' must have a null response and no declared errors,

@@ -3,7 +3,7 @@
   Message: Schema references could not be resolved: 'Demo.Store.Customer', 'Demo.Store.OrderLine',
   Severity: Error,
   Descriptor: {
-    Id: AVROSG0005,
+    Id: AVROSG5002,
     Title: Missing References,
     Description: A named schema reference is not visible to the source file. Supply or import the referenced schema, or correct its fully qualified name.,
     MessageFormat: Schema references could not be resolved: {0},

@@ -15,6 +15,8 @@ internal static class AvroJsonKeys
     public const string Doc = "doc";
     public const string Default = "default";
     public const string LogicalType = "logicalType";
+    public const string Precision = "precision";
+    public const string Scale = "scale";
     public const string Protocol = "protocol";
     public const string Types = "types";
     public const string Messages = "messages";

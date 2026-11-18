@@ -27,29 +27,43 @@ If the command-line build succeeds but the editor still shows stale errors, relo
 | `AVROSG0001` | Unsupported input extension | Use `.avsc`, `.avpr`, or `.avdl`. |
 | `AVROSG0002` | Empty input | Add a complete schema, protocol, or IDL definition. |
 | `AVROSG0003` | Duplicate source path | Remove overlapping `AdditionalFiles` entries or equivalent paths. |
-| `AVROSG0004` | Duplicate schema name | Keep one declaration per fully qualified Avro name, or review [duplicate resolution]({{ '/configuration/#duplicate-resolution' | relative_url }}). |
-| `AVROSG0005` | Missing named references | Check names, namespaces, imports, and [reference resolution]({{ '/configuration/#reference-resolution' | relative_url }}). |
-| `AVROSG1000` | Invalid JSON | Correct the JSON syntax at the reported location. |
-| `AVROSG2000` | Schema expected | Use a schema in `.avsc`; protocols belong in `.avpr`. |
-| `AVROSG2001` | Protocol expected | Supply a JSON protocol with a `protocol` property in `.avpr`. |
-| `AVROSG2032` | Repeated record or error field | Remove or rename the repeated field within that declaration. |
-| `AVROSG2033` | Repeated enum symbol | Keep each symbol only once within that enum. |
-| `AVROSG2034` | Repeated Avro union branch | Keep at most one branch per primitive, array, or map type, and one per named-type fullname. Logical annotations and C# mappings do not distinguish Avro types. |
-| `AVROSG2035` | Immediately nested union | Move the inner branches into the enclosing union, resolving any duplicates. |
-| `AVROSG2036` | Invalid JSON field order | Supply a non-empty string or omit the property. |
-| `AVROSG4000` | Invalid IDL document form | Supply one main `schema` directive with schema declarations, or exactly one `protocol` block. |
-| `AVROSG4001` | Protocol in an IDL schema document | Move the protocol to its own document, or use schema declarations after the `schema` directive. |
-| `AVROSG4007` | Repeated IDL directive | Keep only one `schema` directive and at most one top-level `namespace` directive; identical repetitions are also errors. Each repeated directive is reported. |
-| `AVROSG5000` | Import cycle | Remove the circular dependency between imports. |
-| `AVROSG5001` | Import extension mismatch | Match `schema`, `protocol`, or `idl` to the target file's extension. |
-| `AVROSG5002` | Missing import | Include the target as an `AdditionalFiles` item and correct its path relative to the importing file. |
-| `AVROSG5003` | Wrong imported definition kind | Ensure the target contains the kind declared by the import. |
-| `AVROSG5004` | Unused import | Remove the import or reference a type it supplies. |
-| `AVROSG6000` | No supported runtime detected | Install a runtime or select `AvroSourceGeneratorAvroLibrary=None`. |
-| `AVROSG6001` | Multiple supported runtimes detected | Select the intended runtime explicitly. |
-| `AVROSG6002` | Chr support removed in 0.8.0 | Migrate to `Apache`, explicitly select `None`, or remain on 0.7.x. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}). |
-
-Other schema and IDL diagnostics identify the invalid property, declaration, or token. Use the location and message in the build output to correct that input.
+| `AVROSG1001` | Trailing JSON content | Supply one root JSON value per file. |
+| `AVROSG1002` | JSON value expected | Supply a JSON object, array, number, string, boolean, or null. Quote string values. |
+| `AVROSG1003` | Invalid character | Remove the highlighted character. Between tokens, use spaces, tabs, carriage returns, or line feeds. |
+| `AVROSG1004` | Invalid escape sequence | Correct the escape in the quoted string. |
+| `AVROSG1005` | Invalid number | Correct the number's spelling. For example, write `1` instead of `01` in JSON. |
+| `AVROSG1006` | Unterminated string | Close the string with a quotation mark on the same line. |
+| `AVROSG1007` | Unexpected token | Check the expected token in the diagnostic. Remove a trailing comma when it precedes a closing delimiter. |
+| `AVROSG1008` | JSON comment not allowed | Remove the highlighted comment from the JSON schema or protocol. |
+| `AVROSG1009` | Unpaired surrogate in JSON property name | Replace the unpaired UTF-16 surrogate with valid Unicode text. |
+| `AVROSG1010` | JSON nesting limit exceeded | Reduce the number of nested JSON arrays and objects. |
+| `AVROSG2000` | Unterminated IDL documentation comment | Close the comment with `*/`. |
+| `AVROSG2001` | Unterminated IDL block comment | Close the comment with `*/`. |
+| `AVROSG2002` | Unterminated IDL verbatim identifier | Close the identifier with a backtick. |
+| `AVROSG2003` | Misplaced IDL annotation | Move the annotation to a declaration or type that accepts it. |
+| `AVROSG2004` | Misplaced IDL documentation | Place the comment before a declaration that accepts documentation. |
+| `AVROSG3000` | Schema expected | Supply a schema at the document root or in each union branch. For example, `["null", false]` reports this error at `false`. |
+| `AVROSG3001` | Protocol expected | Supply a JSON protocol with a `protocol` property in `.avpr`. |
+| `AVROSG3003` | Invalid IDL document form | Supply one main `schema` directive with schema declarations, or exactly one `protocol` block. |
+| `AVROSG3004` | Protocol in an IDL schema document | Move the protocol to its own document, or use schema declarations after the `schema` directive. |
+| `AVROSG3005` | Repeated IDL directive | Keep only one `schema` directive and at most one top-level `namespace` directive; identical repetitions are also errors. Each repeated directive is reported. |
+| `AVROSG4000` | Required property missing | Add the named property to the highlighted object. For example, a JSON schema object requires `type`. |
+| `AVROSG4016` | Invalid field order | Supply a non-blank string, use null, or omit the value. |
+| `AVROSG5000` | Malformed type reference in JSON or IDL | Use a valid Avro name such as `com.example.Order` wherever a type is referenced, including inside a union. |
+| `AVROSG5001` | Duplicate schema name | Keep one declaration per fully qualified Avro name, or review [duplicate resolution]({{ '/configuration/#duplicate-resolution' | relative_url }}). |
+| `AVROSG5002` | Missing named references | Check names, namespaces, imports, and [reference resolution]({{ '/configuration/#reference-resolution' | relative_url }}). |
+| `AVROSG5004` | Repeated record or error field | Remove or rename the repeated field within that declaration. |
+| `AVROSG5005` | Repeated enum symbol | Keep each symbol only once within that enum. |
+| `AVROSG5006` | Repeated Avro union branch | Keep at most one branch per primitive, array, or map type, and one per named-type fullname. Logical annotations and C# mappings do not distinguish Avro types. |
+| `AVROSG5007` | Immediately nested union | Move the inner branches into the enclosing union, resolving any duplicates. |
+| `AVROSG6000` | Import cycle | Remove the circular dependency between imports. |
+| `AVROSG6001` | Import extension mismatch | Match `schema`, `protocol`, or `idl` to the target file's extension. |
+| `AVROSG6002` | Missing import | Include the target as an `AdditionalFiles` item and correct its path relative to the importing file. |
+| `AVROSG6003` | Wrong imported definition kind | Ensure the target contains the kind declared by the import. |
+| `AVROSG6004` | Unused import | Remove the import or reference a type it supplies. |
+| `AVROSG7000` | No supported runtime detected | Install a runtime or select `AvroSourceGeneratorAvroLibrary=None`. |
+| `AVROSG7001` | Multiple supported runtimes detected | Select the intended runtime explicitly. |
+| `AVROSG7002` | Chr support removed in 0.8.0 | Migrate to `Apache`, explicitly select `None`, or remain on 0.7.x. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}). |
 
 ## An imported file exists but cannot be found
 

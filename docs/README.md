@@ -38,7 +38,7 @@ Before delivery, inspect wide and narrow layouts, search for a property or diagn
 - Keep standard setup on .NET SDK 10.0.100 or later. Explain higher requirements for optional C# union types in that version's generated-model and configuration pages.
 - Each version's `_includes/examples/` feeds both its rendered guide and the consumer verifier. Update snippets and their package references together.
 - Use `relative_url` for links and assets within a version. Use `site.repository_baseurl` for deliberate cross-version links, and absolute GitHub/NuGet URLs for external links. `site.docs_version.source_ref` pins source links to the selected release.
-- Keep version-specific defaults and generated model behavior in the corresponding guide. The version label and selector supply context; avoid repeating version disclaimers throughout the content.
+- Keep version-specific defaults and generated model behavior in the corresponding guide. Describe the current behavior on `main` in the rolling preview guide. The version label and selector supply the release context.
 - `docs/releases/` is reserved for release artifacts and excluded from the site. Build output and local dependency caches are ignored.
 
 ## GitHub Pages rollout

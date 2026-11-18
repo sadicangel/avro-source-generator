@@ -26,7 +26,7 @@ var user = new User
 
 ## Runtime targets
 
-The generator supports **Apache.Avro** and **library-neutral models**. The Apache target includes runtime integration members. The upcoming 0.8.0 removes Chr.Avro support. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}).
+The generator supports **Apache.Avro** and **library-neutral models**. The Apache target includes runtime integration members. See [migration guidance for Chr.Avro projects]({{ '/libraries/#migrating-from-chravro' | relative_url }}).
 
 ## Schema handling and build behavior
 

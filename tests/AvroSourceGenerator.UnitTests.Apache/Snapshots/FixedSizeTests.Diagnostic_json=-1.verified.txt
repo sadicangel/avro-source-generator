@@ -1,12 +1,12 @@
 ﻿{
   Location: mxpQvsr_q-oKYl7EbJlRVhyQmfk.avsc: (4,10)-(4,12),
-  Message: Property 'size' must be a positive 32-bit integer,
+  Message: Fixed size must be a positive 32-bit integer,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2029,
+    Id: AVROSG4021,
     Title: Invalid Fixed Size,
     Description: A fixed schema size must be a positive 32-bit integer.,
-    MessageFormat: Property 'size' must be a positive 32-bit integer,
+    MessageFormat: Fixed size must be a positive 32-bit integer,
     Category: Compiler,
     DefaultSeverity: Error,
     IsEnabledByDefault: true

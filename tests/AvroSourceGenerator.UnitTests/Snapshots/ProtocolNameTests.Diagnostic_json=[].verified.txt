@@ -3,7 +3,7 @@
   Message: Property 'protocol' must be a non-empty string containing a valid Avro name, optionally prefixed with its namespace,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2006,
+    Id: AVROSG4002,
     Title: Invalid Protocol Name,
     Description: Property 'protocol' must be a non-empty string containing a valid Avro name, optionally prefixed with its namespace.,
     MessageFormat: Property 'protocol' must be a non-empty string containing a valid Avro name, optionally prefixed with its namespace,

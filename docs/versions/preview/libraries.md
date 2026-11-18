@@ -16,7 +16,7 @@ Avro Source Generator creates models. A runtime library handles reading and writ
 
 By default, the generator detects Apache.Avro from the project's references. With Apache.Avro installed, no extra generator setting is needed.
 
-If none is detected, models still generate, but you receive `AVROSG6000`. If Chr.Avro is detected, automatic selection reports error `AVROSG6002` and falls back to standalone models, including when Apache.Avro is also referenced. Select `Apache` or `None` explicitly to continue.
+If none is detected, models still generate, but you receive a warning (`AVROSG7000`). If Chr.Avro is detected, automatic selection reports an error (`AVROSG7002`) and falls back to standalone models, including when Apache.Avro is also referenced. Select `Apache` or `None` explicitly to continue.
 
 ## Apache.Avro
 
@@ -50,11 +50,9 @@ This suppresses the no-library warning and generates library-neutral models. It 
 
 ## Migrating from Chr.Avro
 
-**Unreleased breaking change for 0.8.0:** this removal is not included in the preview package currently listed by this guide.
-
 [Chr.Avro was archived on July 2, 2026](https://github.com/ch-robinson/dotnet-avro), and its maintainers recommend switching to Apache.Avro. Avro Source Generator 0.8.0 removes the Chr target, generated serializer/deserializer builder cases, and the Chr Kafka sample.
 
-Projects configured with `AvroSourceGeneratorAvroLibrary=Chr` receive error `AVROSG6002`. Standalone fallback models still generate, but the error prevents a successful build. The CLI rejects `--library Chr` with migration advice before writing files.
+Projects configured with `AvroSourceGeneratorAvroLibrary=Chr` receive error `AVROSG7002` and generate standalone fallback models. The CLI rejects `--library Chr` with migration advice before writing files.
 
 To migrate to Apache.Avro:
 

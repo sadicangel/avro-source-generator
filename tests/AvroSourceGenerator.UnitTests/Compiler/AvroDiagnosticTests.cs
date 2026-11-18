@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using System.Globalization;
-using System.Text.Json;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Diagnostics;
@@ -92,31 +91,6 @@ public sealed class AvroDiagnosticTests
         Assert.NotEqual(first, new AvroDiagnostic(first.Code, first.SourceSpan, "c", "b"));
         Assert.True(SourceSpan.None.IsNone);
         Assert.Equal("", SourceSpan.None.ToString());
-    }
-
-    [Theory]
-    [InlineData("é")]
-    [InlineData("😀")]
-    [InlineData("世界😀é")]
-    public void Json_byte_positions_map_to_utf16_offsets(string value)
-    {
-        var source = new SourceText("test.avsc", "{\n\"value\":\"" + value + "\",\"bad\":!\n}");
-        var exception = Assert.ThrowsAny<JsonException>(() => JsonDocument.Parse(source.Text));
-        var span = SourceSpan.FromException(source, exception);
-        Assert.Equal(source.Text.IndexOf('!'), span.Offset);
-        Assert.Equal("!", span.ToString());
-    }
-
-    [Theory]
-    [InlineData("Syntax error", null, null, "Syntax error")]
-    [InlineData("Syntax error | LineNumber: 1 | BytePositionInLine: 2.", 1L, 2L, "Syntax error")]
-    [InlineData("Syntax error. Path: $.type | LineNumber: 1 | BytePositionInLine: 2.", 1L, 2L, "Syntax error. Path: $.type")]
-    [InlineData("Unexpected 'LineNumber: 1 | BytePositionInLine: 2.'", 1L, 2L, "Unexpected 'LineNumber: 1 | BytePositionInLine: 2.'")]
-    public void Json_diagnostics_remove_only_redundant_location_metadata(string message, long? line, long? position, string expected)
-    {
-        var exception = new JsonException(message, null, line, position);
-        var diagnostic = AvroDiagnostic.InvalidJson(SourceSpan.None, exception);
-        Assert.Equal($"Invalid JSON: {expected}", diagnostic.GetMessage());
     }
 
     [Fact]

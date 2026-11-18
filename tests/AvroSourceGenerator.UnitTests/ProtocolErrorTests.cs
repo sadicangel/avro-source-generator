@@ -84,6 +84,6 @@ public sealed class ProtocolErrorTests
             : SchemaCompilerTestHelpers.ParseJson(text, extension: ".avpr");
 
         Assert.False(file.IsValid);
-        Assert.Equal(idl ? AvroDiagnosticCode.InvalidIdlOneWayMessage : AvroDiagnosticCode.InvalidOneWayMessage, Assert.Single(file.GetDiagnostics()).Code);
+        Assert.Equal(AvroDiagnosticCode.InvalidOneWayMessage, Assert.Single(file.GetDiagnostics()).Code);
     }
 }

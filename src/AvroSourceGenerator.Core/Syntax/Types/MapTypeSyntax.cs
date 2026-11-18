@@ -1,0 +1,19 @@
+﻿namespace AvroSourceGenerator.Syntax.Types;
+
+internal sealed record class MapTypeSyntax(
+    SyntaxToken MapKeyword,
+    SyntaxToken LessThanToken,
+    ITypeSyntax ValueType,
+    SyntaxToken GreaterThanToken)
+    : ITypeSyntax
+{
+    public SyntaxKind SyntaxKind => SyntaxKind.MapType;
+
+    public IEnumerable<ISyntaxNode> Children()
+    {
+        yield return MapKeyword;
+        yield return LessThanToken;
+        yield return ValueType;
+        yield return GreaterThanToken;
+    }
+}

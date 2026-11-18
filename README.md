@@ -13,7 +13,7 @@
 
 **Avro Source Generator** generates strongly typed C# models from [Avro](https://avro.apache.org/) schemas (`.avsc`), protocols (`.avpr`), and IDL files (`.avdl`) during your normal build.
 
-- Integrate with **Apache.Avro**, **Chr.Avro**, or generate standalone models.
+- Integrate with **Apache.Avro** or generate standalone models.
 - Use partial records or classes, nullable properties, and modern C# features.
 - Share named types across inputs and resolve IDL imports.
 - Keep models up to date without a separate code-generation command.
@@ -24,7 +24,7 @@
 
 Use **.NET SDK 10.0.100 or later**. Visual Studio users should use **Visual Studio 2026 18.0 or later** with .NET 10 support.
 
-The upcoming 0.8.0 preview removes Chr.Avro support. See the [migration guide](https://sadicangel.github.io/avro-source-generator/preview/libraries/#migrating-from-chravro); this removal is not yet included in published packages.
+Stable 0.7.x supports Chr.Avro. For upgrades to 0.8.0, follow the [Chr.Avro migration guide](https://sadicangel.github.io/avro-source-generator/preview/libraries/#migrating-from-chravro).
 
 The quick start below uses stable **AvroSourceGenerator 0.7.0** and targets `net10.0`. [0.8.0 preview features](https://sadicangel.github.io/avro-source-generator/preview/generated-models/#native-c-unions), including native C# unions, have separate requirements.
 
@@ -111,7 +111,7 @@ The Apache target also generates the `ISpecificRecord` implementation. Read abou
 
 ## Command-line tool
 
-An on-demand .NET tool, `AvroSourceGenerator.Cli` (`avro-sg compile`), is in development. See the [preview CLI guide](https://sadicangel.github.io/avro-source-generator/preview/cli/); the CLI is not yet available in the documented package releases.
+The `AvroSourceGenerator.Cli` .NET tool generates C# models on demand with `avro-sg compile`. See the [preview CLI guide](https://sadicangel.github.io/avro-source-generator/preview/cli/).
 
 ## Samples
 

@@ -68,7 +68,7 @@ public sealed class RoslynDiagnosticTests
             }
         }
         Assert.Equal("Invalid IDL Document", AvroDiagnosticCode.InvalidIdlDocument.ToDiagnosticDescriptor().Title.ToString());
-        Assert.Equal("Invalid JSON", AvroDiagnosticCode.InvalidJson.ToDiagnosticDescriptor().Title.ToString());
+        Assert.Equal("JSON Comment Not Allowed", AvroDiagnosticCode.JsonCommentNotAllowed.ToDiagnosticDescriptor().Title.ToString());
     }
 
     [Fact]

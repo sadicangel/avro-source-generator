@@ -26,7 +26,7 @@ foreach (var source in inputs)
         throw new InvalidOperationException($"Could not compile {source.Path.OriginalPath}.");
 }
 var strict = AvroFile.Parse(inputs[0], options with { RequireTopLevelSchema = true }, CancellationToken.None);
-if (strict.IsValid || strict.GetDiagnostics().Count() != 1 || (int)strict.GetDiagnostics().Single().Code != 2002)
+if (strict.IsValid || strict.GetDiagnostics().Count() != 1 || (int)strict.GetDiagnostics().Single().Code != 3002)
     throw new InvalidOperationException("Named-root validation was not applied.");
 
 var assembly = typeof(AvroFile).Assembly;
@@ -34,8 +34,9 @@ var expectedVersion = args.Single();
 if (assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion != expectedVersion)
     throw new InvalidOperationException("Core assembly version differs from its package.");
 if (assembly.GetExportedTypes().Any(type =>
-    type.Namespace?.StartsWith("AvroSourceGenerator.Avdl", StringComparison.Ordinal) == true ||
-    type.Namespace == "AvroSourceGenerator.Avjs" || type.Name.EndsWith("Parser", StringComparison.Ordinal)))
+    type.Namespace == "AvroSourceGenerator.Syntax" ||
+    type.Namespace?.StartsWith("AvroSourceGenerator.Syntax.", StringComparison.Ordinal) == true ||
+    type.Name.EndsWith("Parser", StringComparison.Ordinal)))
     throw new InvalidOperationException("Parser machinery was exported.");
 Console.WriteLine($"Core {expectedVersion}: parsing and compilation passed.");
 

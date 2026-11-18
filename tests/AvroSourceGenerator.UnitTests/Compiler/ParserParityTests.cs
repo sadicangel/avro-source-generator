@@ -1,11 +1,11 @@
-﻿using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Avdl.Declarations;
-using AvroSourceGenerator.Compiler;
-using AvroSourceGenerator.Compiler.Configuration;
+﻿using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Compiler.Parsing;
+using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Syntax.Declarations;
+using AvroSourceGenerator.Syntax;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.UnitTests.Compiler;
@@ -74,22 +74,22 @@ public sealed class ParserParityTests
         const string Fixed = """{"type":"fixed","name":"F","size":16,"logicalType":1}""";
         var inputs = new[]
         {
-            (new SourceText("test.avdl", "protocol P { @logicalType(1) fixed F(16); }"), AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation),
-            (new SourceText("test.avdl", "schema F; @logicalType(1) fixed F(16);"), AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation),
-            (new SourceText("test.avpr", $$$$"""{"protocol":"P","types":[{{{{Fixed}}}}],"messages":{}}"""), AvroDiagnosticCode.InvalidLogicalType),
-            (new SourceText("test.avsc", Fixed), AvroDiagnosticCode.InvalidLogicalType)
+            new SourceText("test.avdl", "protocol P { @logicalType(1) fixed F(16); }"),
+            new SourceText("test.avdl", "schema F; @logicalType(1) fixed F(16);"),
+            new SourceText("test.avpr", $$$$"""{"protocol":"P","types":[{{{{Fixed}}}}],"messages":{}}"""),
+            new SourceText("test.avsc", Fixed)
         };
-        foreach (var (source, code) in inputs)
+        foreach (var source in inputs)
         {
             var file = Parse(source, target);
             AssertInvalidState(file);
             var diagnostic = Assert.Single(file.GetDiagnostics());
-            Assert.Equal(code, diagnostic.Code);
+            Assert.Equal(AvroDiagnosticCode.InvalidLogicalType, diagnostic.Code);
             var offset = source.Text.IndexOf("1", StringComparison.Ordinal);
             if (source.Path.OriginalPath.EndsWith(".avsc", StringComparison.Ordinal) || source.Path.OriginalPath.EndsWith(".avpr", StringComparison.Ordinal))
                 offset = source.Text.LastIndexOf("1", StringComparison.Ordinal);
             Assert.Equal(source.GetSourceSpan(offset, 1), diagnostic.SourceSpan);
-            Assert.Equal($"AVROSG{(int)code:D4}", diagnostic.ToDiagnostic().Id);
+            Assert.Equal("AVROSG4008", diagnostic.ToDiagnostic().Id);
             Assert.Same(source, diagnostic.SourceSpan.SourceText);
             Assert.Equal(file.GetDiagnostics(), SchemaCompilerTestHelpers.Bind(file).GetDiagnostics());
         }
@@ -191,7 +191,7 @@ public sealed class ParserParityTests
                     var file = Parse(source, target);
                     AssertInvalidState(file);
                     var diagnostic = Assert.Single(file.GetDiagnostics());
-                    Assert.Equal(source.Path.OriginalPath.EndsWith(".avdl", StringComparison.Ordinal) ? AvroDiagnosticCode.InvalidIdlNamespace : AvroDiagnosticCode.InvalidNamespace, diagnostic.Code);
+                    Assert.Equal(AvroDiagnosticCode.InvalidNamespace, diagnostic.Code);
                     var value = $"\"{ns}\"";
                     Assert.Equal(source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length), diagnostic.SourceSpan);
                     Assert.Same(source, diagnostic.SourceSpan.SourceText);
@@ -209,16 +209,20 @@ public sealed class ParserParityTests
         foreach (var ns in new[] { "\"\"", "\"bad-name\"", "null" })
         {
             var source = new SourceText("test.avdl", $"@namespace({ns}) protocol P {{ @namespace({ns}) record R {{}} }}");
-            var syntax = Parser.Parse(source, TestContext.Current.CancellationToken);
+            var syntax = Parser.ParseIdl(source, TestContext.Current.CancellationToken);
             Assert.Empty(syntax.Diagnostics);
-            var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(syntax.Document.Declarations));
+            var protocol = Assert.IsType<ProtocolDeclarationSyntax>(Assert.Single(syntax.Root.Declarations));
             var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(protocol.Types));
             // The syntax parser accepts simple declaration names. Exercise qualified-name
             // precedence directly at the shared semantic name conversion boundary.
-            protocol = protocol with { Name = new SimpleNameSyntax(protocol.Name.Identifier with { Value = "qualified.P" }) };
-            record = record with { Name = new SimpleNameSyntax(record.Name.Identifier with { Value = "qualified.R" }) };
-            Assert.Equal(new SchemaName("P", "qualified"), protocol.GetSchemaName("enclosing").GetValue());
-            Assert.Equal(new SchemaName("R", "qualified"), record.GetSchemaName("enclosing").GetValue());
+            protocol = protocol with { Name = new SimpleNameSyntax(protocol.Name.Identifier with { ValueText = "qualified.P" }) };
+            record = record with { Name = new SimpleNameSyntax(record.Name.Identifier with { ValueText = "qualified.R" }) };
+            protocol = protocol with { Types = [record] };
+            var tree = syntax with { Root = syntax.Root with { Declarations = [protocol] } };
+            var (idl, _) = new AvdlParser(tree, Options(target), TestContext.Current.CancellationToken).ParseFile();
+            AssertValid(idl);
+            Assert.Equal(new SchemaName("P", "qualified"), idl.RootSchema.SchemaName);
+            Assert.Equal(new SchemaName("R", "qualified"), idl.Declarations[0].SchemaName);
             var json = Parse(new SourceText("test.avpr", $$$$"""{"protocol":"qualified.P","namespace":{{{{ns}}}},"types":[{"type":"record","name":"qualified.R","namespace":{{{{ns}}}},"fields":[]}],"messages":{}}"""), target);
             AssertValid(json);
             Assert.Equal(new SchemaName("P", "qualified"), json.RootSchema.SchemaName);
@@ -229,6 +233,9 @@ public sealed class ParserParityTests
         AssertValid(emptyNamespace);
         Assert.Equal(string.Empty, emptyNamespace.RootSchema.SchemaName.Namespace);
         Assert.Equal(string.Empty, Assert.IsType<ProtocolSchema>(emptyNamespace.RootSchema).Types[0].SchemaName.Namespace);
+        var jsonProtocol = Parse(new SourceText("test.avpr", """{"protocol":"P","namespace":"","types":[{"type":"record","name":"R","namespace":"","fields":[]}],"messages":{}}"""), target);
+        AssertValid(jsonProtocol);
+        Assert.Equal(SerializeBound(jsonProtocol), SerializeBound(emptyNamespace));
     }
 
     [Theory]
@@ -271,6 +278,75 @@ public sealed class ParserParityTests
             Assert.Equal(SerializeBound(jsonFile), SerializeBound(keywordFile));
             Assert.Equal(SerializeBound(jsonFile), SerializeBound(annotatedFile));
         }
+    }
+
+    [Theory]
+    [InlineData("\"\"")]
+    [InlineData("\"  \"")]
+    [InlineData("null")]
+    [InlineData("{\"nested\":[1,2]}")]
+    public void Alias_diagnostic_identifies_the_bad_entry_in_both_formats(string entry)
+    {
+        var json = "{\"type\":\"record\",\"name\":\"R\",\"aliases\":[\"Old\"," + entry + "],\"fields\":[]}";
+        var idl = "schema R; @aliases([\"Old\"," + entry + "]) record R {}";
+        foreach (var source in new[] { new SourceText("test.avsc", json), new SourceText("test.avdl", idl) })
+        {
+            var diagnostic = Assert.Single(Parse(source, GenerationTarget.Modern).GetDiagnostics());
+            Assert.Equal("AVROSG4006", diagnostic.ToDiagnostic().Id);
+            Assert.Equal(MessageTemplate.InvalidAliases, diagnostic.GetMessage());
+            Assert.Equal(source.GetSourceSpan(source.Text.IndexOf(entry, StringComparison.Ordinal), entry.Length), diagnostic.SourceSpan);
+        }
+    }
+
+    [Theory]
+    [InlineData("2147483648", "-2147483649")]
+    [InlineData("9223372036854775808", "-9223372036854775809")]
+    [InlineData("1e999", "-2e999")]
+    [InlineData("false", "null")]
+    [InlineData("1.0", "\"2\"")]
+    public void Invalid_decimal_metadata_reports_precision_then_scale_in_both_formats(string precision, string scale)
+    {
+        var metadata = "\"logicalType\":\"decimal\",\"scale\":" + scale + ",\"precision\":" + precision;
+        var annotations = "@logicalType(\"decimal\") @scale(" + scale + ") @precision(" + precision + ")";
+        var inputs = new[]
+        {
+            new SourceText("test.avsc", "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"f\",\"type\":{\"type\":\"bytes\"," + metadata + "}}]}"),
+            new SourceText("test.avdl", "schema R; record R { " + annotations + " bytes f; }"),
+            new SourceText("test.avdl", "schema R; record R { decimal(" + precision + "," + scale + ") f; }"),
+            new SourceText("test.avsc", "{\"type\":\"fixed\",\"name\":\"F\",\"size\":8," + metadata + "}"),
+            new SourceText("test.avdl", "schema F; " + annotations + " fixed F(8);")
+        };
+
+        foreach (var source in inputs)
+        {
+            var file = Parse(source, GenerationTarget.Apache);
+            AssertInvalidState(file);
+            var diagnostics = file.GetDiagnostics();
+            Assert.Equal(["AVROSG4009", "AVROSG4010"], diagnostics.Select(d => d.ToDiagnostic().Id));
+            Assert.Equal([MessageTemplate.InvalidDecimalPrecision, MessageTemplate.InvalidDecimalScale], diagnostics.Select(d => d.GetMessage()));
+            Assert.Equal(new[] { precision, scale }.Select(v => source.GetSourceSpan(source.Text.IndexOf(v, StringComparison.Ordinal), v.Length)),
+                diagnostics.Select(d => d.SourceSpan));
+        }
+    }
+
+    [Theory]
+    [InlineData("""{"type":"record","name":"R","namespace":null,"aliases":null,"fields":[{"type":"int","name":"f","order":null}]}""",
+        "schema R; @namespace(null) @aliases(null) record R { int @order(null) f; }")]
+    [InlineData("""{"type":"enum","name":"R","symbols":["A"],"default":" "}""",
+        """schema R; enum R { A } = " ";""")]
+    [InlineData("""{"type":"fixed","name":"R","size":8,"logicalType":"decimal"}""",
+        """schema R; @logicalType("decimal") fixed R(8);""")]
+    [InlineData("""{"type":"fixed","name":"R","size":8,"precision":"unrelated"}""",
+        """schema R; @precision("unrelated") fixed R(8);""")]
+    [InlineData("""{"type":"record","name":"R","fields":[{"name":"f","type":{"type":"bytes","logicalType":"decimal","precision":2147483647,"scale":-2147483648}}]}""",
+        """schema R; record R { @precision("ignored") @scale(null) decimal(2147483647,-2147483648) f; }""")]
+    public void Shared_metadata_rules_produce_equivalent_models(string json, string idl)
+    {
+        var jsonFile = Parse(new SourceText("test.avsc", json), GenerationTarget.Modern);
+        var idlFile = Parse(new SourceText("test.avdl", idl), GenerationTarget.Modern);
+        AssertValid(jsonFile);
+        AssertValid(idlFile);
+        Assert.Equal(SerializeBound(jsonFile), SerializeBound(idlFile));
     }
 
     private static AvroParseOptions Options(GenerationTarget target) => new AvroParseOptions(target, LanguageFeatures.NullableReferenceTypes);

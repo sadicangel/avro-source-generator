@@ -50,6 +50,9 @@ internal closed class AvxxParser(AvroParseOptions options)
         return file;
     }
 
+    protected static bool AllowsOneWay(AvroSchema response, AvroSchema? errors) =>
+        response.SchemaType is SchemaType.Null && errors is (null or UnionSchema { Schemas: [{ SchemaType: SchemaType.String }] });
+
     protected void Declare(TopLevelSchema schema, SourceSpan sourceSpan)
     {
         DeclarationSpans.Add(sourceSpan);

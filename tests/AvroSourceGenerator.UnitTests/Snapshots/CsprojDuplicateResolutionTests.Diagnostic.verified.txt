@@ -3,7 +3,7 @@
   Message: Schema 'RecordNamespace.Record' is declared more than once,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG0004,
+    Id: AVROSG5001,
     Title: Duplicate Schema,
     Description: Multiple declarations define the same fully qualified schema name. Rename or remove a declaration; only use AvroSourceGeneratorDuplicateResolution=Ignore when an arbitrary winner is acceptable.,
     MessageFormat: Schema '{0}' is declared more than once,

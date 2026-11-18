@@ -4,7 +4,7 @@
   Severity: Warning,
   WarningLevel: 1,
   Descriptor: {
-    Id: AVROSG5004,
+    Id: AVROSG6004,
     Title: Unused Import,
     Description: No schema reference requires this import. Remove it or reference a declaration from the imported file.,
     MessageFormat: Import '{0}' is unused,

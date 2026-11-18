@@ -109,8 +109,8 @@ public sealed class PrimitiveRootTests
     public void Parser_machinery_is_not_exported()
     {
         Assert.DoesNotContain(typeof(AvroFile).Assembly.GetExportedTypes(), type =>
-            type.Namespace is "AvroSourceGenerator.Avdl" or "AvroSourceGenerator.Avjs" ||
-            type.Namespace?.StartsWith("AvroSourceGenerator.Avdl.", StringComparison.Ordinal) == true ||
+            type.Namespace == "AvroSourceGenerator.Syntax" ||
+            type.Namespace?.StartsWith("AvroSourceGenerator.Syntax.", StringComparison.Ordinal) == true ||
             type.Name.EndsWith("Parser", StringComparison.Ordinal));
     }
 }

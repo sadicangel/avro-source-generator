@@ -3,7 +3,7 @@
   Message: Property 'namespace' must be a string containing a valid Avro namespace, or null,
   Severity: Error,
   Descriptor: {
-    Id: AVROSG2009,
+    Id: AVROSG4005,
     Title: Invalid Namespace,
     Description: A namespace must be null or a string containing valid dot-separated Avro names.,
     MessageFormat: Property 'namespace' must be a string containing a valid Avro namespace, or null,

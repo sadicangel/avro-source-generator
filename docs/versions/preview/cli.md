@@ -58,7 +58,7 @@ Root `--version` reports the package version from the tool assembly. Generated m
 
 Enum names are case-insensitive; unknown names and numeric enum values are rejected. `Auto` requires a consuming compilation, which the standalone CLI does not have.
 
-The next 0.8.0 preview removes Chr support. `--library Chr` fails before writing files and explains the supported alternatives. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}).
+`--library Chr` fails before writing files and explains the supported alternatives. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}).
 
 Language presets are `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, `CSharp12`, `CSharp13`, `CSharp14`, and `CSharp15`. Individual flags are `NullableReferenceTypes`, `Records`, `InitOnlyProperties`, `RequiredProperties`, `RawStringLiterals`, `UnsafeAccessors`, and `Unions`; `None`, `All`, and `Latest` are also supported. Requested features are capped by the C# version. For example:
 
@@ -96,5 +96,3 @@ Compiler diagnostics retain source-generator IDs, messages, severity, ordering, 
 | `1` | Compilation/filesystem errors or check differences |
 | `2` | Invalid invocation or input selection |
 | `130` | Cancellation |
-
-C# to Avro compilation through `avro-sg reverse` is planned future work. It is not an available command in this release.

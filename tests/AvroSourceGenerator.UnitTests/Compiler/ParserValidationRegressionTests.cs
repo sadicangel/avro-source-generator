@@ -14,8 +14,6 @@ public sealed class ParserValidationRegressionTests
     [Theory]
     [InlineData("1")]
     [InlineData("true")]
-    [InlineData("{}")]
-    [InlineData("[]")]
     public void Invalid_enum_defaults_report_the_value_span(string value)
     {
         var source = new SourceText("test.avdl", $"schema E; enum E {{ A }} = {value};");
@@ -24,7 +22,7 @@ public sealed class ParserValidationRegressionTests
 
         var diagnostic = Assert.Single(file.GetDiagnostics());
         var expectedSpan = source.GetSourceSpan(source.Text.IndexOf(value, StringComparison.Ordinal), value.Length);
-        Assert.Equal(AvroDiagnosticCode.InvalidIdlEnumDefault, diagnostic.Code);
+        Assert.Equal(AvroDiagnosticCode.InvalidEnumDefault, diagnostic.Code);
         Assert.Equal(expectedSpan, diagnostic.SourceSpan);
         Assert.Equal(
             "Enum default must be a string or null",
@@ -32,18 +30,27 @@ public sealed class ParserValidationRegressionTests
     }
 
     [Theory]
-    [InlineData("schema R; @namespace(1) record R {}", "1", AvroDiagnosticCode.InvalidIdlNamespace, "Annotation '@namespace' must have a string value")]
-    [InlineData("schema R; @namespace(null) record R {}", "null", AvroDiagnosticCode.InvalidIdlNamespace, "Annotation '@namespace' must have a string value")]
-    [InlineData("schema R; record R { @logicalType(null) string f; }", "null", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
-    [InlineData("schema R; @logicalType(null) fixed R(16);", "null", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
-    [InlineData("schema R; record R { string @order(null) f; }", "null", AvroDiagnosticCode.InvalidIdlOrder, "Annotation '@order' must have a string value")]
-    [InlineData("schema R; @aliases(1) record R {}", "1", AvroDiagnosticCode.InvalidIdlAliases, "Annotation '@aliases' must have an array of strings as its value")]
-    [InlineData("schema R; record R { @logicalType(1) string f; }", "1", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
-    [InlineData("schema R; @logicalType(1) fixed R(16);", "1", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
-    [InlineData("schema R; record R { string @order(1) f; }", "1", AvroDiagnosticCode.InvalidIdlOrder, "Annotation '@order' must have a string value")]
-    [InlineData("schema R; @namespace([]) record R {}", "[]", AvroDiagnosticCode.InvalidIdlNamespace, "Annotation '@namespace' must have a string value")]
-    [InlineData("schema R; record R { @logicalType({}) string f; }", "{}", AvroDiagnosticCode.InvalidIdlLogicalTypeAnnotation, "Annotation '@logicalType' must have a string value")]
-    [InlineData("schema R; record R { string @order(false) f; }", "false", AvroDiagnosticCode.InvalidIdlOrder, "Annotation '@order' must have a string value")]
+    [InlineData("{}")]
+    [InlineData("[]")]
+    public void Enum_defaults_reject_containers_as_syntax(string value)
+    {
+        var source = new SourceText("test.avdl", $"schema E; enum E {{ A }} = {value};");
+        var diagnostics = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).GetDiagnostics();
+        Assert.Contains(diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.UnexpectedToken
+            && diagnostic.SourceSpan.Offset == source.Text.IndexOf(value, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("schema R; @namespace(1) record R {}", "1", AvroDiagnosticCode.InvalidNamespace, "Property 'namespace' must be a string containing a valid Avro namespace, or null")]
+    [InlineData("schema R; record R { @logicalType(null) string f; }", "null", AvroDiagnosticCode.InvalidLogicalType, "Property 'logicalType' must be a non-empty string")]
+    [InlineData("schema R; @logicalType(null) fixed R(16);", "null", AvroDiagnosticCode.InvalidLogicalType, "Property 'logicalType' must be a non-empty string")]
+    [InlineData("schema R; @aliases(1) record R {}", "1", AvroDiagnosticCode.InvalidAliases, "Property 'aliases' must be an array of non-empty strings, or null")]
+    [InlineData("schema R; record R { @logicalType(1) string f; }", "1", AvroDiagnosticCode.InvalidLogicalType, "Property 'logicalType' must be a non-empty string")]
+    [InlineData("schema R; @logicalType(1) fixed R(16);", "1", AvroDiagnosticCode.InvalidLogicalType, "Property 'logicalType' must be a non-empty string")]
+    [InlineData("schema R; record R { string @order(1) f; }", "1", AvroDiagnosticCode.InvalidOrder, "Field property 'order' must be a non-empty string or null")]
+    [InlineData("schema R; @namespace([]) record R {}", "[]", AvroDiagnosticCode.InvalidNamespace, "Property 'namespace' must be a string containing a valid Avro namespace, or null")]
+    [InlineData("schema R; record R { @logicalType({}) string f; }", "{}", AvroDiagnosticCode.InvalidLogicalType, "Property 'logicalType' must be a non-empty string")]
+    [InlineData("schema R; record R { string @order(false) f; }", "false", AvroDiagnosticCode.InvalidOrder, "Field property 'order' must be a non-empty string or null")]
     public void Invalid_annotation_values_report_the_value_span(string text, string value, AvroDiagnosticCode code, string message)
     {
         var source = new SourceText("test.avdl", text);
@@ -67,7 +74,7 @@ public sealed class ParserValidationRegressionTests
         var source = new SourceText("test.avdl", text);
         var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).GetDiagnostics());
         Assert.Equal(AvroDiagnosticCode.InvalidSchemaReference, diagnostic.Code);
-        Assert.Equal("AVROSG2003", diagnostic.ToDiagnostic().Id);
+        Assert.Equal("AVROSG5000", diagnostic.ToDiagnostic().Id);
         Assert.Equal($"Invalid type reference '{name}'; expected a name such as 'Order' or 'com.example.Order'", diagnostic.GetMessage());
         Assert.Equal(source.GetSourceSpan(text.IndexOf(reference, StringComparison.Ordinal), reference.Length), diagnostic.SourceSpan);
     }

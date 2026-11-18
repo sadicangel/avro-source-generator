@@ -1,23 +1,23 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
-using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Avdl.Annotations;
-using AvroSourceGenerator.Avdl.Declarations;
-using AvroSourceGenerator.Avdl.Types;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Syntax.Annotations;
+using AvroSourceGenerator.Syntax.Declarations;
+using AvroSourceGenerator.Syntax.Types;
+using AvroSourceGenerator.Syntax;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler.Parsing;
 
-internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options, CancellationToken cancellationToken)
+internal sealed class AvdlParser(SyntaxTree<DocumentSyntax> syntaxTree, AvroParseOptions options, CancellationToken cancellationToken)
     : AvxxParser(options)
 {
     public static (AvroFile File, SourceSpan RootSpan) ParseFile(SourceText source, AvroParseOptions options, CancellationToken cancellationToken) =>
-        new AvdlParser(Parser.Parse(source, cancellationToken), options, cancellationToken).ParseFile();
+        new AvdlParser(Parser.ParseIdl(source, cancellationToken), options, cancellationToken).ParseFile();
 
     public (AvroFile File, SourceSpan RootSpan) ParseFile()
     {
@@ -28,22 +28,21 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
 
         // Multiplicity is validated while parsing, before accessing the singular directives.
         // Without a main schema, only a single protocol declaration is a complete document.
-        if (syntaxTree.Document.SchemaDirective is null && syntaxTree.Document.Declarations is not [ProtocolDeclarationSyntax])
-            return (AvroFile.Invalid(sourceText, [AvroDiagnostic.InvalidIdlDocument(syntaxTree.Document.GetSourceSpan())], Options), sourceText.GetSourceSpan());
+        var document = syntaxTree.Root;
+        if (document.SchemaDirective is null && document.Declarations is not [ProtocolDeclarationSyntax])
+            return (AvroFile.Invalid(sourceText, [AvroDiagnostic.InvalidIdlDocument(document.GetSourceSpan())], Options), sourceText.GetSourceSpan());
 
-        var rootSpan = syntaxTree.Document.SchemaDirective?.MainSchemaType is { } mainSchemaType
+        var rootSpan = document.SchemaDirective?.MainSchemaType is { } mainSchemaType
             ? mainSchemaType.GetSourceSpan()
-            : syntaxTree.Document.GetSourceSpan();
-        return (ParseCore(syntaxTree), rootSpan);
+            : document.GetSourceSpan();
+        return (ParseCore(document, sourceText), rootSpan);
     }
 
-    private AvroFile ParseCore(SyntaxTree syntaxTree)
+    private AvroFile ParseCore(DocumentSyntax document, SourceText source)
     {
-        var source = syntaxTree.SourceText;
-
-        var imports = syntaxTree.Document.ImportDirectives
+        var imports = document.ImportDirectives
             .Concat(
-                syntaxTree.Document.Declarations
+                document.Declarations
                     .OfType<ProtocolDeclarationSyntax>()
                     .SelectMany(static protocol => protocol.Imports))
             .WithCancellation(cancellationToken)
@@ -55,11 +54,11 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
                     SyntaxKind.SchemaKeyword => AvroImportKind.Schema,
                     _ => throw new InvalidOperationException("Unreachable: Unsupported Avro import kind."),
                 },
-                import.ImportPathLiteralToken.Value as string ?? string.Empty,
+                import.ImportPathLiteralToken.ValueText,
                 import.ImportPathLiteralToken.SourceSpan))
             .ToImmutableArray();
 
-        if (Document(syntaxTree) is not AvroSchema rootSchema)
+        if (Document(document) is not AvroSchema rootSchema)
             return AvroFile.Invalid(source, [.. Diagnostics], Options);
 
         return new AvroFile(
@@ -75,10 +74,12 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
             Options);
     }
 
-    private Option<AvroSchema> Document(SyntaxTree syntaxTree)
+    private Option<AvroSchema> Document(DocumentSyntax document)
     {
-        var document = syntaxTree.Document;
-        var containingNamespace = document.NamespaceDirective?.NamespaceName.FullName;
+        string? containingNamespace = null;
+        if (document.NamespaceDirective?.NamespaceName is { } name &&
+            !TryUnwrap(name.GetNamespace(), out containingNamespace))
+            return Option.None<AvroSchema>();
         var mainSchema = document.SchemaDirective?.MainSchemaType;
         if (mainSchema is null)
         {
@@ -103,14 +104,9 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
         return isValid ? root : Option.None<AvroSchema>();
     }
 
-    private Option<AvroSchema> Type(
-        ITypeSyntax syntax,
-        string? containingNamespace,
-        ImmutableSortedDictionary<string, JsonElement>? properties = null,
-        bool hasNonNullDefault = false)
+    private Option<AvroSchema> Type(ITypeSyntax syntax, string? containingNamespace, bool hasNonNullDefault = false, ImmutableSortedDictionary<string, JsonElement>? properties = null)
     {
         properties ??= ImmutableSortedDictionary<string, JsonElement>.Empty;
-
         return syntax switch
         {
             AnnotatedTypeSyntax type => Annotated(type, containingNamespace, hasNonNullDefault),
@@ -118,10 +114,34 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
             ILogicalTypeSyntax type => Logical(type, properties),
             MapTypeSyntax type => Map(type, containingNamespace, properties),
             NamedTypeSyntax type => Named(type, containingNamespace),
-            OptionalTypeSyntax type => Optional(type, containingNamespace, properties, hasNonNullDefault),
+            OptionalTypeSyntax type => Optional(type, Type(type.Type, containingNamespace, properties: properties), hasNonNullDefault),
             PrimitiveTypeSyntax type => Primitive(type, properties),
             UnionTypeSyntax type => Union(type.Types, containingNamespace),
             _ => throw new InvalidOperationException($"Unreachable: Unsupported Avro IDL type syntax '{syntax.SyntaxKind}'."),
+        };
+    }
+
+    private Option<AvroSchema> Named(NamedTypeSyntax syntax, string? containingNamespace) =>
+        TryUnwrap(syntax.AsSchemaReference(), out var name)
+            ? Reference(name, containingNamespace, syntax.Name.GetSourceSpan())
+            : Option.None<AvroSchema>();
+
+    private Option<AvroSchema> Annotated(AnnotatedTypeSyntax syntax, string? containingNamespace, bool hasNonNullDefault)
+    {
+        var logicalTypeName = Unwrap(syntax.GetLogicalTypeName());
+        var properties = Unwrap(syntax.GetSchemaProperties());
+        if (logicalTypeName.IsNone || properties.IsNone || Type(syntax.Type, containingNamespace, hasNonNullDefault, properties.GetValue()) is not AvroSchema underlyingSchema)
+            return Option.None<AvroSchema>();
+
+        if (logicalTypeName.GetValue().GetValueOrDefault() == LogicalTypeNames.Decimal &&
+            syntax.Type is not (DecimalLogicalTypeSyntax or OptionalTypeSyntax { Type: DecimalLogicalTypeSyntax }) &&
+            !ValidateDecimalAnnotations(syntax.Annotations))
+            return Option.None<AvroSchema>();
+
+        return logicalTypeName.GetValue() switch
+        {
+            string logicalType => LogicalSchema.Create(logicalType, underlyingSchema, Options.GenerationTarget),
+            _ => underlyingSchema
         };
     }
 
@@ -157,13 +177,15 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
         if (!maybeSchema.TryGetValue(out NamedSchema? schema))
             return Option.None<NamedSchema>();
 
-        if (schema is not FixedSchema fixedSchema || !declaration.Annotations.OfType<LogicalTypeAnnotationSyntax>().Any())
+        if (!TryUnwrap(declaration.GetLogicalTypeName(), out var maybeLogicalType))
+            return Option.None<NamedSchema>();
+        if (!maybeLogicalType.TryGetValue(out string? logicalType))
             return schema;
 
-        if (!TryUnwrap(declaration.GetLogicalTypeName(), out var maybeLogicalType) || !maybeLogicalType.TryGetValue(out string? logicalType))
+        if (logicalType == LogicalTypeNames.Decimal && !ValidateDecimalAnnotations(declaration.Annotations))
             return Option.None<NamedSchema>();
 
-        // TODO: We can do better here...
+        if (schema is not FixedSchema fixedSchema) return schema;
         if (LogicalSchema.Create(logicalType, fixedSchema, Options.GenerationTarget) is not LogicalSchema)
             return fixedSchema;
 
@@ -176,20 +198,16 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
     {
         if (syntax is DecimalLogicalTypeSyntax decimalSyntax)
         {
-            var precision = decimalSyntax.PrecisionLiteralToken.Value is int precisionValue
-                ? precisionValue
-                : Report<int>(AvroDiagnostic.InvalidIdlDecimalPrecision(decimalSyntax.PrecisionLiteralToken.SourceSpan));
-            var scale = decimalSyntax.ScaleLiteralToken.Value is int scaleValue
-                ? scaleValue
-                : Report<int>(AvroDiagnostic.InvalidIdlDecimalScale(decimalSyntax.ScaleLiteralToken.SourceSpan));
+            var precision = Unwrap(decimalSyntax.GetDecimalPrecision());
+            var scale = Unwrap(decimalSyntax.GetDecimalScale());
             if (precision.IsNone || scale.IsNone)
                 return Option.None<AvroSchema>();
 
             var bytes = AvroSchema.Bytes with
             {
                 Properties = properties
-                    .SetItem("precision", JsonSerializer.SerializeToElement(precision.GetValue()))
-                    .SetItem("scale", JsonSerializer.SerializeToElement(scale.GetValue()))
+                    .SetItem(AvroJsonKeys.Precision, JsonSerializer.SerializeToElement(precision.GetValue()))
+                    .SetItem(AvroJsonKeys.Scale, JsonSerializer.SerializeToElement(scale.GetValue()))
             };
 
             return LogicalSchema.Create(LogicalTypeNames.Decimal, bytes, Options.GenerationTarget);
@@ -212,25 +230,12 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
         return LogicalSchema.Create(logicalType, properties.IsEmpty ? underlyingSchema : underlyingSchema with { Properties = properties }, Options.GenerationTarget);
     }
 
-    private Option<AvroSchema> Annotated(AnnotatedTypeSyntax syntax, string? containingNamespace, bool hasNonNullDefault)
+    private bool ValidateDecimalAnnotations(SyntaxList<IAnnotationSyntax> annotations)
     {
-        var logicalTypeName = Unwrap(syntax.GetLogicalTypeName());
-        var properties = Unwrap(syntax.GetSchemaProperties());
-        if (logicalTypeName.IsNone || properties.IsNone || Type(syntax.Type, containingNamespace, properties.GetValue(), hasNonNullDefault) is not AvroSchema underlyingSchema)
-            return Option.None<AvroSchema>();
-
-        return logicalTypeName.GetValue() switch
-        {
-            string logicalType => LogicalSchema.Create(logicalType, underlyingSchema, Options.GenerationTarget),
-            _ => underlyingSchema
-        };
+        var precision = TryUnwrap(annotations.GetDecimalPrecision(), out _);
+        var scale = TryUnwrap(annotations.GetDecimalScale(), out _);
+        return precision && scale;
     }
-
-    private Option<AvroSchema> Named(NamedTypeSyntax syntax, string? containingNamespace) => syntax.Name.GetSchemaName(containingNamespace: null) switch
-    {
-        SchemaName name => Reference(name, containingNamespace, syntax.Name.GetSourceSpan()),
-        AvroDiagnostic => Report<AvroSchema>(AvroDiagnostic.InvalidSchemaReference(syntax.Name.GetSourceSpan(), syntax.Name.FullName))
-    };
 
     private Option<AvroSchema> Array(ArrayTypeSyntax syntax, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties) => Type(syntax.ItemType, containingNamespace) switch
     {
@@ -246,10 +251,8 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
 
     private Option<NamedSchema> Enum(EnumDeclarationSyntax syntax, string? containingNamespace)
     {
-        if (!TryUnwrap(syntax.GetSchemaName(containingNamespace), out var schemaName))
+        if (!CanDeclareSchema(syntax, isProtocol: false, containingNamespace, out var schemaName))
             return Option.None<NamedSchema>();
-        if (IsInRecursionScope(schemaName))
-            return Report<NamedSchema>(AvroDiagnostic.RecursiveDefinition(syntax.Name.GetSourceSpan(), schemaName));
 
         using var recursionScope = EnterRecursionScope(schemaName);
         var documentation = Unwrap(syntax.GetDocumentation());
@@ -278,11 +281,13 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
         var valid = true;
         foreach (var symbol in syntaxlist.WithCancellation(cancellationToken))
         {
-            var name = new MemberName(symbol.FullName);
-            if (!members.Add(name))
+            if (!NameValidator.IsValidMemberName(symbol.FullName))
+                return Report<ImmutableArray<MemberName>>(AvroDiagnostic.InvalidSymbols(symbol.GetSourceSpan()));
+
+            if (!members.Add(new MemberName(symbol.FullName)))
             {
                 valid = false;
-                Report(AvroDiagnostic.DuplicateSymbol(symbol.GetSourceSpan(), name.SchemaName, schemaName));
+                Report(AvroDiagnostic.DuplicateSymbol(symbol.GetSourceSpan(), symbol.FullName, schemaName));
             }
         }
 
@@ -291,10 +296,8 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
 
     private Option<NamedSchema> Fixed(FixedDeclarationSyntax syntax, string? containingNamespace)
     {
-        if (!TryUnwrap(syntax.GetSchemaName(containingNamespace), out var schemaName))
+        if (!CanDeclareSchema(syntax, isProtocol: false, containingNamespace, out var schemaName))
             return Option.None<NamedSchema>();
-        if (IsInRecursionScope(schemaName))
-            return Report<NamedSchema>(AvroDiagnostic.RecursiveDefinition(syntax.Name.GetSourceSpan(), schemaName));
 
         using var recursionScope = EnterRecursionScope(schemaName);
         var documentation = Unwrap(syntax.GetDocumentation());
@@ -317,10 +320,8 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
 
     private Option<NamedSchema> Record(RecordDeclarationSyntax syntax, string? containingNamespace)
     {
-        if (!TryUnwrap(syntax.GetSchemaName(containingNamespace), out var schemaName))
+        if (!CanDeclareSchema(syntax, isProtocol: false, containingNamespace, out var schemaName))
             return Option.None<NamedSchema>();
-        if (IsInRecursionScope(schemaName))
-            return Report<NamedSchema>(AvroDiagnostic.RecursiveDefinition(syntax.Name.GetSourceSpan(), schemaName));
 
         using var recursionScope = EnterRecursionScope(schemaName);
         var documentation = Unwrap(syntax.GetDocumentation());
@@ -338,10 +339,8 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
 
     private Option<NamedSchema> Error(ErrorDeclarationSyntax syntax, string? containingNamespace)
     {
-        if (!TryUnwrap(syntax.GetSchemaName(containingNamespace), out var schemaName))
+        if (!CanDeclareSchema(syntax, isProtocol: false, containingNamespace, out var schemaName))
             return Option.None<NamedSchema>();
-        if (IsInRecursionScope(schemaName))
-            return Report<NamedSchema>(AvroDiagnostic.RecursiveDefinition(syntax.Name.GetSourceSpan(), schemaName));
 
         using var recursionScope = EnterRecursionScope(schemaName);
         var documentation = Unwrap(syntax.GetDocumentation());
@@ -379,7 +378,7 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
 
     private Option<Field> Field(FieldDeclarationSyntax syntax, SchemaName containingSchemaName)
     {
-        var name = Unwrap(syntax.GetMemberName());
+        var name = Unwrap(syntax.GetFieldName());
         var defaultValue = Unwrap(syntax.DefaultValueClause.GetDefaultValue());
         var type = Type(syntax.Type, containingSchemaName.Namespace, hasNonNullDefault: defaultValue.IsNotNullOrNullLiteral);
         var documentation = Unwrap(syntax.GetDocumentation());
@@ -407,7 +406,7 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
         var valid = true;
         var branches = new HashSet<AvroSchema>(UnionBranchComparer.Instance);
         if (prependSystemError) branches.Add(AvroSchema.String);
-        foreach (var item in items)
+        foreach (var item in items.WithCancellation(cancellationToken))
         {
             switch (Type(item, containingNamespace))
             {
@@ -430,9 +429,9 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
         return valid ? UnionSchema.Create([.. branches], Options.LanguageFeatures.HasNullableReferenceTypes) : Option.None<AvroSchema>();
     }
 
-    private Option<AvroSchema> Optional(OptionalTypeSyntax syntax, string? containingNamespace, ImmutableSortedDictionary<string, JsonElement> properties, bool hasNonNullDefault)
+    private Option<AvroSchema> Optional(OptionalTypeSyntax syntax, Option<AvroSchema> type, bool hasNonNullDefault)
     {
-        return Type(syntax.Type, containingNamespace, properties) switch
+        return type switch
         {
             PrimitiveSchema { SchemaType: SchemaType.Null } => Report<AvroSchema>(AvroDiagnostic.DuplicateUnionBranch(syntax.Type.GetSourceSpan(), AvroTypeNames.Null)),
             UnionSchema => Report<AvroSchema>(AvroDiagnostic.NestedUnion(syntax.Type.GetSourceSpan())),
@@ -443,10 +442,8 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
 
     private Option<ProtocolSchema> Protocol(ProtocolDeclarationSyntax syntax, string? containingNamespace)
     {
-        if (!TryUnwrap(syntax.GetSchemaName(containingNamespace), out var schemaName))
+        if (!CanDeclareSchema(syntax, isProtocol: true, containingNamespace, out var schemaName))
             return Option.None<ProtocolSchema>();
-        if (IsInRecursionScope(schemaName))
-            return Report<ProtocolSchema>(AvroDiagnostic.RecursiveDefinition(syntax.Name.GetSourceSpan(), schemaName));
 
         using var recursionScope = EnterRecursionScope(schemaName);
         var types = ProtocolTypes(syntax.Types, schemaName.Namespace);
@@ -490,17 +487,15 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
     {
         var methodName = new MemberName(syntax.Name.FullName);
         var parameters = ProtocolRequest(syntax.Parameters, containingNamespace);
-        var response = ProtocolResponse(syntax.Type, containingNamespace);
+        var response = ProtocolResponse(syntax, containingNamespace);
         var errors = ProtocolErrors(syntax.ThrowsErrorClause, containingNamespace);
         var oneWay = syntax.OneWayClause is not null ? true : default(bool?);
         var documentation = Unwrap(syntax.GetDocumentation());
         if (parameters.IsNone || response.IsNone || errors.IsNone || documentation.IsNone)
             return Option.None<ProtocolMessage>();
 
-        var hasDeclaredErrors = errors.GetValue().GetValueOrDefault() is { } errorSchema &&
-            errorSchema is not UnionSchema { Schemas: [{ SchemaType: SchemaType.String }] };
-        if (oneWay is true && (response.GetValue().Type.SchemaType is not SchemaType.Null || hasDeclaredErrors))
-            return Report<ProtocolMessage>(AvroDiagnostic.InvalidIdlOneWayMessage(syntax.OneWayClause!.OneWayKeyword.SourceSpan, syntax.Name.FullName));
+        if (oneWay is true && !AllowsOneWay(response.GetValue().Type, errors.GetValue().GetValueOrDefault()))
+            return Report<ProtocolMessage>(AvroDiagnostic.InvalidOneWayMessage(syntax.OneWayClause!.OneWayKeyword.SourceSpan, syntax.Name.FullName));
 
         return new ProtocolMessage(
             methodName,
@@ -532,7 +527,7 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
 
     private Option<ProtocolRequestParameter> ProtocolRequestParameter(ParameterDeclarationSyntax syntax, string? containingNamespace)
     {
-        var name = Unwrap(syntax.GetMemberName());
+        var name = Unwrap(syntax.GetParameterName());
         var defaultValue = Unwrap(syntax.DefaultValueClause.GetDefaultValue());
         var type = Type(syntax.Type, containingNamespace, hasNonNullDefault: defaultValue.IsNotNullOrNullLiteral);
         var documentation = Unwrap(syntax.GetDocumentation());
@@ -547,20 +542,28 @@ internal sealed class AvdlParser(SyntaxTree syntaxTree, AvroParseOptions options
             defaultValue.GetValue().GetValueOrDefault());
     }
 
-    private Option<ProtocolResponse> ProtocolResponse(ITypeSyntax syntax, string? containingNamespace) => Type(syntax, containingNamespace) switch
-    {
-        AvroSchema schema => new ProtocolResponse(schema, schema.GetUnderlyingOrSelf()),
-        _ => Option.None<ProtocolResponse>()
-    };
+    private Option<ProtocolResponse> ProtocolResponse(MessageDeclarationSyntax syntax, string? containingNamespace) =>
+        Type(syntax.Type, containingNamespace).Map(static schema => new ProtocolResponse(schema, schema.GetUnderlyingOrSelf()));
 
     private Option<Option<AvroSchema>> ProtocolErrors(ThrowsErrorClauseSyntax? syntax, string? containingNamespace) =>
-        syntax is null
-            ? Option.Some(Option.None<AvroSchema>())
-            : Union(syntax.Errors, containingNamespace, prependSystemError: true).Map(Option.Some);
+        syntax is ThrowsErrorClauseSyntax clause
+            ? Union(clause.Errors, containingNamespace, prependSystemError: true).Map(Option.Some)
+            : Option.Some(Option.None<AvroSchema>());
 
-    private T Invalid<T>(T @default, AvroDiagnostic diagnostic)
+    private bool CanDeclareSchema(IDeclarationSyntax syntax, bool isProtocol, string? containingNamespace, out SchemaName schemaName)
     {
-        Report(diagnostic);
-        return @default;
+        if (!TryUnwrap(syntax.Name.AsSchemaName(isProtocol), out schemaName))
+            return false;
+
+        if (!schemaName.IsQualified)
+        {
+            if (!TryUnwrap(syntax.GetNamespace(), out var ns)) return false;
+            schemaName = schemaName.ResolveIn(ns.GetValueOrDefault() ?? containingNamespace);
+        }
+        if (!IsInRecursionScope(schemaName))
+            return true;
+
+        Report(AvroDiagnostic.RecursiveDefinition(syntax.Name.GetSourceSpan(), schemaName));
+        return false;
     }
 }

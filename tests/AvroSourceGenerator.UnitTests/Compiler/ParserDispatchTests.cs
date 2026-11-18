@@ -13,8 +13,6 @@ public sealed class ParserDispatchTests
     private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
 
     [Theory]
-    [InlineData(".avsc", """{"protocol":"P"}""", AvroDiagnosticCode.SchemaExpected)]
-    [InlineData(".avsc", "{}", AvroDiagnosticCode.SchemaExpected)]
     [InlineData(".avsc", "false", AvroDiagnosticCode.SchemaExpected)]
     [InlineData(".avsc", "null", AvroDiagnosticCode.SchemaExpected)]
     [InlineData(".avsc", "42", AvroDiagnosticCode.SchemaExpected)]
@@ -85,17 +83,23 @@ public sealed class ParserDispatchTests
     }
 
     [Theory]
-    [InlineData(".avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":{"protocol":"P"}}]}""", AvroDiagnosticCode.InvalidFieldType)]
-    [InlineData(".avsc", """[{"protocol":"P"}]""", AvroDiagnosticCode.SchemaExpected)]
-    [InlineData(".avsc", """{"type":"array","items":{"protocol":"P"}}""", AvroDiagnosticCode.InvalidItems)]
-    [InlineData(".avpr", """{"protocol":"Outer","types":[{"protocol":"P"}],"messages":{}}""", AvroDiagnosticCode.MissingSchemaProperty)]
-    [InlineData(".avpr", """{"protocol":"Outer","types":[],"messages":{"m":{"request":[],"response":{"protocol":"P"}}}}""", AvroDiagnosticCode.InvalidResponse)]
-    public void Nested_protocols_are_not_schemas(string extension, string json, AvroDiagnosticCode code)
+    [InlineData(".avsc", "{}", "{}")]
+    [InlineData(".avsc", """{"protocol":"P"}""", """{"protocol":"P"}""")]
+    [InlineData(".avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":{"protocol":"P"}}]}""", """{"protocol":"P"}""")]
+    [InlineData(".avsc", """[{"protocol":"P"}]""", """{"protocol":"P"}""")]
+    [InlineData(".avsc", """{"type":"array","items":{}}""", "{}")]
+    [InlineData(".avsc", """{"type":"map","values":{}}""", "{}")]
+    [InlineData(".avpr", """{"protocol":"Outer","types":[{"protocol":"P"}],"messages":{}}""", """{"protocol":"P"}""")]
+    [InlineData(".avpr", """{"protocol":"P","types":[],"messages":{"m":{"request":[{"name":"p","type":{}}],"response":"null"}}}""", "{}")]
+    [InlineData(".avpr", """{"protocol":"Outer","types":[],"messages":{"m":{"request":[],"response":{"protocol":"P"}}}}""", """{"protocol":"P"}""")]
+    public void Schema_objects_without_a_type_report_the_missing_property(string extension, string json, string owner)
     {
         var source = new SourceText("test" + extension, json);
         var diagnostic = Assert.Single(AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken).GetDiagnostics());
-        Assert.Equal(code, diagnostic.Code);
-        Assert.Equal("""{"protocol":"P"}""", diagnostic.SourceSpan.ToString());
+        Assert.Equal(AvroDiagnosticCode.MissingSchemaProperty, diagnostic.Code);
+        Assert.Equal("AVROSG4000", diagnostic.ToDiagnostic().Id);
+        Assert.Equal("Required property 'type' is missing", diagnostic.GetMessage());
+        Assert.Equal(source.GetSourceSpan(json.IndexOf(owner, StringComparison.Ordinal), owner.Length), diagnostic.SourceSpan);
         Assert.Same(source, diagnostic.SourceSpan.SourceText);
     }
 

@@ -14,14 +14,28 @@ public sealed class SemanticValidationTests
 {
     public static TheoryData<string, int, string> IssueExamples => new TheoryData<string, int, string>
     {
-        { """{"type":"record","name":"R","fields":[{"name":"Value","type":"int"},{"name":"Value","type":"int"}]}""", 2032, "\"Value\"" },
-        { """{"type":"enum","name":"E","symbols":["A","A"]}""", 2033, "\"A\"" },
-        { """{"type":"record","name":"R","fields":[{"name":"Value","type":["int","int"]}]}""", 2034, "\"int\"" },
-        { """{"type":"record","name":"R","fields":[{"name":"Value","type":["null",["int","string"]]}]}""", 2035, "[\"int\",\"string\"]" },
+        { """{"type":"record","name":"R","fields":[{"name":"Value","type":"int"},{"name":"Value","type":"int"}]}""", 5004, "\"Value\"" },
+        { """{"type":"enum","name":"E","symbols":["A","A"]}""", 5005, "\"A\"" },
+        { """{"type":"record","name":"R","fields":[{"name":"Value","type":["int","int"]}]}""", 5006, "\"int\"" },
+        { """{"type":"record","name":"R","fields":[{"name":"Value","type":["null",["int","string"]]}]}""", 5007, "[\"int\",\"string\"]" },
     };
 
     public static TheoryData<string, string, AvroDiagnosticCode, string> InvalidInputs => new TheoryData<string, string, AvroDiagnosticCode, string>
     {
+        { "avsc", "$ /** note */ { 1", AvroDiagnosticCode.JsonCommentNotAllowed, "/** note */" },
+        { "avsc", """{"\uD800": 0}""", AvroDiagnosticCode.JsonPropertyNameUnpairedSurrogate, "\"\\uD800\"" },
+        { "avdl", "schema R; @custom(" + new string('[', 65) + "0" + new string(']', 65) + ") record R {}", AvroDiagnosticCode.JsonNestingLimitExceeded, "[" },
+        { "avsc", """{"type":"fixed","name":"F","size":01}""", AvroDiagnosticCode.InvalidNumber, "01" },
+        { "avdl", "schema R; @custom(01) record R {}", AvroDiagnosticCode.InvalidNumber, "01" },
+        { "avsc", """{"type":"fixed","name":"F","size":0}""", AvroDiagnosticCode.InvalidFixedSize, "0" },
+        { "avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":["null","acme.bad-name"]}]}""", AvroDiagnosticCode.InvalidSchemaReference, "\"acme.bad-name\"" },
+        { "avdl", "schema R; record R { union { null, acme.bad-name } f; }", AvroDiagnosticCode.InvalidSchemaReference, "acme.bad-name" },
+        { "avdl", "namespace invalid.; schema R; record R {}", AvroDiagnosticCode.InvalidNamespace, "invalid." },
+        { "avdl", "schema F; fixed F(0);", AvroDiagnosticCode.InvalidFixedSize, "0" },
+        { "avdl", "schema F; fixed F(9223372036854775808);", AvroDiagnosticCode.InvalidFixedSize, "9223372036854775808" },
+        { "avsc", """{"type":"fixed","name":"F","size":9223372036854775808}""", AvroDiagnosticCode.InvalidFixedSize, "9223372036854775808" },
+        { "avdl", """schema R; record R { @logicalType(" ") string f; }""", AvroDiagnosticCode.InvalidLogicalType, "\" \"" },
+        { "avdl", """schema R; record R { string @order("") f; }""", AvroDiagnosticCode.InvalidOrder, "\"\"" },
         { "avsc", """{"type":"error","name":"R","fields":[{"name":"class","type":"int"},{"name":"class","type":"long"}]}""", AvroDiagnosticCode.DuplicateField, "\"class\"" },
         { "avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":[{"type":"array","items":"int"},{"type":"array","items":"string"}]}]}""", AvroDiagnosticCode.DuplicateUnionBranch, "{\"type\":\"array\",\"items\":\"string\"}" },
         { "avsc", """{"type":"record","name":"R","fields":[{"name":"f","type":[{"type":"map","values":"int"},{"type":"map","values":"string"}]}]}""", AvroDiagnosticCode.DuplicateUnionBranch, "{\"type\":\"map\",\"values\":\"string\"}" },

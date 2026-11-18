@@ -1,0 +1,23 @@
+﻿using AvroSourceGenerator.Syntax.Json;
+
+namespace AvroSourceGenerator.Syntax.Annotations;
+
+internal sealed record class LogicalTypeAnnotationSyntax(
+    SyntaxToken AtSignToken,
+    AnnotationNameSyntax AnnotationName,
+    SyntaxToken ParenthesisOpenToken,
+    JsonValueSyntax JsonValue,
+    SyntaxToken ParenthesisCloseToken)
+    : IAnnotationSyntax
+{
+    public SyntaxKind SyntaxKind => SyntaxKind.LogicalTypeAnnotation;
+
+    public IEnumerable<ISyntaxNode> Children()
+    {
+        yield return AtSignToken;
+        yield return AnnotationName;
+        yield return ParenthesisOpenToken;
+        yield return JsonValue;
+        yield return ParenthesisCloseToken;
+    }
+}

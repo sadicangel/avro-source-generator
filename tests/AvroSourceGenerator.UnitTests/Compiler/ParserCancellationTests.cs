@@ -1,8 +1,8 @@
 ﻿using System.Text;
-using AvroSourceGenerator.Avdl;
-using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Compiler.Parsing;
+using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Syntax;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.UnitTests.Compiler;
@@ -26,7 +26,7 @@ public sealed class ParserCancellationTests
         var token = CreateCancelledToken();
 
         Assert.Throws<OperationCanceledException>(() =>
-            Parser.Parse(new SourceText("test.avdl", "schema R; record R {}"), token));
+            Parser.ParseIdl(new SourceText("test.avdl", "schema R; record R {}"), token));
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public sealed class ParserCancellationTests
     [InlineData("record R {}")]
     public void Avdl_lowering_propagates_cancellation_after_syntax_parsing(string text)
     {
-        var syntax = Parser.Parse(new SourceText("test.avdl", text), TestContext.Current.CancellationToken);
+        var syntax = Parser.ParseIdl(new SourceText("test.avdl", text), TestContext.Current.CancellationToken);
         var token = CreateCancelledToken();
 
         Assert.Throws<OperationCanceledException>(() => new AvdlParser(syntax, s_options, token).ParseFile());
@@ -90,7 +90,7 @@ public sealed class ParserCancellationTests
         text.Append(" }");
 
         Assert.Throws<OperationCanceledException>(() =>
-            Parser.Parse(new SourceText("large.avdl", text.ToString()), CreateCancelledToken()));
+            Parser.ParseIdl(new SourceText("large.avdl", text.ToString()), CreateCancelledToken()));
     }
 
     [Fact]

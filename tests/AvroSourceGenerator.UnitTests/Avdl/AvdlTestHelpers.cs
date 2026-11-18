@@ -1,4 +1,4 @@
-﻿using AvroSourceGenerator.Avdl;
+﻿using AvroSourceGenerator.Syntax;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.UnitTests.Avdl;

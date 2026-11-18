@@ -384,6 +384,94 @@ public sealed class AvroCompilationTests
         Assert.True(compiled.Compilation.IsValid);
     }
 
+    [Theory]
+    [InlineData(ReferenceResolution.Strict)]
+    [InlineData(ReferenceResolution.Deferred)]
+    public void Shared_owner_uses_every_import_path_from_each_referring_file(ReferenceResolution resolution)
+    {
+        var compiled = Compile(
+            resolution,
+            DuplicateResolution.Error,
+            ("first.avdl", """
+                import idl "left.avdl";
+                import idl "right.avdl";
+                import idl "unused.avdl";
+                schema First;
+                record First { A a; B b; }
+                """),
+            ("second.avdl", """
+                import idl "left.avdl";
+                schema Second;
+                record Second { A a; B b; }
+                """),
+            ("left.avdl", """
+                import idl "owner.avdl";
+                schema Left;
+                record Left { }
+                """),
+            ("right.avdl", """
+                import idl "owner.avdl";
+                schema Right;
+                record Right { }
+                """),
+            ("owner.avdl", """
+                schema A;
+                record A { }
+                record B { }
+                """),
+            ("unused.avdl", "schema Unused; record Unused { }"));
+
+        var diagnostic = Assert.Single(compiled.Compilation.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.UnusedImport, diagnostic.Code);
+        Assert.Equal("Import 'unused.avdl' is unused", diagnostic.GetMessage());
+        Assert.Equal(compiled.BoundFiles[0].File.Imports[2].SourceSpan, diagnostic.SourceSpan);
+        Assert.True(compiled.Compilation.IsValid);
+        Assert.Equal(["first.avdl", "owner.avdl"], compiled.Compilation
+            .GetContributingFiles(compiled.BoundFiles[0], TestContext.Current.CancellationToken)
+            .Select(file => file.Path.OriginalPath));
+        Assert.Equal(["owner.avdl", "second.avdl"], compiled.Compilation
+            .GetContributingFiles(compiled.BoundFiles[1], TestContext.Current.CancellationToken)
+            .Select(file => file.Path.OriginalPath));
+    }
+
+    [Theory]
+    [InlineData(ReferenceResolution.Strict)]
+    [InlineData(ReferenceResolution.Deferred)]
+    public void Unresolved_names_use_imports_outside_resolved_owner_paths(ReferenceResolution resolution)
+    {
+        var compiled = Compile(
+            resolution,
+            DuplicateResolution.Error,
+            ("consumer.avdl", """
+                import idl "owner.avdl";
+                import idl "bridge.avdl";
+                schema Consumer;
+                record Consumer { A a; B b; MissingFirst first; MissingSecond second; }
+                """),
+            ("owner.avdl", "schema A; record A { } record B { }"),
+            ("bridge.avdl", """
+                import idl "missing.avdl";
+                import schema "wrong.avpr";
+                schema Bridge;
+                record Bridge { }
+                """));
+
+        Assert.Collection(compiled.Compilation.Diagnostics,
+            missing =>
+            {
+                Assert.Equal(AvroDiagnosticCode.MissingImport, missing.Code);
+                Assert.Equal("Import file 'missing.avdl' was not supplied as an AdditionalFile", missing.GetMessage());
+                Assert.Equal(compiled.BoundFiles[2].File.Imports[0].SourceSpan, missing.SourceSpan);
+            },
+            wrongKind =>
+            {
+                Assert.Equal(AvroDiagnosticCode.InvalidImportFileExtension, wrongKind.Code);
+                Assert.Equal("Import 'schema' requires a '.avsc' file; 'wrong.avpr' has an incompatible extension", wrongKind.GetMessage());
+                Assert.Equal(compiled.BoundFiles[2].File.Imports[1].SourceSpan, wrongKind.SourceSpan);
+            });
+        Assert.False(compiled.Compilation.IsValid);
+    }
+
     [Fact]
     public void Missing_import_reports_one_import_diagnostic_without_reference_noise()
     {

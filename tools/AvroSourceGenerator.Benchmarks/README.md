@@ -90,4 +90,32 @@ An in-process short run on Windows 11 with SDK 11.0.100 compared the indexed bin
 
 In the single-reference case, the net index setup cost was about 0.31 µs and 0.70 KiB for 10 enums, and 27 µs and 47 KiB for 1,000 enums. These differences include the change in lookup overhead.
 
+## Import analysis
+
+`ImportAnalysisBenchmarks` measures `AvroCompilation.Create` after parsing, linking, and binding. The direct, chain, and diamond cases vary the number of distinct names referenced from one protocol. The chain contains 32 intermediate files, and the diamond includes an unused branch. The distinct-owner case uses Deferred resolution with 512 independent consumer/owner pairs. The other cases use Strict resolution, including the unresolved-name case with a cycle, a missing import, and a missing-reference diagnostic.
+
+`ImportAnalysisIncrementalBenchmarks` runs the generator against the 256-reference diamond after priming the driver. It applies either an independent IDL edit in Strict mode or a referenced protocol edit in Deferred mode. Setup checks the diagnostics for Core compilation or validates the generated source count and absence of errors for generator runs.
+
+```powershell
+dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter '*ImportAnalysis*' --job short --inProcess
+```
+
+The measurements used BenchmarkDotNet 0.14.0 on Windows 11 with SDK 11.0.100 and runtime 11.0.0. Both runs used the same benchmark harness. The baseline was the compiler and generator at `db65bc9`. The short job uses three measured iterations, so small timing differences are inconclusive. [GitHub issue #200](https://github.com/sadicangel/avro-source-generator/issues/200)
+
+| Workload | Mean before (µs) | Mean candidate (µs) | Allocated before (KiB) | Allocated candidate (KiB) |
+| --- | ---: | ---: | ---: | ---: |
+| Standalone record | 1.043 | 1.154 | 3.63 | 3.63 |
+| Direct import, 1 reference | 2.986 | 3.196 | 6.84 | 6.76 |
+| Direct import, 256 references | 210.77 | 184.63 | 249.06 | 181.90 |
+| Chain, 1 reference | 66.32 | 62.86 | 114.12 | 108.48 |
+| Chain, 256 references | 743.85 | 265.16 | 625.83 | 302.63 |
+| Diamond, 1 reference | 8.03 | 7.18 | 14.30 | 14.23 |
+| Diamond, 256 references | 265.64 | 178.69 | 297.88 | 188.79 |
+| 512 distinct owners | 1,712.27 | 1,549.70 | 2,923.60 | 2,763.83 |
+| Unresolved names | 201.35 | 118.56 | 179.92 | 59.87 |
+| Independent incremental edit | 800.8 | 783.9 | 583.23 | 470.38 |
+| Referenced incremental edit | 16,652.0 | 18,415.8 | 14,218.53 | 14,106.03 |
+
+The 256-reference chain used 64% less time and allocated 52% less. The unresolved case allocated 67% less. The distinct-owner workload still incurs 512 KiB of boolean reachability data across its 1,024 files. The independent edit allocated about 19% less. The referenced edit had a higher timing mean and wide confidence intervals, with 0.8% lower allocation across the full generation pass.
+
 No CI or pipeline integration is included. Benchmark results are written to the ignored `BenchmarkDotNet.Artifacts` directory.

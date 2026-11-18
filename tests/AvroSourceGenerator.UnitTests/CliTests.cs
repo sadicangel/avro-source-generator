@@ -148,6 +148,23 @@ public sealed class CliTests : IDisposable
     }
 
     [Theory]
+    [InlineData("", "(1,1): error AVROSG0002: Source file is empty")]
+    [InlineData("schema string", "(1,14): error AVROSG1007: ';' expected")]
+    [InlineData("schema string\n\n", "(3,1): error AVROSG1007: ';' expected")]
+    [InlineData("schema string\r\n\r\n", "(3,1): error AVROSG1007: ';' expected")]
+    public async Task Diagnostics_use_one_based_locations_at_end_of_file(string text, string expected)
+    {
+        var path = Write("invalid.avdl", text);
+
+        var (code, output, error) = await Run("compile", path, "-o", Output);
+
+        Assert.Equal(1, code);
+        Assert.Empty(output);
+        Assert.Equal(path + expected + Environment.NewLine, error);
+        Assert.False(Directory.Exists(Output));
+    }
+
+    [Theory]
     [InlineData("--library", "Auto")]
     [InlineData("--library", "2147483647")]
     [InlineData("--library", "unknown")]

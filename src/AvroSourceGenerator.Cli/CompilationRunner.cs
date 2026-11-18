@@ -61,12 +61,8 @@ internal static class CompilationRunner
             var span = diagnostic.SourceSpan;
             if (!span.IsNone)
             {
-                var line = 0;
-                for (var index = 1; index < span.SourceText.Lines.Length && span.SourceText.Lines[index].SourceSpan.Offset <= span.Offset; index++)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    line = index;
-                }
+                var line = span.SourceText.GetLineIndex(span.Offset);
+                cancellationToken.ThrowIfCancellationRequested();
                 location = $"{span.SourceText.Path.OriginalPath}({line + 1},{span.Offset - span.SourceText.Lines[line].SourceSpan.Offset + 1}): ";
             }
             await error.WriteLineAsync($"{location}{diagnostic.Severity.ToString().ToLowerInvariant()} AVROSG{(int)diagnostic.Code:D4}: {diagnostic.GetMessage()}");

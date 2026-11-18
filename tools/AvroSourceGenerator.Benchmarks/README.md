@@ -1,6 +1,6 @@
 # AvroSourceGenerator benchmarks
 
-This project compares the current local source-generator project with the latest stable NuGet release. The GA baseline is intentionally pinned in `AvroSourceGenerator.Benchmarks.csproj` so a report remains reproducible; update the `LastGaVersion` property when a new stable release is published. Preview releases are never selected implicitly.
+The generator benchmarks compare the current local source-generator project with the latest stable NuGet release. The GA baseline is pinned in `AvroSourceGenerator.Benchmarks.csproj` to keep reports reproducible. Update the `LastGaVersion` property when a new stable release is published. Preview releases are selected only when explicitly configured.
 
 The default workload contains 250 independent Avro record schemas with 36 fields each (9,000 fields total). The fields exercise primitives, nullable unions, arrays, maps, timestamps, decimals, defaults, and Apache-specific output. Both versions use C# 12 output so init-only properties, required properties, records, nullable annotations, raw strings, and unsafe accessors are enabled.
 
@@ -49,7 +49,7 @@ Run the validation-only smoke test first:
 dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --smoke
 ```
 
-Run all seven benchmarks from the repository root (quote the wildcard in PowerShell so BenchmarkDotNet selects every class without prompting):
+Run all benchmarks from the repository root. Quote the wildcard in PowerShell so BenchmarkDotNet selects every class without prompting.
 
 ```powershell
 dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter '*'
@@ -68,5 +68,26 @@ dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter
 ```
 
 BenchmarkDotNet reports `LastGa` as the baseline. For `CurrentTip`, a time or allocation ratio above `1.00` is a regression and a ratio below `1.00` is an improvement. Focus on ratios larger than the reported noise rather than small single-run differences, and compare results on the same idle machine and runtime.
+
+## Local reference binding
+
+`LocalReferenceBindingBenchmarks` measures the local Core build with 10 or 1,000 enum declarations. Each case binds an already parsed and linked protocol. The zero-reference case measures binding without building a local name index. The single-reference case targets the first enum, so comparing it across revisions shows the net cost of constructing the index against a minimal scan. The 2,000-reference case targets the last enum to exercise repeated lookups.
+
+```powershell
+dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter '*LocalReferenceBindingBenchmarks*' --job short --inProcess
+```
+
+An in-process short run on Windows 11 with SDK 11.0.100 compared the indexed binder with commit `8da4c86`.
+
+| Enums | Local references | Mean before (µs) | Mean indexed (µs) | Allocated before (KiB) | Allocated indexed (KiB) |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 | 0 | 0.393 | 0.390 | 1.21 | 1.22 |
+| 10 | 1 | 0.432 | 0.738 | 1.38 | 2.08 |
+| 10 | 2,000 | 168.45 | 45.47 | 329.34 | 2.08 |
+| 1,000 | 0 | 30.89 | 32.00 | 107.80 | 107.80 |
+| 1,000 | 1 | 37.55 | 64.33 | 107.96 | 155.33 |
+| 1,000 | 2,000 | 11,156.68 | 111.54 | 435.98 | 155.33 |
+
+In the single-reference case, the net index setup cost was about 0.31 µs and 0.70 KiB for 10 enums, and 27 µs and 47 KiB for 1,000 enums. These differences include the change in lookup overhead.
 
 No CI or pipeline integration is included. Benchmark results are written to the ignored `BenchmarkDotNet.Artifacts` directory.

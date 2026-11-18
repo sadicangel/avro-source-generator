@@ -8,11 +8,13 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageDownload Include="AvroSourceGenerator" Version="[$(LastGaVersion)]" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../src/AvroSourceGenerator.Core/AvroSourceGenerator.Core.csproj" />
     <ProjectReference Include="../../src/AvroSourceGenerator/AvroSourceGenerator.csproj"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>

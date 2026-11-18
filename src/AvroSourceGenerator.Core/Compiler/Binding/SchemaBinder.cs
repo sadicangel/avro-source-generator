@@ -1,7 +1,6 @@
 ﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
 using AvroSourceGenerator.Compiler.Configuration;
-using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 
@@ -13,6 +12,7 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
     private readonly AvroParseOptions _options = linkedFile.File.ParseOptions;
     private readonly FrozenDictionary<SchemaName, TopLevelSchema?> _references = linkedFile.References;
     private readonly Dictionary<AvroSchema, AvroSchema> _boundSchemas = [with(ReferenceEqualityComparer.Instance)];
+    private Dictionary<SchemaName, TopLevelSchema>? _localDeclarations;
 
     public AvroSchema Bind(AvroSchema schema)
     {
@@ -187,7 +187,18 @@ internal sealed class SchemaBinder(LinkedAvroFile linkedFile, CancellationToken 
     }
 
     private TopLevelSchema? ResolveReference(SchemaName name) =>
-        _references.GetValueOrDefault(name) ?? _file.Declarations.WithCancellation(cancellationToken).FirstOrDefault(declaration => declaration.SchemaName == name);
+        _references.GetValueOrDefault(name) ?? (_localDeclarations ??= IndexLocalDeclarations()).GetValueOrDefault(name);
+
+    private Dictionary<SchemaName, TopLevelSchema> IndexLocalDeclarations()
+    {
+        var declarations = new Dictionary<SchemaName, TopLevelSchema>(_file.Declarations.Length);
+        foreach (var declaration in _file.Declarations)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            declarations.TryAdd(declaration.SchemaName, declaration);
+        }
+        return declarations;
+    }
 
     private AvroSchema BindUnionType(UnionTypeSchema generatedUnion)
     {

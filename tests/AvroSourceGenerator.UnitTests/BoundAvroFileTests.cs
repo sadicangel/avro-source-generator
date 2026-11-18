@@ -1,4 +1,7 @@
-﻿using AvroSourceGenerator.Compiler.Configuration;
+﻿using AvroSourceGenerator.Compiler;
+using AvroSourceGenerator.Compiler.Configuration;
+using AvroSourceGenerator.Compiler.Linking;
+using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 
 namespace AvroSourceGenerator.UnitTests;
@@ -75,6 +78,69 @@ public sealed class BoundAvroFileTests
         Assert.Same(compiled.Files[0].RootSchema, compiled.BoundFiles[0].RootSchema);
         Assert.Same(compiled.Files[0].Declarations[0], compiled.BoundFiles[0].Declarations[0]);
         Assert.Null(compiled.BoundFiles[0].References[Name("Missing")]);
+    }
+
+    [Fact]
+    public void Repeated_local_nullable_references_use_the_first_declaration()
+    {
+        var file = SchemaCompilerTestHelpers.ParseJson(
+            """
+            {
+              "protocol": "Service",
+              "namespace": "Demo",
+              "types": [
+                { "type": "enum", "name": "Status", "symbols": ["Ready"] },
+                { "type": "record", "name": "Status", "fields": [] },
+                { "type": "record", "name": "Consumer", "fields": [
+                  { "name": "first", "type": ["null", "Status"] },
+                  { "name": "second", "type": ["null", "Status"] }
+                ] }
+              ],
+              "messages": {}
+            }
+            """,
+            useNullableReferenceTypes: false,
+            extension: ".avpr");
+        var bound = SchemaCompilerTestHelpers.Bind(file);
+        var parsedConsumer = Assert.IsType<RecordSchema>(file.Declarations.Single(schema => schema.SchemaName == Name("Consumer")));
+        var boundConsumer = Assert.IsType<RecordSchema>(bound.Declarations.Single(schema => schema.SchemaName == Name("Consumer")));
+
+        Assert.Empty(bound.References);
+        Assert.All(parsedConsumer.Fields, field => Assert.Equal("global::Demo.Status", field.Type.CSharpName.FullName));
+        Assert.All(boundConsumer.Fields, field => Assert.Equal("global::Demo.Status?", field.Type.CSharpName.FullName));
+
+        var compilation = AvroCompilation.Create(
+            [bound],
+            new AvroCompilationOptions(ReferenceResolution.Deferred, DuplicateResolution.Error),
+            TestContext.Current.CancellationToken);
+        Assert.Equal(AvroDiagnosticCode.DuplicateSchema, Assert.Single(compilation.Diagnostics).Code);
+    }
+
+    [Fact]
+    public void Linked_reference_takes_precedence_over_a_local_declaration()
+    {
+        var external = SchemaCompilerTestHelpers.ParseJson(
+            """{ "type": "fixed", "name": "Status", "namespace": "Demo", "size": 1 }""");
+        var file = SchemaCompilerTestHelpers.ParseJson(
+            """
+            {
+              "protocol": "Service",
+              "namespace": "Demo",
+              "types": [
+                { "type": "record", "name": "Consumer", "fields": [{ "name": "status", "type": "Status" }] },
+                { "type": "enum", "name": "Status", "symbols": ["Ready"] }
+              ],
+              "messages": {}
+            }
+            """,
+            extension: ".avpr");
+        var token = TestContext.Current.CancellationToken;
+        var symbols = SymbolTable.FromFiles([external, file], token);
+        var bound = BoundAvroFile.Bind(LinkedAvroFile.Link(file, symbols, token), token);
+        var consumer = Assert.IsType<RecordSchema>(bound.Declarations.Single(schema => schema.SchemaName == Name("Consumer")));
+
+        Assert.Same(Assert.Single(external.Declarations), bound.References[Name("Status")]);
+        Assert.Equal(AvroSchema.Bytes.CSharpName, Assert.Single(consumer.Fields).Type.CSharpName);
     }
 
     [Theory]

@@ -33,6 +33,28 @@ internal sealed record BenchmarkScenario(
         return new BenchmarkScenario(schemaCount, files, files[0], changedFile, changeScenario);
     }
 
+    public static BenchmarkScenario CreateImportEdit(IncrementalChangeScenario changeScenario)
+    {
+        const int references = 256;
+        var sources = ImportAnalysisBenchmarks.CreateDiamond(references);
+        var files = sources.Select(source => (AdditionalText)new InMemoryAdditionalText(source.Path.OriginalPath, source.Text))
+            .ToImmutableArray();
+        var (path, before, after) = changeScenario switch
+        {
+            IncrementalChangeScenario.IndependentContent => ("Independent.avdl", "{  }", "{ string revision; }"),
+            IncrementalChangeScenario.ReferencedSchemaContent => ("Owner.avpr", "\"name\":\"Type0\",\"fields\":[]",
+                "\"name\":\"Type0\",\"fields\":[{\"name\":\"revision\",\"type\":\"string\"}]"),
+            _ => throw new ArgumentOutOfRangeException(nameof(changeScenario)),
+        };
+        var source = sources.Single(source => source.Path.OriginalPath == path);
+        var original = files.Single(file => file.Path == path);
+        var changed = source.Text.Replace(before, after, StringComparison.Ordinal);
+        if (changed == source.Text)
+            throw new InvalidOperationException($"The {changeScenario} scenario did not change {path}.");
+
+        return new BenchmarkScenario(references + sources.Length, files, original, new InMemoryAdditionalText(path, changed), changeScenario);
+    }
+
     private static string GetPath(int index) => $"Schemas/BenchmarkModel{index:D4}.avsc";
 
     private static string CreateSchema(

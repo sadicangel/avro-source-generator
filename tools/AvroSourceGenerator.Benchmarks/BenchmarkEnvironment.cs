@@ -66,6 +66,13 @@ internal sealed class BenchmarkEnvironment : IDisposable
         return environment;
     }
 
+    public static BenchmarkEnvironment CreateCurrentIncremental(BenchmarkScenario scenario)
+    {
+        var environment = new BenchmarkEnvironment(scenario);
+        environment._currentPrimedDriver = environment.Prime(environment._current.Generator);
+        return environment;
+    }
+
     public GeneratorDriverRunResult RunFullLastGa() => RunFull(_lastGa.Generator);
 
     public GeneratorDriverRunResult RunFullCurrent() => RunFull(_current.Generator);

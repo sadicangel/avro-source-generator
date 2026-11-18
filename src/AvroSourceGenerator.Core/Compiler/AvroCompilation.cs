@@ -145,10 +145,46 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
         }
 
         var reachableByOwner = new Dictionary<int, bool[]>();
+        Stack<int>? traversalStack = null;
+        HashSet<int>? visitedFiles = null;
         foreach (var (fileIndex, file) in files.Index())
         {
             cancellationToken.ThrowIfCancellationRequested();
             var fileDependencies = new HashSet<BoundAvroFile>(ReferenceEqualityComparer.Instance);
+            var hasUnresolvedReference = false;
+            foreach (var reference in file.References.Keys)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (schemaIndex.Owners.TryGetValue(reference, out var owner))
+                    fileDependencies.Add(owner);
+                else
+                    hasUnresolvedReference = true;
+            }
+
+            // Only owners of external references drive import usage. Add other dependencies afterwards.
+            if (imports[fileIndex] is not null)
+            {
+                if (hasUnresolvedReference)
+                {
+                    // An unresolved name can use every reachable import, including missing targets.
+                    MarkUsedImports(fileIndex, reachesOwner: null);
+                }
+                else
+                {
+                    foreach (var owner in fileDependencies)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var ownerIndex = schemaIndex.FileMetadata[owner].FileIndex;
+                        if (ownerIndex == fileIndex || importers[ownerIndex] is null)
+                            continue;
+
+                        var reachesOwner = GetReachability(ownerIndex);
+                        if (reachesOwner[fileIndex])
+                            MarkUsedImports(fileIndex, reachesOwner);
+                    }
+                }
+            }
+
             foreach (var dependencies in file.Dependencies.Values)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -160,65 +196,6 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
                 }
             }
 
-            foreach (var reference in file.References.Keys)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                bool[]? reachesOwner = null;
-                if (schemaIndex.Owners.TryGetValue(reference, out var owner))
-                {
-                    fileDependencies.Add(owner);
-                    var ownerIndex = schemaIndex.FileMetadata[owner].FileIndex;
-                    if (ownerIndex == fileIndex)
-                        continue;
-
-                    if (!reachableByOwner.TryGetValue(ownerIndex, out reachesOwner))
-                    {
-                        reachesOwner = new bool[files.Length];
-                        var pendingImporters = new Queue<int>();
-                        reachesOwner[ownerIndex] = true;
-                        pendingImporters.Enqueue(ownerIndex);
-                        while (pendingImporters.TryDequeue(out var targetIndex))
-                        {
-                            cancellationToken.ThrowIfCancellationRequested();
-                            if (importers[targetIndex] is not { Count: > 0 } targetImporters)
-                                continue;
-
-                            foreach (var importerIndex in targetImporters)
-                            {
-                                cancellationToken.ThrowIfCancellationRequested();
-                                if (reachesOwner[importerIndex])
-                                    continue;
-                                reachesOwner[importerIndex] = true;
-                                pendingImporters.Enqueue(importerIndex);
-                            }
-                        }
-                        reachableByOwner.Add(ownerIndex, reachesOwner);
-                    }
-                }
-
-                var visited = new HashSet<int>();
-                var pending = new Stack<int>();
-                pending.Push(fileIndex);
-                while (pending.TryPop(out var currentIndex))
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (!visited.Add(currentIndex))
-                        continue;
-
-                    if (imports[currentIndex] is not { Count: > 0 } currentImports)
-                        continue;
-
-                    foreach (var (avroImport, targetIndex) in currentImports)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        if (reachesOwner is not null && (targetIndex < 0 || !reachesOwner[targetIndex]))
-                            continue;
-                        schemaIndex.UsedImports.Add(avroImport);
-                        if (targetIndex >= 0)
-                            pending.Push(targetIndex);
-                    }
-                }
-            }
             schemaIndex.FileDependencies.Add(file, [.. fileDependencies]);
         }
 
@@ -230,6 +207,60 @@ public sealed class AvroCompilation : IEquatable<AvroCompilation>
                 cancellationToken.ThrowIfCancellationRequested();
                 if (!schemaIndex.UsedImports.Contains(import))
                     schemaIndex.Diagnostics.Add(AvroDiagnostic.UnusedImport(import.SourceSpan, import.Path));
+            }
+        }
+
+        bool[] GetReachability(int ownerIndex)
+        {
+            if (reachableByOwner.TryGetValue(ownerIndex, out var reachesOwner))
+                return reachesOwner;
+
+            reachesOwner = new bool[files.Length];
+            var pending = traversalStack ??= new Stack<int>();
+            reachesOwner[ownerIndex] = true;
+            pending.Push(ownerIndex);
+            while (pending.TryPop(out var targetIndex))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (importers[targetIndex] is not { } targetImporters)
+                    continue;
+
+                foreach (var importerIndex in targetImporters)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (reachesOwner[importerIndex])
+                        continue;
+                    reachesOwner[importerIndex] = true;
+                    pending.Push(importerIndex);
+                }
+            }
+
+            reachableByOwner.Add(ownerIndex, reachesOwner);
+            return reachesOwner;
+        }
+
+        void MarkUsedImports(int fileIndex, bool[]? reachesOwner)
+        {
+            var visited = visitedFiles ??= new HashSet<int>();
+            var pending = traversalStack ??= new Stack<int>();
+            visited.Clear();
+            visited.Add(fileIndex);
+            pending.Push(fileIndex);
+            while (pending.TryPop(out var currentIndex))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (imports[currentIndex] is not { } currentImports)
+                    continue;
+
+                foreach (var (avroImport, targetIndex) in currentImports)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (reachesOwner is not null && (targetIndex < 0 || !reachesOwner[targetIndex]))
+                        continue;
+                    schemaIndex.UsedImports.Add(avroImport);
+                    if (targetIndex >= 0 && visited.Add(targetIndex))
+                        pending.Push(targetIndex);
+                }
             }
         }
     }

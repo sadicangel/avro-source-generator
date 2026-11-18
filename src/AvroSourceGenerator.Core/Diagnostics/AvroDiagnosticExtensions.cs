@@ -1,5 +1,4 @@
 ﻿using AvroSourceGenerator.Schemas;
-using AvroSourceGenerator.Syntax.Json;
 using AvroSourceGenerator.Syntax;
 using AvroSourceGenerator.Text;
 
@@ -51,7 +50,7 @@ internal static class AvroDiagnosticExtensions
         public static AvroDiagnostic MissingRootSchema(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.MissingRootSchema, span);
         public static AvroDiagnostic RecursiveDefinition(SourceSpan span, SchemaName name) => new AvroDiagnostic(AvroDiagnosticCode.RecursiveSchemaDefinition, span, name.FullName);
 
-        public static AvroDiagnostic MissingProperty(JsonSyntaxNode syntax, string name) => new AvroDiagnostic(AvroDiagnosticCode.MissingSchemaProperty, syntax.GetSourceSpan(), name);
+        public static AvroDiagnostic MissingProperty(SourceSpan span, string name) => new AvroDiagnostic(AvroDiagnosticCode.MissingSchemaProperty, span, name);
         public static AvroDiagnostic InvalidSchemaName(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.InvalidSchemaName, span);
         public static AvroDiagnostic InvalidProtocolName(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.InvalidProtocolName, span);
         public static AvroDiagnostic InvalidFieldName(SourceSpan span) => new AvroDiagnostic(AvroDiagnosticCode.InvalidFieldName, span);

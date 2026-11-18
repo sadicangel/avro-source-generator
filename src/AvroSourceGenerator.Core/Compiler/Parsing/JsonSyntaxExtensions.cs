@@ -82,7 +82,7 @@ internal static class JsonSyntaxExtensions
     extension(JsonObjectSyntax syntax)
     {
         public Result<JsonPropertySyntax> GetRequiredProperty(string propertyName) =>
-            syntax.Property(propertyName) is JsonPropertySyntax property ? property : AvroDiagnostic.MissingProperty(syntax, propertyName);
+            syntax.Property(propertyName) is JsonPropertySyntax property ? property : AvroDiagnostic.MissingProperty(syntax.GetSourceSpan(), propertyName);
 
         public Result<Option<JsonArraySyntax>> GetErrors() => syntax.GetValue(AvroJsonKeys.Errors) switch
         {

@@ -1,10 +1,12 @@
 ﻿namespace AvroSourceGenerator.Syntax.Json;
 
-internal sealed record class JsonPropertySyntax(SyntaxToken Name, SyntaxToken ColonToken, JsonValueSyntax Value) : JsonSyntaxNode(JsonSyntaxKind.Property)
+internal sealed record class JsonPropertySyntax(SyntaxToken Name, SyntaxToken ColonToken, JsonValueSyntax Value) : IJsonSyntaxNode
 {
-    public override SyntaxKind SyntaxKind => SyntaxKind.JsonProperty;
+    public SyntaxKind SyntaxKind => SyntaxKind.JsonProperty;
 
-    public override IEnumerable<ISyntaxNode> Children()
+    public JsonSyntaxKind JsonSyntaxKind => JsonSyntaxKind.Property;
+
+    public IEnumerable<ISyntaxNode> Children()
     {
         yield return Name;
         yield return ColonToken;

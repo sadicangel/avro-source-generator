@@ -517,7 +517,7 @@ internal sealed class Parser
         var open = Match(SyntaxKind.BracketOpenToken);
         var elements = ParseSeparatedList(ParseJsonValue, SyntaxKind.CommaToken, SyntaxKind.BracketCloseToken);
         var close = Match(SyntaxKind.BracketCloseToken);
-        return JsonArraySyntax.Create(open, [.. elements], close);
+        return new JsonArraySyntax(open, [.. elements], close);
     }
 
     private JsonValueSyntax ParseJsonObject()
@@ -527,7 +527,7 @@ internal sealed class Parser
         var open = Match(SyntaxKind.BraceOpenToken);
         var members = ParseSeparatedList(ParseJsonProperty, SyntaxKind.CommaToken, SyntaxKind.BraceCloseToken);
         var close = Match(SyntaxKind.BraceCloseToken);
-        return JsonObjectSyntax.Create(open, [.. members], close);
+        return new JsonObjectSyntax(open, [.. members], close);
     }
 
     private JsonPropertySyntax ParseJsonProperty()

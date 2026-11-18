@@ -68,34 +68,6 @@ public sealed class JsonSyntaxTests
         Assert.Equal(custom.GetRawText().ToString(), custom.AsJsonElement().GetRawText());
     }
 
-    [Fact]
-    public void Parsed_syntax_has_parent_links_to_its_containing_object_or_array()
-    {
-        const string Text = """{"scalar":1,"array":[true,{"nested":[null]}]}""";
-        var root = Assert.IsType<JsonObjectSyntax>(Parse(Text, TestContext.Current.CancellationToken));
-
-        Assert.Null(root.Parent);
-
-        var scalarProperty = root.Property("scalar")!;
-        Assert.Same(root, scalarProperty.Parent);
-        Assert.Same(scalarProperty, scalarProperty.Value.Parent);
-
-        var arrayProperty = root.Property("array")!;
-        var array = Assert.IsType<JsonArraySyntax>(arrayProperty.Value);
-        Assert.Same(root, arrayProperty.Parent);
-        Assert.Same(arrayProperty, array.Parent);
-        Assert.Same(array, array.Elements[0].Parent);
-
-        var nestedObject = Assert.IsType<JsonObjectSyntax>(array.Elements[1]);
-        Assert.Same(array, nestedObject.Parent);
-
-        var nestedProperty = nestedObject.Property("nested")!;
-        var nestedArray = Assert.IsType<JsonArraySyntax>(nestedProperty.Value);
-        Assert.Same(nestedObject, nestedProperty.Parent);
-        Assert.Same(nestedProperty, nestedArray.Parent);
-        Assert.Same(nestedArray, nestedArray.Elements[0].Parent);
-    }
-
     private static JsonValueSyntax Parse(string text, CancellationToken cancellationToken)
     {
         var tree = Parser.ParseJson(new SourceText("test.avsc", text), cancellationToken);
@@ -108,6 +80,9 @@ public sealed class JsonSyntaxTests
     {
         const string Text = """{"a":{"old":1},"b":true,"a":2,"c":[],"a":3,"b":false}""";
         var root = Assert.IsType<JsonObjectSyntax>(Parse(Text, TestContext.Current.CancellationToken));
+        Assert.Equal(
+            ["{", "\"a\":{\"old\":1}", "\"b\":true", "\"a\":2", "\"c\":[]", "\"a\":3", "\"b\":false", "}"],
+            root.Children().Select(child => child.GetSourceSpan().ToString()));
         Assert.Equal(["a", "b", "c"], root.Properties.Select(property => property.Name.ValueText));
         Assert.Equal(["3", "false", "[]"], root.Properties.Select(property => property.Value.GetRawText().ToString()));
         Assert.Equal(2, root.Duplicates.Count(property => property.Name.ValueText == "a"));

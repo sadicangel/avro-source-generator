@@ -9,13 +9,6 @@ internal sealed record class JsonArraySyntax(
 {
     public override SyntaxKind SyntaxKind => SyntaxKind.JsonArray;
 
-    public static JsonArraySyntax Create(SyntaxToken open, ImmutableArray<JsonValueSyntax> elements, SyntaxToken close)
-    {
-        var array = new JsonArraySyntax(open, elements, close);
-        foreach (var element in elements) element.Parent = array;
-        return array;
-    }
-
     public override IEnumerable<ISyntaxNode> Children()
     {
         yield return BracketOpenToken;

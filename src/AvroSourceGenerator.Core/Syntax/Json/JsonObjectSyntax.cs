@@ -3,18 +3,24 @@ using System.Collections.Immutable;
 
 namespace AvroSourceGenerator.Syntax.Json;
 
-internal sealed record class JsonObjectSyntax(
-    SyntaxToken BraceOpenToken,
-    ImmutableArray<JsonPropertySyntax> Properties,
-    SyntaxToken BraceCloseToken,
-    FrozenDictionary<string, int> NameLookup,
-    ImmutableArray<JsonPropertySyntax> Duplicates)
-    : JsonValueSyntax(JsonSyntaxKind.Object)
+internal sealed record class JsonObjectSyntax : JsonValueSyntax
 {
+    private readonly FrozenDictionary<string, int> _nameLookup;
+
+    public SyntaxToken BraceOpenToken { get; }
+    public ImmutableArray<JsonPropertySyntax> Members { get; }
+    public ImmutableArray<JsonPropertySyntax> Properties { get; }
+    public SyntaxToken BraceCloseToken { get; }
+    public ImmutableArray<JsonPropertySyntax> Duplicates { get; }
     public override SyntaxKind SyntaxKind => SyntaxKind.JsonObject;
 
-    public static JsonObjectSyntax Create(SyntaxToken open, ImmutableArray<JsonPropertySyntax> members, SyntaxToken close)
+    public JsonObjectSyntax(SyntaxToken open, ImmutableArray<JsonPropertySyntax> members, SyntaxToken close)
+        : base(JsonSyntaxKind.Object)
     {
+        BraceOpenToken = open;
+        Members = members;
+        BraceCloseToken = close;
+
         var properties = ImmutableArray.CreateBuilder<JsonPropertySyntax>();
         var lookup = new Dictionary<string, int>(StringComparer.Ordinal);
         var duplicates = ImmutableArray.CreateBuilder<JsonPropertySyntax>();
@@ -31,21 +37,18 @@ internal sealed record class JsonObjectSyntax(
                 properties.Add(member);
             }
         }
-        var obj = new JsonObjectSyntax(open, properties.DrainToImmutable(), close, lookup.ToFrozenDictionary(), duplicates.DrainToImmutable());
-        foreach (var member in members)
-        {
-            member.Parent = obj;
-            member.Value.Parent = member;
-        }
-        return obj;
+
+        Properties = duplicates.Count == 0 ? members : properties.DrainToImmutable();
+        Duplicates = duplicates.DrainToImmutable();
+        _nameLookup = lookup.ToFrozenDictionary();
     }
 
-    public JsonPropertySyntax? Property(string propertyName) => NameLookup.TryGetValue(propertyName, out var index) ? Properties[index] : null;
+    public JsonPropertySyntax? Property(string propertyName) => _nameLookup.TryGetValue(propertyName, out var index) ? Properties[index] : null;
 
     public override IEnumerable<ISyntaxNode> Children()
     {
         yield return BraceOpenToken;
-        foreach (var child in Properties) yield return child;
+        foreach (var member in Members) yield return member;
         yield return BraceCloseToken;
     }
 }

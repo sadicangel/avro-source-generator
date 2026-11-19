@@ -32,13 +32,45 @@ public sealed class SerializationTests
     [Fact]
     public void Collections_survive_binary_serialization() => Verify(SerializationCases.CreateCollections());
 
-    [Fact(Skip = "The existing fixture contains an object cycle; Avro represents recursive values as trees, not object identity cycles.")]
-    public void Cyclic_object_graph_survives_binary_serialization()
+    [Fact]
+    public void Recursive_next_chain_survives_binary_serialization()
     {
-        var root = new SelfReference { items = [], lookup = [], next = null };
-        root.lookup["self"] = root;
+        var tail = CreateLeaf();
+        var middle = new SelfReference { items = [], lookup = [], next = tail };
+        var root = new SelfReference { items = [], lookup = [], next = middle };
+
         Verify(root);
     }
+
+    [Fact]
+    public void Recursive_items_survive_binary_serialization()
+    {
+        var child = new SelfReference { items = [CreateLeaf()], lookup = [], next = null };
+        var root = new SelfReference { items = [child, CreateLeaf()], lookup = [], next = null };
+
+        Verify(root);
+    }
+
+    [Fact]
+    public void Recursive_lookup_survives_binary_serialization()
+    {
+        var descendant = new SelfReference { items = [CreateLeaf()], lookup = [], next = null };
+        var child = new SelfReference { items = [], lookup = [], next = descendant };
+        var root = new SelfReference
+        {
+            items = [],
+            lookup = new Dictionary<string, SelfReference>
+            {
+                ["branch"] = child,
+                ["leaf"] = CreateLeaf(),
+            },
+            next = null,
+        };
+
+        Verify(root);
+    }
+
+    private static SelfReference CreateLeaf() => new SelfReference { items = [], lookup = [], next = null };
 
     private static void Verify<T>(T expected)
         => SerializationAssertions.Equal(expected, BinarySerialization.Roundtrip(expected));

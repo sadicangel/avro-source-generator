@@ -40,7 +40,7 @@ If the command-line build succeeds but the editor still shows stale errors, relo
 | `AVROSG2000` | Unterminated IDL documentation comment | Close the comment with `*/`. |
 | `AVROSG2001` | Unterminated IDL block comment | Close the comment with `*/`. |
 | `AVROSG2002` | Unterminated IDL verbatim identifier | Close the identifier with a backtick. |
-| `AVROSG2003` | Misplaced IDL annotation | Move the annotation to a declaration or type that accepts it. |
+| `AVROSG2003` | Misplaced IDL annotation | Move the annotation to a declaration or type that accepts it. For named type references, annotate the named declaration or place the annotation after the field type. |
 | `AVROSG2004` | Misplaced IDL documentation | Place the comment before a declaration that accepts documentation. |
 | `AVROSG3000` | Schema expected | Supply a schema at the document root or in each union branch. For example, `["null", false]` reports this error at `false`. |
 | `AVROSG3001` | Protocol expected | Supply a JSON protocol with a `protocol` property in `.avpr`. |

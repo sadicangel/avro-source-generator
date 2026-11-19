@@ -1,4 +1,5 @@
-﻿using AvroSourceGenerator.Compiler.Configuration;
+﻿using System.Text.Json;
+using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
@@ -13,6 +14,68 @@ namespace AvroSourceGenerator.UnitTests.Avdl;
 public sealed class SemanticResultTests
 {
     private static readonly AvroParseOptions s_options = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.NullableReferenceTypes);
+
+    [Theory]
+    [InlineData("schema R; record Item {} record R { @custom(42) Item Value; }", "custom")]
+    [InlineData("schema R; record Item {} record R { @custom(42) Item? Value; }", "custom")]
+    [InlineData("namespace example; schema R; record Item {} record R { map<array<@custom(42) example.Item>> Values; }", "custom")]
+    [InlineData("schema R; record Item {} record R { union { null, @custom(42) @order(\"ignore\") Item } Value; @custom(43) Item Other; }", "custom", "order", "custom")]
+    [InlineData("schema @custom(42) Item; record Item {}", "custom")]
+    [InlineData("protocol P { record Item {} void send(@custom(42) Item value); }", "custom")]
+    public void Named_reference_annotations_report_errors_at_each_annotation(string text, params string[] annotations)
+    {
+        var source = new SourceText("schemas/reference.avdl", text);
+        var token = TestContext.Current.CancellationToken;
+        var options = new AvroParseOptions(GenerationTarget.Apache, LanguageFeatures.NullableReferenceTypes);
+        var tree = Parser.ParseIdl(source, token);
+        var file = AvroFile.Parse(source, options, token);
+        var compilation = AvroCompiler.Compile([source], options, cancellationToken: token);
+
+        AssertInvalid(file);
+        Assert.False(compilation.IsValid);
+        Assert.Equal(tree.Diagnostics, file.GetDiagnostics());
+        Assert.Equal(tree.Diagnostics, compilation.Diagnostics);
+        Assert.Equal(annotations.Length, compilation.Diagnostics.Length);
+        var offset = 0;
+        foreach (var (index, annotation) in annotations.Index())
+        {
+            offset = text.IndexOf($"@{annotation}(", offset, StringComparison.Ordinal);
+            var diagnostic = compilation.Diagnostics[index];
+            Assert.Equal(AvroDiagnosticCode.MisplacedAnnotation, diagnostic.Code);
+            Assert.Equal(AvroDiagnosticSeverity.Error, diagnostic.Severity);
+            Assert.Same(source, diagnostic.SourceSpan.SourceText);
+            Assert.Equal(new SourceSpan(source, offset, 1), diagnostic.SourceSpan);
+            Assert.Equal($"Annotation '@{annotation}' is not permitted on a named type reference", diagnostic.GetMessage());
+            offset++;
+        }
+    }
+
+    [Fact]
+    public void Supported_annotations_keep_their_metadata_in_the_serialized_schema()
+    {
+        var source = new SourceText("schemas/reference.avdl", """
+            schema R;
+            @custom(1) record Item {}
+            record R {
+                Item @custom(2) Value;
+                @custom(3) array<Item> Items;
+                map<@custom(4) string> Names;
+            }
+            """);
+        var options = new AvroParseOptions(GenerationTarget.Apache, LanguageFeatures.NullableReferenceTypes);
+        var compilation = AvroCompiler.Compile([source], options, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.True(compilation.IsValid);
+        Assert.Empty(compilation.Diagnostics);
+        var root = Assert.Single(compilation.Files).RootSchema;
+        Assert.NotNull(root);
+        using var json = JsonDocument.Parse(root.ToJsonString(compilation.Schemas));
+        var fields = json.RootElement.GetProperty("fields");
+        Assert.Equal(1, fields[0].GetProperty("type").GetProperty("custom").GetInt32());
+        Assert.Equal(2, fields[0].GetProperty("custom").GetInt32());
+        Assert.Equal(3, fields[1].GetProperty("type").GetProperty("custom").GetInt32());
+        Assert.Equal(4, fields[2].GetProperty("type").GetProperty("values").GetProperty("custom").GetInt32());
+    }
 
     [Theory]
     [InlineData("record R {}", AvroDiagnosticCode.InvalidIdlDocument)]
@@ -272,7 +335,7 @@ public sealed class SemanticResultTests
     {
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
-        Assert.Throws<OperationCanceledException>(() => AvxxParser.Parse(new SourceText("test.avdl", "schema R; record R {}"), s_options, cancellation.Token));
+        Assert.Throws<OperationCanceledException>(() => AvxxParser.Parse(new SourceText("test.avdl", "schema R; record Item {} record R { @custom(42) Item Value; }"), s_options, cancellation.Token));
     }
 
     private static AvroFile Parse(string text) =>

@@ -122,6 +122,32 @@ public sealed class CliTests : IDisposable
         Assert.False(Directory.Exists(Output));
     }
 
+    [Fact]
+    public async Task Named_reference_annotation_matches_generator_diagnostic_without_writing()
+    {
+        const string Text = """
+            schema R;
+            record Item {}
+            record R { @custom(42) Item Value; }
+            """;
+        var path = Write("invalid.avdl", Text);
+        var input = GeneratorInput.Create([ProjectFile.Source(Text, path)], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "Apache" });
+        var result = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("AVROSG2003", diagnostic.Id);
+        Assert.Empty(result.GeneratedTrees);
+        var span = diagnostic.Location.GetLineSpan();
+        Assert.Equal(path, span.Path);
+        Assert.Equal(2, span.StartLinePosition.Line);
+        Assert.Equal(11, span.StartLinePosition.Character);
+
+        var (code, output, error) = await Run("compile", path, "-o", Output, "--library", "Apache", "--language-version", "12");
+        Assert.Equal(1, code);
+        Assert.Empty(output);
+        Assert.Equal($"{path}(3,12): error AVROSG2003: {diagnostic.GetMessage()}" + Environment.NewLine, error);
+        Assert.False(Directory.Exists(Output));
+    }
+
     [Theory]
     [InlineData("key.avsc", "\"string\"")]
     [InlineData("key.avsc", """{"type":"array","items":"string"}""")]

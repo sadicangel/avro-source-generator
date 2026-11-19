@@ -615,20 +615,22 @@ internal sealed class Parser
             _ => ParseNamedType(),
         };
 
+        if (type is NamedTypeSyntax && !_lastTokenWasSynthetic)
+        {
+            foreach (var annotation in annotations)
+            {
+                _cancellationToken.ThrowIfCancellationRequested();
+                _diagnostics.Add(AvroDiagnostic.MisplacedAnnotation(
+                    GetAnnotationSpan(annotation), GetAnnotationName(annotation), "a named type reference"));
+            }
+        }
+
         if (_stream.Current.SyntaxKind is SyntaxKind.QuestionMarkToken)
         {
             type = new OptionalTypeSyntax(type, Next());
         }
 
-        if (annotations.Count > 0)
-        {
-            type = new AnnotatedTypeSyntax(annotations, type);
-            // TODO:
-            // Do we want to emit diagnostics for annotations on named type references?
-            // The annotations should be on the declaration itself, not on the reference.
-        }
-
-        return type;
+        return annotations.Count > 0 ? new AnnotatedTypeSyntax(annotations, type) : type;
     }
 
     private ArrayTypeSyntax ParseArrayType()

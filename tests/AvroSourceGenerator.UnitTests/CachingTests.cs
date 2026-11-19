@@ -15,7 +15,8 @@ public sealed class CachingTests
     [InlineData("schema R; record R { union { null, union { int, string } } f; }", "schema R; record R { union { null, int, string } f; }", "AVROSG5007")]
     [InlineData("protocol P { error E {} string m() oneway throws E, E; }", "protocol P { error E {} void m() throws E; }", "AVROSG5006")]
     [InlineData("protocol P { @namespace(\"bad-name\") record R {} }", "protocol P { @namespace(\"valid.name\") record R {} }", "AVROSG4005")]
-    public void Semantic_diagnostics_are_cached_relocated_and_removed_after_repairs(string invalid, string valid, string id)
+    [InlineData("schema R; record Item {} record R { @custom(42) Item Value; }", "schema R; record Item {} record R { Item @custom(42) Value; }", "AVROSG2003")]
+    public void Idl_diagnostics_are_cached_relocated_and_removed_after_repairs(string invalid, string valid, string id)
     {
         var token = TestContext.Current.CancellationToken;
         var input = GeneratorInput.Create([ProjectFile.Source(invalid, "invalid.avdl"), ProjectFile.Source("schema Independent; record Independent {}", "independent.avdl")], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "None" });

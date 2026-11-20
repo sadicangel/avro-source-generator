@@ -121,7 +121,8 @@ internal sealed class Scanner(SourceText sourceText, CancellationToken cancellat
                 return new SyntaxToken(SyntaxKind.EofToken, new SourceSpan(sourceText, _position, 0));
 
             default:
-                var sourceSpan = new SourceSpan(sourceText, _position, 1);
+                var length = CurrentSpan is [var first, var second, ..] && char.IsSurrogatePair(first, second) ? 2 : 1;
+                var sourceSpan = new SourceSpan(sourceText, _position, length);
                 return CreateInvalidToken(sourceSpan, AvroDiagnostic.InvalidCharacter(sourceSpan));
         }
     }
@@ -333,6 +334,9 @@ internal sealed class Scanner(SourceText sourceText, CancellationToken cancellat
 
             switch (CurrentSpan[length])
             {
+                case '\\' when length + 1 < CurrentSpan.Length && CurrentSpan[length + 1] is '"' or '\\':
+                    length += 2;
+                    break;
                 case '"':
                     return length + 1;
                 case '\r':

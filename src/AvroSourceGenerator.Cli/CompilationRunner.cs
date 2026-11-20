@@ -69,16 +69,23 @@ internal static class CompilationRunner
         }
 
         // Render before performing filesystem mutations; internal rendering failures surface normally.
-        var rendered = new List<RenderedSchema>();
+        var rendered = new Dictionary<string, RenderedSchema>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         foreach (var file in compilation.Files)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            rendered.AddRange(AvroTemplate.Render(RenderableAvroFile.Create(file, compilation, renderOptions, cancellationToken), cancellationToken));
+            foreach (var schema in AvroTemplate.Render(RenderableAvroFile.Create(file, compilation, renderOptions, cancellationToken), cancellationToken))
+            {
+                if (!rendered.TryAdd(schema.HintName, schema))
+                {
+                    await error.WriteLineAsync($"avro-sg: Generated filenames '{rendered[schema.HintName].HintName}' and '{schema.HintName}' resolve to the same output path.");
+                    return 1;
+                }
+            }
         }
-        foreach (var schema in rendered)
+        foreach (var (hintName, schema) in rendered)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var path = Path.Combine(destination, schema.HintName);
+            var path = Path.Combine(destination, hintName);
             try
             {
                 if (check)

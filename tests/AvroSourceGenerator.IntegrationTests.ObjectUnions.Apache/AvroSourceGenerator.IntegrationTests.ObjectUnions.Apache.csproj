@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
-    <AvroSourceGeneratorPreviewFeatures>None</AvroSourceGeneratorPreviewFeatures>
+    <AvroSourceGeneratorNativeUnions>false</AvroSourceGeneratorNativeUnions>
   </PropertyGroup>
 
   <ItemGroup>

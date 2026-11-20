@@ -67,6 +67,8 @@ public sealed class SemanticValidationTests
 
     public static TheoryData<string, string> ValidInputs => new TheoryData<string, string>
     {
+        { "avsc", """[{"type":"record","name":"Child","namespace":"","fields":[]},{"type":"record","name":"Parent","fields":[{"name":"Value","type":"Child"}]}]""" },
+        { "avsc", """{"type":"record","name":"Parent","namespace":"example","fields":[{"name":"Value","type":{"type":"record","name":"Child","namespace":"","fields":[]}}]}""" },
         { "avsc", """{"type":"enum","name":"E","symbols":["class","A","a"],"default":"class"}""" },
         { "avsc", """{"type":"enum","name":"E","symbols":["A"]}""" },
         { "avdl", "schema E; enum E { class, A, a } = class;" },

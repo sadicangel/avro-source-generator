@@ -230,7 +230,7 @@ try {
         "-p:ValidationPackageVersion=$packageVersion",
         "-p:ConsumerTargetFramework=$framework",
         "-p:ConsumerLanguageVersion=$language",
-        "-p:ConsumerPreviewFeatures=$(if ($mode -eq 'SdkUnions') { 'Unions' } else { 'None' })",
+        "-p:ConsumerNativeUnions=$(if ($mode -eq 'SdkUnions') { 'true' })",
         "-p:ExpectedRoslynApiVersion=$selectedApi"
       )
       Invoke-DotNet -Arguments (@('restore', $project, '--configfile', $nugetConfig, '--packages', $cache) + $properties)

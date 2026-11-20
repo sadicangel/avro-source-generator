@@ -23,12 +23,12 @@ public sealed class ProjectPropertiesTests
             config.RecordDeclaration = value;
             config.ReferenceResolution = value;
             config.DuplicateResolution = value;
-            config.PreviewFeatures = value;
+            config.NativeUnions = value;
         }
 
         Assert.Equal(new ProjectProperties(
             AvroLibrary.Auto, LanguageFeatures.All, AccessModifier.Public, "record",
-            ReferenceResolution.Strict, DuplicateResolution.Error, PreviewFeatures.None), Read(config));
+            ReferenceResolution.Strict, DuplicateResolution.Error, false), Read(config));
     }
 
     [Theory]
@@ -45,7 +45,7 @@ public sealed class ProjectPropertiesTests
     public void All_features_resolve_against_the_project_language_version(
         LanguageVersion version, LanguageFeatures features)
     {
-        var properties = Read(new ProjectConfig() { AvroLibrary = "Apache", PreviewFeatures = "Unions" });
+        var properties = Read(new ProjectConfig() { AvroLibrary = "Apache", NativeUnions = "true" });
         var configuration = GeneratorConfiguration.Resolve((properties, new CompilationEnvironment([], version)), TestContext.Current.CancellationToken);
 
         Assert.Equal(LanguageFeatures.All, properties.LanguageFeatures);
@@ -77,7 +77,7 @@ public sealed class ProjectPropertiesTests
             RecordDeclaration = "record",
             ReferenceResolution = "Strict",
             DuplicateResolution = "Error",
-            PreviewFeatures = "None",
+            NativeUnions = "false",
         });
 
         Assert.Equal(omitted, explicitDefaults);

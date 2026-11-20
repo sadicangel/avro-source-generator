@@ -84,7 +84,7 @@ internal sealed record GeneratorConfiguration(
 
     private static LanguageFeatures GetLanguageFeatures(ProjectProperties projectProperties, GenerationTarget generationTarget) => projectProperties.LanguageFeatures
         .SetRecords(projectProperties.LanguageFeatures.HasRecords && generationTarget is not GenerationTarget.Legacy && projectProperties.RecordDeclaration is "record")
-        .SetUnions(projectProperties.LanguageFeatures.HasUnions && (projectProperties.PreviewFeatures & PreviewFeatures.Unions) != 0);
+        .SetUnions(projectProperties.LanguageFeatures.HasUnions && projectProperties.NativeUnions);
 
     private static LanguageFeatures MapVersionToFeatures(LanguageVersion languageVersion) => languageVersion switch
     {

@@ -321,6 +321,28 @@ public sealed class CliTests : IDisposable
         Assert.Equal(1, (await Run("compile", first, second, "-o", Output)).Code);
     }
 
+    [Theory]
+    [InlineData()]
+    [InlineData("--force")]
+    [InlineData("--check")]
+    public async Task Case_insensitive_output_collisions_fail_before_any_writes_on_windows(params string[] flags)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        var independent = Write("independent.avsc", Schema("Independent"));
+        var first = Write("first.avsc", Schema("Widget"));
+        var second = Write("second.avsc", Schema("widget"));
+        var existing = Write(Path.Combine("output", "Widget.Avro.g.cs"), "original content");
+
+        var (code, output, error) = await Run(["compile", independent, first, second, "-o", Output, .. flags]);
+
+        Assert.Equal(1, code);
+        Assert.Empty(output);
+        Assert.Contains("'Widget.Avro.g.cs' and 'widget.Avro.g.cs' resolve to the same output path", error);
+        Assert.Equal("original content", File.ReadAllText(existing));
+        Assert.Equal(existing, Assert.Single(Directory.GetFiles(Output)));
+    }
+
     [Fact]
     public async Task Force_skips_identical_files_and_preserves_stale_files()
     {
@@ -453,7 +475,7 @@ public sealed class CliTests : IDisposable
         {
             AvroLibrary = library,
             LanguageFeatures = features,
-            PreviewFeatures = preview,
+            NativeUnions = preview == "Unions" ? "true" : "false",
             RecordDeclaration = declaration,
             AccessModifier = "Internal",
             ReferenceResolution = "Deferred",

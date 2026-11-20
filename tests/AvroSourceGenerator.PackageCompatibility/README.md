@@ -10,7 +10,7 @@ Build, unit, integration, smoke, and release jobs install stable .NET 11 so preb
 Preview compatibility remains independent of the build SDK; between major release cycles it may select a prerelease from the latest stable major.
 
 Each SDK runs every consumer twice: with C# 12 targeting .NET 10, and with its default C# version targeting its own .NET version.
-SDKs starting with .NET 11 also run each consumer with the preview language version and `AvroSourceGeneratorPreviewFeatures=Unions`,
+SDKs starting with .NET 11 also run each consumer with the preview language version and `AvroSourceGeneratorNativeUnions=true`,
 checking that the packaged generator emits usable native unions. The other runs verify that unions remain interface-based without that opt-in.
 The C# 12 runs emit source hashes for comparison across SDKs. Unit snapshots remain a single suite on the latest Roslyn;
 Kafka and Schema Registry tests live in the separate smoke projects and run once per library.

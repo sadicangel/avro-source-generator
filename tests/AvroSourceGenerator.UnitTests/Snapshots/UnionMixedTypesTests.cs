@@ -33,7 +33,7 @@ public sealed class UnionMixedTypesTests
         config => config with
         {
             LanguageFeatures = languageFeatures,
-            PreviewFeatures = languageFeatures == nameof(LanguageFeatures.CSharp15) ? "Unions" : "None",
+            NativeUnions = languageFeatures == nameof(LanguageFeatures.CSharp15) ? "true" : "false",
             LanguageVersion = languageFeatures == nameof(LanguageFeatures.CSharp15) ? LanguageVersion.Preview : LanguageVersion.CSharp14
         }).UseParameters(languageFeatures);
 }

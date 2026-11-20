@@ -13,27 +13,28 @@ namespace AvroSourceGenerator.UnitTests;
 public sealed class UnionTaggedGenerationTests
 {
     [Theory]
-    [InlineData(LanguageVersion.CSharp13, null, "Unions", false)]
-    [InlineData(LanguageVersion.CSharp14, null, "Unions", false)]
-    [InlineData(LanguageVersion.CSharp14, "CSharp15", "Unions", false)]
-    [InlineData(LanguageVersion.CSharp8, "Latest", "Unions", false)]
+    [InlineData(LanguageVersion.CSharp13, null, "true", false)]
+    [InlineData(LanguageVersion.CSharp14, null, "true", false)]
+    [InlineData(LanguageVersion.CSharp14, "CSharp15", "true", false)]
+    [InlineData(LanguageVersion.CSharp8, "Latest", "true", false)]
     [InlineData((LanguageVersion)1500, null, null, false)]
-    [InlineData((LanguageVersion)1500, null, "None", false)]
+    [InlineData((LanguageVersion)1500, null, "false", false)]
     [InlineData((LanguageVersion)1500, null, "invalid", false)]
-    [InlineData((LanguageVersion)1500, null, "Unions", true)]
-    [InlineData((LanguageVersion)1500, null, "unions", true)]
+    [InlineData((LanguageVersion)1500, null, "true", true)]
+    [InlineData((LanguageVersion)1500, null, "TRUE", true)]
+    [InlineData((LanguageVersion)1500, null, "Unions", false)]
     [InlineData(LanguageVersion.Preview, null, null, false)]
-    [InlineData(LanguageVersion.Preview, null, "Unions", true)]
-    [InlineData(LanguageVersion.Preview, "CSharp14", "Unions", false)]
+    [InlineData(LanguageVersion.Preview, null, "true", true)]
+    [InlineData(LanguageVersion.Preview, "CSharp14", "true", false)]
     [InlineData(LanguageVersion.Preview, "CSharp15", null, false)]
-    [InlineData(LanguageVersion.Preview, "CSharp15", "Unions", true)]
+    [InlineData(LanguageVersion.Preview, "CSharp15", "true", true)]
     [InlineData(LanguageVersion.Preview, "Latest", null, false)]
-    public void Tagged_unions_require_language_support_and_explicit_preview_opt_in(
-        LanguageVersion languageVersion, string? languageFeatures, string? previewFeatures, bool tagged)
+    public void Native_unions_require_language_support_and_explicit_opt_in(
+        LanguageVersion languageVersion, string? languageFeatures, string? nativeUnions, bool tagged)
     {
         var config = new ProjectConfig(languageVersion >= (LanguageVersion)1500 ? LanguageVersion.Preview : languageVersion) { AvroLibrary = "None" };
         if (languageFeatures is not null) config.LanguageFeatures = languageFeatures;
-        if (previewFeatures is not null) config.PreviewFeatures = previewFeatures;
+        if (nativeUnions is not null) config.NativeUnions = nativeUnions;
         var input = GeneratorInput.Create([], [], config);
         var properties = ProjectProperties.FromAnalyzerOptions(input.OptionsProvider, TestContext.Current.CancellationToken);
         var configuration = GeneratorConfiguration.Resolve((
@@ -144,20 +145,20 @@ public sealed class UnionTaggedGenerationTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Changing_preview_opt_in_invalidates_parsing_and_caches_the_new_output(bool taggedInitially)
+    public void Changing_native_union_opt_in_invalidates_parsing_and_caches_the_new_output(bool taggedInitially)
     {
         var files = new[] { ProjectFile.Schema(VariantGenerationAssertions.Schema("record", "record")) }.ToImmutableArray();
         var initial = GeneratorInput.Create(files, [], new ProjectConfig(LanguageVersion.Preview)
         {
             AvroLibrary = "None",
             LanguageFeatures = "CSharp15",
-            PreviewFeatures = taggedInitially ? "Unions" : "None",
+            NativeUnions = taggedInitially ? "true" : "false",
         });
         var changed = GeneratorInput.Create(files, [], new ProjectConfig(LanguageVersion.Preview)
         {
             AvroLibrary = "None",
             LanguageFeatures = "CSharp15",
-            PreviewFeatures = taggedInitially ? "None" : "Unions",
+            NativeUnions = taggedInitially ? "false" : "true",
         });
         var driver = initial.GeneratorDriver.RunGenerators(initial.Compilation, TestContext.Current.CancellationToken)
             .WithUpdatedAnalyzerConfigOptions(changed.OptionsProvider)

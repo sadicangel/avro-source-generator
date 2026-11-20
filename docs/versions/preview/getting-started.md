@@ -26,8 +26,6 @@ dotnet add package AvroSourceGenerator --version {{ site.docs_version.package_ve
 dotnet add package Apache.Avro --version 1.12.2
 ```
 
-If your project already uses Chr.Avro, review [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}) before upgrading to 0.8.0.
-
 Update the generator package reference created by installation with `PrivateAssets` and `ExcludeAssets`, and add the `AdditionalFiles` entry. Keep a single reference to each package:
 
 ```xml
@@ -61,6 +59,12 @@ Use the generated type wherever your application needs it:
 ```
 
 For example, in a console application this prints `Ada <ada@example.com>`. You do not create `User.cs` yourself or run an extra generation command.
+
+## Upgrading from 0.7.x
+
+- Chr.Avro users can switch to Apache.Avro or standalone models. See the [Chr.Avro migration guide]({{ '/libraries/#migrating-from-chravro' | relative_url }}).
+- Set any values your C# code previously got from schema-derived property initializers. In C# 11 or later, a non-nullable property can now be `required` even when its Avro field has a default. In older C#, omitting the value can leave it at its CLR default, such as `0` or `null`. [Schema defaults]({{ '/generated-models/#schema-defaults' | relative_url }})
+- Remove trailing commas before closing delimiters in IDL declarations if an existing file reports [`AVROSG1007`]({{ '/troubleshooting/#common-diagnostics' | relative_url }}).
 
 ## What next?
 

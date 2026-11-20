@@ -202,6 +202,78 @@ public sealed class JsonReaderTests
     }
 
     [Theory]
+    [InlineData("{")]
+    [InlineData("[")]
+    public void A_malformed_object_does_not_consume_the_next_array_element(string delimiter)
+    {
+        const string Prefix = """{"fields":[{ """;
+        var text = Prefix + delimiter + """ "name":"first","type":"int"},{"name":"second","type":"string"}]}""";
+        var source = new SourceText("test.avsc", text);
+        var tree = Parser.ParseJson(source, TestContext.Current.CancellationToken);
+
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.UnexpectedToken, diagnostic.Code);
+        Assert.Equal(source.GetSourceSpan(Prefix.Length, 1), diagnostic.SourceSpan);
+        var root = Assert.IsType<JsonObjectSyntax>(tree.Root);
+        var fields = Assert.IsType<JsonArraySyntax>(root.Property("fields")!.Value);
+        Assert.Equal(2, fields.Elements.Length);
+        Assert.Empty(Assert.IsType<JsonObjectSyntax>(fields.Elements[0]).Properties);
+        Assert.Equal("second", Assert.IsType<JsonStringSyntax>(Assert.IsType<JsonObjectSyntax>(fields.Elements[1]).Property("name")!.Value).Value);
+    }
+
+    [Theory]
+    [InlineData("""{ [ { "ignored": 02 }, [1, 2] ], "second": 01 }""", "[")]
+    [InlineData("""{ { "ignored": 02 }, "second": 01 }""", "{")]
+    public void Recovery_skips_nested_blocks_and_reports_errors_in_the_next_property(string text, string opener)
+    {
+        var source = new SourceText("test.avpr", text);
+        var file = AvxxParser.Parse(source, new AvroParseOptions(), TestContext.Current.CancellationToken);
+
+        Assert.False(file.IsValid);
+        var diagnostics = file.GetDiagnostics().ToArray();
+        Assert.Equal([AvroDiagnosticCode.UnexpectedToken, AvroDiagnosticCode.InvalidNumber], diagnostics.Select(diagnostic => diagnostic.Code));
+        Assert.Equal([opener, "01"], diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+        Assert.Equal(text.IndexOf(opener, 1, StringComparison.Ordinal), diagnostics[0].SourceSpan.Offset);
+    }
+
+    [Fact]
+    public void Recovery_leaves_an_ambiguous_closer_for_the_current_object()
+    {
+        const string Text = """[{"data":{"type":"array", {"items":"string"}}, {"name":"second"}]""";
+        var source = new SourceText("test.avsc", Text);
+        var tree = Parser.ParseJson(source, TestContext.Current.CancellationToken);
+
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.UnexpectedToken, diagnostic.Code);
+        Assert.Equal(source.GetSourceSpan(Text.IndexOf("{\"items", StringComparison.Ordinal), 1), diagnostic.SourceSpan);
+        var fields = Assert.IsType<JsonArraySyntax>(tree.Root).Elements;
+        Assert.Equal(2, fields.Length);
+        Assert.Equal("second", Assert.IsType<JsonStringSyntax>(Assert.IsType<JsonObjectSyntax>(fields[1]).Property("name")!.Value).Value);
+    }
+
+    [Fact]
+    public void Recovery_stops_at_eof_when_the_block_is_unclosed()
+    {
+        const string Text = """{ { "ignored": [1, 2""";
+        var source = new SourceText("test.avsc", Text);
+        var tree = Parser.ParseJson(source, TestContext.Current.CancellationToken);
+
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.UnexpectedToken, diagnostic.Code);
+        Assert.Equal(source.GetSourceSpan(Text.IndexOf('{', 1), 1), diagnostic.SourceSpan);
+    }
+
+    [Fact]
+    public void Recovery_leaves_the_enclosing_array_separator_after_an_unexpected_value_block()
+    {
+        const string Text = """[(1, { "ignored": 02 }), 01]""";
+        var tree = Parser.ParseJson(new SourceText("test.avsc", Text), TestContext.Current.CancellationToken);
+
+        Assert.Equal([AvroDiagnosticCode.UnexpectedJsonValue, AvroDiagnosticCode.InvalidNumber], tree.Diagnostics.Select(diagnostic => diagnostic.Code));
+        Assert.Equal(["(", "01"], tree.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
+    }
+
+    [Theory]
     [InlineData("{", AvroDiagnosticCode.UnexpectedToken, "")]
     [InlineData("[] []", AvroDiagnosticCode.TrailingJsonContent, "[")]
     [InlineData("[1,]", AvroDiagnosticCode.UnexpectedToken, ",")]
@@ -213,6 +285,7 @@ public sealed class JsonReaderTests
     [InlineData("""{"a"}""", AvroDiagnosticCode.UnexpectedToken, "}")]
     [InlineData("`name", AvroDiagnosticCode.InvalidCharacter, "`")]
     [InlineData("[ \u00a01]", AvroDiagnosticCode.InvalidCharacter, "\u00a0")]
+    [InlineData("[😀]", AvroDiagnosticCode.InvalidCharacter, "😀")]
     [InlineData("\"raw\ttab\"", AvroDiagnosticCode.InvalidCharacter, "\t")]
     [InlineData("{\"type\":\"record\",\"name\":\"R\",\"fields\":false,", AvroDiagnosticCode.UnexpectedToken, "")]
     public void Malformed_documents_report_a_specific_syntax_diagnostic(string text, AvroDiagnosticCode code, string span)
@@ -247,6 +320,17 @@ public sealed class JsonReaderTests
         Assert.Equal(Text.IndexOf('!'), diagnostic.SourceSpan.Offset);
         Assert.Equal("!", diagnostic.SourceSpan.ToString());
         Assert.Equal("Unexpected character '!'", diagnostic.GetMessage());
+    }
+
+    [Fact]
+    public void Recovering_from_an_invalid_escape_skips_escaped_quotes_in_the_same_string()
+    {
+        const string Text = """{"bad":"invalid\q then \"quote\" and \\","other":$}""";
+        var source = new SourceText("test.avsc", Text);
+        var tree = Parser.ParseJson(source, TestContext.Current.CancellationToken);
+
+        Assert.Equal([AvroDiagnosticCode.InvalidEscapeSequence, AvroDiagnosticCode.InvalidCharacter], tree.Diagnostics.Select(diagnostic => diagnostic.Code));
+        Assert.Equal(["\\q", "$"], tree.Diagnostics.Select(diagnostic => diagnostic.SourceSpan.ToString()));
     }
 
     [Fact]

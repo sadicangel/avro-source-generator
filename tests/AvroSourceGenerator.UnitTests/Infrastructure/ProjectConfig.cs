@@ -20,10 +20,10 @@ public record struct ProjectConfig(LanguageVersion LanguageVersion)
         set => GlobalOptions["AvroSourceGeneratorLanguageFeatures"] = value;
     }
 
-    public string PreviewFeatures
+    public string NativeUnions
     {
-        get => GlobalOptions.GetValueOrDefault("AvroSourceGeneratorPreviewFeatures") ?? string.Empty;
-        set => GlobalOptions["AvroSourceGeneratorPreviewFeatures"] = value;
+        get => GlobalOptions.GetValueOrDefault("AvroSourceGeneratorNativeUnions") ?? string.Empty;
+        set => GlobalOptions["AvroSourceGeneratorNativeUnions"] = value;
     }
 
     public string AccessModifier

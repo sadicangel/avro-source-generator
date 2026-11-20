@@ -21,7 +21,12 @@ internal static class JsonSyntaxExtensions
         public Result<Option<string>> AsNamespace()
         {
             if (optional is not JsonValueSyntax value || value is JsonNullSyntax) return Option.None<string>();
-            return value.GetStringValue() is string ns && (ns.Length == 0 || NameValidator.IsValidName(ns)) ? Option.Some(ns) : AvroDiagnostic.InvalidNamespace(value.GetSourceSpan());
+            return value.GetStringValue().GetValueOrDefault() switch
+            {
+                "" => Option.None<string>(),
+                string ns when NameValidator.IsValidName(ns) => Option.Some(ns),
+                _ => AvroDiagnostic.InvalidNamespace(value.GetSourceSpan())
+            };
         }
 
         public Result<Option<string>> AsOrder()

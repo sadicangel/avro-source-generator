@@ -11,7 +11,7 @@ internal sealed record ProjectProperties(
     string RecordDeclaration,
     ReferenceResolution ReferenceResolution,
     DuplicateResolution DuplicateResolution,
-    PreviewFeatures PreviewFeatures)
+    bool NativeUnions)
 {
     public static ProjectProperties FromAnalyzerOptions(AnalyzerConfigOptionsProvider provider, CancellationToken cancellationToken)
     {
@@ -35,14 +35,10 @@ internal sealed record ProjectProperties(
             languageFeatures = parsedLanguageFeatures;
         }
 
-        var previewFeatures = PreviewFeatures.None;
-        if (provider.GlobalOptions.TryGetValue(
-                "build_property.AvroSourceGeneratorPreviewFeatures",
-                out var previewFeaturesString) &&
-            Enum.TryParse<PreviewFeatures>(previewFeaturesString, ignoreCase: true, out var parsedPreviewFeatures))
-        {
-            previewFeatures = parsedPreviewFeatures;
-        }
+        var nativeUnions = provider.GlobalOptions.TryGetValue(
+                "build_property.AvroSourceGeneratorNativeUnions",
+                out var nativeUnionsString) &&
+            bool.TryParse(nativeUnionsString, out var parsedNativeUnions) && parsedNativeUnions;
 
         var accessModifier = AccessModifier.Public;
         if (provider.GlobalOptions.TryGetValue(
@@ -80,6 +76,6 @@ internal sealed record ProjectProperties(
             duplicateResolution = parsedDuplicateResolution;
         }
 
-        return new ProjectProperties(avroLibrary, languageFeatures, accessModifier, recordDeclaration, referenceResolution, duplicateResolution, previewFeatures);
+        return new ProjectProperties(avroLibrary, languageFeatures, accessModifier, recordDeclaration, referenceResolution, duplicateResolution, nativeUnions);
     }
 }

@@ -204,7 +204,7 @@ public sealed class ParserParityTests
     [Theory]
     [InlineData(GenerationTarget.Modern)]
     [InlineData(GenerationTarget.Apache)]
-    public void Namespace_validation_preserves_empty_strings_and_qualified_name_precedence(GenerationTarget target)
+    public void Namespace_validation_treats_empty_namespaces_as_unset_and_preserves_qualified_name_precedence(GenerationTarget target)
     {
         foreach (var ns in new[] { "\"\"", "\"bad-name\"", "null" })
         {
@@ -231,9 +231,9 @@ public sealed class ParserParityTests
 
         var emptyNamespace = Parse(new SourceText("test.avdl", "namespace enclosing; @namespace(\"\") protocol P { @namespace(\"\") record R {} }"), target);
         AssertValid(emptyNamespace);
-        Assert.Equal(string.Empty, emptyNamespace.RootSchema.SchemaName.Namespace);
-        Assert.Equal(string.Empty, Assert.IsType<ProtocolSchema>(emptyNamespace.RootSchema).Types[0].SchemaName.Namespace);
-        var jsonProtocol = Parse(new SourceText("test.avpr", """{"protocol":"P","namespace":"","types":[{"type":"record","name":"R","namespace":"","fields":[]}],"messages":{}}"""), target);
+        Assert.Equal("enclosing", emptyNamespace.RootSchema.SchemaName.Namespace);
+        Assert.Equal("enclosing", Assert.IsType<ProtocolSchema>(emptyNamespace.RootSchema).Types[0].SchemaName.Namespace);
+        var jsonProtocol = Parse(new SourceText("test.avpr", """{"protocol":"P","namespace":"enclosing","types":[{"type":"record","name":"R","namespace":"","fields":[]}],"messages":{}}"""), target);
         AssertValid(jsonProtocol);
         Assert.Equal(SerializeBound(jsonProtocol), SerializeBound(emptyNamespace));
     }

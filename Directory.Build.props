@@ -5,6 +5,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <AvroSourceGeneratorPreviewFeatures>Unions</AvroSourceGeneratorPreviewFeatures>
+    <AvroSourceGeneratorNativeUnions>true</AvroSourceGeneratorNativeUnions>
   </PropertyGroup>
 </Project>

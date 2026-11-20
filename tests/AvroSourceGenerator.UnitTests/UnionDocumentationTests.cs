@@ -105,7 +105,7 @@ public sealed class UnionDocumentationTests
         {
             AvroLibrary = "None",
             LanguageFeatures = "CSharp15",
-            PreviewFeatures = "Unions",
+            NativeUnions = "true",
         });
         var driver = input.GeneratorDriver.RunGeneratorsAndUpdateCompilation(
             input.Compilation, out var compilation, out var diagnostics, TestContext.Current.CancellationToken);

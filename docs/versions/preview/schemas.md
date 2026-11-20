@@ -151,6 +151,8 @@ This resolves references after all supported inputs have been read. Declared imp
 
 ## Duplicate definitions and errors
 
+The generator treats an empty, `null`, or omitted namespace as unset. A nested declaration inherits its enclosing namespace when its own namespace is unset.
+
 Prefer one declaration for each fully qualified Avro name. See [Duplicate resolution]({{ '/configuration/#duplicate-resolution' | relative_url }}) when intentional duplicates cannot be avoided.
 
 An invalid input produces build diagnostics. Independent valid inputs still generate models, while files depending on an invalid schema are suppressed until it is fixed. See [Troubleshooting]({{ '/troubleshooting/' | relative_url }}) for common diagnostic IDs.

@@ -499,6 +499,39 @@ public sealed class ParserTests
     }
 
     [Theory]
+    [InlineData("record")]
+    [InlineData("error")]
+    public void Parse_FieldList_RecoversAfterAnUnexpectedNestedBlock(string kind)
+    {
+        var tree = ParseTree(kind + " R { { int ignored; [1, 2] } string kept; } record Next {}");
+
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.UnexpectedToken, diagnostic.Code);
+        Assert.Equal("{", diagnostic.SourceSpan.ToString());
+        var fields = tree.Root.Declarations[0] switch
+        {
+            RecordDeclarationSyntax record => record.Fields,
+            ErrorDeclarationSyntax error => error.Fields,
+            _ => throw new InvalidOperationException(),
+        };
+        Assert.Equal("kept", Assert.Single(fields).Name.FullName);
+        Assert.Equal("Next", Assert.IsType<RecordDeclarationSyntax>(tree.Root.Declarations[1]).Name.FullName);
+    }
+
+    [Fact]
+    public void Parse_UnionList_RecoversAfterAnUnexpectedNestedBlock()
+    {
+        var tree = ParseTree("record R { union { int, [ { ignored } ], string } choice; }");
+
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.UnexpectedToken, diagnostic.Code);
+        Assert.Equal("[", diagnostic.SourceSpan.ToString());
+        var record = Assert.IsType<RecordDeclarationSyntax>(Assert.Single(tree.Root.Declarations));
+        var union = Assert.IsType<UnionTypeSyntax>(Assert.Single(record.Fields).Type);
+        Assert.Equal(["int", "string"], union.Types.Select(type => type.GetSourceSpan().ToString()));
+    }
+
+    [Theory]
     [InlineData("enum E { A, }")]
     [InlineData("schema union { string, };")]
     [InlineData("protocol P { void m(string p,); }")]

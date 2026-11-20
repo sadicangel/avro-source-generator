@@ -32,7 +32,7 @@ public sealed class NestedCollectionGenerationTests
                 LanguageVersion = version,
                 LanguageFeatures = features,
                 RecordDeclaration = "class",
-                PreviewFeatures = "None",
+                NativeUnions = "false",
             });
 
         input.GeneratorDriver.RunGeneratorsAndUpdateCompilation(
@@ -44,22 +44,22 @@ public sealed class NestedCollectionGenerationTests
     }
 
     [Theory]
-    [InlineData(LanguageVersion.CSharp7_3, "CSharp7_3", "class", "None", "record")]
-    [InlineData(LanguageVersion.CSharp8, "CSharp8", "class", "None", "record")]
-    [InlineData(LanguageVersion.CSharp9, "CSharp9", "record", "None", "record")]
-    [InlineData(LanguageVersion.CSharp10, "CSharp10", "record", "None", "record")]
-    [InlineData(LanguageVersion.CSharp11, "CSharp11", "record", "None", "record")]
-    [InlineData(LanguageVersion.CSharp12, "CSharp12", "record", "None", "record")]
-    [InlineData(LanguageVersion.Preview, "Latest", "record", "Unions", "record")]
-    [InlineData(LanguageVersion.CSharp7_3, "CSharp7_3", "class", "None", "error")]
-    [InlineData(LanguageVersion.CSharp8, "CSharp8", "class", "None", "error")]
-    [InlineData(LanguageVersion.CSharp9, "CSharp9", "class", "None", "error")]
-    [InlineData(LanguageVersion.CSharp10, "CSharp10", "class", "None", "error")]
-    [InlineData(LanguageVersion.CSharp11, "CSharp11", "class", "None", "error")]
-    [InlineData(LanguageVersion.CSharp12, "CSharp12", "class", "None", "error")]
-    [InlineData(LanguageVersion.Preview, "Latest", "class", "Unions", "error")]
+    [InlineData(LanguageVersion.CSharp7_3, "CSharp7_3", "class", "false", "record")]
+    [InlineData(LanguageVersion.CSharp8, "CSharp8", "class", "false", "record")]
+    [InlineData(LanguageVersion.CSharp9, "CSharp9", "record", "false", "record")]
+    [InlineData(LanguageVersion.CSharp10, "CSharp10", "record", "false", "record")]
+    [InlineData(LanguageVersion.CSharp11, "CSharp11", "record", "false", "record")]
+    [InlineData(LanguageVersion.CSharp12, "CSharp12", "record", "false", "record")]
+    [InlineData(LanguageVersion.Preview, "Latest", "record", "true", "record")]
+    [InlineData(LanguageVersion.CSharp7_3, "CSharp7_3", "class", "false", "error")]
+    [InlineData(LanguageVersion.CSharp8, "CSharp8", "class", "false", "error")]
+    [InlineData(LanguageVersion.CSharp9, "CSharp9", "class", "false", "error")]
+    [InlineData(LanguageVersion.CSharp10, "CSharp10", "class", "false", "error")]
+    [InlineData(LanguageVersion.CSharp11, "CSharp11", "class", "false", "error")]
+    [InlineData(LanguageVersion.CSharp12, "CSharp12", "class", "false", "error")]
+    [InlineData(LanguageVersion.Preview, "Latest", "class", "true", "error")]
     public void Nested_collection_conversions_compile_without_changing_properties(
-        LanguageVersion version, string features, string declaration, string preview, string schemaType)
+        LanguageVersion version, string features, string declaration, string nativeUnions, string schemaType)
     {
         var input = GeneratorInput.Create(
             [ProjectFile.Schema(Schema.Replace("\"type\": \"record\"", $"\"type\": \"{schemaType}\""))],
@@ -70,7 +70,7 @@ public sealed class NestedCollectionGenerationTests
                 LanguageVersion = version,
                 LanguageFeatures = features,
                 RecordDeclaration = declaration,
-                PreviewFeatures = preview,
+                NativeUnions = nativeUnions,
             });
 
         var driver = input.GeneratorDriver.RunGeneratorsAndUpdateCompilation(
@@ -158,7 +158,7 @@ public sealed class NestedCollectionGenerationTests
                 LanguageVersion = LanguageVersion.Preview,
                 LanguageFeatures = "Latest",
                 RecordDeclaration = "class",
-                PreviewFeatures = "Unions",
+                NativeUnions = "true",
             });
 
         input.GeneratorDriver.RunGeneratorsAndUpdateCompilation(
@@ -215,7 +215,7 @@ public sealed class NestedCollectionGenerationTests
                 LanguageVersion = LanguageVersion.Preview,
                 LanguageFeatures = "Latest",
                 RecordDeclaration = "class",
-                PreviewFeatures = nativeUnions ? "Unions" : "None",
+                NativeUnions = nativeUnions ? "true" : "false",
             });
 
         var driver = input.GeneratorDriver.RunGeneratorsAndUpdateCompilation(
@@ -266,7 +266,7 @@ public sealed class NestedCollectionGenerationTests
                 LanguageVersion = version,
                 LanguageFeatures = features,
                 RecordDeclaration = "class",
-                PreviewFeatures = nativeUnions ? "Unions" : "None",
+                NativeUnions = nativeUnions ? "true" : "false",
             });
 
         var driver = input.GeneratorDriver.RunGeneratorsAndUpdateCompilation(
@@ -336,7 +336,7 @@ public sealed class NestedCollectionGenerationTests
         var input = GeneratorInput.Create(
             [ProjectFile.Schema(schema)],
             [MetadataReference.CreateFromFile(typeof(Avro.Schema).Assembly.Location)],
-            new ProjectConfig { AvroLibrary = "Apache", LanguageFeatures = "CSharp8", PreviewFeatures = "None" });
+            new ProjectConfig { AvroLibrary = "Apache", LanguageFeatures = "CSharp8", NativeUnions = "false" });
 
         var driver = input.GeneratorDriver.RunGeneratorsAndUpdateCompilation(
             input.Compilation, out var compilation, out var diagnostics, TestContext.Current.CancellationToken);
@@ -387,7 +387,7 @@ public sealed class NestedCollectionGenerationTests
                 LanguageVersion = version,
                 LanguageFeatures = features,
                 RecordDeclaration = "class",
-                PreviewFeatures = "None",
+                NativeUnions = "false",
             });
 
         var driver = input.GeneratorDriver.RunGeneratorsAndUpdateCompilation(

@@ -33,7 +33,7 @@ If the command-line build succeeds but the editor still shows stale errors, relo
 | `AVROSG1004` | Invalid escape sequence | Correct the escape in the quoted string. |
 | `AVROSG1005` | Invalid number | Correct the number's spelling. For example, write `1` instead of `01` in JSON. |
 | `AVROSG1006` | Unterminated string | Close the string with a quotation mark on the same line. |
-| `AVROSG1007` | Unexpected token | Check the expected token in the diagnostic. Remove a trailing comma when it precedes a closing delimiter. |
+| `AVROSG1007` | Unexpected token | Check the expected token and nearby delimiters. Remove trailing commas before closing delimiters and check whether any nested block starts where a property, field, or type is expected. |
 | `AVROSG1008` | JSON comment not allowed | Remove the highlighted comment from the JSON schema or protocol. |
 | `AVROSG1009` | Unpaired surrogate in JSON property name | Replace the unpaired UTF-16 surrogate with valid Unicode text. |
 | `AVROSG1010` | JSON nesting limit exceeded | Reduce the number of nested JSON arrays and objects. |

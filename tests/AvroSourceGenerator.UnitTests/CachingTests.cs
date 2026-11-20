@@ -7,6 +7,32 @@ namespace AvroSourceGenerator.UnitTests;
 
 public sealed class CachingTests
 {
+    [Fact]
+    public void Global_namespace_spellings_keep_the_same_incremental_output()
+    {
+        const string Explicit = """{"type":"record","name":"Child","namespace":"","fields":[]}""";
+        const string Omitted = """{"type":"record","name":"Child","fields":[]}""";
+        const string Parent = """{"type":"record","name":"Parent","fields":[{"name":"Value","type":"Child"}]}""";
+        var input = GeneratorInput.Create([ProjectFile.Schema(Explicit, "child.avsc"), ProjectFile.Schema(Parent, "parent.avsc")], [],
+            new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "None", ReferenceResolution = "Deferred" });
+        var token = TestContext.Current.CancellationToken;
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, token);
+        Assert.Empty(driver.GetRunResult().Diagnostics);
+        var original = Assert.Single(driver.GetRunResult().Results).GeneratedSources;
+        Assert.Equal(["Child.Avro.g.cs", "Parent.Avro.g.cs"], original.Select(source => source.HintName).Order());
+
+        var child = input.AdditionalTexts[0];
+        var changed = new ChangedAdditionalText(child.Path, Omitted);
+        driver = driver.ReplaceAdditionalText(child, changed).RunGenerators(input.Compilation, token);
+        Assert.Empty(driver.GetRunResult().Diagnostics);
+        var after = Assert.Single(driver.GetRunResult().Results).GeneratedSources;
+        Assert.Equal(original.Select(source => source.SourceText.ToString()), after.Select(source => source.SourceText.ToString()));
+
+        driver = driver.RunGenerators(input.Compilation, token);
+        Assert.All(StepTracking.GetTrackedSteps(driver.GetRunResult())["RenderedFile"].SelectMany(step => step.Outputs),
+            output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
+    }
+
     [Theory]
     [InlineData("schema R; record R { int f; int f; }", "schema R; record R { int f; int other; }", "AVROSG5004")]
     [InlineData("schema E; enum E { A, A }", "schema E; enum E { A, B }", "AVROSG5005")]

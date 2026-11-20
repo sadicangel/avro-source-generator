@@ -16,7 +16,7 @@ public sealed class UnionGenerationCachingTests
         {
             AvroLibrary = "None",
             LanguageFeatures = features.ToString(),
-            PreviewFeatures = features.HasUnions ? "Unions" : "None",
+            NativeUnions = features.HasUnions ? "true" : "false",
         };
         var initial = GeneratorInput.Create([ProjectFile.Schema(VariantGenerationAssertions.Schema("record", "record"), "envelope.avsc")], [], config);
         var changed = GeneratorInput.Create([ProjectFile.Schema(VariantGenerationAssertions.Schema("record", "record", nullable: true), "envelope.avsc")], [], config);
@@ -47,7 +47,7 @@ public sealed class UnionGenerationCachingTests
         {
             AvroLibrary = "None",
             LanguageFeatures = features.ToString(),
-            PreviewFeatures = features.HasUnions ? "Unions" : "None",
+            NativeUnions = features.HasUnions ? "true" : "false",
         };
         var initial = GeneratorInput.Create([ProjectFile.Schema(schema, "envelope.avsc")], [], config);
         var changed = GeneratorInput.Create([ProjectFile.Schema(schema.Replace("\"Second\"", "\"Third\""), "envelope.avsc")], [], config);

@@ -15,7 +15,7 @@ Configure the generator with MSBuild properties in your consuming project's `.cs
 | `AvroSourceGeneratorAvroLibrary` | `Auto` | `Auto`, `None`, `Apache` |
 | `AvroSourceGeneratorDuplicateResolution` | `Error` | `Error`, `Ignore` |
 | `AvroSourceGeneratorReferenceResolution` | `Strict` | `Strict`, `Deferred` |
-| `AvroSourceGeneratorPreviewFeatures` | `None` | `None`, `Unions` |
+| `AvroSourceGeneratorNativeUnions` | `false` | `true`, `false` |
 
 Explicit `Chr` settings or automatic Chr detection report `AVROSG7002` and generate standalone fallback models. See [migration guidance]({{ '/libraries/#migrating-from-chravro' | relative_url }}).
 
@@ -94,4 +94,4 @@ Choose deferred binding for related types declared in separate JSON input files:
 
 ## C# union types
 
-To opt into native C# union types, set `AvroSourceGeneratorPreviewFeatures` to `Unions` and use .NET 11 with `LangVersion=preview`. If you set a language feature set, choose `CSharp15` or `All`. See [native C# unions]({{ '/generated-models/#native-c-unions' | relative_url }}) for the complete setup and limitations.
+In 0.8.0, set `AvroSourceGeneratorNativeUnions` to `true` to opt into native C# union types. Use .NET 11 or later and C# 15 or later with a compiler that supports union types. If you set a language feature set, choose `CSharp15` or `All`. See [native C# unions]({{ '/generated-models/#native-c-unions' | relative_url }}) for setup, preview package configuration, and limitations.

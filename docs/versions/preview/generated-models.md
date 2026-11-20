@@ -64,28 +64,48 @@ An Avro union with `null` and one other type represents an optional value:
 
 In the quick-start project this becomes `string? Email`. Supply Avro defaults in the schema when your data contract requires them; C# nullability alone does not change the Avro schema.
 
-Unions of multiple record types can use generated `I…Variant` interfaces. Other unions can be represented as `object`. Code consuming an object union must handle its possible runtime types, for example with pattern matching.
+### Supported unions
+
+The examples below show the C# type of a field named `Content` on a record named `Envelope`. Native unions require a separate [opt-in](#native-c-unions).
+
+| Avro field type | Default C# type | With native unions enabled |
+|:---|:---|:---|
+| `["int"]` | `int` | `int` |
+| `["null", "int"]` | `int?` | `int?` |
+| `["int", "string"]` | `object` | `EnvelopeContentUnion` |
+| `["null", "int", "string"]` | `object?` | `EnvelopeContentUnion?` |
+| Two inline record definitions | `IEnvelopeContentVariant` | `EnvelopeContentUnion` |
+| `["Email", "Sms"]`, with both records declared earlier | `object` | `EnvelopeContentUnion` |
+
+By default, a union with two or more non-null branches gets a variant interface if each branch is an inline record or error definition, or an inline fixed definition with its own generated C# type. Each branch type implements the interface. Other unions with multiple non-null branches use `object`. This includes unions of named references and mixtures with primitives, enums, arrays, or maps. Use C# pattern matching to handle the possible runtime types of an `object` property. The `?` annotation on reference types depends on the enabled C# language features.
+
+The generator creates variant interfaces and native union types for record and error fields. A union used as an array item or a map value uses the branch type for a single non-null branch, with nullability when applicable. Multiple non-null branches use `object` or `object?`, even with the native union opt-in. For example, an array with `"items": ["int", "string"]` generates `List<object>`.
+
+Avro forbids duplicate branches and a union directly inside another union. Distinct named types can share a schema kind, such as two named fixed types. An array or map can also contain a union in its item or value schema. See [common diagnostics]({{ '/troubleshooting/#common-diagnostics' | relative_url }}).
 
 ## Native C# unions
 
-The generator can represent Avro union fields with [C# union types](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/union). This is opt-in. Use **.NET 11** with C# 15 union support and configure:
+Set `AvroSourceGeneratorNativeUnions` to `true` to use [C# union types](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/union) for eligible fields. The default is `false`, including when the property is omitted. Use **.NET 11 or later** and **C# 15 or later** with a compiler that supports union types. If your compiler requires preview language features for unions, set `LangVersion` to `preview` as shown below.
 
 ```xml
 <PropertyGroup>
   <TargetFramework>net11.0</TargetFramework>
   <LangVersion>preview</LangVersion>
-  <AvroSourceGeneratorPreviewFeatures>Unions</AvroSourceGeneratorPreviewFeatures>
+  <AvroSourceGeneratorNativeUnions>true</AvroSourceGeneratorNativeUnions>
 </PropertyGroup>
 ```
 
-If you also set `AvroSourceGeneratorLanguageFeatures`, choose `CSharp15` or `All`. Without the union opt-in, the generator retains the existing interface/object representation.
+If you also set `AvroSourceGeneratorLanguageFeatures`, choose `CSharp15` or `All`. An eligible field has at least two distinct non-null C# branch types. The cases can include primitives, named types, arrays, and maps. An Avro `null` branch makes the union property nullable.
+
+{: .note }
+`AvroSourceGeneratorNativeUnions` ships with 0.8.0. The preview package linked from this guide uses `AvroSourceGeneratorPreviewFeatures=Unions` for the same opt-in.
 
 Supported feature-set values include `All`, `CSharp7_3`, `CSharp8`, `CSharp9`, `CSharp10`, `CSharp11`, `CSharp12`, `CSharp13`, `CSharp14`, and `CSharp15`. The selected set is limited by the consuming project's language version.
 
 ### Limitations
 
-- Each non-null Avro branch must map to a distinct C# type. For example, `bytes` and a `fixed` type that both map to `byte[]` cannot be distinguished.
-- Apache.Avro returns enum ordinals rather than generated enum values in these unions. This prevents correct enum deserialization and can make enum branches indistinguishable from each other or an `int` branch. The fix is tracked in [Apache Avro PR #4031](https://github.com/apache/avro/pull/4031).
+- Each non-null Avro branch needs a distinct C# type to have its own case. For example, `bytes` and a `fixed` type that both map to `byte[]` share a C# case, so the generated model cannot distinguish them.
+- Apache.Avro 1.12.2 returns enum ordinals when reading unions. This prevents correct enum deserialization and can make enum branches indistinguishable from each other or an `int` branch. The fix is tracked in [Apache Avro PR #4031](https://github.com/apache/avro/pull/4031).
 - Test the serializer with every branch in your schema before relying on the feature in an application.
 
 ## Extending generated types

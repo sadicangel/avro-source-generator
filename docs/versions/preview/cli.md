@@ -78,6 +78,8 @@ avro-sg compile ./schemas --output ./Generated --library Apache --force
 
 Identical files are not rewritten with `--force`. Neither stale files nor unrelated files are removed. Outputs use the generator's `<full-name>.Avro.g.cs` filenames and UTF-8 with BOM. Keep generated files separate from handwritten partial declarations, and avoid also generating the same types with the source generator in one compilation.
 
+On Windows, generated filenames are compared case-insensitively. If two schemas map to the same output path, the command fails before writing any files, including with `--force`.
+
 Check committed output in CI without modifying files:
 
 ```powershell

@@ -142,6 +142,12 @@ internal sealed class Parser
                 break;
             }
 
+            if (TrySkipUnexpectedBlock(SyntaxKind.ProtocolKeyword))
+            {
+                ReportAndClearMisplacedMetadata("document body");
+                continue;
+            }
+
             using (EnsureProgress())
             {
                 declarations.Add(ParseDeclaration());
@@ -172,7 +178,8 @@ internal sealed class Parser
         var symbols = ParseSeparatedList(
             parseNode: ParseSimpleName,
             separator: SyntaxKind.CommaToken,
-            terminators: SyntaxKind.BraceCloseToken);
+            terminator: SyntaxKind.BraceCloseToken,
+            expectedElement: SyntaxKind.IdentifierToken);
         var braceCloseToken = Match(SyntaxKind.BraceCloseToken);
         var defaultValue = ParseEnumDefaultClause();
         var semicolonToken = defaultValue is not null ? Match(SyntaxKind.SemicolonToken) : null;
@@ -247,6 +254,12 @@ internal sealed class Parser
                 break;
             }
 
+            if (TrySkipUnexpectedBlock(SyntaxKind.IdentifierToken))
+            {
+                ReportAndClearMisplacedMetadata("protocol body");
+                continue;
+            }
+
             using (EnsureProgress())
             {
                 switch (_stream.Current.SyntaxKind)
@@ -295,7 +308,7 @@ internal sealed class Parser
         var name = ParseSimpleName();
         var (documentation, annotations) = DequeueMetadata();
         var parenthesisOpenToken = Match(SyntaxKind.ParenthesisOpenToken);
-        var parameters = ParseSeparatedList(ParseParameterDeclaration, SyntaxKind.CommaToken, SyntaxKind.ParenthesisCloseToken);
+        var parameters = ParseSeparatedList(ParseParameterDeclaration, SyntaxKind.CommaToken, SyntaxKind.ParenthesisCloseToken, SyntaxKind.IdentifierToken);
         var parenthesisCloseToken = Match(SyntaxKind.ParenthesisCloseToken);
         var oneWayClause = ParseOneWayClause();
         var throwsErrorClause = ParseThrowsErrorClause();
@@ -333,7 +346,7 @@ internal sealed class Parser
     {
         if (_stream.Current.SyntaxKind is not SyntaxKind.ThrowsKeyword) return null;
         var throwsKeyword = Next();
-        var errors = ParseSeparatedList(ParseNamedType, SyntaxKind.CommaToken, SyntaxKind.SemicolonToken);
+        var errors = ParseSeparatedList(ParseNamedType, SyntaxKind.CommaToken, SyntaxKind.SemicolonToken, SyntaxKind.IdentifierToken);
         return new ThrowsErrorClauseSyntax(throwsKeyword, errors);
     }
 
@@ -420,7 +433,7 @@ internal sealed class Parser
         var separatedIdentifiers = ParseSeparatedList(
             parseNode: () => _stream.Current.SyntaxKind is SyntaxKind.NamespaceKeyword ? Next() : Match(SyntaxKind.IdentifierToken),
             separator: SyntaxKind.DotToken,
-            terminators: SyntaxKind.ParenthesisOpenToken);
+            terminator: SyntaxKind.ParenthesisOpenToken);
 
         return new AnnotationNameSyntax(separatedIdentifiers);
     }
@@ -525,7 +538,10 @@ internal sealed class Parser
         using var scope = IncreaseDepth();
         if (scope.IsAtMaxJsonDepth(out var @null)) return @null;
         var open = Match(SyntaxKind.BraceOpenToken);
-        var members = ParseSeparatedList(ParseJsonProperty, SyntaxKind.CommaToken, SyntaxKind.BraceCloseToken);
+        var members = ParseSeparatedList(ParseJsonProperty, SyntaxKind.CommaToken, SyntaxKind.BraceCloseToken, SyntaxKind.StringLiteralToken,
+            static (parser, offset) => parser._stream.Peek(offset).SyntaxKind == SyntaxKind.CommaToken
+                && parser._stream.Peek(offset + 1).SyntaxKind == SyntaxKind.StringLiteralToken
+                && parser._stream.Peek(offset + 2).SyntaxKind == SyntaxKind.ColonToken);
         var close = Match(SyntaxKind.BraceCloseToken);
         return new JsonObjectSyntax(open, [.. members], close);
     }
@@ -542,6 +558,12 @@ internal sealed class Parser
         var token = _stream.Current;
         if (!_lastTokenWasSynthetic)
             _diagnostics.Add(AvroDiagnostic.UnexpectedJsonValue(token));
+
+        if (GetClosingDelimiter(token.SyntaxKind) is { } closing)
+        {
+            SkipBlock(closing);
+            return new JsonNullSyntax(token);
+        }
 
         if (token.SyntaxKind is SyntaxKind.CommaToken or SyntaxKind.BracketCloseToken or SyntaxKind.BraceCloseToken
             or SyntaxKind.ParenthesisCloseToken or SyntaxKind.SemicolonToken or SyntaxKind.EofToken)
@@ -655,7 +677,7 @@ internal sealed class Parser
     {
         var unionKeyword = Match(SyntaxKind.UnionKeyword);
         var braceOpenToken = Match(SyntaxKind.BraceOpenToken);
-        var types = ParseSeparatedList(ParseType, SyntaxKind.CommaToken, SyntaxKind.BraceCloseToken);
+        var types = ParseSeparatedList(ParseType, SyntaxKind.CommaToken, SyntaxKind.BraceCloseToken, SyntaxKind.IdentifierToken);
         var braceCloseToken = Match(SyntaxKind.BraceCloseToken);
         return new UnionTypeSyntax(unionKeyword, braceOpenToken, types, braceCloseToken);
     }
@@ -704,7 +726,7 @@ internal sealed class Parser
         var separatedIdentifiers = ParseSeparatedList(
             parseNode: () => Match(SyntaxKind.IdentifierToken),
             separator: SyntaxKind.DotToken,
-            terminators: SyntaxKind.SemicolonToken);
+            terminator: SyntaxKind.SemicolonToken);
 
         return new QualifiedNameSyntax(separatedIdentifiers);
     }
@@ -714,6 +736,15 @@ internal sealed class Parser
         var nodes = ImmutableArray.CreateBuilder<T>();
         while (!_stream.IsAtEnd && !terminators.Contains(_stream.Current.SyntaxKind))
         {
+            if (TrySkipUnexpectedBlock(SyntaxKind.IdentifierToken))
+            {
+                if (IsClosingDelimiter(_stream.Current.SyntaxKind) || _stream.Current.SyntaxKind is
+                    SyntaxKind.RecordKeyword or SyntaxKind.ErrorKeyword or SyntaxKind.EnumKeyword or SyntaxKind.FixedKeyword or SyntaxKind.ProtocolKeyword)
+                    break;
+
+                continue;
+            }
+
             using (EnsureProgress(terminators))
             {
                 nodes.Add(parseNode());
@@ -723,23 +754,88 @@ internal sealed class Parser
         return new SyntaxList<T>(nodes.DrainToImmutable());
     }
 
-    private SeparatedSyntaxList<T> ParseSeparatedList<T>(Func<T> parseNode, SyntaxKind separator, params ReadOnlySpan<SyntaxKind> terminators) where T : ISyntaxNode
+    private SeparatedSyntaxList<T> ParseSeparatedList<T>(
+        Func<T> parseNode, SyntaxKind separator, SyntaxKind terminator, SyntaxKind? expectedElement = null,
+        Func<Parser, int, bool>? canResumeAtSeparator = null) where T : ISyntaxNode
     {
         var nodes = ImmutableArray.CreateBuilder<ISyntaxNode>();
 
-        while (!_stream.IsAtEnd && !terminators.Contains(_stream.Current.SyntaxKind))
+        while (!_stream.IsAtEnd && _stream.Current.SyntaxKind != terminator)
         {
+            if (expectedElement is { } expected && TrySkipUnexpectedBlock(expected, terminator, canResumeAtSeparator))
+            {
+                // Leave an ambiguous separator for the enclosing list to handle.
+                if (_stream.Current.SyntaxKind != separator || canResumeAtSeparator?.Invoke(this, 0) == false)
+                    break;
+
+                Next();
+                continue;
+            }
+
             nodes.Add(parseNode());
             if (_stream.Current.SyntaxKind != separator) break;
             var separatorAlreadyReported = _lastTokenWasSynthetic;
             var separatorToken = Next();
             nodes.Add(separatorToken);
-            if (!separatorAlreadyReported && separator == SyntaxKind.CommaToken && terminators.Contains(_stream.Current.SyntaxKind))
+            if (!separatorAlreadyReported && separator == SyntaxKind.CommaToken && _stream.Current.SyntaxKind == terminator)
                 ReportUnexpectedToken(_stream.Current.SyntaxKind, separatorToken);
         }
 
         return new SeparatedSyntaxList<T>(nodes.DrainToImmutable());
     }
+
+    private bool TrySkipUnexpectedBlock(SyntaxKind expected, SyntaxKind? enclosingClose = null, Func<Parser, int, bool>? canResumeAtSeparator = null)
+    {
+        if (GetClosingDelimiter(_stream.Current.SyntaxKind) is not { } closing)
+            return false;
+
+        ReportUnexpectedToken(expected, _stream.Current);
+        SkipBlock(closing, enclosingClose, canResumeAtSeparator);
+        return true;
+    }
+
+    private void SkipBlock(SyntaxKind closing, SyntaxKind? enclosingClose = null, Func<Parser, int, bool>? canResumeAtSeparator = null)
+    {
+        Next();
+        var closers = new Stack<SyntaxKind>();
+        closers.Push(closing);
+        while (!_stream.IsAtEnd)
+        {
+            var kind = _stream.Current.SyntaxKind;
+            if (GetClosingDelimiter(kind) is { } nestedClosing)
+                closers.Push(nestedClosing);
+            else if (IsClosingDelimiter(kind))
+            {
+                if (closers.Peek() != kind)
+                    break;
+
+                // Give an ambiguous closer to the enclosing list unless a valid sibling follows it.
+                if (closers.Count == 1 && kind == enclosingClose && canResumeAtSeparator?.Invoke(this, 1) == false)
+                    break;
+
+                closers.Pop();
+            }
+
+            Next();
+            if (closers.Count == 0)
+                break;
+        }
+
+        // A missing token immediately after the skipped block belongs to the same recovery.
+        _lastTokenWasSynthetic = true;
+    }
+
+    private static SyntaxKind? GetClosingDelimiter(SyntaxKind kind) => kind switch
+    {
+        SyntaxKind.BraceOpenToken => SyntaxKind.BraceCloseToken,
+        SyntaxKind.BracketOpenToken => SyntaxKind.BracketCloseToken,
+        SyntaxKind.ParenthesisOpenToken => SyntaxKind.ParenthesisCloseToken,
+        SyntaxKind.LessThanToken => SyntaxKind.GreaterThanToken,
+        _ => null,
+    };
+
+    private static bool IsClosingDelimiter(SyntaxKind kind) =>
+        kind is SyntaxKind.BraceCloseToken or SyntaxKind.BracketCloseToken or SyntaxKind.ParenthesisCloseToken or SyntaxKind.GreaterThanToken;
 
     private SyntaxToken Match(SyntaxKind syntaxKind)
     {

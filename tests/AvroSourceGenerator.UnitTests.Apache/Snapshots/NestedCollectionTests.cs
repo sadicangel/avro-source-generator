@@ -29,7 +29,7 @@ public sealed class NestedCollectionTests
             LanguageVersion = LanguageVersion.CSharp10,
             LanguageFeatures = "CSharp10",
             RecordDeclaration = "class",
-            PreviewFeatures = "None",
+            NativeUnions = "false",
         });
 
     [Fact]
@@ -58,6 +58,6 @@ public sealed class NestedCollectionTests
             LanguageVersion = LanguageVersion.CSharp8,
             LanguageFeatures = "CSharp8",
             RecordDeclaration = "class",
-            PreviewFeatures = "None",
+            NativeUnions = "false",
         });
 }

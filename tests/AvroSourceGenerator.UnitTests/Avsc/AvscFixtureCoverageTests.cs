@@ -66,15 +66,9 @@ public sealed class AvscFixtureCoverageTests
 
     private static ImmutableArray<SourceText> GetJsonFixtureSources()
     {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "tests", "Schemas")))
-            directory = directory.Parent;
-
-        Assert.NotNull(directory);
-        var schemasDirectory = Path.Combine(directory.FullName, "tests", "Schemas");
         return
         [
-            ..Directory.EnumerateFiles(schemasDirectory)
+            ..Directory.EnumerateFiles(TestSchemas.FixturesDirectory)
                 .Where(static path => Path.GetExtension(path) is ".avsc" or ".avpr")
                 .OrderBy(static path => path, StringComparer.Ordinal)
                 .Select(path => new SourceText(Path.GetFileName(path), File.ReadAllText(path)))

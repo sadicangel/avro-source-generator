@@ -115,6 +115,23 @@ public static class TestSchemas
         """
     };
 
+    public static string FixturesDirectory
+    {
+        get
+        {
+            var directory = new DirectoryInfo(AppContext.BaseDirectory);
+            while (directory is not null)
+            {
+                var path = Path.Combine(directory.FullName, "tests", "Schemas");
+                if (Directory.Exists(path))
+                    return path;
+
+                directory = directory.Parent;
+            }
+            throw new DirectoryNotFoundException("Could not find the tests/Schemas fixture directory.");
+        }
+    }
+
     public static JsonNode Get(string schemaType) => JsonNode.Parse(s_schemas[schemaType])!;
 
     private static JsonNode Parse(object? x) =>

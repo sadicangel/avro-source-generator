@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "NativeCollectionUnions",
+  "namespace": "AvroSourceGenerator.IntegrationTests.Schemas",
+  "fields": [
+    { "name": "Items", "type": { "type": "array", "items": ["string", "int"], "logicalType": "custom-collection" } },
+    { "name": "Values", "type": { "type": "map", "values": ["null", "long", "boolean"] } },
+    { "name": "Choice", "type": ["null", "string", { "type": "array", "items": ["null", "boolean", "double"] }], "default": null },
+    {
+      "name": "Nested",
+      "type": ["null", { "type": "array", "items": { "type": "map", "values": ["long", { "type": "array", "items": ["string", "int"] }] } }],
+      "default": null
+    }
+  ]
+}

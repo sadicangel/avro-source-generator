@@ -5,10 +5,10 @@ using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Extensions;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Syntax;
 using AvroSourceGenerator.Syntax.Annotations;
 using AvroSourceGenerator.Syntax.Declarations;
 using AvroSourceGenerator.Syntax.Types;
-using AvroSourceGenerator.Syntax;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler.Parsing;
@@ -388,7 +388,7 @@ internal sealed class AvdlParser(SyntaxTree<DocumentSyntax> syntaxTree, AvroPars
         if (name.IsNone || type.IsNone || documentation.IsNone || aliases.IsNone || defaultValue.IsNone || order.IsNone || properties.IsNone)
             return Option.None<Field>();
 
-        var fieldType = ResolveFieldType(type.GetValue(), name.GetValue(), containingSchemaName, out var underlyingType, out var remarks);
+        var (fieldType, underlyingType, remarks) = ResolveFieldType(type.GetValue(), name.GetValue(), containingSchemaName, cancellationToken);
         return new Field(
             name.GetValue(),
             fieldType,

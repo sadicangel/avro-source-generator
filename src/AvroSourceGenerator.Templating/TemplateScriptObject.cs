@@ -6,7 +6,6 @@ namespace AvroSourceGenerator.Templating;
 
 internal sealed class TemplateScriptObject : BuiltinFunctions
 {
-    private static readonly ApacheFunctions s_apacheFunctions = new ApacheFunctions();
     private static readonly string s_generatorVersion = typeof(AvroTemplate).Assembly
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
         ?? throw new InvalidOperationException("The templating assembly has no informational version.");
@@ -20,14 +19,12 @@ internal sealed class TemplateScriptObject : BuiltinFunctions
         SetValue("Error", options.Error, readOnly: true);
         SetValue("Fixed", options.Fixed, readOnly: true);
         SetValue("ObjectType", options.ObjectType, readOnly: true);
-        SetValue("FieldValueExpression", options.FieldValueExpression, readOnly: true);
         SetValue("Setter", options.Setter, readOnly: true);
         SetValue("UseNullableReferenceTypes", options.LanguageFeatures.HasNullableReferenceTypes, readOnly: true);
         SetValue("UseRequiredProperties", options.LanguageFeatures.HasRequiredProperties, readOnly: true);
         SetValue("UseInitOnlyProperties", options.LanguageFeatures.HasInitOnlyProperties, readOnly: true);
         SetValue("UseRawStringLiterals", options.LanguageFeatures.HasRawStringLiterals, readOnly: true);
         SetValue("UseUnsafeAccessors", options.LanguageFeatures.HasUnsafeAccessors, readOnly: true);
-        SetValue("UseUnions", options.LanguageFeatures.HasUnions, readOnly: true);
-        SetValue("apache", s_apacheFunctions, readOnly: true);
+        SetValue("apache", new ApacheFunctions(options), readOnly: true);
     }
 }

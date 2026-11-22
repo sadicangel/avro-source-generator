@@ -15,11 +15,11 @@ internal static class Program
             return SmokeTest.Run();
         }
 
-        Console.WriteLine($"Last GA: {GeneratorLocations.LastGaVersion}");
+        Console.WriteLine($"Published baseline: {GeneratorLocations.BaselineVersion} ({GeneratorLocations.BaselineAssemblyPath})");
         Console.WriteLine("Current: local project output");
 
-        BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
-        return 0;
+        var summaries = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+        return summaries.All(summary => !summary.HasCriticalValidationErrors && summary.Reports.All(report => report.Success)) ? 0 : 1;
     }
 }
 
@@ -38,7 +38,7 @@ public class FullGenerationBenchmarks
         _environment.ValidateFullRuns();
     }
 
-    [Benchmark(Baseline = true)] public GeneratorDriverRunResult LastGa() => _environment.RunFullLastGa();
+    [Benchmark(Baseline = true)] public GeneratorDriverRunResult Baseline() => _environment.RunFullBaseline();
 
     [Benchmark] public GeneratorDriverRunResult CurrentTip() => _environment.RunFullCurrent();
 
@@ -65,7 +65,7 @@ public class IncrementalGenerationBenchmarks
         _environment.ValidateIncrementalRuns();
     }
 
-    [Benchmark(Baseline = true)] public GeneratorDriverRunResult LastGa() => _environment.RunIncrementalLastGa();
+    [Benchmark(Baseline = true)] public GeneratorDriverRunResult Baseline() => _environment.RunIncrementalBaseline();
 
     [Benchmark] public GeneratorDriverRunResult CurrentTip() => _environment.RunIncrementalCurrent();
 
@@ -87,12 +87,50 @@ public class ReferencedIncrementalGenerationBenchmarks
             SchemaCount,
             prepareIncrementalRuns: true,
             IncrementalChangeScenario.ReferencedSchemaContent);
-        _environment.ValidateCurrentIncrementalRun();
+        _environment.ValidateIncrementalRuns();
     }
+
+    [Benchmark(Baseline = true)] public GeneratorDriverRunResult Baseline() => _environment.RunIncrementalBaseline();
 
     [Benchmark] public GeneratorDriverRunResult CurrentTip() => _environment.RunIncrementalCurrent();
 
     [GlobalCleanup] public void Cleanup() => _environment.Dispose();
+}
+
+[MemoryDiagnoser]
+public class UnionCollectionGenerationBenchmarks
+{
+    private BenchmarkEnvironment _environment = null!;
+
+    [Params(BenchmarkScenario.DefaultSchemaCount)]
+    public int SchemaCount { get; set; }
+
+    [ParamsAllValues]
+    public UnionCollectionWorkload Workload { get; set; }
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _environment = BenchmarkEnvironment.CreateUnionCollections(SchemaCount, Workload);
+        Validate(_environment, SchemaCount, Workload);
+    }
+
+    [Benchmark(Baseline = true)] public GeneratorDriverRunResult Baseline() => _environment.RunFullBaseline();
+
+    [Benchmark] public GeneratorDriverRunResult CurrentTip() => _environment.RunFullCurrent();
+
+    [GlobalCleanup] public void Cleanup() => _environment.Dispose();
+
+    internal static void Validate(BenchmarkEnvironment environment, int schemaCount, UnionCollectionWorkload workload)
+    {
+        const int recordOnly = 1;
+        const int recordWithFieldUnions = 3;
+        const int recordWithCollectionUnions = 7;
+        var baselinePerRecord = workload == UnionCollectionWorkload.CollectionUnionsOptOut ? recordOnly : recordWithFieldUnions;
+        var currentPerRecord = workload == UnionCollectionWorkload.NativeCollectionUnions ? recordWithCollectionUnions : baselinePerRecord;
+        environment.ValidateFullRuns(schemaCount * baselinePerRecord, schemaCount * currentPerRecord);
+        Console.WriteLine($"{workload}: {schemaCount * baselinePerRecord} baseline sources, {schemaCount * currentPerRecord} current sources.");
+    }
 }
 
 internal static class SmokeTest
@@ -104,19 +142,20 @@ internal static class SmokeTest
         using var fullEnvironment = BenchmarkEnvironment.Create(SchemaCount, prepareIncrementalRuns: false);
         var full = fullEnvironment.ValidateFullRuns();
 
-        Console.WriteLine($"Validated full generation for GA {GeneratorLocations.LastGaVersion} and the current tip with {SchemaCount} schemas.");
+        Console.WriteLine($"Validated full generation for {GeneratorLocations.BaselineVersion} and the current tip with {SchemaCount} schemas.");
         Console.WriteLine($"Full generation: {full.GeneratedSourceCount} sources per version.");
 
         foreach (var changeScenario in Enum.GetValues<IncrementalChangeScenario>())
         {
             using var incrementalEnvironment = BenchmarkEnvironment.Create(SchemaCount, prepareIncrementalRuns: true, changeScenario);
-            var incremental = changeScenario == IncrementalChangeScenario.ReferencedSchemaContent
-                ? incrementalEnvironment.ValidateCurrentIncrementalRun()
-                : incrementalEnvironment.ValidateIncrementalRuns();
-            var comparison = changeScenario == IncrementalChangeScenario.ReferencedSchemaContent
-                ? "current tip only"
-                : "per version";
-            Console.WriteLine($"{changeScenario}: {incremental.GeneratedSourceCount} sources ({comparison}).");
+            var incremental = incrementalEnvironment.ValidateIncrementalRuns();
+            Console.WriteLine($"{changeScenario}: {incremental.GeneratedSourceCount} sources per version.");
+        }
+
+        foreach (var workload in Enum.GetValues<UnionCollectionWorkload>())
+        {
+            using var environment = BenchmarkEnvironment.CreateUnionCollections(SchemaCount, workload);
+            UnionCollectionGenerationBenchmarks.Validate(environment, SchemaCount, workload);
         }
 
         Console.WriteLine("No generator errors were reported.");

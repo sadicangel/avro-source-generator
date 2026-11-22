@@ -161,7 +161,6 @@ namespace Demo
                 case 2:
                     Set_collection(this, fieldValue! switch
                     {
-                        
                         global::System.Collections.IDictionary x => (global::System.Collections.Generic.Dictionary<string, long>)x,
                         global::System.Collections.IList x when x is not byte[] => (global::System.Collections.Generic.List<string>)x,
                         _ => throw new global::Avro.AvroRuntimeException($"Bad value {fieldValue} for field collection in Put()")
@@ -171,7 +170,6 @@ namespace Demo
                 case 3:
                     Set_logical(this, fieldValue! switch
                     {
-                        
                         long x => x,
                         global::System.DateTime x => x,
                         _ => throw new global::Avro.AvroRuntimeException($"Bad value {fieldValue} for field logical in Put()")

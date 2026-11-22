@@ -1,14 +1,17 @@
 # AvroSourceGenerator benchmarks
 
-The generator benchmarks compare the current local source-generator project with the latest stable NuGet release. The GA baseline is pinned in `AvroSourceGenerator.Benchmarks.csproj` to keep reports reproducible. Update the `LastGaVersion` property when a new stable release is published. Preview releases are selected only when explicitly configured.
+The generator benchmarks compare the current local source-generator project with a pinned NuGet release. The default baseline is `0.8.0-preview.6.main.34`. Pass `-p:BaselineVersion=<version>` to select another published package. The native-union and referenced-edit workloads require a baseline that supports those features.
 
 The default workload contains 250 independent Avro record schemas with 36 fields each (9,000 fields total). The fields exercise primitives, nullable unions, arrays, maps, timestamps, decimals, defaults, and Apache-specific output. Both versions use C# 12 output so init-only properties, required properties, records, nullable annotations, raw strings, and unsafe accessors are enabled.
 
-Two operations are measured across three benchmark classes:
+Two operations are measured across four benchmark classes:
 
 - `FullGenerationBenchmarks` creates a fresh Roslyn generator driver and generates every schema.
-- `IncrementalGenerationBenchmarks` compares GA and the current tip after an independent content or schema identity edit.
-- `ReferencedIncrementalGenerationBenchmarks` measures the current tip after a referenced schema changes. It is current-tip-only because 0.6.0 does not support Deferred cross-file references.
+- `IncrementalGenerationBenchmarks` compares the published baseline and the current tip after an independent content or schema identity edit.
+- `ReferencedIncrementalGenerationBenchmarks` compares both versions after a referenced schema changes.
+- `UnionCollectionGenerationBenchmarks` performs full generation with the preview C# language version and 250 schemas containing unions, arrays, and maps.
+
+The union workload includes a control with native field unions whose cases contain nested collections. Both versions emit three sources per input record. The other cases add unions to array items and map values. With the opt-in disabled, both versions emit only one source per input record. With the opt-in enabled, the preview emits three and the local generator emits seven because it also creates native union types for the collection items and values.
 
 The incremental scenarios are:
 
@@ -55,7 +58,7 @@ Run all benchmarks from the repository root. Quote the wildcard in PowerShell so
 dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter '*'
 ```
 
-The benchmark project pins the NuGet baseline to `LastGaVersion` in its `.csproj` and loads the current generator from the local Release build, including uncommitted changes. The run prints both versions before measuring. It validates generated source counts and checks for generator errors during setup. Allow several minutes for the full run. From the repository root, BenchmarkDotNet writes its reports under `BenchmarkDotNet.Artifacts/results/`.
+The benchmark loads the highest compatible Roslyn analyzer from the published package and the current generator from the local Release build, including uncommitted changes. It prints the baseline version and assembly path, validates the expected generated source counts, and checks for generator errors during setup. Allow several minutes for the full run. From the repository root, BenchmarkDotNet writes its reports under `BenchmarkDotNet.Artifacts/results/`.
 
 For a faster, lower-confidence local check, add `--job short` after `--filter '*'`.
 
@@ -65,9 +68,10 @@ Run only one scenario:
 dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter "*FullGenerationBenchmarks*"
 dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter "*IncrementalGenerationBenchmarks*"
 dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter "*ReferencedIncrementalGenerationBenchmarks*"
+dotnet run --project tools/AvroSourceGenerator.Benchmarks -c Release -- --filter "*UnionCollectionGenerationBenchmarks*"
 ```
 
-BenchmarkDotNet reports `LastGa` as the baseline. For `CurrentTip`, a time or allocation ratio above `1.00` is a regression and a ratio below `1.00` is an improvement. Focus on ratios larger than the reported noise rather than small single-run differences, and compare results on the same idle machine and runtime.
+BenchmarkDotNet reports `Baseline` as the reference. Ratios compare the full operation, including any additional source emitted by `CurrentTip`. Focus on differences larger than the reported noise and compare results on the same idle machine and runtime.
 
 ## Local reference binding
 

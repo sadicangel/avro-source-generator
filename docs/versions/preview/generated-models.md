@@ -76,10 +76,10 @@ The examples below show the C# type of a field named `Content` on a record named
 | `["null", "int", "string"]` | `object?` | `EnvelopeContentUnion?` |
 | Two inline record definitions | `IEnvelopeContentVariant` | `EnvelopeContentUnion` |
 | `["Email", "Sms"]`, with both records declared earlier | `object` | `EnvelopeContentUnion` |
+| `{ "type": "array", "items": ["int", "string"] }` | `List<object>` | `List<EnvelopeContentItemUnion>` |
+| `{ "type": "map", "values": ["null", "int", "string"] }` | `Dictionary<string, object?>` | `Dictionary<string, EnvelopeContentValueUnion?>` |
 
 By default, a union with two or more non-null branches gets a variant interface if each branch is an inline record or error definition, or an inline fixed definition with its own generated C# type. Each branch type implements the interface. Other unions with multiple non-null branches use `object`. This includes unions of named references and mixtures with primitives, enums, arrays, or maps. Use C# pattern matching to handle the possible runtime types of an `object` property. The `?` annotation on reference types depends on the enabled C# language features.
-
-The generator creates variant interfaces and native union types for record and error fields. A union used as an array item or a map value uses the branch type for a single non-null branch, with nullability when applicable. Multiple non-null branches use `object` or `object?`, even with the native union opt-in. For example, an array with `"items": ["int", "string"]` generates `List<object>`.
 
 Avro forbids duplicate branches and a union directly inside another union. Distinct named types can share a schema kind, such as two named fixed types. An array or map can also contain a union in its item or value schema. See [common diagnostics]({{ '/troubleshooting/#common-diagnostics' | relative_url }}).
 

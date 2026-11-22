@@ -35,11 +35,13 @@ namespace NestedRegression
                 default: throw new global::Avro.AvroRuntimeException($"Bad index {fieldPos} in Put()");
             }
         }
+    
         private static TList __ApacheConvertArray<TList, TItem>(object? value, global::System.Func<object?, TItem>? convertItem = null)
             where TList : class?, global::System.Collections.Generic.IList<TItem>?, new()
         {
             if (value is null) return null!;
             if (value is TList compatible) return compatible;
+    
             var result = new TList();
             foreach (var item in (global::System.Collections.IEnumerable)value)
                 result.Add(convertItem is null ? (TItem)item! : convertItem(item));

@@ -8,31 +8,25 @@ namespace AvroSourceGenerator.UnitTests;
 public sealed class ApacheFunctionsTests
 {
     [Theory]
-    [InlineData("array", true)]
-    [InlineData("map", true)]
-    [InlineData("scalar", false)]
-    public void Typed_unions_need_collection_converters_only_for_collection_members(string memberType, bool expected)
+    [InlineData("array")]
+    [InlineData("map")]
+    public void Collection_items_with_native_unions_need_a_converter_even_for_scalar_branches(string collectionType)
     {
         var properties = ImmutableSortedDictionary<string, JsonElement>.Empty;
-        AvroSchema member = memberType switch
-        {
-            "array" => new ArraySchema(AvroSchema.Float, null, properties),
-            "map" => new MapSchema(AvroSchema.Float, null, properties),
-            _ => AvroSchema.Float,
-        };
-        ImmutableArray<AvroSchema> members = [AvroSchema.String, member];
+        ImmutableArray<AvroSchema> members = [AvroSchema.String, AvroSchema.Float];
         var generatedUnion = new UnionTypeSchema(new SchemaName("ExampleUnion"), new CSharpName("ExampleUnion"), members);
         var union = UnionSchema.Create(members, useNullableReferenceTypes: true) with
         {
             CSharpName = generatedUnion.CSharpName,
             UnderlyingSchema = generatedUnion,
         };
-        var functionsType = typeof(AvroTemplate).Assembly.GetType("AvroSourceGenerator.Templating.ApacheFunctions", throwOnError: true)!;
-        var method = functionsType.GetMethod("RequiresCollectionConversion");
-        Assert.NotNull(method);
-        var requiresCollectionConversion = (Func<AvroSchema, bool>)method.CreateDelegate(typeof(Func<AvroSchema, bool>));
+        AvroSchema collection = collectionType == "array"
+            ? new ArraySchema(union, null, properties)
+            : new MapSchema(union, null, properties);
+        var schema = new RecordSchema(new SchemaName("ConvertersRecord"), null, [],
+            [new Field("Value", collection, collection, null, [], null, null, properties, null)], properties);
 
-        Assert.Equal(expected, requiresCollectionConversion(union));
+        Assert.Equal([collectionType], RequiredCollectionConverters(schema));
     }
 
     [Theory]
@@ -59,14 +53,18 @@ public sealed class ApacheFunctionsTests
             ? new ErrorSchema(new SchemaName("ConvertersError"), null, [], fields, properties)
             : new RecordSchema(new SchemaName("ConvertersRecord"), null, [], fields, properties);
 
+        Assert.Equal(nested ? ["array", "map"] : [], RequiredCollectionConverters(schema));
+
+        Field CreateField(AvroSchema schema) => new(
+            "Value", schema, schema, null, [], null, null, properties, null);
+    }
+
+    private static string[] RequiredCollectionConverters(AvroSchema schema)
+    {
         var functionsType = typeof(AvroTemplate).Assembly.GetType("AvroSourceGenerator.Templating.ApacheFunctions", throwOnError: true)!;
         var method = functionsType.GetMethod("RequiredCollectionConverters");
         Assert.NotNull(method);
         var requiredConverters = (Func<AvroSchema, string[]>)method.CreateDelegate(typeof(Func<AvroSchema, string[]>));
-
-        Assert.Equal(nested ? ["array", "map"] : [], requiredConverters(schema));
-
-        Field CreateField(AvroSchema schema) => new(
-            "Value", schema, schema, null, [], null, null, properties, null);
+        return requiredConverters(schema);
     }
 }

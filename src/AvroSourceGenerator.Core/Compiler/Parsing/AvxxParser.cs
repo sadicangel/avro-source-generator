@@ -157,40 +157,22 @@ internal closed class AvxxParser(AvroParseOptions options)
 
     protected RecursionScope EnterRecursionScope(SchemaName schemaName) => new RecursionScope(RecursionStack, schemaName);
 
-    protected AvroSchema ResolveFieldType(
-        AvroSchema fieldType,
-        MemberName fieldName,
-        SchemaName containingSchemaName,
-        out AvroSchema underlyingType,
-        out string? remarks)
+    protected readonly record struct ResolvedFieldType(AvroSchema FieldType, AvroSchema UnderlyingType, string? Remarks);
+
+    protected ResolvedFieldType ResolveFieldType(AvroSchema fieldType, MemberName fieldName, SchemaName containingSchemaName, CancellationToken cancellationToken)
     {
-        underlyingType = fieldType;
-        remarks = null;
+        var useNativeUnions = Options.LanguageFeatures.HasUnions;
+        if (useNativeUnions)
+            fieldType = ResolveNativeUnions(fieldType, string.Empty);
 
         switch (fieldType)
         {
-            case UnionSchema union when Options.LanguageFeatures.HasUnions:
+            case UnionSchema union when useNativeUnions:
                 {
-                    var memberSchemas = union.Schemas.Canonicalize(includeNull: false).ToImmutableArray();
-                    if (memberSchemas.Length > 1)
-                    {
-                        var schemaName = UnionTypeSchema.GetSchemaName(containingSchemaName, fieldName, useUnions: true);
-                        var csharpName = CSharpName.FromSchemaName(schemaName);
-
-                        var generatedUnion = new UnionTypeSchema(schemaName, csharpName, memberSchemas);
-                        Declare(generatedUnion, SourceSpan.None);
-
-                        remarks = DocumentationHelper.GetDocumentation(union.Schemas, includeNull: true);
-                        union = union with
-                        {
-                            CSharpName = union.Schemas.Any(static schema => schema.SchemaType is SchemaType.Null)
-                                ? generatedUnion.CSharpName.WithNullableAnnotation()
-                                : generatedUnion.CSharpName,
-                            UnderlyingSchema = generatedUnion
-                        };
-                    }
-                    underlyingType = union.UnderlyingSchema;
-                    return union;
+                    var remarks = union.UnderlyingSchema is UnionTypeSchema
+                        ? DocumentationHelper.GetDocumentation(union.Schemas, includeNull: true)
+                        : null;
+                    return new ResolvedFieldType(union, union.UnderlyingSchema, remarks);
                 }
 
             case UnionSchema union when UnionTypeSchema.CanCreateObjectUnion(union):
@@ -210,7 +192,7 @@ internal closed class AvxxParser(AvroParseOptions options)
                     var generatedUnion = new UnionTypeSchema(schemaName, csharpName, memberSchemas);
                     Declare(generatedUnion, SourceSpan.None);
 
-                    remarks = DocumentationHelper.GetDocumentation(union.Schemas, includeNull: true);
+                    var remarks = DocumentationHelper.GetDocumentation(union.Schemas, includeNull: true);
                     union = union with
                     {
                         CSharpName = union.Schemas.Any(static schema => schema.SchemaType is SchemaType.Null) && Options.LanguageFeatures.HasNullableReferenceTypes
@@ -225,20 +207,77 @@ internal closed class AvxxParser(AvroParseOptions options)
                         ]
                     };
 
-                    underlyingType = union.UnderlyingSchema;
-                    return union;
+                    return new ResolvedFieldType(union, union.UnderlyingSchema, remarks);
                 }
 
             case UnionSchema union:
-                underlyingType = union.UnderlyingSchema;
-                return union;
+                return new ResolvedFieldType(union, union.UnderlyingSchema, Remarks: null);
 
             case FixedSchema fixedSchema when Options.GenerationTarget is not GenerationTarget.Apache:
-                remarks = fixedSchema.Documentation;
-                return fieldType;
+                return new ResolvedFieldType(fixedSchema, fixedSchema, fixedSchema.Documentation);
 
             default:
-                return fieldType;
+                return new ResolvedFieldType(fieldType, fieldType, Remarks: null);
+        }
+
+        AvroSchema ResolveNativeUnions(AvroSchema schema, string path)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            switch (schema)
+            {
+                case ArraySchema array:
+                    var item = ResolveNativeUnions(array.ItemSchema, path + "Item");
+                    return ReferenceEquals(item, array.ItemSchema) ? array : new ArraySchema(item, array.Documentation, array.Properties);
+
+                case MapSchema map:
+                    var value = ResolveNativeUnions(map.ValueSchema, path + "Value");
+                    return ReferenceEquals(value, map.ValueSchema) ? map : new MapSchema(value, map.Documentation, map.Properties);
+
+                case UnionSchema union:
+                    return ResolveNativeUnion(union, path);
+
+                case LogicalSchema { UnderlyingSchema: ArraySchema or MapSchema } logical when logical.CSharpName == logical.UnderlyingSchema.CSharpName:
+                    var underlying = ResolveNativeUnions(logical.UnderlyingSchema, path);
+                    return ReferenceEquals(underlying, logical.UnderlyingSchema) ? logical : new LogicalSchema(underlying, logical.SchemaName, underlying.CSharpName);
+
+                default:
+                    return schema;
+            }
+        }
+
+        UnionSchema ResolveNativeUnion(UnionSchema union, string path)
+        {
+            ImmutableArray<AvroSchema>.Builder? rewrittenBranches = null;
+            for (var index = 0; index < union.Schemas.Length; index++)
+            {
+                var branch = union.Schemas[index];
+                var resolved = ResolveNativeUnions(branch, path);
+                if (rewrittenBranches is null && !ReferenceEquals(branch, resolved))
+                {
+                    rewrittenBranches = ImmutableArray.CreateBuilder<AvroSchema>(union.Schemas.Length);
+                    rewrittenBranches.AddRange(union.Schemas.AsSpan(0, index));
+                }
+                rewrittenBranches?.Add(resolved);
+            }
+
+            if (rewrittenBranches is not null)
+                union = UnionSchema.Create(rewrittenBranches.MoveToImmutable(), Options.LanguageFeatures.HasNullableReferenceTypes);
+
+            var memberSchemas = union.Schemas.Canonicalize(includeNull: false).ToImmutableArray();
+            if (memberSchemas.Length < 2)
+                return union;
+
+            var schemaName = UnionTypeSchema.GetSchemaName(containingSchemaName, new MemberName(fieldName.SchemaName + path), useUnions: true);
+            var generatedUnion = new UnionTypeSchema(schemaName, CSharpName.FromSchemaName(schemaName), memberSchemas);
+            Declare(generatedUnion, SourceSpan.None);
+
+            return union with
+            {
+                CSharpName = union.Schemas.Any(static schema => schema.SchemaType is SchemaType.Null)
+                    ? generatedUnion.CSharpName.WithNullableAnnotation()
+                    : generatedUnion.CSharpName,
+                UnderlyingSchema = generatedUnion,
+            };
         }
     }
 

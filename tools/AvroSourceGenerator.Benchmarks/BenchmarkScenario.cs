@@ -8,7 +8,7 @@ internal sealed record BenchmarkScenario(
     int SchemaCount,
     ImmutableArray<AdditionalText> Files,
     AdditionalText OriginalFile,
-    AdditionalText ChangedFile,
+    AdditionalText? ChangedFile,
     IncrementalChangeScenario ChangeScenario)
 {
     public const int DefaultSchemaCount = 250;
@@ -53,6 +53,34 @@ internal sealed record BenchmarkScenario(
             throw new InvalidOperationException($"The {changeScenario} scenario did not change {path}.");
 
         return new BenchmarkScenario(references + sources.Length, files, original, new InMemoryAdditionalText(path, changed), changeScenario);
+    }
+
+    public static BenchmarkScenario CreateUnionCollections(int schemaCount, bool collectionUnions)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(schemaCount);
+
+        var arrayItems = collectionUnions ? """["int", "string"]""" : "\"int\"";
+        var mapValues = collectionUnions ? """["null", "boolean", "long"]""" : """["null", "long"]""";
+        var nestedMapValues = collectionUnions
+            ? """["long", {"type": "array", "items": ["int", "string"]}]"""
+            : """{"type": "array", "items": "int"}""";
+        var files = Enumerable.Range(0, schemaCount)
+            .Select(index => (AdditionalText)new InMemoryAdditionalText(GetPath(index), $$$$"""
+                {
+                  "type": "record",
+                  "name": "BenchmarkModel{{{{index:D4}}}}",
+                  "namespace": "AvroSourceGenerator.BenchmarkModels",
+                  "fields": [
+                    {"name": "ArrayChoice", "type": ["null", "string", {"type": "array", "items": {"type": "map", "values": "long"}}]},
+                    {"name": "MapChoice", "type": ["boolean", {"type": "map", "values": {"type": "array", "items": "string"}}]},
+                    {"name": "Items", "type": {"type": "array", "items": {{{{arrayItems}}}}}},
+                    {"name": "Values", "type": {"type": "map", "values": {{{{mapValues}}}}}},
+                    {"name": "Nested", "type": {"type": "array", "items": {"type": "map", "values": {{{{nestedMapValues}}}}}}}
+                  ]
+                }
+                """))
+            .ToImmutableArray();
+        return new BenchmarkScenario(schemaCount, files, files[0], ChangedFile: null, IncrementalChangeScenario.IndependentContent);
     }
 
     private static string GetPath(int index) => $"Schemas/BenchmarkModel{index:D4}.avsc";
@@ -144,4 +172,11 @@ public enum IncrementalChangeScenario
     IndependentContent,
     ReferencedSchemaContent,
     SchemaIdentity,
+}
+
+public enum UnionCollectionWorkload
+{
+    NativeFieldUnions,
+    NativeCollectionUnions,
+    CollectionUnionsOptOut,
 }

@@ -4,7 +4,7 @@
     {
         {{~ for field in $.schema.Fields ~}}
         case {{ for.index }}:
-            Set_{{ field.Name.SchemaName }}(this, {{ include 'apache.put_field_value' field: field }}); break;
+            Set_{{ field.Name.SchemaName }}(this, {{ apache.write_put_field_value field }}); break;
             [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Method, Name = {{ $"\"set_{ field.Name.SchemaName }\"" }})]
             extern static void Set_{{ field.Name.SchemaName }}({{ $.schema.CSharpName }} obj, {{ field.Type }} value);
         {{~ end ~}}

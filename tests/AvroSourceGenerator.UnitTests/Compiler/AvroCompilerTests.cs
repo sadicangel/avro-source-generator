@@ -100,6 +100,52 @@ public sealed class AvroCompilerTests
         if (!valid) Assert.Equal(AvroDiagnosticCode.DuplicateSchema, Assert.Single(project.Diagnostics).Code);
     }
 
+    [Theory]
+    [InlineData(DuplicateResolution.Error, false)]
+    [InlineData(DuplicateResolution.Ignore, true)]
+    public void Duplicate_records_with_collection_unions_use_the_existing_duplicate_policy(DuplicateResolution policy, bool valid)
+    {
+        const string schema = """
+            { "type": "record", "name": "EnvelopeContent", "fields": [
+              { "name": "Items", "type": { "type": "array", "items": ["int", "string"] } }
+            ] }
+            """;
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var project = AvroCompiler.Compile(
+            [new SourceText("first.avsc", schema), new SourceText("second.avsc", schema)],
+            new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.CSharp15),
+            new AvroCompilationOptions(ReferenceResolution.Strict, policy),
+            cancellationToken);
+
+        Assert.Equal(valid, project.IsValid);
+        Assert.Equal(["EnvelopeContent", "EnvelopeContentItemsItemUnion"],
+            project.GetOwnedDeclarations(project.Files[0], cancellationToken).Select(declaration => declaration.SchemaName.Name).Order());
+        Assert.Empty(project.GetOwnedDeclarations(project.Files[1], cancellationToken));
+        if (!valid)
+        {
+            Assert.Contains(project.Diagnostics, diagnostic => diagnostic.Code == AvroDiagnosticCode.DuplicateSchema
+                && diagnostic.GetMessage().Contains("EnvelopeContent", StringComparison.Ordinal));
+            Assert.All(project.Diagnostics, diagnostic => Assert.Equal(AvroDiagnosticCode.DuplicateSchema, diagnostic.Code));
+        }
+    }
+
+    [Fact]
+    public void Field_unions_with_the_same_generated_name_report_a_duplicate_schema()
+    {
+        const string schema = """
+            { "type": "record", "name": "Envelope", "fields": [
+              { "name": "Content", "type": { "type": "array", "items": ["int", "string"] } },
+              { "name": "ContentItem", "type": ["boolean", "double"] }
+            ] }
+            """;
+        var project = AvroCompiler.Compile([new SourceText("envelope.avsc", schema)],
+            new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.CSharp15), cancellationToken: TestContext.Current.CancellationToken);
+
+        var diagnostic = Assert.Single(project.Diagnostics);
+        Assert.Equal(AvroDiagnosticCode.DuplicateSchema, diagnostic.Code);
+        Assert.Contains("EnvelopeContentItemUnion", diagnostic.GetMessage());
+    }
+
     [Fact]
     public void Missing_reference_is_a_core_diagnostic()
     {

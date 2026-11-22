@@ -3,14 +3,14 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <AvroSourceGeneratorNativeUnions>false</AvroSourceGeneratorNativeUnions>
-    <LastGaVersion>0.6.0</LastGaVersion>
+    <BaselineVersion Condition="'$(BaselineVersion)' == ''">0.8.0-preview.6.main.34</BaselineVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-    <PackageDownload Include="AvroSourceGenerator" Version="[$(LastGaVersion)]" />
+    <PackageDownload Include="AvroSourceGenerator" Version="[$(BaselineVersion)]" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,12 +21,12 @@
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
-      <_Parameter1>AvroSourceGenerator.Benchmarks.LastGaVersion</_Parameter1>
-      <_Parameter2>$(LastGaVersion)</_Parameter2>
+      <_Parameter1>AvroSourceGenerator.Benchmarks.BaselineVersion</_Parameter1>
+      <_Parameter2>$(BaselineVersion)</_Parameter2>
     </AssemblyAttribute>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
-      <_Parameter1>AvroSourceGenerator.Benchmarks.LastGaAssembly</_Parameter1>
-      <_Parameter2>$([System.IO.Path]::GetFullPath('$(NuGetPackageRoot)avrosourcegenerator/$(LastGaVersion)/analyzers/dotnet/cs/AvroSourceGenerator.dll'))</_Parameter2>
+      <_Parameter1>AvroSourceGenerator.Benchmarks.BaselineAnalyzersDirectory</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(NuGetPackageRoot)avrosourcegenerator/$(BaselineVersion)/analyzers/dotnet'))</_Parameter2>
     </AssemblyAttribute>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>AvroSourceGenerator.Benchmarks.CurrentAssembly</_Parameter1>

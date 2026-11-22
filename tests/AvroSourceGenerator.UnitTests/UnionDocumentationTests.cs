@@ -110,7 +110,11 @@ public sealed class UnionDocumentationTests
         var driver = input.GeneratorDriver.RunGeneratorsAndUpdateCompilation(
             input.Compilation, out var compilation, out var diagnostics, TestContext.Current.CancellationToken);
         Assert.Empty(diagnostics);
-        Assert.Equal(cases.Length, driver.GetRunResult().GeneratedTrees.Count(tree => tree.ToString().Contains("union EnvelopeField", StringComparison.Ordinal)));
+        var generatedTrees = driver.GetRunResult().GeneratedTrees;
+        Assert.Equal(cases.Length + 3, generatedTrees.Count(tree => tree.ToString().Contains("union EnvelopeField", StringComparison.Ordinal)));
+        Assert.Contains(generatedTrees, tree => tree.FilePath.EndsWith("EnvelopeField8ItemUnion.Avro.g.cs", StringComparison.Ordinal));
+        Assert.Contains(generatedTrees, tree => tree.FilePath.EndsWith("EnvelopeField9ValueUnion.Avro.g.cs", StringComparison.Ordinal));
+        Assert.Contains(generatedTrees, tree => tree.FilePath.EndsWith("EnvelopeField10ItemValueUnion.Avro.g.cs", StringComparison.Ordinal));
 
         // The default parse options do not report XML documentation or cref warnings.
         var trees = compilation.SyntaxTrees.Select(tree => CSharpSyntaxTree.ParseText(

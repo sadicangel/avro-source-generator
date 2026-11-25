@@ -39,12 +39,3 @@ if (assembly.GetExportedTypes().Any(type =>
     type.Name.EndsWith("Parser", StringComparison.Ordinal)))
     throw new InvalidOperationException("Parser machinery was exported.");
 Console.WriteLine($"Core {expectedVersion}: parsing and compilation passed.");
-
-#if CHECK_EXTERNAL_INHERITANCE
-public sealed record class ExternalSchema : AvroSchema
-{
-    public ExternalSchema() : base(default, default, default, null, System.Collections.Immutable.ImmutableSortedDictionary<string, JsonElement>.Empty) { }
-
-    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace) { }
-}
-#endif

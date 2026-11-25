@@ -14,6 +14,8 @@ internal static class JsonSyntaxExtensions
     extension(JsonValueSyntax syntax)
     {
         public Option<string> GetStringValue() => syntax is JsonStringSyntax text ? text.Value.ToOption() : Option.None<string>();
+
+        public DefaultValue ToDefaultValue() => new UnboundDefaultValue(syntax.GetRawText().ToString());
     }
 
     extension(Option<JsonValueSyntax> optional)
@@ -229,7 +231,7 @@ internal static class JsonSyntaxExtensions
         }
 
         public Result<Option<DefaultValue>> GetDefaultValue() => syntax.Property(AvroJsonKeys.Default) is JsonPropertySyntax property
-            ? Option.Some<DefaultValue>(new UnboundDefaultValue(property.Value.AsJsonElement()))
+            ? Option.Some(property.Value.ToDefaultValue())
             : Option.None<DefaultValue>();
     }
 

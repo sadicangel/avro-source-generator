@@ -380,7 +380,7 @@ internal sealed class AvdlParser(SyntaxTree<DocumentSyntax> syntaxTree, AvroPars
     {
         var name = Unwrap(syntax.GetFieldName());
         var defaultValue = Unwrap(syntax.DefaultValueClause.GetDefaultValue());
-        var type = Type(syntax.Type, containingSchemaName.Namespace, hasNonNullDefault: defaultValue.IsNotNullOrNullLiteral);
+        var type = Type(syntax.Type, containingSchemaName.Namespace, hasNonNullDefault: syntax.DefaultValueClause.HasNonNullDefault);
         var documentation = Unwrap(syntax.GetDocumentation());
         var aliases = Unwrap(syntax.GetAliases());
         var order = Unwrap(syntax.GetOrder());
@@ -529,7 +529,7 @@ internal sealed class AvdlParser(SyntaxTree<DocumentSyntax> syntaxTree, AvroPars
     {
         var name = Unwrap(syntax.GetParameterName());
         var defaultValue = Unwrap(syntax.DefaultValueClause.GetDefaultValue());
-        var type = Type(syntax.Type, containingNamespace, hasNonNullDefault: defaultValue.IsNotNullOrNullLiteral);
+        var type = Type(syntax.Type, containingNamespace, hasNonNullDefault: syntax.DefaultValueClause.HasNonNullDefault);
         var documentation = Unwrap(syntax.GetDocumentation());
         if (name.IsNone || defaultValue.IsNone || type.IsNone || documentation.IsNone)
             return Option.None<ProtocolRequestParameter>();

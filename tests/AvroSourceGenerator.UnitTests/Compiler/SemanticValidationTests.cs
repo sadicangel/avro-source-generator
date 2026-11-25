@@ -158,7 +158,7 @@ public sealed class SemanticValidationTests
         var compiled = AvroCompiler.Compile([new SourceText("valid." + extension, text)], new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.CSharp12), cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(compiled.IsValid);
         var record = Assert.IsType<RecordSchema>(compiled.Schemas[new SchemaName("R")]);
-        Assert.Equal("raw", Assert.IsType<UnboundDefaultValue>(Assert.Single(record.Fields).Default).Json.GetString());
+        Assert.Equal("\"raw\"", Assert.IsType<UnboundDefaultValue>(Assert.Single(record.Fields).Default).JsonText);
     }
 
     [Theory]
@@ -183,7 +183,7 @@ public sealed class SemanticValidationTests
         var compiled = AvroCompiler.Compile([new SourceText("valid." + extension, text)], new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.CSharp12), cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(compiled.IsValid);
         var protocol = Assert.IsType<ProtocolSchema>(compiled.Schemas[new SchemaName("P")]);
-        Assert.Equal("raw", Assert.IsType<UnboundDefaultValue>(Assert.Single(Assert.Single(protocol.Messages).RequestParameters).Default).Json.GetString());
+        Assert.Equal("\"raw\"", Assert.IsType<UnboundDefaultValue>(Assert.Single(Assert.Single(protocol.Messages).RequestParameters).Default).JsonText);
     }
 
     [Theory]

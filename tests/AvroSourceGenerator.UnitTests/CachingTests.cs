@@ -33,6 +33,31 @@ public sealed class CachingTests
             output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
     }
 
+    [Fact]
+    public void Changing_the_spelling_of_a_default_refreshes_the_generated_schema()
+    {
+        const string Schema = """{"type":"record","name":"R","fields":[{"name":"Value","type":"double","default":1.0}]}""";
+        var input = GeneratorInput.Create([ProjectFile.Schema(Schema, "default.avsc")], [],
+            new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "Apache" });
+        var token = TestContext.Current.CancellationToken;
+        var driver = input.GeneratorDriver.RunGenerators(input.Compilation, token);
+        var initial = driver.GetRunResult();
+        AssertSuccessfulGeneration(initial, 1);
+        Assert.Contains("\"default\": 1.0", initial.Results.Single().GeneratedSources.Single().SourceText.ToString());
+
+        var file = input.AdditionalTexts[0];
+        var changed = new ChangedAdditionalText(file.Path, Schema.Replace("1.0", "1.00", StringComparison.Ordinal));
+        driver = driver.ReplaceAdditionalText(file, changed).RunGenerators(input.Compilation, token);
+        var updated = driver.GetRunResult();
+        AssertSuccessfulGeneration(updated, 1);
+        Assert.Contains("\"default\": 1.00", updated.Results.Single().GeneratedSources.Single().SourceText.ToString());
+        Assert.Equal(1, CountModified(StepTracking.GetTrackedSteps(updated), "RenderedFile"));
+
+        driver = driver.RunGenerators(input.Compilation, token);
+        Assert.All(StepTracking.GetTrackedSteps(driver.GetRunResult())["RenderedFile"].SelectMany(step => step.Outputs),
+            output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason));
+    }
+
     [Theory]
     [InlineData("schema R; record R { int f; int f; }", "schema R; record R { int f; int other; }", "AVROSG5004")]
     [InlineData("schema E; enum E { A, A }", "schema E; enum E { A, B }", "AVROSG5005")]

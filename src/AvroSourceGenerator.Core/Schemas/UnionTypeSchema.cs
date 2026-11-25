@@ -53,6 +53,4 @@ public sealed record class UnionTypeSchema(SchemaName SchemaName, CSharpName CSh
 
         return new SchemaName(name, typeName.Namespace);
     }
-
-    public override void WriteTo(Utf8JsonWriter writer, IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, HashSet<SchemaName> writtenSchemas, string? containingNamespace) { }
 }

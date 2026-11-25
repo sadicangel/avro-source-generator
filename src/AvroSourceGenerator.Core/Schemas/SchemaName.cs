@@ -22,7 +22,4 @@ public readonly record struct SchemaName(string Name, string? Namespace)
 
     public SchemaName ResolveIn(string? containingNamespace) =>
         Namespace is null && containingNamespace is not null ? new SchemaName(Name, containingNamespace) : this;
-
-    public string RelativeTo(string? containingNamespace) =>
-        Namespace == containingNamespace ? Name : FullName;
 }

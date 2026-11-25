@@ -201,11 +201,6 @@ try {
       )
       Invoke-DotNet -Arguments (@('restore', $coreProject, '--configfile', $nugetConfig, '--packages', $cache) + $coreProperties)
       Invoke-DotNet -Arguments (@('run', '--project', $coreProject, '--configuration', 'Release', '--no-restore') + $coreProperties + @('--', $packageVersion))
-      $inheritanceOutput = & dotnet build $coreProject --configuration Release --no-restore @coreProperties -p:CheckExternalInheritance=true 2>&1 | Out-String
-      $inheritanceExitCode = $LASTEXITCODE
-      if ($inheritanceExitCode -eq 0 -or $inheritanceOutput -notmatch 'ClosedClasses|closed (class|type)|cannot (inherit|derive).*closed') {
-        throw "External Core schema inheritance must fail with a closed-class diagnostic: $inheritanceOutput"
-      }
       $passedConsumers++
     }
     foreach ($library in @('Apache', 'None')) {

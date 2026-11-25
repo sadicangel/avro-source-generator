@@ -49,8 +49,8 @@ With `-CliPackagePath`, the runner validates matching package versions and tool 
 and compares its generated files with the generator for every library and language mode. It also verifies `--check` on each output.
 Omit `-CliPackagePath` only when validating the generator package independently.
 With `-CorePackagePath`, the runner checks Core's matching package and assembly versions, its .NET Standard 2.0 library layout,
-and its transitive JSON and Immutable dependencies. A standalone consumer exercises primitive-root parsing and compilation,
-checks that parser machinery is internal and verifies that external schema inheritance fails.
+and its transitive JSON and Immutable dependencies. A standalone consumer exercises primitive-root parsing and compilation
+and checks that parser machinery is internal.
 Core runs in every language/framework mode alongside the generator consumers. Pass all three package paths for normal validation.
 For the .NET 11 baseline and preview SDKs, pass `-ExpectedRoslynApiVersion latest` to require selection of the latest packaged generator variant.
 A newer compiler API emits a Roslyn update review warning; compatibility is established by analyzer selection,

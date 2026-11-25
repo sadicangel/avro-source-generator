@@ -48,7 +48,7 @@ public sealed class AvscParserLocationTests
         Assert.All(actual.Declarations, schema => Assert.NotEmpty(schema.ToJsonString(actualSchemas)));
         Assert.Equal("{\"x\":[2,false,null]}", actual.RootSchema.Properties["custom"].GetRawText());
         var actualRecord = Assert.IsType<RecordSchema>(actual.RootSchema);
-        Assert.Equal("\"00000000-0000-0000-0000-000000000000\"", Assert.IsType<UnboundDefaultValue>(actualRecord.Fields[0].Default).Json.GetRawText());
+        Assert.Equal("\"00000000-0000-0000-0000-000000000000\"", Assert.IsType<UnboundDefaultValue>(actualRecord.Fields[0].Default).JsonText);
     }
 
     [Fact]

@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Schemas;
@@ -31,7 +30,7 @@ public sealed class DefaultValueTests
         Assert.True(file.IsValid);
         Assert.Empty(file.GetDiagnostics());
         var parsed = Assert.IsType<UnboundDefaultValue>(Assert.Single(Assert.IsType<RecordSchema>(file.RootSchema).Fields).Default);
-        Assert.Equal(json, parsed.Json.GetRawText());
+        Assert.Equal(json, parsed.JsonText);
         var bound = SchemaCompilerTestHelpers.Bind(file);
         Assert.True(bound.IsValid);
         Assert.Empty(bound.GetDiagnostics());
@@ -41,17 +40,27 @@ public sealed class DefaultValueTests
     }
 
     [Fact]
-    public void Raw_defaults_own_their_json_and_compare_by_content()
+    public void Raw_defaults_compare_by_content_without_normalizing_json()
     {
-        UnboundDefaultValue value;
-        using (var document = JsonDocument.Parse("{\"number\":1.0000}"))
-            value = new UnboundDefaultValue(document.RootElement);
-        using var equalJson = JsonDocument.Parse("{\"number\":1.0000}");
-        var equal = new UnboundDefaultValue(equalJson.RootElement);
+        const string Json = """{"number":1.0000}""";
+        DefaultValue value = new UnboundDefaultValue(Json);
+        DefaultValue equal = new UnboundDefaultValue(new string(Json.AsSpan()));
+
         Assert.Equal(value, equal);
         Assert.Equal(value.GetHashCode(), equal.GetHashCode());
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream)) value.WriteTo(writer);
-        Assert.Equal("{\"number\":1.0000}", Encoding.UTF8.GetString(stream.ToArray()));
+        Assert.NotEqual(value, new UnboundDefaultValue("""{"number":1.0}"""));
+    }
+
+    [Theory]
+    [InlineData("null", SchemaType.Null)]
+    [InlineData("\"null\"", SchemaType.String)]
+    public void Optional_idl_types_order_branches_using_the_default_literal(string json, SchemaType firstBranch)
+    {
+        var file = SchemaCompilerTestHelpers.ParseSource("schema R; record R { string? Value = /* default */ " + json + "; }");
+        Assert.True(file.IsValid, string.Join(Environment.NewLine, file.GetDiagnostics()));
+        var record = Assert.IsType<RecordSchema>(Assert.Single(file.Declarations));
+        var field = Assert.Single(record.Fields);
+        Assert.Equal(json, Assert.IsType<UnboundDefaultValue>(field.Default).JsonText);
+        Assert.Equal(firstBranch, Assert.IsType<UnionSchema>(field.Type).Schemas[0].SchemaType);
     }
 }

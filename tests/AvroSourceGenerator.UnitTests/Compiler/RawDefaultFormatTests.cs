@@ -36,7 +36,7 @@ public sealed class RawDefaultFormatTests
             ProtocolSchema protocol => Assert.Single(Assert.Single(protocol.Messages).RequestParameters).Default,
             _ => throw new InvalidOperationException()
         };
-        Assert.Equal("\"\\u0100\"", Assert.IsType<UnboundDefaultValue>(value).Json.GetRawText());
+        Assert.Equal("\"\\u0100\"", Assert.IsType<UnboundDefaultValue>(value).JsonText);
         Assert.Contains("\"default\":\"\\u0100\"", schema.ToJsonString(project.Schemas));
     }
 }

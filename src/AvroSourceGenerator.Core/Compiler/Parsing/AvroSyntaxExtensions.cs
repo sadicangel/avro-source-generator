@@ -139,15 +139,9 @@ internal static class AvroSyntaxExtensions
 
     extension(DefaultValueClauseSyntax? syntax)
     {
-        public Result<Option<DefaultValue>> GetDefaultValue() =>
-            (syntax?.JsonValue).ToOption().Map<DefaultValue>(static json => new UnboundDefaultValue(json.AsJsonElement()));
-    }
+        public bool HasNonNullDefault => syntax?.JsonValue is not (null or JsonNullSyntax);
 
-    extension(Option<Option<DefaultValue>> defaultValue)
-    {
-        public bool IsNotNullOrNullLiteral => defaultValue
-            .Map(static option => option.Map(static value => value is UnboundDefaultValue { Json.ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) }))
-            .GetValueOrDefault()
-            .GetValueOrDefault();
+        public Result<Option<DefaultValue>> GetDefaultValue() =>
+            (syntax?.JsonValue).ToOption().Map(static json => json.ToDefaultValue());
     }
 }

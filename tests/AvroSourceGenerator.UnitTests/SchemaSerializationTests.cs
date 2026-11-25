@@ -41,4 +41,30 @@ public sealed class SchemaSerializationTests
         Assert.Equal("ordinary", fields[1].GetProperty("name").GetString());
         Assert.DoesNotContain('\0', json);
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Json_preserves_raw_protocol_parameter_defaults(bool indented)
+    {
+        const string Source = """
+            {"protocol":"P","types":[],"messages":{"m":{"request":[
+              {"name":"withDefault","type":{"type":"map","values":"double"},"default":{"number":1.0000}},
+              {"name":"withoutDefault","type":"string"},
+              {"name":"nullable","type":["null","string"],"default":null}
+            ],"response":"null"}}}
+            """;
+        var parsed = SchemaCompilerTestHelpers.ParseJson(Source, extension: ".avpr");
+        Assert.True(parsed.IsValid, string.Join(Environment.NewLine, parsed.GetDiagnostics()));
+
+        var json = parsed.RootSchema.ToJsonString(
+            parsed.Declarations.ToDictionary(schema => schema.SchemaName),
+            new JsonWriterOptions { Indented = indented });
+
+        using var document = JsonDocument.Parse(json);
+        var parameters = document.RootElement.GetProperty("messages").GetProperty("m").GetProperty("request");
+        Assert.Equal("""{"number":1.0000}""", parameters[0].GetProperty("default").GetRawText());
+        Assert.False(parameters[1].TryGetProperty("default", out _));
+        Assert.Equal(JsonValueKind.Null, parameters[2].GetProperty("default").ValueKind);
+    }
 }

@@ -278,7 +278,8 @@ public sealed class SemanticResultTests
         var record = Assert.IsType<RecordSchema>(Assert.Single(file.Declarations));
         Assert.Equal(2, record.Properties["custom"].GetProperty("x").GetInt32());
         var bound = Assert.IsType<RecordSchema>(SchemaCompilerTestHelpers.Bind(file).Declarations.Single());
-        Assert.Equal(4, Assert.IsType<UnboundDefaultValue>(bound.Fields[0].Default).Json.GetProperty("x").GetInt32());
+        using var boundDefault = JsonDocument.Parse(Assert.IsType<UnboundDefaultValue>(bound.Fields[0].Default).JsonText);
+        Assert.Equal(4, boundDefault.RootElement.GetProperty("x").GetInt32());
     }
 
     [Fact]
@@ -291,7 +292,8 @@ public sealed class SemanticResultTests
         Assert.True(file.IsValid);
         Assert.Empty(file.GetDiagnostics());
         var record = Assert.IsType<RecordSchema>(Assert.Single(file.Declarations));
-        var values = new[] { record.Properties["custom"], Assert.IsType<UnboundDefaultValue>(record.Fields[0].Default).Json };
+        using var fieldDefault = JsonDocument.Parse(Assert.IsType<UnboundDefaultValue>(record.Fields[0].Default).JsonText);
+        var values = new[] { record.Properties["custom"], fieldDefault.RootElement };
         foreach (var value in values)
         {
             Assert.Equal(Value, value.GetRawText());
@@ -317,7 +319,7 @@ public sealed class SemanticResultTests
         Assert.Empty(file.GetDiagnostics());
         var record = Assert.IsType<RecordSchema>(Assert.Single(file.Declarations));
         Assert.Equal(number, record.Properties["custom"].GetRawText());
-        Assert.Equal(number, Assert.IsType<UnboundDefaultValue>(record.Fields[0].Default).Json.GetRawText());
+        Assert.Equal(number, Assert.IsType<UnboundDefaultValue>(record.Fields[0].Default).JsonText);
     }
 
     [Fact]

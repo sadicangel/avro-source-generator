@@ -111,7 +111,7 @@ The Apache target also generates the `ISpecificRecord` implementation. Read abou
 
 ## Command-line tool
 
-The `AvroSourceGenerator.Cli` .NET tool generates C# models on demand with `avro-sg compile`. See the [preview CLI guide](https://sadicangel.github.io/avro-source-generator/preview/cli/).
+The `AvroSourceGenerator.Cli` .NET tool generates C# models on demand with `avro-sg cs`. See the [preview CLI guide](https://sadicangel.github.io/avro-source-generator/preview/cli/).
 
 ## Samples
 

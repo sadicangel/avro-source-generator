@@ -89,8 +89,13 @@ if ($CliPackagePath) {
     foreach ($assembly in @('avro-sg', 'AvroSourceGenerator.Core', 'AvroSourceGenerator.Templating')) {
       Assert-AssemblyVersion $archive "tools/net10.0/any/$assembly.dll" $packageVersion
     }
-    if (@($archive.Entries | Where-Object FullName -Match 'Microsoft.CodeAnalysis|/AvroSourceGenerator\.dll$').Count) {
-      throw 'The CLI must not package Roslyn or the source generator assembly.'
+    if (@($archive.Entries | Where-Object FullName -Match '/AvroSourceGenerator\.dll$').Count) {
+      throw 'The CLI must not package the source generator assembly.'
+    }
+    foreach ($assembly in @('Microsoft.CodeAnalysis.CSharp', 'Microsoft.CodeAnalysis.CSharp.Workspaces',
+        'Microsoft.CodeAnalysis.Workspaces.MSBuild', 'Basic.Reference.Assemblies.Net100',
+        'BuildHost-netcore/Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost')) {
+      if (!$archive.GetEntry("tools/net10.0/any/$assembly.dll")) { throw "Missing CLI compilation dependency: $assembly." }
     }
   }
   finally { $archive.Dispose() }
@@ -176,6 +181,75 @@ try {
     Invoke-DotNet -Arguments @('tool', 'install', 'AvroSourceGenerator.Cli', '--local', '--version', $packageVersion, '--configfile', $nugetConfig)
     $toolVersion = & dotnet tool run avro-sg -- --version
     if ($LASTEXITCODE -ne 0 -or $toolVersion.Trim() -cne $packageVersion) { throw "CLI reports incorrect version: $toolVersion." }
+    $standaloneSource = Join-Path $workspace 'Standalone.cs'
+    [IO.File]::WriteAllText($standaloneSource, 'public record Standalone(string? Name);')
+    $schemaOutput = Join-Path $workspace 'schemas'
+    foreach ($format in 'avsc', 'avdl') {
+      Invoke-DotNet -Arguments @('tool', 'run', 'avro-sg', '--', $format, $standaloneSource, '-o', $schemaOutput)
+      if (!(Test-Path -LiteralPath (Join-Path $schemaOutput "Standalone.$format") -PathType Leaf)) {
+        throw "CLI did not generate Standalone.$format."
+      }
+    }
+
+    $contracts = Join-Path $workspace 'Contracts'
+    [IO.Directory]::CreateDirectory($contracts) | Out-Null
+    [IO.File]::WriteAllText((Join-Path $contracts 'Directory.Build.props'), '<Project />')
+    $contractsProject = Join-Path $contracts 'Contracts.csproj'
+    $contractsFramework = "net$($SdkVersion.Split('.')[0]).0"
+    [IO.File]::WriteAllText($contractsProject, @"
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>$contractsFramework;netstandard2.1</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Standalone.cs" Link="Standalone.cs" />
+  </ItemGroup>
+</Project>
+"@)
+    $contractsSource = Join-Path $contracts 'Order.cs'
+    [IO.File]::WriteAllText($contractsSource, @"
+public record Order(List<Item> Items);
+/// <summary>A view of an item.</summary>
+public record ItemView(ItemDetail Detail);
+"@)
+    [IO.File]::WriteAllText((Join-Path $contracts 'Item.cs'), 'public record Item(int Id, ItemDetail? Detail); public record ItemDetail(Item? Parent);')
+    Invoke-DotNet -Arguments @('restore', $contractsProject, '--configfile', $nugetConfig, '--packages', $cache)
+    $ambiguousFramework = & dotnet tool run avro-sg -- avsc $contractsSource -o $schemaOutput 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 2 -or $ambiguousFramework -notmatch 'Specify --framework') {
+      throw "Generating Avro from a multi-targeted project must require a framework. $ambiguousFramework"
+    }
+    foreach ($format in 'avsc', 'avdl') {
+      Invoke-DotNet -Arguments @('tool', 'run', 'avro-sg', '--', $format, $contractsSource, '-o', $schemaOutput,
+        '--framework', $contractsFramework, '--documentation', 'xml')
+      if ((Get-Content -LiteralPath (Join-Path $schemaOutput "ItemView.$format") -Raw) -notmatch 'A view of an item\.') {
+        throw "CLI did not include XML documentation in ItemView.$format."
+      }
+      $resolution = if ($format -eq 'avdl') { 'Deferred' } else { 'Strict' }
+      Invoke-DotNet -Arguments @('tool', 'run', 'avro-sg', '--', 'cs', (Join-Path $schemaOutput "ItemView.$format"),
+        '-o', (Join-Path $schemaOutput "roundtrip-$format"), '--reference-resolution', $resolution)
+    }
+    Invoke-DotNet -Arguments @('tool', 'run', 'avro-sg', '--', 'avsc', $standaloneSource, '-o', (Join-Path $schemaOutput 'linked'), '--project', $contractsProject, '--framework', $contractsFramework)
+
+    $missingReferencesDirectory = Join-Path $workspace 'MissingReferences'
+    [IO.Directory]::CreateDirectory($missingReferencesDirectory) | Out-Null
+    $missingReferencesProject = Join-Path $missingReferencesDirectory 'MissingReferences.csproj'
+    [IO.File]::WriteAllText($missingReferencesProject, @"
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$contractsFramework</TargetFramework>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+  </PropertyGroup>
+</Project>
+"@)
+    $missingReferencesSource = Join-Path $missingReferencesDirectory 'Model.cs'
+    [IO.File]::WriteAllText($missingReferencesSource, 'public record Model(int Id);')
+    Invoke-DotNet -Arguments @('restore', $missingReferencesProject, '--configfile', $nugetConfig, '--packages', $cache)
+    $missingReferences = & dotnet tool run avro-sg -- avdl $missingReferencesSource -o $schemaOutput 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 1 -or $missingReferences -notmatch 'did not load its .NET reference assemblies' -or $missingReferences -match '\bCS\d{4}\b') {
+      throw "CLI must report the missing reference assemblies without cascading compiler diagnostics. $missingReferences"
+    }
   }
   $sdkMajor = [int]($SdkVersion.Split('.')[0])
   $modes = @('CSharp12', 'SdkDefault')
@@ -243,7 +317,7 @@ try {
         $cliOutput = Join-Path $modeDirectory "Cli/$library"
         # Newer SDKs can compile the tool's highest supported syntax without adding a new CLI version value.
         $cliLanguage = if ($mode -eq 'CSharp12') { '12' } elseif ($mode -eq 'SdkUnions') { 'preview' } else { [string][Math]::Min($sdkMajor + 4, 15) }
-        $cliArguments = @('compile', "$schemas/*.avsc", "$schemas/*.avpr", "$schemas/*.avdl", '--output', $cliOutput,
+        $cliArguments = @('cs', "$schemas/*.avsc", "$schemas/*.avpr", "$schemas/*.avdl", '--output', $cliOutput,
           '--library', $library, '--language-version', $cliLanguage, '--record-declaration', 'class', '--access-modifier', 'internal',
           '--preview-features', $(if ($mode -eq 'SdkUnions') { 'Unions' } else { 'None' }))
         Invoke-DotNet -Arguments (@('tool', 'run', 'avro-sg', '--') + $cliArguments)

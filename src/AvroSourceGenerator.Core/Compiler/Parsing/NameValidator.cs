@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using AvroSourceGenerator.Extensions;
+using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.Compiler.Parsing;
 

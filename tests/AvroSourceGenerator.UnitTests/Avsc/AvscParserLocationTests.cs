@@ -6,6 +6,7 @@ using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Schemas.Defaults;
+using AvroSourceGenerator.Serialization;
 using AvroSourceGenerator.Templating;
 using AvroSourceGenerator.Text;
 
@@ -45,7 +46,7 @@ public sealed class AvscParserLocationTests
         Assert.True(actual.IsValid, string.Join("; ", actual.GetDiagnostics()));
         var actualSchemas = actual.Declarations.ToDictionary(static schema => schema.SchemaName);
         Assert.Equal(actual.Declarations.Length, actualSchemas.Count);
-        Assert.All(actual.Declarations, schema => Assert.NotEmpty(schema.ToJsonString(actualSchemas)));
+        Assert.All(actual.Declarations, schema => Assert.NotEmpty(schema.ToAvjs(actualSchemas)));
         Assert.Equal("{\"x\":[2,false,null]}", actual.RootSchema.Properties["custom"].GetRawText());
         var actualRecord = Assert.IsType<RecordSchema>(actual.RootSchema);
         Assert.Equal("\"00000000-0000-0000-0000-000000000000\"", Assert.IsType<UnboundDefaultValue>(actualRecord.Fields[0].Default).JsonText);

@@ -2,7 +2,7 @@
 using System.Text.Json;
 using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
-using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 using AvroSourceGenerator.Text;
 
 var options = new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.None);
@@ -20,7 +20,7 @@ foreach (var source in inputs)
     var file = AvroFile.Parse(source, options, CancellationToken.None);
     if (!file.IsValid || file.GetDiagnostics().Any() || file.Declarations.Length != 0)
         throw new InvalidOperationException($"Could not parse {source.Path.OriginalPath}.");
-    using var json = JsonDocument.Parse(file.RootSchema.ToJsonString(new Dictionary<SchemaName, TopLevelSchema>()));
+    using var json = JsonDocument.Parse(file.RootSchema.ToAvjs());
     var compilation = AvroCompiler.Compile(new[] { source }, options);
     if (!compilation.IsValid || compilation.Schemas.Count != 0 || compilation.Files[0].RootSchema is null)
         throw new InvalidOperationException($"Could not compile {source.Path.OriginalPath}.");

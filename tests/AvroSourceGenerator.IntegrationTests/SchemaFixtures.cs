@@ -1,6 +1,7 @@
 ﻿using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 using AvroSourceGenerator.Text;
 using Xunit;
 
@@ -24,6 +25,6 @@ public static class SchemaFixtures
         if (!compilation.IsValid)
             throw new InvalidOperationException($"Invalid schema fixtures: {string.Join(Environment.NewLine, compilation.Diagnostics)}");
         var schema = compilation.Schemas[new SchemaName(type.Name, type.Namespace)];
-        return schema.ToJsonString(compilation.Schemas);
+        return schema.ToAvjs(compilation.Schemas);
     }
 }

@@ -1,9 +1,14 @@
 ﻿using System.Text;
 using AvroSourceGenerator.Cli;
+using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Diagnostics;
+using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Text;
 using AvroSourceGenerator.UnitTests.Compiler;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace AvroSourceGenerator.UnitTests;
 
@@ -12,6 +17,203 @@ public sealed class CliTests : IDisposable
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "avro-cli-tests", Guid.NewGuid().ToString("N"));
 
     private string Output => Path.Combine(_directory, "output");
+
+    [Theory]
+    [InlineData("avsc")]
+    [InlineData("avdl")]
+    public async Task Avro_commands_map_nullable_values_dictionaries_and_logical_types(string format)
+    {
+        var source = Write("Model.cs", """
+            using System;
+            using System.Collections.Generic;
+            public record Model(int? Count, Dictionary<string, Guid?> Keys, DateOnly Day,
+                TimeOnly Clock, DateTime Created, DateTimeOffset Updated, decimal Price);
+            """);
+        var (code, _, error) = await Run(format, source, "-o", Output);
+        Assert.True(code == 0, error);
+
+        var record = ReadRecord(Path.Combine(Output, $"Model.{format}"));
+        var fields = record.Fields.ToDictionary(field => field.Name.SchemaName, field => field.Type);
+        Assert.Equal([SchemaType.Null, SchemaType.Int], Assert.IsType<UnionSchema>(fields["Count"]).Schemas.Select(schema => schema.SchemaType));
+        var map = Assert.IsType<MapSchema>(fields["Keys"]);
+        var values = Assert.IsType<UnionSchema>(map.ValueSchema);
+        Assert.Equal(SchemaType.Null, values.Schemas[0].SchemaType);
+        Assert.Equal("uuid", Assert.IsType<LogicalSchema>(values.Schemas[1]).SchemaName.Name);
+        Assert.Equal("date", Assert.IsType<LogicalSchema>(fields["Day"]).SchemaName.Name);
+        Assert.Equal("time-millis", Assert.IsType<LogicalSchema>(fields["Clock"]).SchemaName.Name);
+        Assert.Equal("timestamp-millis", Assert.IsType<LogicalSchema>(fields["Created"]).SchemaName.Name);
+        Assert.Equal("timestamp-millis", Assert.IsType<LogicalSchema>(fields["Updated"]).SchemaName.Name);
+        var price = Assert.IsType<LogicalSchema>(fields["Price"]);
+        Assert.Equal("decimal", price.SchemaName.Name);
+        Assert.Equal(57, price.Properties["precision"].GetInt32());
+        Assert.Equal(28, price.Properties["scale"].GetInt32());
+    }
+
+    [Theory]
+    [InlineData("avsc")]
+    [InlineData("avdl")]
+    public async Task Avro_commands_include_XML_summaries_and_positional_parameter_docs_on_request(string format)
+    {
+        var source = Write("Model.cs", """
+            namespace @record.Example.@enum;
+            /// <summary>Model summary.</summary>
+            /// <param name="Count">Count parameter.</param>
+            public record Model(int Count)
+            {
+                /// <summary>Value for <see langword="null"/>.</summary>
+                public string? @string { get; init; }
+            }
+            """);
+        var path = Path.Combine(Output, $"record.Example.enum.Model.{format}");
+        var (code, _, error) = await Run(format, source, "-o", Output, "--documentation", "xml");
+        Assert.True(code == 0, error);
+        var documented = ReadRecord(path);
+        Assert.Equal("record.Example.enum", documented.SchemaName.Namespace);
+        Assert.Equal("Model summary.", documented.Documentation);
+        Assert.Equal("Count parameter.", documented.Fields[0].Documentation);
+        Assert.Equal("Value for null.", documented.Fields[1].Documentation);
+        Assert.Equal("string", documented.Fields[1].Name.SchemaName);
+
+        Assert.Equal(0, (await Run(format, source, "-o", Output, "--documentation", "none", "--force")).Code);
+        var undocumented = ReadRecord(path);
+        Assert.Null(undocumented.Documentation);
+        Assert.All(undocumented.Fields, field => Assert.Null(field.Documentation));
+    }
+
+    [Theory]
+    [InlineData("avsc", "System.IDisposable")]
+    [InlineData("avdl", "System.Collections.Generic.Dictionary<int, string>")]
+    public async Task Avro_commands_report_unsupported_property_types_at_the_source(string format, string type)
+    {
+        var source = Write("Model.cs", $"public record Model({type} Value);");
+        var (code, output, error) = await Run(format, source, "-o", Output);
+        Assert.Equal(1, code);
+        Assert.Empty(output);
+        Assert.Contains($"{source}(1,", error);
+        Assert.Contains("Cannot map property 'Model.Value'", error);
+        Assert.Contains(type, error);
+        Assert.False(Directory.Exists(Output));
+    }
+
+    [Theory]
+    [InlineData("avsc")]
+    [InlineData("avdl")]
+    public async Task Avro_commands_select_a_root_and_share_force_and_check_behavior(string format)
+    {
+        var source = Write("Models.cs", """
+            namespace Contracts;
+            public record Note(Kind Kind);
+            public enum Kind { Sharp }
+            public record Unsupported(System.IDisposable Value);
+            """);
+        string[] args = [format, source, "-o", Output, "--type", "Contracts.Note"];
+        Assert.Equal(1, (await Run([.. args, "--check"])).Code);
+        Assert.False(Directory.Exists(Output));
+        var (code, _, error) = await Run(args);
+        Assert.True(code == 0, error);
+        var path = Assert.Single(Directory.GetFiles(Output));
+        Assert.Equal(Path.Combine(Output, $"Contracts.Note.{format}"), path);
+        Assert.Equal(0, (await Run("cs", path, "-o", Path.Combine(_directory, "roundtrip"))).Code);
+        Assert.Equal(0, (await Run([.. args, "--check"])).Code);
+        var expected = File.ReadAllText(path);
+        File.WriteAllText(path, "stale");
+        Assert.Equal(1, (await Run([.. args, "--check"])).Code);
+        Assert.Equal("stale", File.ReadAllText(path));
+        Assert.Equal(0, (await Run([.. args, "-f"])).Code);
+        Assert.Equal(expected, File.ReadAllText(path));
+        Assert.Equal(2, (await Run([.. args, "--force", "--check"])).Code);
+        Assert.Equal(2, (await Run(format, source, "-o", Output, "--type", "Contracts.Missing")).Code);
+    }
+
+    private static RecordSchema ReadRecord(string path)
+    {
+        var compilation = AvroCompiler.Compile([new SourceText(path, File.ReadAllText(path))],
+            new AvroParseOptions(GenerationTarget.Modern, LanguageFeatures.All), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(compilation.IsValid, string.Join(Environment.NewLine, compilation.Diagnostics));
+        var root = Assert.IsAssignableFrom<AvroSchema>(Assert.Single(compilation.Files).RootSchema);
+        return Assert.IsType<RecordSchema>(compilation.Schemas[root.SchemaName]);
+    }
+
+    [Theory]
+    [InlineData("avsc")]
+    [InlineData("avdl")]
+    public async Task Avro_commands_generate_round_trip_schemas_from_standalone_CSharp(string format)
+    {
+        var source = Write("Models.cs", "namespace Contracts; public record Order(string? Name); public enum Status { Pending }");
+        var (code, output, error) = await Run(format, source, "-o", Output);
+        Assert.Equal(0, code);
+        Assert.Empty(error);
+        var files = Directory.GetFiles(Output).Order(StringComparer.Ordinal).ToArray();
+        Assert.Equal([Path.Combine(Output, $"Contracts.Order.{format}"), Path.Combine(Output, $"Contracts.Status.{format}")], files);
+        Assert.All(files, path => Assert.Contains(path, output));
+        var (roundTripCode, _, roundTripError) = await Run(["cs", .. files, "-o", Path.Combine(_directory, "models")]);
+        Assert.True(roundTripCode == 0, roundTripError);
+    }
+
+    [Theory]
+    [InlineData("avsc", "Strict")]
+    [InlineData("avdl", "Deferred")]
+    public async Task Avro_commands_include_mutually_recursive_dependencies_in_each_output(string format, string resolution)
+    {
+        var source = Write("Models.cs", "namespace Contracts; public record Branch(Leaf? Leaf); public record Leaf(Branch? Branch);");
+        var (code, _, error) = await Run(format, source, "-o", Output);
+        Assert.True(code == 0, error);
+
+        foreach (var name in new[] { "Branch", "Leaf" })
+        {
+            var destination = Path.Combine(_directory, name);
+            var (roundTripCode, _, roundTripError) = await Run("cs", Path.Combine(Output, $"Contracts.{name}.{format}"), "-o", destination,
+                "--reference-resolution", resolution);
+            Assert.True(roundTripCode == 0, roundTripError);
+            Assert.True(File.Exists(Path.Combine(destination, "Contracts.Branch.Avro.g.cs")));
+            Assert.True(File.Exists(Path.Combine(destination, "Contracts.Leaf.Avro.g.cs")));
+        }
+    }
+
+    [Fact]
+    public async Task Avdl_declares_dependencies_before_the_records_that_use_them()
+    {
+        var source = Write("Models.cs", "namespace Contracts; public record Order(Item[] Items); public record Item(int Id);");
+        var (code, _, error) = await Run("avdl", source, "-o", Output);
+        Assert.True(code == 0, error);
+
+        var destination = Path.Combine(_directory, "models");
+        var (roundTripCode, _, roundTripError) = await Run("cs", Path.Combine(Output, "Contracts.Order.avdl"), "-o", destination);
+        Assert.True(roundTripCode == 0, roundTripError);
+        Assert.True(File.Exists(Path.Combine(destination, "Contracts.Item.Avro.g.cs")));
+    }
+
+    [Fact]
+    public async Task Standalone_CSharp_compilation_preserves_symbols_and_nullability()
+    {
+        var source = Write("Models.cs", "namespace Contracts; public record Order(string? Name); public enum Status { Pending }");
+        var token = TestContext.Current.CancellationToken;
+        var input = await CSharpCompilationLoader.LoadAsync(source, null, null, token);
+        var root = (CompilationUnitSyntax)await input.SyntaxTree.GetRootAsync(token);
+        var declarations = Assert.IsType<FileScopedNamespaceDeclarationSyntax>(Assert.Single(root.Members)).Members;
+        var model = input.Compilation.GetSemanticModel(input.SyntaxTree);
+        var order = model.GetDeclaredSymbol(Assert.IsType<RecordDeclarationSyntax>(declarations[0]), token);
+        var name = Assert.IsAssignableFrom<IPropertySymbol>(Assert.Single(order!.GetMembers("Name")));
+        Assert.Equal(NullableAnnotation.Annotated, name.NullableAnnotation);
+        Assert.Equal(TypeKind.Enum, model.GetDeclaredSymbol(Assert.IsType<EnumDeclarationSyntax>(declarations[1]), token)!.TypeKind);
+    }
+
+    [Theory]
+    [InlineData("avsc")]
+    [InlineData("avdl")]
+    public async Task Avro_commands_report_CSharp_diagnostics_and_invalid_input(string format)
+    {
+        var source = Write("Broken.cs", "public record Broken(Unknown Value);");
+        var (code, output, error) = await Run(format, source, "-o", Output);
+        Assert.Equal(1, code);
+        Assert.Empty(output);
+        Assert.Contains($"{source}(1,22): error CS0246:", error);
+        Assert.Equal(2, (await Run(format, source)).Code);
+        Assert.Equal(2, (await Run(format, source, "-o", Output, "--framework", "net10.0")).Code);
+        Assert.Equal(2, (await Run(format, Path.Combine(_directory, "missing.cs"), "-o", Output)).Code);
+        Assert.Equal(2, (await Run(format, Write("wrong.avsc", "{}"), "-o", Output)).Code);
+        Assert.False(Directory.Exists(Output));
+    }
 
     [Theory]
     [MemberData(nameof(SemanticValidationTests.IssueExamples), MemberType = typeof(SemanticValidationTests))]
@@ -37,7 +239,7 @@ public sealed class CliTests : IDisposable
             return $"{span.Path}({span.StartLinePosition.Line + 1},{span.StartLinePosition.Character + 1}): error {diagnostic.Id}: {diagnostic.GetMessage()}" + Environment.NewLine;
         }));
 
-        var (exitCode, output, error) = await Run("compile", path, "-o", Output, "--library", "None", "--language-version", "12");
+        var (exitCode, output, error) = await Run("cs", path, "-o", Output, "--library", "None", "--language-version", "12");
         Assert.Equal(1, exitCode);
         Assert.Empty(output);
         Assert.Equal(expected, error);
@@ -52,7 +254,7 @@ public sealed class CliTests : IDisposable
         var input = GeneratorInput.Create([new ProjectFile(text, extension, path)], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = "None" });
         var result = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
         Assert.Empty(result.Diagnostics);
-        var (code, _, error) = await Run("compile", path, "-o", Output, "--library", "None", "--language-version", "12");
+        var (code, _, error) = await Run("cs", path, "-o", Output, "--library", "None", "--language-version", "12");
         Assert.Equal(0, code);
         Assert.Empty(error);
         var sources = Assert.Single(result.Results).GeneratedSources;
@@ -67,7 +269,7 @@ public sealed class CliTests : IDisposable
     {
         Assert.True(expected is null or "B");
         var path = Write("preserved." + extension, text);
-        var (code, _, error) = await Run("compile", path, "-o", Output, "--library", "None");
+        var (code, _, error) = await Run("cs", path, "-o", Output, "--library", "None");
         Assert.Equal(0, code);
         Assert.Empty(error);
         Assert.True(File.Exists(Path.Combine(Output, "E.Avro.g.cs")));
@@ -86,7 +288,7 @@ public sealed class CliTests : IDisposable
         var input = GeneratorInput.Create([file], [], new ProjectConfig(LanguageVersion.CSharp12) { AvroLibrary = library });
         var generated = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
         Assert.Empty(generated.Diagnostics);
-        var (code, _, error) = await Run("compile", path, "-o", Output, "--library", library, "--language-version", "12");
+        var (code, _, error) = await Run("cs", path, "-o", Output, "--library", library, "--language-version", "12");
         Assert.Equal(0, code);
         Assert.Empty(error);
         var sources = generated.Results.Single().GeneratedSources;
@@ -94,7 +296,7 @@ public sealed class CliTests : IDisposable
         Assert.Equal(sources.Length, Directory.GetFiles(Output).Length);
         foreach (var source in sources)
             Assert.Equal(source.SourceText.ToString(), File.ReadAllText(Path.Combine(Output, source.HintName)));
-        Assert.Equal(0, (await Run("compile", path, "-o", Output, "--library", library, "--language-version", "12", "--check")).Code);
+        Assert.Equal(0, (await Run("cs", path, "-o", Output, "--library", library, "--language-version", "12", "--check")).Code);
     }
 
     [Theory]
@@ -114,7 +316,7 @@ public sealed class CliTests : IDisposable
             return $"{span.Path}({span.StartLinePosition.Line + 1},{span.StartLinePosition.Character + 1}): error {diagnostic.Id}: {diagnostic.GetMessage()}" + Environment.NewLine;
         }));
 
-        var (code, output, error) = await Run("compile", path, "-o", Output);
+        var (code, output, error) = await Run("cs", path, "-o", Output);
 
         Assert.Equal(1, code);
         Assert.Empty(output);
@@ -141,7 +343,7 @@ public sealed class CliTests : IDisposable
         Assert.Equal(2, span.StartLinePosition.Line);
         Assert.Equal(11, span.StartLinePosition.Character);
 
-        var (code, output, error) = await Run("compile", path, "-o", Output, "--library", "Apache", "--language-version", "12");
+        var (code, output, error) = await Run("cs", path, "-o", Output, "--library", "Apache", "--language-version", "12");
         Assert.Equal(1, code);
         Assert.Empty(output);
         Assert.Equal($"{path}(3,12): error AVROSG2003: {diagnostic.GetMessage()}" + Environment.NewLine, error);
@@ -163,7 +365,7 @@ public sealed class CliTests : IDisposable
         var result = input.GeneratorDriver.RunGenerators(input.Compilation, TestContext.Current.CancellationToken).GetRunResult();
         var diagnostic = Assert.Single(result.Diagnostics);
         Assert.Equal("AVROSG3002", diagnostic.Id);
-        var (code, output, error) = await Run("compile", inputPath, "-o", Output);
+        var (code, output, error) = await Run("cs", inputPath, "-o", Output);
         var span = diagnostic.Location.GetLineSpan();
         Assert.Equal(1, code);
         Assert.Empty(output);
@@ -182,7 +384,7 @@ public sealed class CliTests : IDisposable
     {
         var path = Write("invalid.avdl", text);
 
-        var (code, output, error) = await Run("compile", path, "-o", Output);
+        var (code, output, error) = await Run("cs", path, "-o", Output);
 
         Assert.Equal(1, code);
         Assert.Empty(output);
@@ -205,7 +407,7 @@ public sealed class CliTests : IDisposable
     public async Task Invalid_options_do_not_write(string option, string value)
     {
         var input = Write("schema.avsc", Schema("Example"));
-        var (code, _, error) = await Run("compile", input, "-o", Output, option, value);
+        var (code, _, error) = await Run("cs", input, "-o", Output, option, value);
         Assert.Equal(2, code);
         Assert.Contains(value, error);
         Assert.False(Directory.Exists(Output));
@@ -217,7 +419,7 @@ public sealed class CliTests : IDisposable
     public async Task Removed_runtime_reports_migration_advice_without_writing(string library)
     {
         var input = Write("schema.avsc", Schema("Example"));
-        var (code, _, error) = await Run("compile", input, "-o", Output, "--library", library);
+        var (code, _, error) = await Run("cs", input, "-o", Output, "--library", library);
 
         Assert.Equal(2, code);
         Assert.Contains("support was removed", error);
@@ -229,7 +431,9 @@ public sealed class CliTests : IDisposable
 
     [Theory]
     [InlineData("--help")]
-    [InlineData("compile", "--help")]
+    [InlineData("cs", "--help")]
+    [InlineData("avsc", "--help")]
+    [InlineData("avdl", "--help")]
     [InlineData("--version")]
     public async Task Help_and_version_do_not_require_inputs(params string[] args)
     {
@@ -244,7 +448,7 @@ public sealed class CliTests : IDisposable
     public async Task Force_and_check_are_mutually_exclusive()
     {
         var input = Write("schema.avsc", Schema("Example"));
-        var (code, _, error) = await Run("compile", input, "-o", Output, "--force", "--check");
+        var (code, _, error) = await Run("cs", input, "-o", Output, "--force", "--check");
         Assert.Equal(2, code);
         Assert.Contains("cannot be combined", error);
         Assert.False(Directory.Exists(Output));
@@ -257,7 +461,7 @@ public sealed class CliTests : IDisposable
     public async Task Missing_option_values_are_usage_errors(string option)
     {
         var input = Write("schema.avsc", Schema("Example"));
-        Assert.Equal(2, (await Run("compile", input, "-o", Output, option)).Code);
+        Assert.Equal(2, (await Run("cs", input, "-o", Output, option)).Code);
         Assert.False(Directory.Exists(Output));
     }
 
@@ -267,7 +471,7 @@ public sealed class CliTests : IDisposable
     public async Task Invalid_boolean_values_are_usage_errors(string option)
     {
         var input = Write("schema.avsc", Schema("Example"));
-        Assert.Equal(2, (await Run("compile", input, "-o", Output, option)).Code);
+        Assert.Equal(2, (await Run("cs", input, "-o", Output, option)).Code);
         Assert.False(Directory.Exists(Output));
     }
 
@@ -275,10 +479,10 @@ public sealed class CliTests : IDisposable
     public async Task Default_output_matches_explicit_defaults()
     {
         var input = Write("schema.avsc", Schema("Example"));
-        Assert.Equal(0, (await Run("compile", input, "-o", Output)).Code);
+        Assert.Equal(0, (await Run("cs", input, "-o", Output)).Code);
         var expected = File.ReadAllText(Path.Combine(Output, "Example.Avro.g.cs"));
         var (code, _, error) = await Run(
-            "compile",
+            "cs",
             input,
             "-o",
             Output,
@@ -310,15 +514,15 @@ public sealed class CliTests : IDisposable
         var first = Write("first.avsc", Schema("First"));
         var second = Write("second.avsc", Schema("Second"));
         var existing = Write("output/First.Avro.g.cs", "user content");
-        var (code, _, error) = await Run("compile", first, second, "-o", Output);
+        var (code, _, error) = await Run("cs", first, second, "-o", Output);
         Assert.Equal(1, code);
         Assert.Contains("First.Avro.g.cs", error);
         Assert.Equal("user content", File.ReadAllText(existing));
         Assert.True(File.Exists(Path.Combine(Output, "Second.Avro.g.cs")));
-        Assert.Equal(0, (await Run("compile", first, second, "-o", Output, "-f")).Code);
+        Assert.Equal(0, (await Run("cs", first, second, "-o", Output, "-f")).Code);
         Assert.NotEqual("user content", File.ReadAllText(existing));
         // Even identical existing output is a collision without explicit force.
-        Assert.Equal(1, (await Run("compile", first, second, "-o", Output)).Code);
+        Assert.Equal(1, (await Run("cs", first, second, "-o", Output)).Code);
     }
 
     [Theory]
@@ -334,7 +538,7 @@ public sealed class CliTests : IDisposable
         var second = Write("second.avsc", Schema("widget"));
         var existing = Write(Path.Combine("output", "Widget.Avro.g.cs"), "original content");
 
-        var (code, output, error) = await Run(["compile", independent, first, second, "-o", Output, .. flags]);
+        var (code, output, error) = await Run(["cs", independent, first, second, "-o", Output, .. flags]);
 
         Assert.Equal(1, code);
         Assert.Empty(output);
@@ -347,13 +551,13 @@ public sealed class CliTests : IDisposable
     public async Task Force_skips_identical_files_and_preserves_stale_files()
     {
         var input = Write("schema.avsc", Schema("Example"));
-        Assert.Equal(0, (await Run("compile", input, "-o", Output)).Code);
+        Assert.Equal(0, (await Run("cs", input, "-o", Output)).Code);
         var generated = Path.Combine(Output, "Example.Avro.g.cs");
         var timestamp = DateTime.UtcNow.AddDays(-1);
         File.SetLastWriteTimeUtc(generated, timestamp);
         timestamp = File.GetLastWriteTimeUtc(generated);
         var extra = Write("output/Stale.Avro.g.cs", "stale");
-        Assert.Equal(0, (await Run("compile", input, "-o", Output, "--force")).Code);
+        Assert.Equal(0, (await Run("cs", input, "-o", Output, "--force")).Code);
         Assert.Equal(timestamp, File.GetLastWriteTimeUtc(generated));
         Assert.Equal("stale", File.ReadAllText(extra));
         Assert.Equal(new byte[] { 0xef, 0xbb, 0xbf }, File.ReadAllBytes(generated).Take(3));
@@ -363,17 +567,17 @@ public sealed class CliTests : IDisposable
     public async Task Check_is_read_only_and_ignores_bom_newlines_and_extra_files()
     {
         var input = Write("schema.avsc", Schema("Example"));
-        Assert.Equal(1, (await Run("compile", input, "-o", Output, "--check")).Code);
+        Assert.Equal(1, (await Run("cs", input, "-o", Output, "--check")).Code);
         Assert.False(Directory.Exists(Output));
-        Assert.Equal(0, (await Run("compile", input, "-o", Output)).Code);
+        Assert.Equal(0, (await Run("cs", input, "-o", Output)).Code);
         var generated = Path.Combine(Output, "Example.Avro.g.cs");
         File.WriteAllText(generated, File.ReadAllText(generated).ReplaceLineEndings("\n"), new UTF8Encoding(false));
         Write("output/extra.txt", "unrelated");
         var before = File.ReadAllBytes(generated);
-        Assert.Equal(0, (await Run("compile", input, "-o", Output, "--check")).Code);
+        Assert.Equal(0, (await Run("cs", input, "-o", Output, "--check")).Code);
         Assert.Equal(before, File.ReadAllBytes(generated));
         File.WriteAllText(generated, "changed");
-        Assert.Equal(1, (await Run("compile", input, "-o", Output, "--check")).Code);
+        Assert.Equal(1, (await Run("cs", input, "-o", Output, "--check")).Code);
         Assert.Equal("changed", File.ReadAllText(generated));
     }
 
@@ -384,7 +588,7 @@ public sealed class CliTests : IDisposable
         var parent = Write("schemas/parent.avdl", "protocol Parent { import schema \"nested/child.avsc\"; record Envelope { Child Value; } }");
         var inputs = new[] { Path.Combine(_directory, "schemas"), Path.Combine(_directory, "schemas/**/*.avsc"), parent, child };
         Assert.Equal(2, InputDiscovery.Discover(inputs, TestContext.Current.CancellationToken).Length);
-        var (code, _, error) = await Run(["compile", .. inputs, "-o", Output]);
+        var (code, _, error) = await Run(["cs", .. inputs, "-o", Output]);
         Assert.Equal(0, code);
         Assert.Empty(error);
         Assert.True(File.Exists(Path.Combine(Output, "Child.Avro.g.cs")));
@@ -396,7 +600,7 @@ public sealed class CliTests : IDisposable
     {
         Write("child.avsc", Schema("Child"));
         var parent = Write("parent.avdl", "protocol Parent { import schema \"child.avsc\"; record Envelope { Child Value; } }");
-        var (code, _, error) = await Run("compile", parent, "-o", Output);
+        var (code, _, error) = await Run("cs", parent, "-o", Output);
         Assert.Equal(1, code);
         Assert.Contains("AVROSG6002", error);
         Assert.False(File.Exists(Path.Combine(Output, "Child.Avro.g.cs")));
@@ -407,7 +611,7 @@ public sealed class CliTests : IDisposable
     {
         var first = Write("a.avsc", Schema("Example", "First"));
         var second = Write("b.avsc", Schema("Example", "Second"));
-        var (code, _, _) = await Run("compile", second, first, "-o", Output, "--duplicate-resolution", "Ignore");
+        var (code, _, _) = await Run("cs", second, first, "-o", Output, "--duplicate-resolution", "Ignore");
         Assert.Equal(0, code);
         var text = File.ReadAllText(Path.Combine(Output, "Example.Avro.g.cs"));
         Assert.Contains("Second", text);
@@ -422,7 +626,7 @@ public sealed class CliTests : IDisposable
     public async Task Invalid_inputs_fail_before_writing(string input)
     {
         if (input.EndsWith(".cs", StringComparison.Ordinal)) Write(input, "class Example {}");
-        var (code, _, error) = await Run("compile", Path.Combine(_directory, input), "-o", Output);
+        var (code, _, error) = await Run("cs", Path.Combine(_directory, input), "-o", Output);
         Assert.Equal(2, code);
         Assert.NotEmpty(error);
         Assert.False(Directory.Exists(Output));
@@ -433,7 +637,7 @@ public sealed class CliTests : IDisposable
     {
         var input = Write("schema.avsc", Schema("Example"));
         var destination = Write("destination", "file, not a directory");
-        var (code, _, error) = await Run("compile", input, "-o", destination);
+        var (code, _, error) = await Run("cs", input, "-o", destination);
         Assert.Equal(1, code);
         Assert.Contains(destination, error);
         Assert.DoesNotContain("AVROSG", error);
@@ -447,7 +651,7 @@ public sealed class CliTests : IDisposable
         cancellation.Cancel();
         await using var output = new StringWriter();
         await using var error = new StringWriter();
-        Assert.Equal(130, await CliApplication.RunAsync(["compile", input, "-o", Output], output, error, cancellation.Token));
+        Assert.Equal(130, await CliApplication.RunAsync(["cs", input, "-o", Output], output, error, cancellation.Token));
         Assert.DoesNotContain("AVROSG", error.ToString());
         Assert.False(Directory.Exists(Output));
     }
@@ -484,7 +688,7 @@ public sealed class CliTests : IDisposable
         var generatorInput = GeneratorInput.Create([ProjectFile.Schema(content, input)], [], config);
         var generator = generatorInput.GeneratorDriver.RunGenerators(generatorInput.Compilation, TestContext.Current.CancellationToken).GetRunResult().Results.Single();
         var (code, _, error) = await Run(
-            "compile",
+            "cs",
             input,
             "-o",
             Output,
@@ -531,7 +735,7 @@ public sealed class CliTests : IDisposable
             [],
             new ProjectConfig((LanguageVersion)1400) { AvroLibrary = "None" });
         var generator = generatorInput.GeneratorDriver.RunGenerators(generatorInput.Compilation, TestContext.Current.CancellationToken).GetRunResult().Results.Single();
-        var (code, _, error) = await Run("compile", invalid, valid, dependent, "-o", Output);
+        var (code, _, error) = await Run("cs", invalid, valid, dependent, "-o", Output);
         Assert.Equal(1, code);
         var lines = error.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         Assert.Equal(generator.Diagnostics.Length, lines.Length);

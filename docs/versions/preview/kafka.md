@@ -24,7 +24,7 @@ Use the Apache.Avro integration below.
 Keep Apache.Avro selected for generation and install Confluent's Avro serializer:
 
 ```bash
-dotnet add package Confluent.SchemaRegistry.Serdes.Avro --version 2.15.1
+dotnet add package Confluent.SchemaRegistry.Serdes.Avro --version 2.16.0
 ```
 
 The generated `User` implements `ISpecificRecord`, which is the contract this serializer expects. The following round-trip example configures a typed producer and consumer, sends a `User`, and verifies that the matching message comes back with the same values:

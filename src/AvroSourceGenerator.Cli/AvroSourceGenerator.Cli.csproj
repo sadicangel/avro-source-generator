@@ -20,9 +20,11 @@
     <InternalsVisibleTo Include="AvroSourceGenerator.UnitTests" />
     <ProjectReference Include="../AvroSourceGenerator.Core/AvroSourceGenerator.Core.csproj" />
     <ProjectReference Include="../AvroSourceGenerator.Templating/AvroSourceGenerator.Templating.csproj" />
+    <PackageReference Include="Basic.Reference.Assemblies.Net100" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
-    <!-- Core's JSON and Immutable assemblies are provided by the .NET 10 shared framework. -->
     <None Include="README.md" Pack="true" PackagePath="/" />
     <None Include="../../icon.png" Pack="true" PackagePath="/" />
   </ItemGroup>

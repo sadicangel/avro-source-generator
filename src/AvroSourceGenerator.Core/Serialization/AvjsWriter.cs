@@ -6,15 +6,15 @@ using AvroSourceGenerator.Schemas.Defaults;
 
 namespace AvroSourceGenerator.Serialization;
 
-public sealed class AvroJsonWriter(Stream stream, IReadOnlyDictionary<SchemaName, TopLevelSchema> schemaIndex, JsonWriterOptions options = default) : IDisposable
+public sealed class AvjsWriter(Stream stream, IReadOnlyDictionary<SchemaName, TopLevelSchema>? schemaIndex = null, JsonWriterOptions options = default) : IDisposable
 {
     private readonly Utf8JsonWriter _writer = new Utf8JsonWriter(stream, options);
     private readonly HashSet<SchemaName> _writtenSchemas = [];
 
-    internal static string WriteToString(AvroSchema schema, IReadOnlyDictionary<SchemaName, TopLevelSchema> schemaIndex, JsonWriterOptions options)
+    internal static string WriteToString(AvroSchema schema, IReadOnlyDictionary<SchemaName, TopLevelSchema>? schemaIndex, JsonWriterOptions options)
     {
         using var stream = new MemoryStream();
-        using var writer = new AvroJsonWriter(stream, schemaIndex, options);
+        using var writer = new AvjsWriter(stream, schemaIndex, options);
         writer.Write(schema);
         writer.Flush();
         return Encoding.UTF8.GetString(stream.GetBuffer(), 0, checked((int)stream.Length));
@@ -22,7 +22,7 @@ public sealed class AvroJsonWriter(Stream stream, IReadOnlyDictionary<SchemaName
 
     public void Dispose() => _writer.Dispose();
 
-    public void Write(AvroSchema schema) => Write(schema, schema.SchemaName.Namespace);
+    public void Write(AvroSchema schema) => Write(schema, containingNamespace: null);
 
     public void Flush() => _writer.Flush();
 
@@ -386,13 +386,10 @@ public sealed class AvroJsonWriter(Stream stream, IReadOnlyDictionary<SchemaName
 
     private void WriteSchemaReference(AvroSchemaReference schema, string? containingNamespace)
     {
-        if (_writtenSchemas.Contains(schema.SchemaName))
-        {
+        if (!_writtenSchemas.Contains(schema.SchemaName) && schemaIndex?.TryGetValue(schema.SchemaName, out var target) == true)
+            Write(target, containingNamespace);
+        else
             WriteReferenceName(schema.SchemaName, containingNamespace);
-            return;
-        }
-
-        Write(schemaIndex[schema.SchemaName], containingNamespace);
     }
 
     private void WriteReferenceName(SchemaName name, string? containingNamespace) =>

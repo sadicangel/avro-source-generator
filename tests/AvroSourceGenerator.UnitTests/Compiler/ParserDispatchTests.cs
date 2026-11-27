@@ -4,6 +4,7 @@ using AvroSourceGenerator.Compiler.Parsing;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.UnitTests.Compiler;
@@ -117,7 +118,7 @@ public sealed class ParserDispatchTests
         var expected = AvxxParser.Parse(source, s_options, TestContext.Current.CancellationToken);
         var actual = AvroFile.Parse(source, s_options, TestContext.Current.CancellationToken);
         Assert.Equal(expected, actual);
-        Assert.Equal(expected.RootSchema.ToJsonString(expected.Declarations.ToDictionary(schema => schema.SchemaName)), actual.RootSchema.ToJsonString(actual.Declarations.ToDictionary(schema => schema.SchemaName)));
+        Assert.Equal(expected.RootSchema.ToAvjs(expected.Declarations.ToDictionary(schema => schema.SchemaName)), actual.RootSchema.ToAvjs(actual.Declarations.ToDictionary(schema => schema.SchemaName)));
         Assert.Equal(expected.GetDiagnostics(), actual.GetDiagnostics());
         Assert.Equal(expected.Declarations.Select(schema => schema.SchemaName), actual.Declarations.Select(schema => schema.SchemaName));
         Assert.Equal(s_options, actual.ParseOptions);

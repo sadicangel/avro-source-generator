@@ -4,6 +4,7 @@ using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Schemas.Defaults;
+using AvroSourceGenerator.Serialization;
 using AvroSourceGenerator.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -294,7 +295,7 @@ public sealed class SemanticValidationTests
         var record = Assert.IsType<RecordSchema>(compiled.Schemas[new SchemaName("R")]);
         var union = Assert.IsType<UnionSchema>(Assert.Single(record.Fields).Type);
         Assert.Equal(["B", "bytes", "A"], union.Schemas.Select(schema => schema.SchemaName.FullName));
-        using var document = System.Text.Json.JsonDocument.Parse(record.ToJsonString(compiled.Schemas));
+        using var document = System.Text.Json.JsonDocument.Parse(record.ToAvjs(compiled.Schemas));
         var branches = document.RootElement.GetProperty("fields")[0].GetProperty("type");
         Assert.Equal("B", branches[0].GetProperty("name").GetString());
         Assert.Equal("bytes", branches[1].GetString());

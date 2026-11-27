@@ -2,6 +2,7 @@
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 
 namespace AvroSourceGenerator.UnitTests;
 
@@ -22,7 +23,7 @@ public sealed class ProtocolErrorTests
         var message = Assert.Single(protocol.Messages);
         Assert.Null(message.Errors);
         Assert.Null(message.OneWay);
-        using var json = JsonDocument.Parse(protocol.ToJsonString(file.Declarations.ToDictionary(schema => schema.SchemaName)));
+        using var json = JsonDocument.Parse(protocol.ToAvjs(file.Declarations.ToDictionary(schema => schema.SchemaName)));
         Assert.False(json.RootElement.GetProperty("messages").GetProperty("m").TryGetProperty("errors", out _));
     }
 
@@ -45,7 +46,7 @@ public sealed class ProtocolErrorTests
         Assert.Same(AvroSchema.String, union.Schemas[0]);
         var bound = Assert.IsType<ProtocolSchema>(SchemaCompilerTestHelpers.Bind(file).RootSchema);
         Assert.Equal(union.Schemas, Assert.IsType<UnionSchema>(Assert.Single(bound.Messages).Errors).Schemas);
-        using var json = JsonDocument.Parse(protocol.ToJsonString(file.Declarations.ToDictionary(schema => schema.SchemaName)));
+        using var json = JsonDocument.Parse(protocol.ToAvjs(file.Declarations.ToDictionary(schema => schema.SchemaName)));
         Assert.Equal(["B", "A"], json.RootElement.GetProperty("messages").GetProperty("m").GetProperty("errors").EnumerateArray().Select(error => error.GetString()));
     }
 
@@ -68,7 +69,7 @@ public sealed class ProtocolErrorTests
             Assert.Same(AvroSchema.String, Assert.Single(Assert.IsType<UnionSchema>(message.Errors).Schemas));
         else
             Assert.Null(message.Errors);
-        using var json = JsonDocument.Parse(protocol.ToJsonString(file.Declarations.ToDictionary(schema => schema.SchemaName)));
+        using var json = JsonDocument.Parse(protocol.ToAvjs(file.Declarations.ToDictionary(schema => schema.SchemaName)));
         Assert.False(json.RootElement.GetProperty("messages").GetProperty("m").TryGetProperty("errors", out _));
     }
 

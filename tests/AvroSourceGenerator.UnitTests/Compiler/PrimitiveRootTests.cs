@@ -3,6 +3,7 @@ using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.UnitTests.Compiler;
@@ -44,7 +45,7 @@ public sealed class PrimitiveRootTests
         Assert.Empty(file.References);
         Assert.Empty(file.Imports);
         Assert.Empty(file.Dependencies);
-        var json = file.RootSchema.ToJsonString(new Dictionary<SchemaName, TopLevelSchema>());
+        var json = file.RootSchema.ToAvjs();
         using var document = JsonDocument.Parse(json);
         var roundTrip = AvroFile.Parse(new SourceText("roundtrip.avsc", json), s_options, token);
         Assert.True(roundTrip.IsValid);

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
-using AvroSourceGenerator.Serialization;
 
 namespace AvroSourceGenerator.Schemas;
 
@@ -24,7 +23,4 @@ public closed record class AvroSchema(
     public bool RequiresNullability => SchemaType is SchemaType.Record or SchemaType.Error or SchemaType.Protocol;
 
     public sealed override string ToString() => CSharpName.FullName;
-
-    public string ToJsonString(IReadOnlyDictionary<SchemaName, TopLevelSchema> registeredSchemas, JsonWriterOptions options = default) =>
-        AvroJsonWriter.WriteToString(this, registeredSchemas, options);
 }

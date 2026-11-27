@@ -4,6 +4,7 @@ using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Compiler.Linking;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using SourceText = AvroSourceGenerator.Text.SourceText;
@@ -204,8 +205,8 @@ public sealed class PrimitiveAnnotationTests
         Assert.True(bound.IsValid);
         Assert.Empty(bound.GetDiagnostics());
         var schemas = bound.Declarations.ToDictionary(schema => schema.SchemaName);
-        var lowered = file.RootSchema.ToJsonString(file.Declarations.ToDictionary(schema => schema.SchemaName));
-        var serialized = bound.RootSchema!.ToJsonString(schemas);
+        var lowered = file.RootSchema.ToAvjs(file.Declarations.ToDictionary(schema => schema.SchemaName));
+        var serialized = bound.RootSchema!.ToAvjs(schemas);
         Assert.Equal(lowered, serialized);
         return serialized;
     }

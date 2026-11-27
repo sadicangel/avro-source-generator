@@ -1,7 +1,9 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Text.Json;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 using Scriban.Functions;
 
 namespace AvroSourceGenerator.Templating;
@@ -33,18 +35,18 @@ public static class AvroTemplate
         }
     }
 
-    private static string GetSchemaJson(TopLevelSchema schema, IReadOnlyDictionary<SchemaName, TopLevelSchema> schemasByName, RenderOptions options)
+    private static string GetSchemaJson(TopLevelSchema schema, FrozenDictionary<SchemaName, TopLevelSchema> schemaIndex, RenderOptions options)
     {
         if (options.LanguageFeatures.HasRawStringLiterals)
         {
             return $""""
                 """
-                {schema.ToJsonString(schemasByName, new JsonWriterOptions { Indented = true })}
+                {schema.ToAvjs(schemaIndex, new JsonWriterOptions { Indented = true })}
                 """
                 """";
         }
 
-        return StringFunctions.Literal(schema.ToJsonString(schemasByName))
+        return StringFunctions.Literal(schema.ToAvjs(schemaIndex))
             ?? throw new InvalidOperationException("Unreachable code");
     }
 }

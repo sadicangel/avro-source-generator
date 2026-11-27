@@ -4,6 +4,7 @@ using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 using AvroSourceGenerator.Syntax.Declarations;
 using AvroSourceGenerator.Syntax;
 using AvroSourceGenerator.Text;
@@ -141,8 +142,8 @@ public sealed class ParserParityTests
         }
 
         Assert.Equal(Serialize(jsonProtocol), Serialize(idlProtocol));
-        var expectedFixed = jsonSchema.Declarations[0].ToJsonString(jsonSchema.Declarations.ToDictionary(schema => schema.SchemaName));
-        Assert.All(files, file => Assert.Equal(expectedFixed, file.Declarations[0].ToJsonString(file.Declarations.ToDictionary(schema => schema.SchemaName))));
+        var expectedFixed = jsonSchema.Declarations[0].ToAvjs(jsonSchema.Declarations.ToDictionary(schema => schema.SchemaName));
+        Assert.All(files, file => Assert.Equal(expectedFixed, file.Declarations[0].ToAvjs(file.Declarations.ToDictionary(schema => schema.SchemaName))));
         Assert.Equal(SerializeBound(jsonProtocol), SerializeBound(idlProtocol));
     }
 
@@ -371,7 +372,7 @@ public sealed class ParserParityTests
         Assert.Empty(file.Imports);
     }
 
-    private static string Serialize(AvroFile file) => file.RootSchema.ToJsonString(file.Declarations.ToDictionary(schema => schema.SchemaName));
+    private static string Serialize(AvroFile file) => file.RootSchema.ToAvjs(file.Declarations.ToDictionary(schema => schema.SchemaName));
 
     private static string SerializeBound(AvroFile file)
     {
@@ -379,6 +380,6 @@ public sealed class ParserParityTests
         Assert.True(bound.IsValid, string.Join("; ", bound.GetDiagnostics()));
         Assert.Empty(bound.GetDiagnostics());
         Assert.NotNull(bound.RootSchema);
-        return bound.RootSchema.ToJsonString(bound.Declarations.ToDictionary(schema => schema.SchemaName));
+        return bound.RootSchema.ToAvjs(bound.Declarations.ToDictionary(schema => schema.SchemaName));
     }
 }

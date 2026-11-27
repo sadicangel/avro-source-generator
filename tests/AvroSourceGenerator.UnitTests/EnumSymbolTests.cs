@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 
 namespace AvroSourceGenerator.UnitTests;
 
@@ -20,7 +21,7 @@ public sealed class EnumSymbolTests
             var enumeration = Assert.Single(file.Declarations.OfType<EnumSchema>());
             Assert.Equal(["class", "normal", "int"], enumeration.Symbols.Select(symbol => symbol.SchemaName));
             Assert.Equal(["@class", "normal", "@int"], enumeration.Symbols.Select(symbol => symbol.CSharpName));
-            var text = record.ToJsonString(file.Declarations.ToDictionary(schema => schema.SchemaName));
+            var text = record.ToAvjs(file.Declarations.ToDictionary(schema => schema.SchemaName));
             serialized.Add(text);
             using var document = JsonDocument.Parse(text);
             var field = document.RootElement.GetProperty("fields")[0];

@@ -3,6 +3,7 @@ using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Schemas.Defaults;
+using AvroSourceGenerator.Serialization;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.UnitTests.Compiler;
@@ -37,6 +38,6 @@ public sealed class RawDefaultFormatTests
             _ => throw new InvalidOperationException()
         };
         Assert.Equal("\"\\u0100\"", Assert.IsType<UnboundDefaultValue>(value).JsonText);
-        Assert.Contains("\"default\":\"\\u0100\"", schema.ToJsonString(project.Schemas));
+        Assert.Contains("\"default\":\"\\u0100\"", schema.ToAvjs(project.Schemas));
     }
 }

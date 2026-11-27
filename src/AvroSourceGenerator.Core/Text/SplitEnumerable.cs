@@ -1,6 +1,6 @@
-﻿namespace AvroSourceGenerator.Extensions;
+﻿namespace AvroSourceGenerator.Text;
 
-internal readonly ref struct SplitEnumerable(ReadOnlySpan<char> value, char separator)
+public readonly ref struct SplitEnumerable(ReadOnlySpan<char> value, char separator)
 {
     private readonly ReadOnlySpan<char> _value = value;
 

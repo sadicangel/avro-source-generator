@@ -3,6 +3,7 @@ using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Schemas;
 using AvroSourceGenerator.Schemas.Defaults;
+using AvroSourceGenerator.Serialization;
 using AvroSourceGenerator.Text;
 
 namespace AvroSourceGenerator.UnitTests.Compiler;
@@ -35,7 +36,7 @@ public sealed class DefaultValueTests
         Assert.True(bound.IsValid);
         Assert.Empty(bound.GetDiagnostics());
         Assert.Same(parsed, Assert.Single(Assert.IsType<RecordSchema>(bound.RootSchema).Fields).Default);
-        using var serialized = JsonDocument.Parse(bound.RootSchema!.ToJsonString(bound.Declarations.ToDictionary(schema => schema.SchemaName)));
+        using var serialized = JsonDocument.Parse(bound.RootSchema!.ToAvjs(bound.Declarations.ToDictionary(schema => schema.SchemaName)));
         Assert.Equal(json, serialized.RootElement.GetProperty("fields")[0].GetProperty("default").GetRawText());
     }
 

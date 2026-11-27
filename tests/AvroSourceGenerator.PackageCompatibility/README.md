@@ -22,7 +22,7 @@ The package stores Core, Templating, and nine common runtime dependencies, inclu
 Each `analyzers/dotnet/roslynX.Y/cs/` folder contains only the generator.
 The checks verify all 13 packaged DLLs and that each consumer receives the 11 shared dependencies plus exactly one generator variant.
 
-All source libraries use the central `System.Collections.Immutable` version without overrides. The .NET 10 CLI uses the shared framework's JSON and Immutable assemblies.
+All source libraries use the central `System.Collections.Immutable` version without overrides. The .NET 10 CLI uses the shared framework's Immutable assembly and packages its newer JSON dependency alongside the tool.
 The package consumers verify that the shared assemblies and Immutable APIs work with every supported compiler host,
 including SDK 10.0.100. Increasing Immutable's major version requires checking that minimum host again.
 
@@ -47,6 +47,7 @@ Verify's `ScrubReplace` normalizes only the generated version annotation to the 
 The runner checks numeric assembly/file versions, full informational versions, and the `GeneratedCodeAttribute` version in every generated model.
 With `-CliPackagePath`, the runner validates matching package versions and tool contents, installs the CLI in an isolated local-tool manifest/cache,
 and compares its generated files with the generator for every library and language mode. It also verifies `--check` on each output.
+The same installed tool must generate schemas from standalone C# input and load a restored project for `avsc`.
 Omit `-CliPackagePath` only when validating the generator package independently.
 With `-CorePackagePath`, the runner checks Core's matching package and assembly versions, its .NET Standard 2.0 library layout,
 and its transitive JSON and Immutable dependencies. A standalone consumer exercises primitive-root parsing and compilation

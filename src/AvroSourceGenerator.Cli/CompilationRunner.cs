@@ -1,5 +1,4 @@
-﻿using System.Text;
-using AvroSourceGenerator.Compiler;
+﻿using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Templating;
 using AvroSourceGenerator.Text;
@@ -68,51 +67,8 @@ internal static class CompilationRunner
             await error.WriteLineAsync($"{location}{diagnostic.Severity.ToString().ToLowerInvariant()} AVROSG{(int)diagnostic.Code:D4}: {diagnostic.GetMessage()}");
         }
 
-        // Render before performing filesystem mutations; internal rendering failures surface normally.
-        var rendered = new Dictionary<string, RenderedSchema>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
-        foreach (var file in compilation.Files)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            foreach (var schema in AvroTemplate.Render(RenderableAvroFile.Create(file, compilation, renderOptions, cancellationToken), cancellationToken))
-            {
-                if (!rendered.TryAdd(schema.HintName, schema))
-                {
-                    await error.WriteLineAsync($"avro-sg: Generated filenames '{rendered[schema.HintName].HintName}' and '{schema.HintName}' resolve to the same output path.");
-                    return 1;
-                }
-            }
-        }
-        foreach (var (hintName, schema) in rendered)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var path = Path.Combine(destination, hintName);
-            try
-            {
-                if (check)
-                {
-                    if (!File.Exists(path) ||
-                        (await File.ReadAllTextAsync(path, cancellationToken)).ReplaceLineEndings("\n") != schema.SourceText.ReplaceLineEndings("\n"))
-                    {
-                        await error.WriteLineAsync($"avro-sg: Missing or changed output '{path}'.");
-                        failed = true;
-                    }
-                    continue;
-                }
-                if (force && File.Exists(path) && await File.ReadAllTextAsync(path, cancellationToken) == schema.SourceText)
-                    continue;
-                Directory.CreateDirectory(destination);
-                await using var stream = new FileStream(path, force ? FileMode.Create : FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, useAsync: true);
-                await using var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
-                await writer.WriteAsync(schema.SourceText.AsMemory(), cancellationToken);
-                await writer.FlushAsync(cancellationToken);
-                await output.WriteLineAsync($"Generated {path}");
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-            {
-                await error.WriteLineAsync($"avro-sg: Cannot write or check '{path}': {exception.Message}");
-                failed = true;
-            }
-        }
-        return failed ? 1 : 0;
+        var rendered = compilation.Files.SelectMany(file =>
+            AvroTemplate.Render(RenderableAvroFile.Create(file, compilation, renderOptions, cancellationToken), cancellationToken));
+        return await GeneratedFileWriter.WriteAsync(destination, rendered, force, check, failed, emitUtf8Bom: true, output, error, cancellationToken);
     }
 }

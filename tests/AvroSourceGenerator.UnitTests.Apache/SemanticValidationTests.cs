@@ -2,6 +2,7 @@
 using AvroSourceGenerator.Compiler.Configuration;
 using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 using AvroSourceGenerator.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -26,7 +27,7 @@ public sealed class SemanticValidationTests
             new AvroParseOptions(GenerationTarget.Apache, LanguageFeatures.CSharp12), cancellationToken: token);
         Assert.True(compiled.IsValid, string.Join(Environment.NewLine, compiled.Diagnostics));
         var root = Assert.Single(compiled.Files).RootSchema!;
-        var record = Assert.IsType<Avro.RecordSchema>(Avro.Schema.Parse(root.ToJsonString(compiled.Schemas)));
+        var record = Assert.IsType<Avro.RecordSchema>(Avro.Schema.Parse(root.ToAvjs(compiled.Schemas)));
         Assert.Equal(["example.EmptyChild", "example.NullChild", "example.OmittedChild"],
             record.Fields.Select(field => Assert.IsType<Avro.RecordSchema>(field.Schema).Fullname));
     }
@@ -39,7 +40,7 @@ public sealed class SemanticValidationTests
         var compiled = AvroCompiler.Compile([new SourceText("valid." + extension, text)], new AvroParseOptions(GenerationTarget.Apache, LanguageFeatures.CSharp12), cancellationToken: token);
         Assert.True(compiled.IsValid, string.Join(Environment.NewLine, compiled.Diagnostics));
         var root = Assert.Single(compiled.Files).RootSchema!;
-        var json = root.ToJsonString(compiled.Schemas);
+        var json = root.ToAvjs(compiled.Schemas);
         if (root is ProtocolSchema)
             Assert.NotNull(Avro.Protocol.Parse(json));
         else

@@ -5,6 +5,7 @@ using AvroSourceGenerator.Compiler;
 using AvroSourceGenerator.Diagnostics;
 using AvroSourceGenerator.Schemas.Defaults;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 using AvroSourceGenerator.Syntax.Declarations;
 using AvroSourceGenerator.Syntax;
 using AvroSourceGenerator.Text;
@@ -69,7 +70,7 @@ public sealed class SemanticResultTests
         Assert.Empty(compilation.Diagnostics);
         var root = Assert.Single(compilation.Files).RootSchema;
         Assert.NotNull(root);
-        using var json = JsonDocument.Parse(root.ToJsonString(compilation.Schemas));
+        using var json = JsonDocument.Parse(root.ToAvjs(compilation.Schemas));
         var fields = json.RootElement.GetProperty("fields");
         Assert.Equal(1, fields[0].GetProperty("type").GetProperty("custom").GetInt32());
         Assert.Equal(2, fields[0].GetProperty("custom").GetInt32());
@@ -251,8 +252,8 @@ public sealed class SemanticResultTests
         Assert.Same(source, actual.Text);
         Assert.Equal(expected.IsValid, actual.IsValid);
         Assert.Equal(expected.ParseOptions, actual.ParseOptions);
-        Assert.Equal(expected.RootSchema.ToJsonString(expectedSchemas), actual.RootSchema.ToJsonString(actualSchemas));
-        Assert.Equal(expected.Declarations.Select(schema => schema.ToJsonString(expectedSchemas)), actual.Declarations.Select(schema => schema.ToJsonString(actualSchemas)));
+        Assert.Equal(expected.RootSchema.ToAvjs(expectedSchemas), actual.RootSchema.ToAvjs(actualSchemas));
+        Assert.Equal(expected.Declarations.Select(schema => schema.ToAvjs(expectedSchemas)), actual.Declarations.Select(schema => schema.ToAvjs(actualSchemas)));
         Assert.Equal(expected.DeclarationSpans, actual.DeclarationSpans);
         Assert.Equal(expected.References, actual.References);
         Assert.Equal(expected.Imports, actual.Imports);

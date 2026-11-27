@@ -9,6 +9,31 @@ internal static class CliApplication
 {
     public static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter error, CancellationToken cancellationToken = default)
     {
+        var root = new RootCommand("Avro Source Generator command-line tool.")
+        {
+            CreateCSharpCommand(output, error),
+            CreateAvroCommand("avsc", "Generate Avro schema JSON from C#.", output, error),
+            CreateAvroCommand("avdl", "Generate Avro IDL from C#.", output, error),
+        };
+        var parsed = root.Parse(args);
+        try
+        {
+            var exitCode = await parsed.InvokeAsync(new InvocationConfiguration
+            {
+                Output = output,
+                Error = error,
+                EnableDefaultExceptionHandler = false,
+            }, cancellationToken);
+            return parsed.Errors.Count > 0 && exitCode != 0 ? 2 : exitCode;
+        }
+        catch (OperationCanceledException)
+        {
+            return 130;
+        }
+    }
+
+    private static Command CreateCSharpCommand(TextWriter output, TextWriter error)
+    {
         var inputs = new Argument<string[]>("inputs")
         {
             Description = "Avro files, recursive directories, or quoted glob patterns, in declaration precedence order.",
@@ -41,11 +66,11 @@ internal static class CliApplication
         var duplicates = EnumOption("--duplicate-resolution", DuplicateResolution.Error, "Duplicate declaration handling; Ignore keeps the first definition.");
         var force = new Option<bool>("--force", "-f") { Description = "Allow replacement of existing generated files." };
         var check = new Option<bool>("--check") { Description = "Check expected files without writing. Extra files are ignored." };
-        var compile = new Command("compile", "Generate C# models from Avro schemas, protocols, and IDL.")
+        var command = new Command("cs", "Generate C# models from Avro schemas, protocols, and IDL.")
         {
             inputs, destination, library, language, features, preview, access, declaration, references, duplicates, force, check,
         };
-        compile.SetAction(async (result, token) =>
+        command.SetAction(async (result, token) =>
         {
             if (result.GetValue(force) && result.GetValue(check))
             {
@@ -69,22 +94,32 @@ internal static class CliApplication
                 new RenderOptions(target, enabled, result.GetValue(access)),
                 result.GetValue(force), result.GetValue(check), output, error, token);
         });
-        var root = new RootCommand("Avro Source Generator command-line tool.") { compile };
-        var parsed = root.Parse(args);
-        try
+        return command;
+    }
+
+    private static Command CreateAvroCommand(string name, string description, TextWriter output, TextWriter error)
+    {
+        var input = new Argument<string>("input") { Description = "C# source file (.cs)." };
+        var destination = new Option<string>("--output", "-o") { Description = "Destination directory.", Required = true };
+        var project = new Option<string>("--project") { Description = "C# project file (.csproj). Defaults to project discovery." };
+        var framework = new Option<string>("--framework") { Description = "Target framework. Required for multi-targeted projects." };
+        var type = new Option<string>("--type") { Description = "Fully qualified C# name of the type to generate." };
+        var documentation = new Option<string>("--documentation")
         {
-            var exitCode = await parsed.InvokeAsync(new InvocationConfiguration
-            {
-                Output = output,
-                Error = error,
-                EnableDefaultExceptionHandler = false,
-            }, cancellationToken);
-            return parsed.Errors.Count > 0 && exitCode != 0 ? 2 : exitCode;
-        }
-        catch (OperationCanceledException)
+            Description = "Source of Avro documentation. Use xml for C# XML comments.",
+            DefaultValueFactory = _ => "none",
+        };
+        documentation.AcceptOnlyFromAmong("none", "xml");
+        var force = new Option<bool>("--force", "-f") { Description = "Allow replacement of existing generated files." };
+        var check = new Option<bool>("--check") { Description = "Check expected files without writing. Extra files are ignored." };
+        var command = new Command(name, description)
         {
-            return 130;
-        }
+            input, destination, project, framework, type, documentation, force, check,
+        };
+        command.SetAction((result, token) => CSharpCompilationRunner.RunAsync(
+            result.GetValue(input)!, result.GetValue(destination)!, name, result.GetValue(project), result.GetValue(framework),
+            result.GetValue(type), result.GetValue(documentation) == "xml", result.GetValue(force), result.GetValue(check), output, error, token));
+        return command;
     }
 
     private static Option<T> EnumOption<T>(string name, T defaultValue, string description, Func<T, string?>? validate = null) where T : struct, Enum

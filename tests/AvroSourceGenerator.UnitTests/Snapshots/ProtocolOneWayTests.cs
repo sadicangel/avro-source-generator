@@ -1,5 +1,6 @@
-using AvroSourceGenerator.Protocols;
+﻿using AvroSourceGenerator.Protocols;
 using AvroSourceGenerator.Schemas;
+using AvroSourceGenerator.Serialization;
 
 namespace AvroSourceGenerator.UnitTests.Snapshots;
 
@@ -15,7 +16,7 @@ public sealed class ProtocolOneWayTests
             """);
         var message = Assert.Single(protocol.Messages);
 
-        var json = protocol.ToJsonString(schemas);
+        var json = protocol.ToAvjs(schemas);
 
         Assert.False(message.OneWay);
         Assert.Contains("\"one-way\":false", json);

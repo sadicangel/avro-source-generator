@@ -2,7 +2,7 @@
 
 namespace AvroSourceGenerator.Extensions;
 
-internal static class AvroSchemaExtensions
+public static class AvroSchemaExtensions
 {
     extension(AvroSchema schema)
     {

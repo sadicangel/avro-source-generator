@@ -2,9 +2,9 @@
 
 namespace AvroSourceGenerator.Schemas;
 
-public readonly record struct MemberName(string SchemaName)
+public readonly record struct MemberName(string SchemaName, string CSharpName)
 {
-    public string CSharpName { get; } = SchemaName.ToValidName();
+    public MemberName(string schemaName) : this(schemaName, schemaName.ToValidName()) { }
 
     public static implicit operator MemberName(string schemaName) => new MemberName(schemaName);
 
